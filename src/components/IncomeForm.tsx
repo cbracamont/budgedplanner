@@ -26,10 +26,10 @@ export const IncomeForm = ({ onIncomeChange }: IncomeFormProps) => {
       <CardHeader className="bg-gradient-income text-income-foreground rounded-t-xl">
         <div className="flex items-center gap-2">
           <TrendingUp className="h-5 w-5" />
-          <CardTitle>Ingresos Mensuales</CardTitle>
+          <CardTitle>Monthly Income</CardTitle>
         </div>
         <CardDescription className="text-income-foreground/80">
-          Ingresa tus fuentes de ingreso
+          Enter your income sources
         </CardDescription>
       </CardHeader>
       <CardContent className="pt-6">
@@ -37,7 +37,7 @@ export const IncomeForm = ({ onIncomeChange }: IncomeFormProps) => {
           <div className="space-y-2">
             <Label htmlFor="salary" className="flex items-center gap-2">
               <DollarSign className="h-4 w-4 text-income" />
-              Salario Mensual
+              Monthly Salary
             </Label>
             <Input
               id="salary"
@@ -53,7 +53,7 @@ export const IncomeForm = ({ onIncomeChange }: IncomeFormProps) => {
           <div className="space-y-2">
             <Label htmlFor="tips" className="flex items-center gap-2">
               <DollarSign className="h-4 w-4 text-income" />
-              Propinas Mensuales
+              Monthly Tips
             </Label>
             <Input
               id="tips"
@@ -67,7 +67,7 @@ export const IncomeForm = ({ onIncomeChange }: IncomeFormProps) => {
           </div>
 
           <Button type="submit" className="w-full bg-income hover:bg-income/90">
-            Actualizar Ingresos
+            Update Income
           </Button>
         </form>
       </CardContent>

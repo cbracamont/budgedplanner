@@ -28,10 +28,10 @@ export const DebtsForm = ({ onDebtsChange }: DebtsFormProps) => {
       <CardHeader className="bg-gradient-debt text-debt-foreground rounded-t-xl">
         <div className="flex items-center gap-2">
           <TrendingDown className="h-5 w-5" />
-          <CardTitle>Deudas Mensuales</CardTitle>
+          <CardTitle>Monthly Debts</CardTitle>
         </div>
         <CardDescription className="text-debt-foreground/80">
-          Ingresa tus pagos mensuales de deudas
+          Enter your monthly debt payments
         </CardDescription>
       </CardHeader>
       <CardContent className="pt-6">
@@ -39,7 +39,7 @@ export const DebtsForm = ({ onDebtsChange }: DebtsFormProps) => {
           <div className="space-y-2">
             <Label htmlFor="personalLoan" className="flex items-center gap-2">
               <Wallet className="h-4 w-4 text-debt" />
-              Préstamo Personal
+              Personal Loan
             </Label>
             <Input
               id="personalLoan"
@@ -55,7 +55,7 @@ export const DebtsForm = ({ onDebtsChange }: DebtsFormProps) => {
           <div className="space-y-2">
             <Label htmlFor="carFinance" className="flex items-center gap-2">
               <Car className="h-4 w-4 text-debt" />
-              Financiamiento de Auto
+              Car Finance
             </Label>
             <Input
               id="carFinance"
@@ -71,7 +71,7 @@ export const DebtsForm = ({ onDebtsChange }: DebtsFormProps) => {
           <div className="space-y-2">
             <Label htmlFor="creditCards" className="flex items-center gap-2">
               <CreditCard className="h-4 w-4 text-debt" />
-              Tarjetas de Crédito
+              Credit Cards
             </Label>
             <Input
               id="creditCards"
@@ -85,7 +85,7 @@ export const DebtsForm = ({ onDebtsChange }: DebtsFormProps) => {
           </div>
 
           <Button type="submit" className="w-full bg-debt hover:bg-debt/90">
-            Actualizar Deudas
+            Update Debts
           </Button>
         </form>
       </CardContent>

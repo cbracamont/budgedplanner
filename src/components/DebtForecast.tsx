@@ -45,17 +45,17 @@ export const DebtForecast = ({ totalDebts }: DebtForecastProps) => {
       <CardHeader className="bg-gradient-primary text-primary-foreground rounded-t-xl">
         <div className="flex items-center gap-2">
           <Clock className="h-5 w-5" />
-          <CardTitle>Pronóstico de Pago de Deudas</CardTitle>
+          <CardTitle>Debt Payoff Forecast</CardTitle>
         </div>
         <CardDescription className="text-primary-foreground/80">
-          Calcula cuánto tiempo tardarás en pagar tus deudas
+          Calculate how long it will take to pay off your debts
         </CardDescription>
       </CardHeader>
       <CardContent className="pt-6">
         <form onSubmit={calculatePayoffTime} className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="extraPayment">
-              Pago Extra Mensual Destinado a Deudas
+              Extra Monthly Payment Towards Debts
             </Label>
             <Input
               id="extraPayment"
@@ -67,12 +67,12 @@ export const DebtForecast = ({ totalDebts }: DebtForecastProps) => {
               className="text-lg font-medium"
             />
             <p className="text-xs text-muted-foreground">
-              Monto adicional que puedes destinar cada mes al pago de deudas
+              Additional amount you can allocate each month to pay off debts
             </p>
           </div>
 
           <Button type="submit" className="w-full">
-            Calcular Tiempo de Pago
+            Calculate Payoff Time
           </Button>
         </form>
 
@@ -82,25 +82,25 @@ export const DebtForecast = ({ totalDebts }: DebtForecastProps) => {
               <AlertCircle className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
               <div className="space-y-2 flex-1">
                 <p className="font-semibold text-foreground">
-                  Tiempo Estimado de Pago
+                  Estimated Payoff Time
                 </p>
                 <div className="space-y-1">
                   <p className="text-2xl font-bold text-primary">
-                    {yearsToPayOff! > 0 && `${yearsToPayOff} ${yearsToPayOff === 1 ? 'año' : 'años'}`}
-                    {yearsToPayOff! > 0 && (monthsToPayOff! % 12) > 0 && ' y '}
-                    {(monthsToPayOff! % 12) > 0 && `${monthsToPayOff! % 12} ${(monthsToPayOff! % 12) === 1 ? 'mes' : 'meses'}`}
-                    {yearsToPayOff === 0 && monthsToPayOff === 0 && 'Menos de 1 mes'}
+                    {yearsToPayOff! > 0 && `${yearsToPayOff} ${yearsToPayOff === 1 ? 'year' : 'years'}`}
+                    {yearsToPayOff! > 0 && (monthsToPayOff! % 12) > 0 && ' and '}
+                    {(monthsToPayOff! % 12) > 0 && `${monthsToPayOff! % 12} ${(monthsToPayOff! % 12) === 1 ? 'month' : 'months'}`}
+                    {yearsToPayOff === 0 && monthsToPayOff === 0 && 'Less than 1 month'}
                   </p>
                   <p className="text-sm text-muted-foreground">
-                    ({monthsToPayOff} meses en total)
+                    ({monthsToPayOff} months in total)
                   </p>
                 </div>
                 <div className="pt-2 border-t border-border">
                   <p className="text-sm text-muted-foreground">
-                    Total de deudas: <span className="font-semibold text-foreground">{formatCurrency(totalDebts)}</span>
+                    Total debts: <span className="font-semibold text-foreground">{formatCurrency(totalDebts)}</span>
                   </p>
                   <p className="text-sm text-muted-foreground">
-                    Pago extra mensual: <span className="font-semibold text-foreground">{formatCurrency(parseFloat(extraPayment) || 0)}</span>
+                    Extra monthly payment: <span className="font-semibold text-foreground">{formatCurrency(parseFloat(extraPayment) || 0)}</span>
                   </p>
                 </div>
               </div>
@@ -111,7 +111,7 @@ export const DebtForecast = ({ totalDebts }: DebtForecastProps) => {
         {totalDebts === 0 && (
           <div className="mt-6 p-4 bg-success/10 rounded-lg">
             <p className="text-sm text-success font-medium">
-              ¡Excelente! No tienes deudas registradas.
+              Excellent! You have no debts registered.
             </p>
           </div>
         )}
