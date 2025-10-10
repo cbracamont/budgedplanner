@@ -2,6 +2,7 @@ import { useState } from "react";
 import { IncomeForm } from "@/components/IncomeForm";
 import { DebtsForm } from "@/components/DebtsForm";
 import { BudgetSummary } from "@/components/BudgetSummary";
+import { DebtForecast } from "@/components/DebtForecast";
 import { Calculator } from "lucide-react";
 
 const Index = () => {
@@ -46,6 +47,7 @@ const Index = () => {
           <div className="lg:col-span-2 space-y-6">
             <IncomeForm onIncomeChange={handleIncomeChange} />
             <DebtsForm onDebtsChange={handleDebtsChange} />
+            <DebtForecast totalDebts={totalDebts} />
           </div>
 
           <div className="lg:col-span-1">

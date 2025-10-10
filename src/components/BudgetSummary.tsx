@@ -12,9 +12,9 @@ export const BudgetSummary = ({ totalIncome, totalDebts }: BudgetSummaryProps) =
   const isPositive = monthlyBalance >= 0;
 
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('es-US', {
+    return new Intl.NumberFormat('en-GB', {
       style: 'currency',
-      currency: 'USD',
+      currency: 'GBP',
       minimumFractionDigits: 2,
     }).format(amount);
   };
