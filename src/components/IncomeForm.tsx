@@ -3,13 +3,16 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { DollarSign, TrendingUp } from "lucide-react";
+import { Wallet, TrendingUp } from "lucide-react";
+import { getTranslation, Language } from "@/lib/i18n";
 
 interface IncomeFormProps {
   onIncomeChange: (salary: number, tips: number) => void;
+  language: Language;
 }
 
-export const IncomeForm = ({ onIncomeChange }: IncomeFormProps) => {
+export const IncomeForm = ({ onIncomeChange, language }: IncomeFormProps) => {
+  const t = (key: string) => getTranslation(language, key);
   const [salary, setSalary] = useState<string>("");
   const [tips, setTips] = useState<string>("");
 
@@ -23,21 +26,21 @@ export const IncomeForm = ({ onIncomeChange }: IncomeFormProps) => {
 
   return (
     <Card className="shadow-medium border-income/20">
-      <CardHeader className="bg-gradient-income text-income-foreground rounded-t-xl">
+      <CardHeader className="bg-income/10 border-b border-income/20">
         <div className="flex items-center gap-2">
-          <TrendingUp className="h-5 w-5" />
-          <CardTitle>Monthly Income</CardTitle>
+          <TrendingUp className="h-5 w-5 text-income" />
+          <CardTitle>{t('income')}</CardTitle>
         </div>
-        <CardDescription className="text-income-foreground/80">
-          Enter your income sources
+        <CardDescription>
+          {language === 'en' ? 'Enter your monthly income sources' : 'Ingresa tus fuentes de ingreso mensuales'}
         </CardDescription>
       </CardHeader>
       <CardContent className="pt-6">
         <form onSubmit={handleSubmit} className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="salary" className="flex items-center gap-2">
-              <DollarSign className="h-4 w-4 text-income" />
-              Monthly Salary
+              <Wallet className="h-4 w-4 text-income" />
+              {t('salary')}
             </Label>
             <Input
               id="salary"
@@ -51,9 +54,8 @@ export const IncomeForm = ({ onIncomeChange }: IncomeFormProps) => {
           </div>
 
           <div className="space-y-2">
-            <Label htmlFor="tips" className="flex items-center gap-2">
-              <DollarSign className="h-4 w-4 text-income" />
-              Monthly Tips
+            <Label htmlFor="tips">
+              {t('tips')}
             </Label>
             <Input
               id="tips"
@@ -66,8 +68,8 @@ export const IncomeForm = ({ onIncomeChange }: IncomeFormProps) => {
             />
           </div>
 
-          <Button type="submit" className="w-full bg-income hover:bg-income/90">
-            Update Income
+          <Button type="submit" className="w-full">
+            {t('updateIncome')}
           </Button>
         </form>
       </CardContent>

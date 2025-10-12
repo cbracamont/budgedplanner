@@ -1,27 +1,22 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Calendar, CalendarDays, PiggyBank, TrendingUp } from "lucide-react";
+import { formatCurrency, getTranslation, Language } from "@/lib/i18n";
 
 interface BudgetSummaryProps {
   totalIncome: number;
   totalDebts: number;
   totalFixedExpenses: number;
   totalVariableExpenses: number;
+  language: Language;
 }
 
-export const BudgetSummary = ({ totalIncome, totalDebts, totalFixedExpenses, totalVariableExpenses }: BudgetSummaryProps) => {
+export const BudgetSummary = ({ totalIncome, totalDebts, totalFixedExpenses, totalVariableExpenses, language }: BudgetSummaryProps) => {
+  const t = (key: string) => getTranslation(language, key);
   const totalExpenses = totalDebts + totalFixedExpenses + totalVariableExpenses;
   const monthlyBalance = totalIncome - totalExpenses;
   const estimatedSavings = monthlyBalance > 0 ? monthlyBalance : 0;
   const weeklyBalance = monthlyBalance / 4;
   const isPositive = monthlyBalance >= 0;
-
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-GB', {
-      style: 'currency',
-      currency: 'GBP',
-      minimumFractionDigits: 2,
-    }).format(amount);
-  };
 
   return (
     <div className="space-y-4">
@@ -29,26 +24,26 @@ export const BudgetSummary = ({ totalIncome, totalDebts, totalFixedExpenses, tot
         <CardHeader className="bg-gradient-primary text-primary-foreground pb-3">
           <div className="flex items-center gap-2">
             <PiggyBank className="h-5 w-5" />
-            <CardTitle className="text-lg">Financial Summary</CardTitle>
+            <CardTitle className="text-lg">{t('financialSummary')}</CardTitle>
           </div>
         </CardHeader>
         <CardContent className="pt-6">
           <div className="grid gap-6">
             <div className="space-y-1">
-              <p className="text-sm text-muted-foreground">Total Income</p>
+              <p className="text-sm text-muted-foreground">{t('totalIncome')}</p>
               <p className="text-2xl font-bold text-income">
                 {formatCurrency(totalIncome)}
               </p>
             </div>
             <div className="space-y-1">
-              <p className="text-sm text-muted-foreground">Total Expenses</p>
+              <p className="text-sm text-muted-foreground">{t('totalExpenses')}</p>
               <p className="text-2xl font-bold text-debt">
                 {formatCurrency(totalExpenses)}
               </p>
               <div className="text-xs text-muted-foreground space-y-0.5 pt-2">
-                <p>Debts: {formatCurrency(totalDebts)}</p>
-                <p>Fixed: {formatCurrency(totalFixedExpenses)}</p>
-                <p>Variable: {formatCurrency(totalVariableExpenses)}</p>
+                <p>{t('debts')}: {formatCurrency(totalDebts)}</p>
+                <p>{t('fixed')}: {formatCurrency(totalFixedExpenses)}</p>
+                <p>{t('variable')}: {formatCurrency(totalVariableExpenses)}</p>
               </div>
             </div>
           </div>
@@ -59,7 +54,7 @@ export const BudgetSummary = ({ totalIncome, totalDebts, totalFixedExpenses, tot
         <CardHeader className="pb-3">
           <div className="flex items-center gap-2">
             <Calendar className="h-5 w-5 text-primary" />
-            <CardTitle className="text-lg">Monthly Budget</CardTitle>
+            <CardTitle className="text-lg">{t('monthlyBudget')}</CardTitle>
           </div>
         </CardHeader>
         <CardContent>
@@ -67,7 +62,7 @@ export const BudgetSummary = ({ totalIncome, totalDebts, totalFixedExpenses, tot
             {formatCurrency(monthlyBalance)}
           </p>
           <p className="text-sm text-muted-foreground mt-2">
-            {isPositive ? 'Available to save or spend' : 'Monthly deficit'}
+            {isPositive ? t('availableToSave') : t('monthlyDeficit')}
           </p>
         </CardContent>
       </Card>
@@ -76,7 +71,7 @@ export const BudgetSummary = ({ totalIncome, totalDebts, totalFixedExpenses, tot
         <CardHeader className="pb-3">
           <div className="flex items-center gap-2">
             <CalendarDays className="h-5 w-5 text-primary" />
-            <CardTitle className="text-lg">Weekly Budget</CardTitle>
+            <CardTitle className="text-lg">{t('weeklyBudget')}</CardTitle>
           </div>
         </CardHeader>
         <CardContent>
@@ -84,7 +79,7 @@ export const BudgetSummary = ({ totalIncome, totalDebts, totalFixedExpenses, tot
             {formatCurrency(weeklyBalance)}
           </p>
           <p className="text-sm text-muted-foreground mt-2">
-            Approximately per week
+            {t('weeklyApprox')}
           </p>
         </CardContent>
       </Card>
@@ -93,7 +88,7 @@ export const BudgetSummary = ({ totalIncome, totalDebts, totalFixedExpenses, tot
         <CardHeader className="pb-3">
           <div className="flex items-center gap-2">
             <TrendingUp className="h-5 w-5 text-success" />
-            <CardTitle className="text-lg">Estimated Savings</CardTitle>
+            <CardTitle className="text-lg">{t('estimatedSavings')}</CardTitle>
           </div>
         </CardHeader>
         <CardContent>
@@ -101,7 +96,7 @@ export const BudgetSummary = ({ totalIncome, totalDebts, totalFixedExpenses, tot
             {formatCurrency(estimatedSavings)}
           </p>
           <p className="text-sm text-muted-foreground mt-2">
-            {estimatedSavings > 0 ? 'Monthly savings potential' : 'No savings available - expenses exceed income'}
+            {estimatedSavings > 0 ? t('monthlySavingsPotential') : t('noSavingsAvailable')}
           </p>
         </CardContent>
       </Card>

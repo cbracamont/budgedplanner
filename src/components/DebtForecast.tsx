@@ -4,23 +4,18 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Clock, AlertCircle } from "lucide-react";
+import { formatCurrency, getTranslation, Language } from "@/lib/i18n";
 
 interface DebtForecastProps {
   totalDebts: number;
+  language: Language;
 }
 
-export const DebtForecast = ({ totalDebts }: DebtForecastProps) => {
+export const DebtForecast = ({ totalDebts, language }: DebtForecastProps) => {
+  const t = (key: string) => getTranslation(language, key);
   const [extraPayment, setExtraPayment] = useState<string>("");
   const [monthsToPayOff, setMonthsToPayOff] = useState<number | null>(null);
   const [yearsToPayOff, setYearsToPayOff] = useState<number | null>(null);
-
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat('en-GB', {
-      style: 'currency',
-      currency: 'GBP',
-      minimumFractionDigits: 2,
-    }).format(amount);
-  };
 
   const calculatePayoffTime = (e: React.FormEvent) => {
     e.preventDefault();
@@ -34,7 +29,6 @@ export const DebtForecast = ({ totalDebts }: DebtForecastProps) => {
 
     const months = Math.ceil(totalDebts / payment);
     const years = Math.floor(months / 12);
-    const remainingMonths = months % 12;
     
     setMonthsToPayOff(months);
     setYearsToPayOff(years);
@@ -45,17 +39,17 @@ export const DebtForecast = ({ totalDebts }: DebtForecastProps) => {
       <CardHeader className="bg-gradient-primary text-primary-foreground rounded-t-xl">
         <div className="flex items-center gap-2">
           <Clock className="h-5 w-5" />
-          <CardTitle>Debt Payoff Forecast</CardTitle>
+          <CardTitle>{t('debtPayoffForecast')}</CardTitle>
         </div>
         <CardDescription className="text-primary-foreground/80">
-          Calculate how long it will take to pay off your debts
+          {t('debtPayoffDescription')}
         </CardDescription>
       </CardHeader>
       <CardContent className="pt-6">
         <form onSubmit={calculatePayoffTime} className="space-y-4">
           <div className="space-y-2">
             <Label htmlFor="extraPayment">
-              Extra Monthly Payment Towards Debts
+              {t('extraMonthlyPayment')}
             </Label>
             <Input
               id="extraPayment"
@@ -67,12 +61,12 @@ export const DebtForecast = ({ totalDebts }: DebtForecastProps) => {
               className="text-lg font-medium"
             />
             <p className="text-xs text-muted-foreground">
-              Additional amount you can allocate each month to pay off debts
+              {t('extraPaymentDescription')}
             </p>
           </div>
 
           <Button type="submit" className="w-full">
-            Calculate Payoff Time
+            {t('calculatePayoffTime')}
           </Button>
         </form>
 
@@ -82,25 +76,25 @@ export const DebtForecast = ({ totalDebts }: DebtForecastProps) => {
               <AlertCircle className="h-5 w-5 text-primary mt-0.5 flex-shrink-0" />
               <div className="space-y-2 flex-1">
                 <p className="font-semibold text-foreground">
-                  Estimated Payoff Time
+                  {t('estimatedPayoffTime')}
                 </p>
                 <div className="space-y-1">
                   <p className="text-2xl font-bold text-primary">
-                    {yearsToPayOff! > 0 && `${yearsToPayOff} ${yearsToPayOff === 1 ? 'year' : 'years'}`}
-                    {yearsToPayOff! > 0 && (monthsToPayOff! % 12) > 0 && ' and '}
-                    {(monthsToPayOff! % 12) > 0 && `${monthsToPayOff! % 12} ${(monthsToPayOff! % 12) === 1 ? 'month' : 'months'}`}
-                    {yearsToPayOff === 0 && monthsToPayOff === 0 && 'Less than 1 month'}
+                    {yearsToPayOff! > 0 && `${yearsToPayOff} ${yearsToPayOff === 1 ? t('year') : t('years')}`}
+                    {yearsToPayOff! > 0 && (monthsToPayOff! % 12) > 0 && ` ${language === 'en' ? 'and' : 'y'} `}
+                    {(monthsToPayOff! % 12) > 0 && `${monthsToPayOff! % 12} ${(monthsToPayOff! % 12) === 1 ? t('month') : t('months')}`}
+                    {yearsToPayOff === 0 && monthsToPayOff === 0 && t('lessThanMonth')}
                   </p>
                   <p className="text-sm text-muted-foreground">
-                    ({monthsToPayOff} months in total)
+                    ({monthsToPayOff} {t('monthsInTotal')})
                   </p>
                 </div>
                 <div className="pt-2 border-t border-border">
                   <p className="text-sm text-muted-foreground">
-                    Total debts: <span className="font-semibold text-foreground">{formatCurrency(totalDebts)}</span>
+                    {t('totalDebts')}: <span className="font-semibold text-foreground">{formatCurrency(totalDebts)}</span>
                   </p>
                   <p className="text-sm text-muted-foreground">
-                    Extra monthly payment: <span className="font-semibold text-foreground">{formatCurrency(parseFloat(extraPayment) || 0)}</span>
+                    {t('extraMonthlyPayment')}: <span className="font-semibold text-foreground">{formatCurrency(parseFloat(extraPayment) || 0)}</span>
                   </p>
                 </div>
               </div>
@@ -111,7 +105,7 @@ export const DebtForecast = ({ totalDebts }: DebtForecastProps) => {
         {totalDebts === 0 && (
           <div className="mt-6 p-4 bg-success/10 rounded-lg">
             <p className="text-sm text-success font-medium">
-              Excellent! You have no debts registered.
+              {t('noDebts')}
             </p>
           </div>
         )}
