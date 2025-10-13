@@ -4,12 +4,15 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Home, Zap, Wifi, Phone } from "lucide-react";
+import { getTranslation, Language } from "@/lib/i18n";
 
 interface FixedExpensesFormProps {
   onExpensesChange: (rent: number, utilities: number, internet: number, phone: number, other: number) => void;
+  language: Language;
 }
 
-export const FixedExpensesForm = ({ onExpensesChange }: FixedExpensesFormProps) => {
+export const FixedExpensesForm = ({ onExpensesChange, language }: FixedExpensesFormProps) => {
+  const t = (key: string) => getTranslation(language, key);
   const [rent, setRent] = useState<string>("");
   const [utilities, setUtilities] = useState<string>("");
   const [internet, setInternet] = useState<string>("");
@@ -32,10 +35,10 @@ export const FixedExpensesForm = ({ onExpensesChange }: FixedExpensesFormProps) 
       <CardHeader className="bg-warning/10 border-b border-warning/20">
         <div className="flex items-center gap-2">
           <Home className="h-5 w-5 text-warning" />
-          <CardTitle>Fixed Monthly Expenses</CardTitle>
+          <CardTitle>{t('fixedExpenses')}</CardTitle>
         </div>
         <CardDescription>
-          Enter your regular monthly expenses
+          {language === 'en' ? 'Enter your regular monthly expenses' : 'Ingresa tus gastos fijos mensuales'}
         </CardDescription>
       </CardHeader>
       <CardContent className="pt-6">
@@ -120,7 +123,7 @@ export const FixedExpensesForm = ({ onExpensesChange }: FixedExpensesFormProps) 
           </div>
 
           <Button type="submit" className="w-full">
-            Update Fixed Expenses
+            {t('updateFixedExpenses')}
           </Button>
         </form>
       </CardContent>

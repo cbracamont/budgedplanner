@@ -4,12 +4,15 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { ShoppingCart, UtensilsCrossed, Fuel, ShoppingBag } from "lucide-react";
+import { getTranslation, Language } from "@/lib/i18n";
 
 interface VariableExpensesFormProps {
   onExpensesChange: (groceries: number, dining: number, transport: number, shopping: number, entertainment: number) => void;
+  language: Language;
 }
 
-export const VariableExpensesForm = ({ onExpensesChange }: VariableExpensesFormProps) => {
+export const VariableExpensesForm = ({ onExpensesChange, language }: VariableExpensesFormProps) => {
+  const t = (key: string) => getTranslation(language, key);
   const [groceries, setGroceries] = useState<string>("");
   const [dining, setDining] = useState<string>("");
   const [transport, setTransport] = useState<string>("");
@@ -32,10 +35,10 @@ export const VariableExpensesForm = ({ onExpensesChange }: VariableExpensesFormP
       <CardHeader className="bg-muted/50 border-b">
         <div className="flex items-center gap-2">
           <ShoppingCart className="h-5 w-5 text-primary" />
-          <CardTitle>Variable Monthly Expenses</CardTitle>
+          <CardTitle>{t('variableExpenses')}</CardTitle>
         </div>
         <CardDescription>
-          Enter your estimated monthly spending
+          {language === 'en' ? 'Enter your estimated monthly spending' : 'Ingresa tus gastos variables estimados'}
         </CardDescription>
       </CardHeader>
       <CardContent className="pt-6">
@@ -120,7 +123,7 @@ export const VariableExpensesForm = ({ onExpensesChange }: VariableExpensesFormP
           </div>
 
           <Button type="submit" className="w-full">
-            Update Variable Expenses
+            {t('updateVariableExpenses')}
           </Button>
         </form>
       </CardContent>
