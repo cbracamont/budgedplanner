@@ -14,7 +14,108 @@ export type Database = {
   }
   public: {
     Tables: {
-      [_ in never]: never
+      debts: {
+        Row: {
+          apr: number
+          balance: number
+          bank: string | null
+          created_at: string
+          id: string
+          minimum_payment: number
+          name: string
+          payment_day: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          apr: number
+          balance: number
+          bank?: string | null
+          created_at?: string
+          id?: string
+          minimum_payment: number
+          name: string
+          payment_day: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          apr?: number
+          balance?: number
+          bank?: string | null
+          created_at?: string
+          id?: string
+          minimum_payment?: number
+          name?: string
+          payment_day?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      fixed_expenses: {
+        Row: {
+          amount: number
+          created_at: string
+          frequency: string
+          id: string
+          name: string
+          payment_day: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          frequency?: string
+          id?: string
+          name: string
+          payment_day: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          frequency?: string
+          id?: string
+          name?: string
+          payment_day?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      income_sources: {
+        Row: {
+          amount: number
+          created_at: string
+          id: string
+          name: string
+          payment_day: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          id?: string
+          name: string
+          payment_day: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          id?: string
+          name?: string
+          payment_day?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
