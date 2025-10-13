@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { ShoppingCart, UtensilsCrossed, Fuel, ShoppingBag } from "lucide-react";
 import { getTranslation, Language } from "@/lib/i18n";
 
-interface VariableExpensesFormProps {
+export interface VariableExpensesFormProps {
   onExpensesChange: (groceries: number, dining: number, transport: number, shopping: number, entertainment: number) => void;
   language: Language;
 }

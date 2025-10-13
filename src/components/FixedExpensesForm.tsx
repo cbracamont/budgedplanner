@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Home, Zap, Wifi, Phone } from "lucide-react";
 import { getTranslation, Language } from "@/lib/i18n";
 
-interface FixedExpensesFormProps {
+export interface FixedExpensesFormProps {
   onExpensesChange: (rent: number, utilities: number, internet: number, phone: number, other: number) => void;
   language: Language;
 }
