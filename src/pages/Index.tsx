@@ -6,6 +6,7 @@ import { FixedExpensesManager } from "@/components/FixedExpensesManager";
 import { VariableExpensesForm } from "@/components/VariableExpensesForm";
 import { BudgetSummary } from "@/components/BudgetSummary";
 import { DebtForecast } from "@/components/DebtForecast";
+import { DebtAdvisor } from "@/components/DebtAdvisor";
 import { CalendarView } from "@/components/CalendarView";
 import { LanguageToggle } from "@/components/LanguageToggle";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -25,6 +26,12 @@ const Index = () => {
   const [transport, setTransport] = useState(0);
   const [shopping, setShopping] = useState(0);
   const [entertainment, setEntertainment] = useState(0);
+  const [extraDebtPayment, setExtraDebtPayment] = useState(0);
+  
+  // Data for calendar and advisor
+  const [incomeData, setIncomeData] = useState<any[]>([]);
+  const [debtData, setDebtData] = useState<any[]>([]);
+  const [fixedExpensesData, setFixedExpensesData] = useState<any[]>([]);
   
   const t = (key: string) => getTranslation(language, key);
 
@@ -52,7 +59,57 @@ const Index = () => {
     setEntertainment(newEntertainment);
   };
 
+  // Load data for calendar and advisor
+  useEffect(() => {
+    if (!user) return;
+    
+    const loadData = async () => {
+      const [incomeResult, debtResult, fixedResult] = await Promise.all([
+        supabase.from("income_sources").select("*").order("created_at"),
+        supabase.from("debts").select("*").order("created_at"),
+        supabase.from("fixed_expenses").select("*").order("created_at")
+      ]);
+      
+      if (incomeResult.data) setIncomeData(incomeResult.data);
+      if (debtResult.data) setDebtData(debtResult.data);
+      if (fixedResult.data) setFixedExpensesData(fixedResult.data);
+    };
+    
+    loadData();
+  }, [user]);
+
+  // Calculate payments for calendar
+  const calendarPayments = [
+    ...incomeData.map(income => ({
+      name: income.name,
+      amount: income.amount,
+      dueDay: income.payment_day,
+      category: 'income' as const
+    })),
+    ...debtData.map(debt => ({
+      name: debt.name,
+      amount: debt.minimum_payment,
+      dueDay: debt.payment_day,
+      category: 'debt' as const
+    })),
+    ...fixedExpensesData.map(expense => ({
+      name: expense.name,
+      amount: expense.amount,
+      dueDay: expense.payment_day,
+      category: 'fixed' as const
+    }))
+  ];
+
+  // Prepare debt data for advisor
+  const debtAdvisorData = debtData.map(debt => ({
+    name: debt.name,
+    balance: debt.balance,
+    apr: debt.apr,
+    minimumPayment: debt.minimum_payment
+  }));
+
   const totalVariableExpenses = groceries + dining + transport + shopping + entertainment;
+  const availableForDebt = totalIncome - totalDebts - totalFixedExpenses - totalVariableExpenses;
 
   if (!user) {
     return <Auth />;
@@ -81,9 +138,10 @@ const Index = () => {
         </header>
 
         <Tabs defaultValue="dashboard" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-2 lg:w-auto lg:inline-grid">
+          <TabsList className="grid w-full grid-cols-3 lg:w-auto lg:inline-grid">
             <TabsTrigger value="dashboard">{t('dashboard')}</TabsTrigger>
             <TabsTrigger value="calendar">{t('calendar')}</TabsTrigger>
+            <TabsTrigger value="advisor">{t('debtAdvisor')}</TabsTrigger>
           </TabsList>
 
           <TabsContent value="dashboard" className="space-y-6">
@@ -111,7 +169,15 @@ const Index = () => {
           </TabsContent>
 
           <TabsContent value="calendar">
-            <CalendarView payments={[]} language={language} />
+            <CalendarView payments={calendarPayments} language={language} />
+          </TabsContent>
+
+          <TabsContent value="advisor">
+            <DebtAdvisor 
+              debts={debtAdvisorData} 
+              extraPayment={availableForDebt > 0 ? availableForDebt : 0}
+              language={language} 
+            />
           </TabsContent>
         </Tabs>
 
