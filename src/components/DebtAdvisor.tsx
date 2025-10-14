@@ -53,9 +53,54 @@ export const DebtAdvisor = ({ debts, extraPayment, language }: DebtAdvisorProps)
     return Math.max(0, interestSaved);
   };
 
+  const getSmartRecommendations = () => {
+    if (debts.length === 0) return [];
+    
+    const recommendations = [];
+    const prioritized = prioritizeDebts();
+    const totalMinPayment = debts.reduce((sum, d) => sum + d.minimumPayment, 0);
+    
+    // Recommendation 1: Focus on highest APR
+    if (prioritized.length > 0 && prioritized[0].apr > 15) {
+      recommendations.push({
+        title: language === 'en' ? 'High Interest Alert' : 'Alerta de Alto Interés',
+        description: language === 'en' 
+          ? `Focus on ${prioritized[0].name} first - it has ${prioritized[0].apr}% APR. Every extra payment saves significant interest.`
+          : `Concéntrate primero en ${prioritized[0].name} - tiene ${prioritized[0].apr}% de TAE. Cada pago extra ahorra intereses significativos.`,
+        priority: 'high'
+      });
+    }
+
+    // Recommendation 2: Emergency fund
+    if (extraPayment > totalMinPayment * 0.5) {
+      recommendations.push({
+        title: language === 'en' ? 'Keep Emergency Reserve' : 'Mantén Reserva de Emergencia',
+        description: language === 'en'
+          ? 'Consider keeping £500-£1000 as emergency fund before aggressive debt payoff.'
+          : 'Considera mantener £500-£1000 como fondo de emergencia antes de pagar deudas agresivamente.',
+        priority: 'medium'
+      });
+    }
+
+    // Recommendation 3: Snowball effect
+    const smallestDebt = [...debts].sort((a, b) => a.balance - b.balance)[0];
+    if (smallestDebt && smallestDebt.balance < 1000) {
+      recommendations.push({
+        title: language === 'en' ? 'Quick Win Strategy' : 'Estrategia de Victoria Rápida',
+        description: language === 'en'
+          ? `${smallestDebt.name} (${formatCurrency(smallestDebt.balance)}) could be paid off quickly for motivation boost.`
+          : `${smallestDebt.name} (${formatCurrency(smallestDebt.balance)}) podría pagarse rápido para motivación extra.`,
+        priority: 'low'
+      });
+    }
+
+    return recommendations;
+  };
+
   const debtFreeDate = calculateDebtFreeDate();
   const prioritizedDebts = prioritizeDebts();
   const interestSavings = calculateInterestSavings();
+  const recommendations = getSmartRecommendations();
 
   return (
     <Card className="shadow-medium border-primary/20">
@@ -69,6 +114,28 @@ export const DebtAdvisor = ({ debts, extraPayment, language }: DebtAdvisorProps)
         </CardDescription>
       </CardHeader>
       <CardContent className="pt-6 space-y-6">
+        {/* Smart Recommendations */}
+        {recommendations.length > 0 && (
+          <div className="space-y-3">
+            <h3 className="font-semibold text-lg">
+              {language === 'en' ? '💡 Smart Recommendations' : '💡 Recomendaciones Inteligentes'}
+            </h3>
+            {recommendations.map((rec, idx) => (
+              <div 
+                key={idx}
+                className={`p-4 rounded-lg border ${
+                  rec.priority === 'high' ? 'bg-debt/10 border-debt/20' :
+                  rec.priority === 'medium' ? 'bg-warning/10 border-warning/20' :
+                  'bg-success/10 border-success/20'
+                }`}
+              >
+                <p className="font-semibold mb-1">{rec.title}</p>
+                <p className="text-sm text-muted-foreground">{rec.description}</p>
+              </div>
+            ))}
+          </div>
+        )}
+
         {debtFreeDate && (
           <div className="p-4 bg-success/10 rounded-lg border border-success/20">
             <div className="flex items-start gap-2">
