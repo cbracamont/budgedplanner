@@ -5,7 +5,8 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { Home, Plus, Trash2 } from "lucide-react";
+import { Home, Plus, Trash2, Pencil } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { getTranslation, Language } from "@/lib/i18n";
 
 interface FixedExpense {
@@ -26,6 +27,8 @@ export const FixedExpensesManager = ({ language, onExpensesChange }: FixedExpens
   const { toast } = useToast();
   const [expenses, setExpenses] = useState<FixedExpense[]>([]);
   const [newExpense, setNewExpense] = useState({ name: "", amount: "", payment_day: "1" });
+  const [editingExpense, setEditingExpense] = useState<FixedExpense | null>(null);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
 
   useEffect(() => {
     loadExpenses();
@@ -79,6 +82,29 @@ export const FixedExpensesManager = ({ language, onExpensesChange }: FixedExpens
     } else {
       loadExpenses();
       toast({ title: "Success", description: "Expense deleted" });
+    }
+  };
+
+  const updateExpense = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingExpense) return;
+
+    const { error } = await supabase
+      .from("fixed_expenses")
+      .update({
+        name: editingExpense.name,
+        amount: editingExpense.amount,
+        payment_day: editingExpense.payment_day,
+      })
+      .eq("id", editingExpense.id);
+
+    if (error) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    } else {
+      setIsEditDialogOpen(false);
+      setEditingExpense(null);
+      loadExpenses();
+      toast({ title: "Success", description: "Expense updated" });
     }
   };
 
@@ -152,13 +178,74 @@ export const FixedExpensesManager = ({ language, onExpensesChange }: FixedExpens
                   £{expense.amount.toFixed(2)} - {language === 'en' ? 'Day' : 'Día'} {expense.payment_day}
                 </p>
               </div>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => deleteExpense(expense.id)}
-              >
-                <Trash2 className="h-4 w-4 text-destructive" />
-              </Button>
+              <div className="flex gap-1">
+                <Dialog open={isEditDialogOpen && editingExpense?.id === expense.id} onOpenChange={(open) => {
+                  setIsEditDialogOpen(open);
+                  if (!open) setEditingExpense(null);
+                }}>
+                  <DialogTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => {
+                        setEditingExpense(expense);
+                        setIsEditDialogOpen(true);
+                      }}
+                    >
+                      <Pencil className="h-4 w-4" />
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>{language === 'en' ? 'Edit Fixed Expense' : 'Editar Gasto Fijo'}</DialogTitle>
+                    </DialogHeader>
+                    <form onSubmit={updateExpense} className="space-y-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="edit-expense-name">{language === 'en' ? 'Name' : 'Nombre'}</Label>
+                        <Input
+                          id="edit-expense-name"
+                          value={editingExpense?.name || ''}
+                          onChange={(e) => setEditingExpense(editingExpense ? {...editingExpense, name: e.target.value} : null)}
+                          required
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="edit-expense-amount">{language === 'en' ? 'Amount' : 'Monto'}</Label>
+                        <Input
+                          id="edit-expense-amount"
+                          type="number"
+                          step="0.01"
+                          value={editingExpense?.amount || ''}
+                          onChange={(e) => setEditingExpense(editingExpense ? {...editingExpense, amount: parseFloat(e.target.value)} : null)}
+                          required
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="edit-expense-day">{language === 'en' ? 'Payment Day' : 'Día de Pago'}</Label>
+                        <Input
+                          id="edit-expense-day"
+                          type="number"
+                          min="1"
+                          max="31"
+                          value={editingExpense?.payment_day || ''}
+                          onChange={(e) => setEditingExpense(editingExpense ? {...editingExpense, payment_day: parseInt(e.target.value)} : null)}
+                          required
+                        />
+                      </div>
+                      <Button type="submit" className="w-full">
+                        {language === 'en' ? 'Update' : 'Actualizar'}
+                      </Button>
+                    </form>
+                  </DialogContent>
+                </Dialog>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => deleteExpense(expense.id)}
+                >
+                  <Trash2 className="h-4 w-4 text-destructive" />
+                </Button>
+              </div>
             </div>
           ))}
         </div>

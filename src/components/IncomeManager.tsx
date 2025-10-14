@@ -5,7 +5,8 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { TrendingUp, Plus, Trash2 } from "lucide-react";
+import { TrendingUp, Plus, Trash2, Pencil } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { getTranslation, Language } from "@/lib/i18n";
 
 interface IncomeSource {
@@ -25,6 +26,8 @@ export const IncomeManager = ({ language, onIncomeChange }: IncomeManagerProps) 
   const { toast } = useToast();
   const [incomeSources, setIncomeSources] = useState<IncomeSource[]>([]);
   const [newIncome, setNewIncome] = useState({ name: "", amount: "", payment_day: "1" });
+  const [editingIncome, setEditingIncome] = useState<IncomeSource | null>(null);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
 
   useEffect(() => {
     loadIncomeSources();
@@ -77,6 +80,29 @@ export const IncomeManager = ({ language, onIncomeChange }: IncomeManagerProps) 
     } else {
       loadIncomeSources();
       toast({ title: "Success", description: "Income source deleted" });
+    }
+  };
+
+  const updateIncomeSource = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingIncome) return;
+
+    const { error } = await supabase
+      .from("income_sources")
+      .update({
+        name: editingIncome.name,
+        amount: editingIncome.amount,
+        payment_day: editingIncome.payment_day,
+      })
+      .eq("id", editingIncome.id);
+
+    if (error) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    } else {
+      setIsEditDialogOpen(false);
+      setEditingIncome(null);
+      loadIncomeSources();
+      toast({ title: "Success", description: "Income source updated" });
     }
   };
 
@@ -150,13 +176,74 @@ export const IncomeManager = ({ language, onIncomeChange }: IncomeManagerProps) 
                   £{source.amount.toFixed(2)} - {language === 'en' ? 'Day' : 'Día'} {source.payment_day}
                 </p>
               </div>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => deleteIncomeSource(source.id)}
-              >
-                <Trash2 className="h-4 w-4 text-destructive" />
-              </Button>
+              <div className="flex gap-1">
+                <Dialog open={isEditDialogOpen && editingIncome?.id === source.id} onOpenChange={(open) => {
+                  setIsEditDialogOpen(open);
+                  if (!open) setEditingIncome(null);
+                }}>
+                  <DialogTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => {
+                        setEditingIncome(source);
+                        setIsEditDialogOpen(true);
+                      }}
+                    >
+                      <Pencil className="h-4 w-4" />
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>{language === 'en' ? 'Edit Income Source' : 'Editar Ingreso'}</DialogTitle>
+                    </DialogHeader>
+                    <form onSubmit={updateIncomeSource} className="space-y-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="edit-income-name">{language === 'en' ? 'Name' : 'Nombre'}</Label>
+                        <Input
+                          id="edit-income-name"
+                          value={editingIncome?.name || ''}
+                          onChange={(e) => setEditingIncome(editingIncome ? {...editingIncome, name: e.target.value} : null)}
+                          required
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="edit-income-amount">{language === 'en' ? 'Amount' : 'Monto'}</Label>
+                        <Input
+                          id="edit-income-amount"
+                          type="number"
+                          step="0.01"
+                          value={editingIncome?.amount || ''}
+                          onChange={(e) => setEditingIncome(editingIncome ? {...editingIncome, amount: parseFloat(e.target.value)} : null)}
+                          required
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="edit-income-day">{language === 'en' ? 'Payment Day' : 'Día de Pago'}</Label>
+                        <Input
+                          id="edit-income-day"
+                          type="number"
+                          min="1"
+                          max="31"
+                          value={editingIncome?.payment_day || ''}
+                          onChange={(e) => setEditingIncome(editingIncome ? {...editingIncome, payment_day: parseInt(e.target.value)} : null)}
+                          required
+                        />
+                      </div>
+                      <Button type="submit" className="w-full">
+                        {language === 'en' ? 'Update' : 'Actualizar'}
+                      </Button>
+                    </form>
+                  </DialogContent>
+                </Dialog>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => deleteIncomeSource(source.id)}
+                >
+                  <Trash2 className="h-4 w-4 text-destructive" />
+                </Button>
+              </div>
             </div>
           ))}
         </div>

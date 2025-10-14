@@ -6,7 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { CreditCard, Plus, Trash2 } from "lucide-react";
+import { CreditCard, Plus, Trash2, Pencil } from "lucide-react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { getTranslation, Language, ukBanks } from "@/lib/i18n";
 
 interface Debt {
@@ -36,6 +37,8 @@ export const DebtsManager = ({ language, onDebtsChange }: DebtsManagerProps) => 
     minimum_payment: "",
     payment_day: "1"
   });
+  const [editingDebt, setEditingDebt] = useState<Debt | null>(null);
+  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
 
   useEffect(() => {
     loadDebts();
@@ -91,6 +94,32 @@ export const DebtsManager = ({ language, onDebtsChange }: DebtsManagerProps) => 
     } else {
       loadDebts();
       toast({ title: "Success", description: "Debt deleted" });
+    }
+  };
+
+  const updateDebt = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!editingDebt) return;
+
+    const { error } = await supabase
+      .from("debts")
+      .update({
+        name: editingDebt.name,
+        bank: editingDebt.bank,
+        balance: editingDebt.balance,
+        apr: editingDebt.apr,
+        minimum_payment: editingDebt.minimum_payment,
+        payment_day: editingDebt.payment_day,
+      })
+      .eq("id", editingDebt.id);
+
+    if (error) {
+      toast({ title: "Error", description: error.message, variant: "destructive" });
+    } else {
+      setIsEditDialogOpen(false);
+      setEditingDebt(null);
+      loadDebts();
+      toast({ title: "Success", description: "Debt updated" });
     }
   };
 
@@ -205,13 +234,109 @@ export const DebtsManager = ({ language, onDebtsChange }: DebtsManagerProps) => 
                   {language === 'en' ? 'Balance:' : 'Balance:'} £{debt.balance.toFixed(2)} • APR: {debt.apr}%
                 </p>
               </div>
-              <Button
-                variant="ghost"
-                size="icon"
-                onClick={() => deleteDebt(debt.id)}
-              >
-                <Trash2 className="h-4 w-4 text-destructive" />
-              </Button>
+              <div className="flex gap-1">
+                <Dialog open={isEditDialogOpen && editingDebt?.id === debt.id} onOpenChange={(open) => {
+                  setIsEditDialogOpen(open);
+                  if (!open) setEditingDebt(null);
+                }}>
+                  <DialogTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => {
+                        setEditingDebt(debt);
+                        setIsEditDialogOpen(true);
+                      }}
+                    >
+                      <Pencil className="h-4 w-4" />
+                    </Button>
+                  </DialogTrigger>
+                  <DialogContent>
+                    <DialogHeader>
+                      <DialogTitle>{language === 'en' ? 'Edit Debt' : 'Editar Deuda'}</DialogTitle>
+                    </DialogHeader>
+                    <form onSubmit={updateDebt} className="space-y-4">
+                      <div className="space-y-2">
+                        <Label htmlFor="edit-debt-name">{language === 'en' ? 'Name' : 'Nombre'}</Label>
+                        <Input
+                          id="edit-debt-name"
+                          value={editingDebt?.name || ''}
+                          onChange={(e) => setEditingDebt(editingDebt ? {...editingDebt, name: e.target.value} : null)}
+                          required
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="edit-debt-bank">{t('bank')}</Label>
+                        <Select value={editingDebt?.bank || ''} onValueChange={(value) => setEditingDebt(editingDebt ? {...editingDebt, bank: value} : null)}>
+                          <SelectTrigger>
+                            <SelectValue placeholder={t('selectBank')} />
+                          </SelectTrigger>
+                          <SelectContent>
+                            {ukBanks.map(bank => (
+                              <SelectItem key={bank} value={bank}>{bank}</SelectItem>
+                            ))}
+                          </SelectContent>
+                        </Select>
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="edit-debt-balance">{language === 'en' ? 'Total Balance' : 'Balance Total'}</Label>
+                        <Input
+                          id="edit-debt-balance"
+                          type="number"
+                          step="0.01"
+                          value={editingDebt?.balance || ''}
+                          onChange={(e) => setEditingDebt(editingDebt ? {...editingDebt, balance: parseFloat(e.target.value)} : null)}
+                          required
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="edit-debt-apr">{t('interestRate')}</Label>
+                        <Input
+                          id="edit-debt-apr"
+                          type="number"
+                          step="0.01"
+                          value={editingDebt?.apr || ''}
+                          onChange={(e) => setEditingDebt(editingDebt ? {...editingDebt, apr: parseFloat(e.target.value)} : null)}
+                          required
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="edit-debt-payment">{t('minimumPayment')}</Label>
+                        <Input
+                          id="edit-debt-payment"
+                          type="number"
+                          step="0.01"
+                          value={editingDebt?.minimum_payment || ''}
+                          onChange={(e) => setEditingDebt(editingDebt ? {...editingDebt, minimum_payment: parseFloat(e.target.value)} : null)}
+                          required
+                        />
+                      </div>
+                      <div className="space-y-2">
+                        <Label htmlFor="edit-debt-day">{language === 'en' ? 'Payment Day' : 'Día de Pago'}</Label>
+                        <Input
+                          id="edit-debt-day"
+                          type="number"
+                          min="1"
+                          max="31"
+                          value={editingDebt?.payment_day || ''}
+                          onChange={(e) => setEditingDebt(editingDebt ? {...editingDebt, payment_day: parseInt(e.target.value)} : null)}
+                          required
+                        />
+                      </div>
+                      <Button type="submit" className="w-full">
+                        {language === 'en' ? 'Update' : 'Actualizar'}
+                      </Button>
+                    </form>
+                  </DialogContent>
+                </Dialog>
+                <Button
+                  variant="ghost"
+                  size="icon"
+                  onClick={() => deleteDebt(debt.id)}
+                >
+                  <Trash2 className="h-4 w-4 text-destructive" />
+                </Button>
+              </div>
             </div>
           ))}
         </div>
