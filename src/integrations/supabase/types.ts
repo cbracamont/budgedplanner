@@ -14,6 +14,30 @@ export type Database = {
   }
   public: {
     Tables: {
+      app_settings: {
+        Row: {
+          created_at: string
+          id: string
+          updated_at: string
+          user_id: string
+          wallpaper_url: string | null
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          updated_at?: string
+          user_id: string
+          wallpaper_url?: string | null
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          updated_at?: string
+          user_id?: string
+          wallpaper_url?: string | null
+        }
+        Relationships: []
+      }
       debts: {
         Row: {
           apr: number
@@ -115,6 +139,95 @@ export type Database = {
           user_id?: string
         }
         Relationships: []
+      }
+      savings: {
+        Row: {
+          created_at: string
+          id: string
+          monthly_goal: number
+          total_accumulated: number
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          monthly_goal?: number
+          total_accumulated?: number
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          monthly_goal?: number
+          total_accumulated?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      variable_expense_categories: {
+        Row: {
+          created_at: string
+          icon: string | null
+          id: string
+          name: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          icon?: string | null
+          id?: string
+          name: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          icon?: string | null
+          id?: string
+          name?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      variable_expenses: {
+        Row: {
+          amount: number
+          category_id: string | null
+          created_at: string
+          id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          category_id?: string | null
+          created_at?: string
+          id?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          category_id?: string | null
+          created_at?: string
+          id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "variable_expenses_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "variable_expense_categories"
+            referencedColumns: ["id"]
+          },
+        ]
       }
     }
     Views: {

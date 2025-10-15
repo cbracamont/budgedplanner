@@ -3,7 +3,10 @@ import { Auth } from "@/components/Auth";
 import { IncomeManager } from "@/components/IncomeManager";
 import { DebtsManager } from "@/components/DebtsManager";
 import { FixedExpensesManager } from "@/components/FixedExpensesManager";
-import { VariableExpensesForm } from "@/components/VariableExpensesForm";
+import { VariableExpensesManager } from "@/components/VariableExpensesManager";
+import { SavingsManager } from "@/components/SavingsManager";
+import { FinancialCharts } from "@/components/FinancialCharts";
+import { WallpaperSettings } from "@/components/WallpaperSettings";
 import { BudgetSummary } from "@/components/BudgetSummary";
 import { DebtForecast } from "@/components/DebtForecast";
 import { DebtAdvisor } from "@/components/DebtAdvisor";
@@ -21,12 +24,8 @@ const Index = () => {
   const [totalIncome, setTotalIncome] = useState(0);
   const [totalDebts, setTotalDebts] = useState(0);
   const [totalFixedExpenses, setTotalFixedExpenses] = useState(0);
-  const [groceries, setGroceries] = useState(0);
-  const [dining, setDining] = useState(0);
-  const [transport, setTransport] = useState(0);
-  const [shopping, setShopping] = useState(0);
-  const [entertainment, setEntertainment] = useState(0);
-  const [extraDebtPayment, setExtraDebtPayment] = useState(0);
+  const [totalVariableExpenses, setTotalVariableExpenses] = useState(0);
+  const [wallpaperUrl, setWallpaperUrl] = useState<string | null>(null);
   
   // Data for calendar and advisor
   const [incomeData, setIncomeData] = useState<any[]>([]);
@@ -51,14 +50,6 @@ const Index = () => {
     await supabase.auth.signOut();
   };
 
-  const handleVariableExpensesChange = (newGroceries: number, newDining: number, newTransport: number, newShopping: number, newEntertainment: number) => {
-    setGroceries(newGroceries);
-    setDining(newDining);
-    setTransport(newTransport);
-    setShopping(newShopping);
-    setEntertainment(newEntertainment);
-  };
-
   // Load data for calendar and advisor
   useEffect(() => {
     if (!user) return;
@@ -78,25 +69,31 @@ const Index = () => {
     loadData();
   }, [user]);
 
-  // Calculate payments for calendar
+  // Calculate payments for calendar with IDs and source tables
   const calendarPayments = [
     ...incomeData.map(income => ({
+      id: income.id,
       name: income.name,
       amount: income.amount,
       dueDay: income.payment_day,
-      category: 'income' as const
+      category: 'income' as const,
+      sourceTable: 'income_sources' as const
     })),
     ...debtData.map(debt => ({
+      id: debt.id,
       name: debt.name,
       amount: debt.minimum_payment,
       dueDay: debt.payment_day,
-      category: 'debt' as const
+      category: 'debt' as const,
+      sourceTable: 'debts' as const
     })),
     ...fixedExpensesData.map(expense => ({
+      id: expense.id,
       name: expense.name,
       amount: expense.amount,
       dueDay: expense.payment_day,
-      category: 'fixed' as const
+      category: 'fixed' as const,
+      sourceTable: 'fixed_expenses' as const
     }))
   ];
 
@@ -108,15 +105,23 @@ const Index = () => {
     minimumPayment: debt.minimum_payment
   }));
 
-  const totalVariableExpenses = groceries + dining + transport + shopping + entertainment;
   const availableForDebt = totalIncome - totalDebts - totalFixedExpenses - totalVariableExpenses;
+  const availableForSavings = totalIncome - totalDebts - totalFixedExpenses - totalVariableExpenses;
 
   if (!user) {
     return <Auth />;
   }
 
   return (
-    <div className="min-h-screen bg-background py-8 px-4 sm:px-6 lg:px-8">
+    <div 
+      className="min-h-screen bg-background py-8 px-4 sm:px-6 lg:px-8"
+      style={wallpaperUrl ? {
+        backgroundImage: `url(${wallpaperUrl})`,
+        backgroundSize: 'cover',
+        backgroundPosition: 'center',
+        backgroundAttachment: 'fixed'
+      } : {}}
+    >
       <div className="max-w-7xl mx-auto">
         <header className="text-center mb-12">
           <div className="flex items-center justify-center gap-3 mb-4">
@@ -138,19 +143,30 @@ const Index = () => {
         </header>
 
         <Tabs defaultValue="dashboard" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-3 lg:w-auto lg:inline-grid">
+          <TabsList className="grid w-full grid-cols-4 lg:w-auto lg:inline-grid">
             <TabsTrigger value="dashboard">{t('dashboard')}</TabsTrigger>
             <TabsTrigger value="calendar">{t('calendar')}</TabsTrigger>
             <TabsTrigger value="advisor">{t('debtAdvisor')}</TabsTrigger>
+            <TabsTrigger value="settings">{language === 'en' ? 'Settings' : 'Ajustes'}</TabsTrigger>
           </TabsList>
 
           <TabsContent value="dashboard" className="space-y-6">
+            {/* Financial Charts */}
+            <FinancialCharts
+              totalIncome={totalIncome}
+              totalDebts={totalDebts}
+              totalFixedExpenses={totalFixedExpenses}
+              totalVariableExpenses={totalVariableExpenses}
+              language={language}
+            />
+            
             <div className="grid lg:grid-cols-3 gap-6">
               <div className="lg:col-span-2 space-y-6">
                 <IncomeManager language={language} onIncomeChange={setTotalIncome} />
                 <DebtsManager language={language} onDebtsChange={setTotalDebts} />
                 <FixedExpensesManager language={language} onExpensesChange={setTotalFixedExpenses} />
-                <VariableExpensesForm onExpensesChange={handleVariableExpensesChange} language={language} />
+                <VariableExpensesManager onExpensesChange={setTotalVariableExpenses} language={language} />
+                <SavingsManager language={language} availableToSave={availableForSavings} />
                 <DebtForecast totalDebts={totalDebts} language={language} />
               </div>
 
@@ -178,6 +194,10 @@ const Index = () => {
               extraPayment={availableForDebt > 0 ? availableForDebt : 0}
               language={language} 
             />
+          </TabsContent>
+
+          <TabsContent value="settings">
+            <WallpaperSettings language={language} onWallpaperChange={setWallpaperUrl} />
           </TabsContent>
         </Tabs>
 
