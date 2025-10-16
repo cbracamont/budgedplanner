@@ -82,9 +82,11 @@ export type Database = {
           amount: number
           created_at: string
           frequency: string
+          frequency_type: string
           id: string
           name: string
           payment_day: number
+          payment_month: number | null
           updated_at: string
           user_id: string
         }
@@ -92,9 +94,11 @@ export type Database = {
           amount: number
           created_at?: string
           frequency?: string
+          frequency_type?: string
           id?: string
           name: string
           payment_day: number
+          payment_month?: number | null
           updated_at?: string
           user_id: string
         }
@@ -102,9 +106,11 @@ export type Database = {
           amount?: number
           created_at?: string
           frequency?: string
+          frequency_type?: string
           id?: string
           name?: string
           payment_day?: number
+          payment_month?: number | null
           updated_at?: string
           user_id?: string
         }
@@ -162,6 +168,36 @@ export type Database = {
           id?: string
           monthly_goal?: number
           total_accumulated?: number
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      savings_history: {
+        Row: {
+          amount: number
+          created_at: string
+          id: string
+          month_year: string
+          notes: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          amount?: number
+          created_at?: string
+          id?: string
+          month_year: string
+          notes?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          id?: string
+          month_year?: string
+          notes?: string | null
           updated_at?: string
           user_id?: string
         }

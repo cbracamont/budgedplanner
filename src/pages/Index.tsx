@@ -4,12 +4,12 @@ import { IncomeManager } from "@/components/IncomeManager";
 import { DebtsManager } from "@/components/DebtsManager";
 import { FixedExpensesManager } from "@/components/FixedExpensesManager";
 import { VariableExpensesManager } from "@/components/VariableExpensesManager";
-import { SavingsManager } from "@/components/SavingsManager";
+import { EnhancedSavingsManager } from "@/components/EnhancedSavingsManager";
 import { FinancialCharts } from "@/components/FinancialCharts";
 import { WallpaperSettings } from "@/components/WallpaperSettings";
 import { BudgetSummary } from "@/components/BudgetSummary";
-import { DebtForecast } from "@/components/DebtForecast";
-import { DebtAdvisor } from "@/components/DebtAdvisor";
+import { ImprovedDebtForecast } from "@/components/ImprovedDebtForecast";
+import { EnhancedDebtAdvisor } from "@/components/EnhancedDebtAdvisor";
 import { CalendarView } from "@/components/CalendarView";
 import { LanguageToggle } from "@/components/LanguageToggle";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -18,14 +18,17 @@ import { Calculator, LogOut } from "lucide-react";
 import { Language, getTranslation } from "@/lib/i18n";
 import { supabase } from "@/integrations/supabase/client";
 
-const Index = () => {
+interface IndexProps {
+  onWallpaperChange?: (url: string | null) => void;
+}
+
+const Index = ({ onWallpaperChange }: IndexProps = {}) => {
   const [language, setLanguage] = useState<Language>('en');
   const [user, setUser] = useState<any>(null);
   const [totalIncome, setTotalIncome] = useState(0);
   const [totalDebts, setTotalDebts] = useState(0);
   const [totalFixedExpenses, setTotalFixedExpenses] = useState(0);
   const [totalVariableExpenses, setTotalVariableExpenses] = useState(0);
-  const [wallpaperUrl, setWallpaperUrl] = useState<string | null>(null);
   
   // Data for calendar and advisor
   const [incomeData, setIncomeData] = useState<any[]>([]);
@@ -113,15 +116,7 @@ const Index = () => {
   }
 
   return (
-    <div 
-      className="min-h-screen bg-background py-8 px-4 sm:px-6 lg:px-8"
-      style={wallpaperUrl ? {
-        backgroundImage: `url(${wallpaperUrl})`,
-        backgroundSize: 'cover',
-        backgroundPosition: 'center',
-        backgroundAttachment: 'fixed'
-      } : {}}
-    >
+    <div className="min-h-screen bg-background py-8 px-4 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto">
         <header className="text-center mb-12">
           <div className="flex items-center justify-center gap-3 mb-4">
@@ -166,8 +161,8 @@ const Index = () => {
                 <DebtsManager language={language} onDebtsChange={setTotalDebts} />
                 <FixedExpensesManager language={language} onExpensesChange={setTotalFixedExpenses} />
                 <VariableExpensesManager onExpensesChange={setTotalVariableExpenses} language={language} />
-                <SavingsManager language={language} availableToSave={availableForSavings} />
-                <DebtForecast totalDebts={totalDebts} language={language} />
+                <EnhancedSavingsManager language={language} availableToSave={availableForSavings} />
+                <ImprovedDebtForecast totalDebts={totalDebts} language={language} />
               </div>
 
               <div className="lg:col-span-1">
@@ -189,15 +184,15 @@ const Index = () => {
           </TabsContent>
 
           <TabsContent value="advisor">
-            <DebtAdvisor 
-              debts={debtAdvisorData} 
+            <EnhancedDebtAdvisor 
+              debts={debtAdvisorData.map((d, i) => ({ ...d, id: debtData[i]?.id }))} 
               extraPayment={availableForDebt > 0 ? availableForDebt : 0}
               language={language} 
             />
           </TabsContent>
 
           <TabsContent value="settings">
-            <WallpaperSettings language={language} onWallpaperChange={setWallpaperUrl} />
+            <WallpaperSettings language={language} onWallpaperChange={onWallpaperChange || (() => {})} />
           </TabsContent>
         </Tabs>
 

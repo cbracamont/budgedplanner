@@ -232,7 +232,7 @@ export const VariableExpensesManager = ({ onExpensesChange, language }: Variable
   };
 
   return (
-    <Card className="shadow-medium border-muted">
+    <Card className="shadow-medium border-warning/20">
       <CardHeader className="bg-muted/50 border-b">
         <div className="flex items-center gap-2">
           <ShoppingCart className="h-5 w-5 text-primary" />

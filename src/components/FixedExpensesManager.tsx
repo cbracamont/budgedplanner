@@ -3,6 +3,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Home, Plus, Trash2, Pencil } from "lucide-react";
@@ -15,6 +16,8 @@ interface FixedExpense {
   amount: number;
   payment_day: number;
   frequency: string;
+  frequency_type: 'monthly' | 'annual';
+  payment_month?: number | null;
 }
 
 interface FixedExpensesManagerProps {
@@ -22,12 +25,30 @@ interface FixedExpensesManagerProps {
   onExpensesChange: (total: number) => void;
 }
 
+const monthNames = {
+  en: ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'],
+  es: ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre']
+};
+
 export const FixedExpensesManager = ({ language, onExpensesChange }: FixedExpensesManagerProps) => {
   const t = (key: string) => getTranslation(language, key);
   const { toast } = useToast();
   const [expenses, setExpenses] = useState<FixedExpense[]>([]);
-  const [newExpense, setNewExpense] = useState({ name: "", amount: "", payment_day: "1" });
-  const [editingExpense, setEditingExpense] = useState<FixedExpense | null>(null);
+  const [newExpense, setNewExpense] = useState({
+    name: "",
+    amount: "",
+    payment_day: "1",
+    frequency_type: "monthly" as 'monthly' | 'annual',
+    payment_month: null as number | null
+  });
+  const [editingExpense, setEditingExpense] = useState<{
+    id: string;
+    name: string;
+    amount: number;
+    payment_day: number;
+    frequency_type: 'monthly' | 'annual';
+    payment_month: number | null;
+  } | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
 
   useEffect(() => {
@@ -46,14 +67,16 @@ export const FixedExpensesManager = ({ language, onExpensesChange }: FixedExpens
       .order("created_at", { ascending: true });
 
     if (error) {
-      toast({ title: "Error", description: error.message, variant: "destructive" });
+      toast({ title: "Error", description: "Failed to load expenses", variant: "destructive" });
     } else {
-      setExpenses(data || []);
+      setExpenses((data || []) as FixedExpense[]);
     }
   };
 
   const addExpense = async (e: React.FormEvent) => {
     e.preventDefault();
+    if (!newExpense.name || !newExpense.amount) return;
+
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
 
@@ -63,12 +86,14 @@ export const FixedExpensesManager = ({ language, onExpensesChange }: FixedExpens
       amount: parseFloat(newExpense.amount),
       payment_day: parseInt(newExpense.payment_day),
       frequency: "monthly",
+      frequency_type: newExpense.frequency_type,
+      payment_month: newExpense.frequency_type === 'annual' ? newExpense.payment_month : null
     });
 
     if (error) {
-      toast({ title: "Error", description: error.message, variant: "destructive" });
+      toast({ title: "Error", description: "Failed to add expense", variant: "destructive" });
     } else {
-      setNewExpense({ name: "", amount: "", payment_day: "1" });
+      setNewExpense({ name: "", amount: "", payment_day: "1", frequency_type: "monthly", payment_month: null });
       loadExpenses();
       toast({ title: "Success", description: "Expense added" });
     }
@@ -78,7 +103,7 @@ export const FixedExpensesManager = ({ language, onExpensesChange }: FixedExpens
     const { error } = await supabase.from("fixed_expenses").delete().eq("id", id);
 
     if (error) {
-      toast({ title: "Error", description: error.message, variant: "destructive" });
+      toast({ title: "Error", description: "Failed to delete expense", variant: "destructive" });
     } else {
       loadExpenses();
       toast({ title: "Success", description: "Expense deleted" });
@@ -95,11 +120,13 @@ export const FixedExpensesManager = ({ language, onExpensesChange }: FixedExpens
         name: editingExpense.name,
         amount: editingExpense.amount,
         payment_day: editingExpense.payment_day,
+        frequency_type: editingExpense.frequency_type,
+        payment_month: editingExpense.frequency_type === 'annual' ? editingExpense.payment_month : null
       })
       .eq("id", editingExpense.id);
 
     if (error) {
-      toast({ title: "Error", description: error.message, variant: "destructive" });
+      toast({ title: "Error", description: "Failed to update expense", variant: "destructive" });
     } else {
       setIsEditDialogOpen(false);
       setEditingExpense(null);
@@ -116,12 +143,12 @@ export const FixedExpensesManager = ({ language, onExpensesChange }: FixedExpens
           <CardTitle>{t('fixedExpenses')}</CardTitle>
         </div>
         <CardDescription>
-          {language === 'en' ? 'Manage your fixed monthly expenses' : 'Administra tus gastos fijos mensuales'}
+          {language === 'en' ? 'Manage your fixed monthly and annual expenses' : 'Administra tus gastos fijos mensuales y anuales'}
         </CardDescription>
       </CardHeader>
       <CardContent className="pt-6 space-y-6">
         <form onSubmit={addExpense} className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <div className="space-y-2">
               <Label htmlFor="expense-name">
                 {language === 'en' ? 'Name' : 'Nombre'}
@@ -149,6 +176,47 @@ export const FixedExpensesManager = ({ language, onExpensesChange }: FixedExpens
               />
             </div>
             <div className="space-y-2">
+              <Label htmlFor="frequency-type">
+                {language === 'en' ? 'Frequency' : 'Frecuencia'}
+              </Label>
+              <Select
+                value={newExpense.frequency_type}
+                onValueChange={(value: 'monthly' | 'annual') => 
+                  setNewExpense({ ...newExpense, frequency_type: value, payment_month: value === 'monthly' ? null : newExpense.payment_month })
+                }
+              >
+                <SelectTrigger id="frequency-type">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="monthly">{language === 'en' ? 'Monthly' : 'Mensual'}</SelectItem>
+                  <SelectItem value="annual">{language === 'en' ? 'Annual' : 'Anual'}</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            {newExpense.frequency_type === 'annual' && (
+              <div className="space-y-2">
+                <Label htmlFor="payment-month">
+                  {language === 'en' ? 'Payment Month' : 'Mes de Pago'}
+                </Label>
+                <Select
+                  value={newExpense.payment_month?.toString() || ""}
+                  onValueChange={(value) => setNewExpense({ ...newExpense, payment_month: parseInt(value) })}
+                >
+                  <SelectTrigger id="payment-month">
+                    <SelectValue placeholder={language === 'en' ? 'Select month' : 'Selecciona mes'} />
+                  </SelectTrigger>
+                  <SelectContent>
+                    {monthNames[language].map((month, index) => (
+                      <SelectItem key={index + 1} value={(index + 1).toString()}>
+                        {month}
+                      </SelectItem>
+                    ))}
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
+            <div className="space-y-2">
               <Label htmlFor="expense-day">
                 {language === 'en' ? 'Payment Day' : 'Día de Pago'}
               </Label>
@@ -175,7 +243,10 @@ export const FixedExpensesManager = ({ language, onExpensesChange }: FixedExpens
               <div className="flex-1">
                 <p className="font-medium">{expense.name}</p>
                 <p className="text-sm text-muted-foreground">
-                  £{expense.amount.toFixed(2)} - {language === 'en' ? 'Day' : 'Día'} {expense.payment_day}
+                  £{expense.amount.toFixed(2)} - {expense.frequency_type === 'annual' 
+                    ? `${monthNames[language][expense.payment_month! - 1]}, ${language === 'en' ? 'Day' : 'Día'} ${expense.payment_day}`
+                    : `${language === 'en' ? 'Day' : 'Día'} ${expense.payment_day}`}
+                  {expense.frequency_type === 'annual' && ` (${language === 'en' ? 'Annual' : 'Anual'})`}
                 </p>
               </div>
               <div className="flex gap-1">
@@ -188,7 +259,14 @@ export const FixedExpensesManager = ({ language, onExpensesChange }: FixedExpens
                       variant="ghost"
                       size="icon"
                       onClick={() => {
-                        setEditingExpense(expense);
+                        setEditingExpense({
+                          id: expense.id,
+                          name: expense.name,
+                          amount: expense.amount,
+                          payment_day: expense.payment_day,
+                          frequency_type: expense.frequency_type,
+                          payment_month: expense.payment_month
+                        });
                         setIsEditDialogOpen(true);
                       }}
                     >
@@ -199,43 +277,82 @@ export const FixedExpensesManager = ({ language, onExpensesChange }: FixedExpens
                     <DialogHeader>
                       <DialogTitle>{language === 'en' ? 'Edit Fixed Expense' : 'Editar Gasto Fijo'}</DialogTitle>
                     </DialogHeader>
-                    <form onSubmit={updateExpense} className="space-y-4">
-                      <div className="space-y-2">
-                        <Label htmlFor="edit-expense-name">{language === 'en' ? 'Name' : 'Nombre'}</Label>
-                        <Input
-                          id="edit-expense-name"
-                          value={editingExpense?.name || ''}
-                          onChange={(e) => setEditingExpense(editingExpense ? {...editingExpense, name: e.target.value} : null)}
-                          required
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="edit-expense-amount">{language === 'en' ? 'Amount' : 'Monto'}</Label>
-                        <Input
-                          id="edit-expense-amount"
-                          type="number"
-                          step="0.01"
-                          value={editingExpense?.amount || ''}
-                          onChange={(e) => setEditingExpense(editingExpense ? {...editingExpense, amount: parseFloat(e.target.value)} : null)}
-                          required
-                        />
-                      </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="edit-expense-day">{language === 'en' ? 'Payment Day' : 'Día de Pago'}</Label>
-                        <Input
-                          id="edit-expense-day"
-                          type="number"
-                          min="1"
-                          max="31"
-                          value={editingExpense?.payment_day || ''}
-                          onChange={(e) => setEditingExpense(editingExpense ? {...editingExpense, payment_day: parseInt(e.target.value)} : null)}
-                          required
-                        />
-                      </div>
-                      <Button type="submit" className="w-full">
-                        {language === 'en' ? 'Update' : 'Actualizar'}
-                      </Button>
-                    </form>
+                    {editingExpense && (
+                      <form onSubmit={updateExpense} className="space-y-4">
+                        <div className="space-y-2">
+                          <Label htmlFor="edit-expense-name">{language === 'en' ? 'Name' : 'Nombre'}</Label>
+                          <Input
+                            id="edit-expense-name"
+                            value={editingExpense.name}
+                            onChange={(e) => setEditingExpense({...editingExpense, name: e.target.value})}
+                            required
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="edit-expense-amount">{language === 'en' ? 'Amount' : 'Monto'}</Label>
+                          <Input
+                            id="edit-expense-amount"
+                            type="number"
+                            step="0.01"
+                            value={editingExpense.amount}
+                            onChange={(e) => setEditingExpense({...editingExpense, amount: parseFloat(e.target.value)})}
+                            required
+                          />
+                        </div>
+                        <div className="space-y-2">
+                          <Label htmlFor="edit-frequency-type">{language === 'en' ? 'Frequency' : 'Frecuencia'}</Label>
+                          <Select
+                            value={editingExpense.frequency_type}
+                            onValueChange={(value: 'monthly' | 'annual') => 
+                              setEditingExpense({...editingExpense, frequency_type: value, payment_month: value === 'monthly' ? null : editingExpense.payment_month})
+                            }
+                          >
+                            <SelectTrigger id="edit-frequency-type">
+                              <SelectValue />
+                            </SelectTrigger>
+                            <SelectContent>
+                              <SelectItem value="monthly">{language === 'en' ? 'Monthly' : 'Mensual'}</SelectItem>
+                              <SelectItem value="annual">{language === 'en' ? 'Annual' : 'Anual'}</SelectItem>
+                            </SelectContent>
+                          </Select>
+                        </div>
+                        {editingExpense.frequency_type === 'annual' && (
+                          <div className="space-y-2">
+                            <Label htmlFor="edit-payment-month">{language === 'en' ? 'Payment Month' : 'Mes de Pago'}</Label>
+                            <Select
+                              value={editingExpense.payment_month?.toString() || ""}
+                              onValueChange={(value) => setEditingExpense({...editingExpense, payment_month: parseInt(value)})}
+                            >
+                              <SelectTrigger id="edit-payment-month">
+                                <SelectValue />
+                              </SelectTrigger>
+                              <SelectContent>
+                                {monthNames[language].map((month, index) => (
+                                  <SelectItem key={index + 1} value={(index + 1).toString()}>
+                                    {month}
+                                  </SelectItem>
+                                ))}
+                              </SelectContent>
+                            </Select>
+                          </div>
+                        )}
+                        <div className="space-y-2">
+                          <Label htmlFor="edit-expense-day">{language === 'en' ? 'Payment Day' : 'Día de Pago'}</Label>
+                          <Input
+                            id="edit-expense-day"
+                            type="number"
+                            min="1"
+                            max="31"
+                            value={editingExpense.payment_day}
+                            onChange={(e) => setEditingExpense({...editingExpense, payment_day: parseInt(e.target.value)})}
+                            required
+                          />
+                        </div>
+                        <Button type="submit" className="w-full">
+                          {language === 'en' ? 'Update' : 'Actualizar'}
+                        </Button>
+                      </form>
+                    )}
                   </DialogContent>
                 </Dialog>
                 <Button
