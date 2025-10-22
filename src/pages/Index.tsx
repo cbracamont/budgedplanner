@@ -18,7 +18,7 @@ import { VariableExpensesManager } from "@/components/VariableExpensesManager";
 import { EmergencyFundManager } from "@/components/EmergencyFundManager";
 import { GeneralSavingsManager } from "@/components/GeneralSavingsManager";
 import { EnhancedFinancialCharts } from "@/components/EnhancedFinancialCharts";
-import { WallpaperSettings } from "@/components/WallpaperSettings";
+import { ThemeSettings } from "@/components/ThemeSettings";
 import { ChartSettings, ChartType } from "@/components/ChartSettings";
 import { BudgetSummary } from "@/components/BudgetSummary";
 import { EnhancedDebtAdvisor } from "@/components/EnhancedDebtAdvisor";
@@ -35,12 +35,15 @@ import { Calculator, LogOut } from "lucide-react";
 import { Language, getTranslation } from "@/lib/i18n";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
+import { useTheme } from "@/hooks/useTheme";
 
 interface IndexProps {
   onWallpaperChange?: (url: string | null) => void;
 }
 
 const Index = ({ onWallpaperChange }: IndexProps = {}) => {
+  useTheme();
+
   const [language, setLanguage] = useState<Language>('en');
   const [user, setUser] = useState<any>(null);
   const [chartType, setChartType] = useState<ChartType>('bar');
@@ -442,7 +445,7 @@ const Index = ({ onWallpaperChange }: IndexProps = {}) => {
                 selectedChart={chartType}
                 onChartChange={setChartType}
               />
-              <WallpaperSettings language={language} onWallpaperChange={onWallpaperChange || (() => {})} />
+              <ThemeSettings language={language} onThemeChange={(theme) => console.log('Theme changed:', theme)} />
             </div>
             <ExcelManager language={language} onDataImported={reloadData} />
           </TabsContent>
