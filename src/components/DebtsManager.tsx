@@ -531,17 +531,19 @@ export const DebtsManager = ({ language, onDebtsChange }: DebtsManagerProps) => 
                           required
                         />
                       </div>
-                      <div className="space-y-2">
-                        <Label htmlFor="edit-debt-apr">{t('interestRate')}</Label>
-                        <Input
-                          id="edit-debt-apr"
-                          type="number"
-                          step="0.01"
-                          value={editingDebt?.apr || ''}
-                          onChange={(e) => setEditingDebt(editingDebt ? {...editingDebt, apr: parseFloat(e.target.value)} : null)}
-                          required
-                        />
-                      </div>
+                      {!(editingDebt?.promotional_apr && editingDebt?.promotional_apr_end_date) && (
+                        <div className="space-y-2">
+                          <Label htmlFor="edit-debt-apr">{t('interestRate')}</Label>
+                          <Input
+                            id="edit-debt-apr"
+                            type="number"
+                            step="0.01"
+                            value={editingDebt?.apr || ''}
+                            onChange={(e) => setEditingDebt(editingDebt ? {...editingDebt, apr: parseFloat(e.target.value)} : null)}
+                            required
+                          />
+                        </div>
+                      )}
                       <div className="space-y-2">
                         <Label htmlFor="edit-debt-payment">{t('minimumPayment')}</Label>
                         <Input
