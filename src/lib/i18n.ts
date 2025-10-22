@@ -12,6 +12,11 @@ export const translations = {
     debtAdvisor: "Debt Advisor",
     scenarios: "What If Scenarios",
     
+    // Categories
+    emergencyFund: "Emergency Fund",
+    savings: "Savings",
+    savingsGoals: "Saving Pots",
+    
     // Income
     income: "Income",
     salary: "Salary",
@@ -133,6 +138,11 @@ export const translations = {
     calendar: "Calendario de Pagos",
     debtAdvisor: "Asesor de Deudas",
     scenarios: "Escenarios Qué Pasaría Si",
+    
+    // Categories
+    emergencyFund: "Fondo de Emergencia",
+    savings: "Ahorros",
+    savingsGoals: "Objetivos de Ahorro",
     
     // Income
     income: "Ingresos",
