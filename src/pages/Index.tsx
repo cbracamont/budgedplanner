@@ -9,6 +9,7 @@ import {
   useSavingsGoals,
   useSavings
 } from "@/hooks/useFinancialData";
+import { useCategoryNames } from "@/hooks/useCategoryNames";
 import { Auth } from "@/components/Auth";
 import { IncomeManager } from "@/components/IncomeManager";
 import { DebtsManager } from "@/components/DebtsManager";
@@ -26,6 +27,7 @@ import { FinancialAdvisor } from "@/components/FinancialAdvisor";
 import { ExcelManager } from "@/components/ExcelManager";
 import { DailyRecommendations } from "@/components/DailyRecommendations";
 import { SavingsGoalsManager } from "@/components/SavingsGoalsManager";
+import { CategoryNameEditor } from "@/components/CategoryNameEditor";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Calculator, LogOut } from "lucide-react";
@@ -42,6 +44,7 @@ const Index = ({ onWallpaperChange }: IndexProps = {}) => {
   const [user, setUser] = useState<any>(null);
   const [chartType, setChartType] = useState<ChartType>('bar');
   const queryClient = useQueryClient();
+  const { getCategoryName } = useCategoryNames(language);
   
   // Fetch all data with React Query
   const { data: incomeData = [] } = useIncomeSources();
@@ -84,7 +87,10 @@ const Index = ({ onWallpaperChange }: IndexProps = {}) => {
     [savingsGoalsData]
   );
 
-  const monthlyEmergencyContribution = 0; // Always 0, user needs to manually activate
+  const monthlyEmergencyContribution = useMemo(() => 
+    savings?.monthly_emergency_contribution || 0,
+    [savings]
+  );
   
   const totalSavings = useMemo(() => 
     savings?.total_accumulated || 0,
@@ -141,7 +147,7 @@ const Index = ({ onWallpaperChange }: IndexProps = {}) => {
     queryClient.invalidateQueries({ queryKey: ["savings"] });
   };
 
-  const totalSavingsContributions = totalActiveSavingsGoals + 0; // emergency contribution handled elsewhere
+  const totalSavingsContributions = totalActiveSavingsGoals + monthlyEmergencyContribution;
 
   // Calculate payments for calendar with IDs and source tables
   const calendarPayments = [
@@ -228,6 +234,7 @@ const Index = ({ onWallpaperChange }: IndexProps = {}) => {
             <div className="p-3 bg-gradient-primary rounded-xl shadow-medium">
               <Calculator className="h-8 w-8 text-primary-foreground" />
             </div>
+            <CategoryNameEditor language={language} />
             <LanguageToggle language={language} onLanguageChange={setLanguage} />
             <Button variant="outline" size="sm" onClick={handleSignOut}>
               <LogOut className="mr-2 h-4 w-4" />
@@ -280,7 +287,7 @@ const Index = ({ onWallpaperChange }: IndexProps = {}) => {
                 <Collapsible defaultOpen>
                   <CollapsibleTrigger className="w-full">
                     <div className="flex items-center justify-between w-full mb-4">
-                      <h2 className="text-xl font-semibold">{t('income')}</h2>
+                      <h2 className="text-xl font-semibold">{getCategoryName('income')}</h2>
                       <ChevronDown className="h-5 w-5 transition-transform duration-200 [[data-state=open]>&]:rotate-180" />
                     </div>
                   </CollapsibleTrigger>
@@ -292,7 +299,7 @@ const Index = ({ onWallpaperChange }: IndexProps = {}) => {
                 <Collapsible defaultOpen>
                   <CollapsibleTrigger className="w-full">
                     <div className="flex items-center justify-between w-full mb-4">
-                      <h2 className="text-xl font-semibold">{t('debts')}</h2>
+                      <h2 className="text-xl font-semibold">{getCategoryName('debts')}</h2>
                       <ChevronDown className="h-5 w-5 transition-transform duration-200 [[data-state=open]>&]:rotate-180" />
                     </div>
                   </CollapsibleTrigger>
@@ -304,7 +311,7 @@ const Index = ({ onWallpaperChange }: IndexProps = {}) => {
                 <Collapsible defaultOpen>
                   <CollapsibleTrigger className="w-full">
                     <div className="flex items-center justify-between w-full mb-4">
-                      <h2 className="text-xl font-semibold">{t('fixedExpenses')}</h2>
+                      <h2 className="text-xl font-semibold">{getCategoryName('fixedExpenses')}</h2>
                       <ChevronDown className="h-5 w-5 transition-transform duration-200 [[data-state=open]>&]:rotate-180" />
                     </div>
                   </CollapsibleTrigger>
@@ -316,7 +323,7 @@ const Index = ({ onWallpaperChange }: IndexProps = {}) => {
                 <Collapsible defaultOpen>
                   <CollapsibleTrigger className="w-full">
                     <div className="flex items-center justify-between w-full mb-4">
-                      <h2 className="text-xl font-semibold">{t('variableExpenses')}</h2>
+                      <h2 className="text-xl font-semibold">{getCategoryName('variableExpenses')}</h2>
                       <ChevronDown className="h-5 w-5 transition-transform duration-200 [[data-state=open]>&]:rotate-180" />
                     </div>
                   </CollapsibleTrigger>
@@ -328,7 +335,7 @@ const Index = ({ onWallpaperChange }: IndexProps = {}) => {
                 <Collapsible defaultOpen>
                   <CollapsibleTrigger className="w-full">
                     <div className="flex items-center justify-between w-full mb-4">
-                      <h2 className="text-xl font-semibold">{language === 'en' ? 'Emergency Fund' : 'Fondo de Emergencia'}</h2>
+                      <h2 className="text-xl font-semibold">{getCategoryName('emergencyFund')}</h2>
                       <ChevronDown className="h-5 w-5 transition-transform duration-200 [[data-state=open]>&]:rotate-180" />
                     </div>
                   </CollapsibleTrigger>
@@ -344,7 +351,7 @@ const Index = ({ onWallpaperChange }: IndexProps = {}) => {
                 <Collapsible defaultOpen>
                   <CollapsibleTrigger className="w-full">
                     <div className="flex items-center justify-between w-full mb-4">
-                      <h2 className="text-xl font-semibold">{language === 'en' ? 'Savings Goals' : 'Metas de Ahorro'}</h2>
+                      <h2 className="text-xl font-semibold">{getCategoryName('savingsGoals')}</h2>
                       <ChevronDown className="h-5 w-5 transition-transform duration-200 [[data-state=open]>&]:rotate-180" />
                     </div>
                   </CollapsibleTrigger>
@@ -366,7 +373,7 @@ const Index = ({ onWallpaperChange }: IndexProps = {}) => {
                     totalFixedExpenses={totalFixedExpenses}
                     totalVariableExpenses={totalVariableExpenses}
                     totalSavingsGoals={totalActiveSavingsGoals}
-                    monthlyEmergencyContribution={0}
+                    monthlyEmergencyContribution={monthlyEmergencyContribution}
                     language={language}
                   />
                 </div>

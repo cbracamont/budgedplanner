@@ -41,6 +41,33 @@ export type Database = {
         }
         Relationships: []
       }
+      category_names: {
+        Row: {
+          category_key: string
+          created_at: string
+          custom_name: string
+          id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          category_key: string
+          created_at?: string
+          custom_name: string
+          id?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          category_key?: string
+          created_at?: string
+          custom_name?: string
+          id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       debts: {
         Row: {
           apr: number
@@ -183,6 +210,7 @@ export type Database = {
           goal_description: string | null
           goal_name: string | null
           id: string
+          monthly_emergency_contribution: number | null
           monthly_goal: number
           total_accumulated: number
           updated_at: string
@@ -194,6 +222,7 @@ export type Database = {
           goal_description?: string | null
           goal_name?: string | null
           id?: string
+          monthly_emergency_contribution?: number | null
           monthly_goal?: number
           total_accumulated?: number
           updated_at?: string
@@ -205,6 +234,7 @@ export type Database = {
           goal_description?: string | null
           goal_name?: string | null
           id?: string
+          monthly_emergency_contribution?: number | null
           monthly_goal?: number
           total_accumulated?: number
           updated_at?: string

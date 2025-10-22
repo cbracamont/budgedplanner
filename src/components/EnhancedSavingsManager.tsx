@@ -10,6 +10,7 @@ import { PiggyBank, TrendingUp, History, Pencil, Trash2, Shield } from "lucide-r
 import { formatCurrency, getTranslation, Language } from "@/lib/i18n";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useQueryClient } from "@tanstack/react-query";
 
 interface SavingsManagerProps {
   language: Language;
@@ -27,6 +28,7 @@ interface SavingsHistoryEntry {
 export const EnhancedSavingsManager = ({ language, availableToSave, totalExpenses }: SavingsManagerProps) => {
   const t = (key: string) => getTranslation(language, key);
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   
   const [monthlyGoal, setMonthlyGoal] = useState("");
   const [totalAccumulated, setTotalAccumulated] = useState(0);
@@ -78,6 +80,7 @@ export const EnhancedSavingsManager = ({ language, availableToSave, totalExpense
       setGoalName(data.goal_name || "");
       setGoalDescription(data.goal_description || "");
       setEmergencyFund(data.emergency_fund?.toString() || "");
+      setMonthlyEmergencyContribution(data.monthly_emergency_contribution?.toString() || "");
     }
   };
 
@@ -110,7 +113,8 @@ export const EnhancedSavingsManager = ({ language, availableToSave, totalExpense
           monthly_goal: goalValue,
           goal_name: goalName,
           goal_description: goalDescription,
-          emergency_fund: emergencyValue
+          emergency_fund: emergencyValue,
+          monthly_emergency_contribution: parseFloat(monthlyEmergencyContribution) || 0
         })
         .eq('id', savingsId);
 
@@ -126,7 +130,8 @@ export const EnhancedSavingsManager = ({ language, availableToSave, totalExpense
           monthly_goal: goalValue,
           goal_name: goalName,
           goal_description: goalDescription,
-          emergency_fund: emergencyValue
+          emergency_fund: emergencyValue,
+          monthly_emergency_contribution: parseFloat(monthlyEmergencyContribution) || 0
         })
         .select()
         .single();
@@ -140,6 +145,7 @@ export const EnhancedSavingsManager = ({ language, availableToSave, totalExpense
     }
 
     toast({ title: "Success", description: "Savings goal updated successfully" });
+    queryClient.invalidateQueries({ queryKey: ["savings"] });
   };
 
   const saveCurrentMonth = async () => {
