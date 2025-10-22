@@ -277,7 +277,7 @@ const Index = ({ onWallpaperChange }: IndexProps = {}) => {
                     </div>
                   </CollapsibleTrigger>
                   <CollapsibleContent>
-                    <IncomeManager language={language} onIncomeChange={() => {}} />
+                    <IncomeManager language={language} />
                   </CollapsibleContent>
                 </Collapsible>
 
@@ -289,7 +289,7 @@ const Index = ({ onWallpaperChange }: IndexProps = {}) => {
                     </div>
                   </CollapsibleTrigger>
                   <CollapsibleContent>
-                    <DebtsManager language={language} onDebtsChange={() => {}} />
+                    <DebtsManager language={language} />
                   </CollapsibleContent>
                 </Collapsible>
 
@@ -301,7 +301,7 @@ const Index = ({ onWallpaperChange }: IndexProps = {}) => {
                     </div>
                   </CollapsibleTrigger>
                   <CollapsibleContent>
-                    <FixedExpensesManager language={language} onExpensesChange={() => {}} />
+                    <FixedExpensesManager language={language} />
                   </CollapsibleContent>
                 </Collapsible>
 
@@ -313,7 +313,7 @@ const Index = ({ onWallpaperChange }: IndexProps = {}) => {
                     </div>
                   </CollapsibleTrigger>
                   <CollapsibleContent>
-                    <VariableExpensesManager onExpensesChange={() => {}} language={language} />
+                    <VariableExpensesManager language={language} />
                   </CollapsibleContent>
                 </Collapsible>
 

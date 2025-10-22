@@ -18,7 +18,7 @@ interface IncomeSource {
 
 interface IncomeManagerProps {
   language: Language;
-  onIncomeChange: (total: number) => void;
+  onIncomeChange?: (total: number) => void;
 }
 
 export const IncomeManager = ({ language, onIncomeChange }: IncomeManagerProps) => {
@@ -35,7 +35,7 @@ export const IncomeManager = ({ language, onIncomeChange }: IncomeManagerProps) 
 
   useEffect(() => {
     const total = incomeSources.reduce((sum, source) => sum + source.amount, 0);
-    onIncomeChange(total);
+    onIncomeChange?.(total);
   }, [incomeSources, onIncomeChange]);
 
   const loadIncomeSources = async () => {

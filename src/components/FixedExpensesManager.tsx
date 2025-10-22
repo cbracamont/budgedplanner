@@ -22,7 +22,7 @@ interface FixedExpense {
 
 interface FixedExpensesManagerProps {
   language: Language;
-  onExpensesChange: (total: number) => void;
+  onExpensesChange?: (total: number) => void;
 }
 
 const monthNames = {
@@ -64,7 +64,7 @@ export const FixedExpensesManager = ({ language, onExpensesChange }: FixedExpens
       }
       return sum + expense.amount;
     }, 0);
-    onExpensesChange(total);
+    onExpensesChange?.(total);
   }, [expenses, onExpensesChange]);
 
   const loadExpenses = async () => {

@@ -16,7 +16,7 @@ interface VariableExpense {
 }
 
 interface VariableExpensesManagerProps {
-  onExpensesChange: (total: number) => void;
+  onExpensesChange?: (total: number) => void;
   language: Language;
 }
 
@@ -36,7 +36,7 @@ export const VariableExpensesManager = ({ onExpensesChange, language }: Variable
 
   useEffect(() => {
     const total = expenses.reduce((sum, exp) => sum + exp.amount, 0);
-    onExpensesChange(total);
+    onExpensesChange?.(total);
   }, [expenses, onExpensesChange]);
 
   const loadExpenses = async () => {

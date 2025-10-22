@@ -31,7 +31,7 @@ interface Debt {
 
 interface DebtsManagerProps {
   language: Language;
-  onDebtsChange: (total: number) => void;
+  onDebtsChange?: (total: number) => void;
 }
 
 export const DebtsManager = ({ language, onDebtsChange }: DebtsManagerProps) => {
@@ -66,7 +66,7 @@ export const DebtsManager = ({ language, onDebtsChange }: DebtsManagerProps) => 
 
   useEffect(() => {
     const total = debts.reduce((sum, debt) => sum + debt.minimum_payment, 0);
-    onDebtsChange(total);
+    onDebtsChange?.(total);
   }, [debts, onDebtsChange]);
 
   const loadDebts = async () => {
