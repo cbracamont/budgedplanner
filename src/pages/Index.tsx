@@ -1,4 +1,6 @@
 import { useState, useEffect } from "react";
+import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
+import { ChevronDown } from "lucide-react";
 import { Auth } from "@/components/Auth";
 import { IncomeManager } from "@/components/IncomeManager";
 import { DebtsManager } from "@/components/DebtsManager";
@@ -273,20 +275,85 @@ const Index = ({ onWallpaperChange }: IndexProps = {}) => {
             
             <div className="grid lg:grid-cols-3 gap-6">
               <div className="lg:col-span-2 space-y-6">
-                <IncomeManager language={language} onIncomeChange={setTotalIncome} />
-                <DebtsManager language={language} onDebtsChange={setTotalDebts} />
-                <FixedExpensesManager language={language} onExpensesChange={setTotalFixedExpenses} />
-                <VariableExpensesManager onExpensesChange={setTotalVariableExpenses} language={language} />
-                <EnhancedSavingsManager 
-                  language={language} 
-                  availableToSave={availableForSavings}
-                  totalExpenses={totalFixedExpenses + totalVariableExpenses}
-                />
-                <SavingsGoalsManager 
-                  language={language} 
-                  availableForSavings={availableForSavings}
-                  availableBudget={totalIncome - totalFixedExpenses - totalVariableExpenses - totalDebts}
-                />
+                <Collapsible defaultOpen>
+                  <CollapsibleTrigger className="w-full">
+                    <div className="flex items-center justify-between w-full mb-4">
+                      <h2 className="text-xl font-semibold">{t('income')}</h2>
+                      <ChevronDown className="h-5 w-5 transition-transform duration-200 [[data-state=open]>&]:rotate-180" />
+                    </div>
+                  </CollapsibleTrigger>
+                  <CollapsibleContent>
+                    <IncomeManager language={language} onIncomeChange={setTotalIncome} />
+                  </CollapsibleContent>
+                </Collapsible>
+
+                <Collapsible defaultOpen>
+                  <CollapsibleTrigger className="w-full">
+                    <div className="flex items-center justify-between w-full mb-4">
+                      <h2 className="text-xl font-semibold">{t('debts')}</h2>
+                      <ChevronDown className="h-5 w-5 transition-transform duration-200 [[data-state=open]>&]:rotate-180" />
+                    </div>
+                  </CollapsibleTrigger>
+                  <CollapsibleContent>
+                    <DebtsManager language={language} onDebtsChange={setTotalDebts} />
+                  </CollapsibleContent>
+                </Collapsible>
+
+                <Collapsible defaultOpen>
+                  <CollapsibleTrigger className="w-full">
+                    <div className="flex items-center justify-between w-full mb-4">
+                      <h2 className="text-xl font-semibold">{t('fixedExpenses')}</h2>
+                      <ChevronDown className="h-5 w-5 transition-transform duration-200 [[data-state=open]>&]:rotate-180" />
+                    </div>
+                  </CollapsibleTrigger>
+                  <CollapsibleContent>
+                    <FixedExpensesManager language={language} onExpensesChange={setTotalFixedExpenses} />
+                  </CollapsibleContent>
+                </Collapsible>
+
+                <Collapsible defaultOpen>
+                  <CollapsibleTrigger className="w-full">
+                    <div className="flex items-center justify-between w-full mb-4">
+                      <h2 className="text-xl font-semibold">{t('variableExpenses')}</h2>
+                      <ChevronDown className="h-5 w-5 transition-transform duration-200 [[data-state=open]>&]:rotate-180" />
+                    </div>
+                  </CollapsibleTrigger>
+                  <CollapsibleContent>
+                    <VariableExpensesManager onExpensesChange={setTotalVariableExpenses} language={language} />
+                  </CollapsibleContent>
+                </Collapsible>
+
+                <Collapsible defaultOpen>
+                  <CollapsibleTrigger className="w-full">
+                    <div className="flex items-center justify-between w-full mb-4">
+                      <h2 className="text-xl font-semibold">{language === 'en' ? 'Emergency Fund' : 'Fondo de Emergencia'}</h2>
+                      <ChevronDown className="h-5 w-5 transition-transform duration-200 [[data-state=open]>&]:rotate-180" />
+                    </div>
+                  </CollapsibleTrigger>
+                  <CollapsibleContent>
+                    <EnhancedSavingsManager 
+                      language={language} 
+                      availableToSave={availableForSavings}
+                      totalExpenses={totalFixedExpenses + totalVariableExpenses}
+                    />
+                  </CollapsibleContent>
+                </Collapsible>
+
+                <Collapsible defaultOpen>
+                  <CollapsibleTrigger className="w-full">
+                    <div className="flex items-center justify-between w-full mb-4">
+                      <h2 className="text-xl font-semibold">{language === 'en' ? 'Savings Goals' : 'Metas de Ahorro'}</h2>
+                      <ChevronDown className="h-5 w-5 transition-transform duration-200 [[data-state=open]>&]:rotate-180" />
+                    </div>
+                  </CollapsibleTrigger>
+                  <CollapsibleContent>
+                    <SavingsGoalsManager 
+                      language={language} 
+                      availableForSavings={availableForSavings}
+                      availableBudget={totalIncome - totalFixedExpenses - totalVariableExpenses - totalDebts}
+                    />
+                  </CollapsibleContent>
+                </Collapsible>
               </div>
 
               <div className="lg:col-span-1">
