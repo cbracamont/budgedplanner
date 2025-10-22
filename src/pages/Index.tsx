@@ -1,6 +1,14 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useMemo } from "react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
 import { ChevronDown } from "lucide-react";
+import { 
+  useIncomeSources, 
+  useDebts, 
+  useFixedExpenses, 
+  useVariableExpenses,
+  useSavingsGoals,
+  useSavings
+} from "@/hooks/useFinancialData";
 import { Auth } from "@/components/Auth";
 import { IncomeManager } from "@/components/IncomeManager";
 import { DebtsManager } from "@/components/DebtsManager";
@@ -31,22 +39,65 @@ interface IndexProps {
 const Index = ({ onWallpaperChange }: IndexProps = {}) => {
   const [language, setLanguage] = useState<Language>('en');
   const [user, setUser] = useState<any>(null);
-  const [totalIncome, setTotalIncome] = useState(0);
-  const [totalDebts, setTotalDebts] = useState(0);
-  const [totalFixedExpenses, setTotalFixedExpenses] = useState(0);
-  const [totalVariableExpenses, setTotalVariableExpenses] = useState(0);
-  const [totalSavings, setTotalSavings] = useState(0);
-  const [totalActiveSavingsGoals, setTotalActiveSavingsGoals] = useState(0);
-  const [monthlyEmergencyContribution, setMonthlyEmergencyContribution] = useState(0);
-  const [emergencyFund, setEmergencyFund] = useState(0);
-  const [emergencyFundTarget, setEmergencyFundTarget] = useState(0);
   const [chartType, setChartType] = useState<ChartType>('bar');
   
-  // Data for calendar and advisor
-  const [incomeData, setIncomeData] = useState<any[]>([]);
-  const [debtData, setDebtData] = useState<any[]>([]);
-  const [fixedExpensesData, setFixedExpensesData] = useState<any[]>([]);
-  const [savingsGoalsData, setSavingsGoalsData] = useState<any[]>([]);
+  // Fetch all data with React Query
+  const { data: incomeData = [] } = useIncomeSources();
+  const { data: debtData = [] } = useDebts();
+  const { data: fixedExpensesData = [] } = useFixedExpenses();
+  const { data: variableExpensesData = [] } = useVariableExpenses();
+  const { data: savingsGoalsData = [] } = useSavingsGoals();
+  const { data: savings } = useSavings();
+
+  // Calculate totals automatically from query data
+  const totalIncome = useMemo(() => 
+    incomeData.reduce((sum, source) => sum + source.amount, 0), 
+    [incomeData]
+  );
+
+  const totalDebts = useMemo(() => 
+    debtData.reduce((sum, debt) => sum + debt.minimum_payment, 0), 
+    [debtData]
+  );
+
+  const totalFixedExpenses = useMemo(() => {
+    const currentMonth = new Date().getMonth() + 1;
+    return fixedExpensesData.reduce((sum, expense) => {
+      if (expense.frequency_type === 'annual') {
+        return sum + (expense.payment_month === currentMonth ? expense.amount : 0);
+      }
+      return sum + expense.amount;
+    }, 0);
+  }, [fixedExpensesData]);
+
+  const totalVariableExpenses = useMemo(() => 
+    variableExpensesData.reduce((sum, exp) => sum + exp.amount, 0), 
+    [variableExpensesData]
+  );
+
+  const totalActiveSavingsGoals = useMemo(() => 
+    savingsGoalsData
+      .filter(goal => goal.is_active)
+      .reduce((sum, goal) => sum + (goal.monthly_contribution || 0), 0),
+    [savingsGoalsData]
+  );
+
+  const monthlyEmergencyContribution = 0; // Always 0, user needs to manually activate
+  
+  const totalSavings = useMemo(() => 
+    savings?.total_accumulated || 0,
+    [savings]
+  );
+
+  const emergencyFund = useMemo(() => 
+    savings?.emergency_fund || 0,
+    [savings]
+  );
+
+  const emergencyFundTarget = useMemo(() => {
+    const monthlyExpenses = totalFixedExpenses + totalVariableExpenses;
+    return monthlyExpenses * 4;
+  }, [totalFixedExpenses, totalVariableExpenses]);
   
   const t = (key: string) => getTranslation(language, key);
 
@@ -79,65 +130,8 @@ const Index = ({ onWallpaperChange }: IndexProps = {}) => {
   };
 
   const reloadData = () => {
-    if (user) {
-      const loadData = async () => {
-        const [incomeResult, debtResult, fixedResult] = await Promise.all([
-          supabase.from("income_sources").select("*").order("created_at"),
-          supabase.from("debts").select("*").order("created_at"),
-          supabase.from("fixed_expenses").select("*").order("created_at")
-        ]);
-        
-        if (incomeResult.data) setIncomeData(incomeResult.data);
-        if (debtResult.data) setDebtData(debtResult.data);
-        if (fixedResult.data) setFixedExpensesData(fixedResult.data);
-      };
-      
-      loadData();
-    }
+    // React Query will handle data reloading automatically
   };
-
-  // Load data for calendar and advisor
-  useEffect(() => {
-    if (!user) return;
-    
-    const loadData = async () => {
-      const [incomeResult, debtResult, fixedResult, savingsResult, savingsGoalsResult] = await Promise.all([
-        supabase.from("income_sources").select("*").order("created_at"),
-        supabase.from("debts").select("*").order("created_at"),
-        supabase.from("fixed_expenses").select("*").order("created_at"),
-        supabase.from("savings").select("*").eq("user_id", user.id).maybeSingle(),
-        supabase.from("savings_goals").select("*").eq("is_active", true).order("created_at")
-      ]);
-      
-      if (incomeResult.data) setIncomeData(incomeResult.data);
-      if (debtResult.data) setDebtData(debtResult.data);
-      if (fixedResult.data) setFixedExpensesData(fixedResult.data);
-      if (savingsGoalsResult.data) setSavingsGoalsData(savingsGoalsResult.data);
-      if (savingsResult.data) {
-        setTotalSavings(savingsResult.data.total_accumulated || 0);
-        setEmergencyFund(savingsResult.data.emergency_fund || 0);
-        
-        // Only set emergency contribution if user has actively set a monthly goal for it
-        // Otherwise it's just a suggestion and shouldn't be deducted from budget
-        setMonthlyEmergencyContribution(0); // User needs to manually set this
-        
-        // Calculate emergency fund target (3-6 months of expenses)
-        const monthlyExpenses = totalFixedExpenses + totalVariableExpenses;
-        const emergencyFundTarget = monthlyExpenses * 4;
-        setEmergencyFundTarget(emergencyFundTarget);
-      }
-    };
-    
-    loadData();
-  }, [user, totalFixedExpenses, totalVariableExpenses]);
-
-  // Calculate total active savings contributions
-  useEffect(() => {
-    const totalContributions = savingsGoalsData.reduce((sum, goal) => 
-      sum + (goal.monthly_contribution || 0), 0
-    );
-    setTotalActiveSavingsGoals(totalContributions);
-  }, [savingsGoalsData]);
 
   const totalSavingsContributions = totalActiveSavingsGoals + monthlyEmergencyContribution;
 
@@ -283,7 +277,7 @@ const Index = ({ onWallpaperChange }: IndexProps = {}) => {
                     </div>
                   </CollapsibleTrigger>
                   <CollapsibleContent>
-                    <IncomeManager language={language} onIncomeChange={setTotalIncome} />
+                    <IncomeManager language={language} onIncomeChange={() => {}} />
                   </CollapsibleContent>
                 </Collapsible>
 
@@ -295,7 +289,7 @@ const Index = ({ onWallpaperChange }: IndexProps = {}) => {
                     </div>
                   </CollapsibleTrigger>
                   <CollapsibleContent>
-                    <DebtsManager language={language} onDebtsChange={setTotalDebts} />
+                    <DebtsManager language={language} onDebtsChange={() => {}} />
                   </CollapsibleContent>
                 </Collapsible>
 
@@ -307,7 +301,7 @@ const Index = ({ onWallpaperChange }: IndexProps = {}) => {
                     </div>
                   </CollapsibleTrigger>
                   <CollapsibleContent>
-                    <FixedExpensesManager language={language} onExpensesChange={setTotalFixedExpenses} />
+                    <FixedExpensesManager language={language} onExpensesChange={() => {}} />
                   </CollapsibleContent>
                 </Collapsible>
 
@@ -319,7 +313,7 @@ const Index = ({ onWallpaperChange }: IndexProps = {}) => {
                     </div>
                   </CollapsibleTrigger>
                   <CollapsibleContent>
-                    <VariableExpensesManager onExpensesChange={setTotalVariableExpenses} language={language} />
+                    <VariableExpensesManager onExpensesChange={() => {}} language={language} />
                   </CollapsibleContent>
                 </Collapsible>
 
