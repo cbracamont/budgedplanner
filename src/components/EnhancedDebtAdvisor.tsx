@@ -13,6 +13,9 @@ interface Debt {
   balance: number;
   apr: number;
   minimumPayment: number;
+  promotional_apr?: number;
+  promotional_apr_end_date?: string;
+  regular_apr?: number;
 }
 
 interface EnhancedDebtAdvisorProps {
@@ -80,7 +83,42 @@ export const EnhancedDebtAdvisor = ({ debts, extraPayment, language }: EnhancedD
   };
 
   const prioritizeDebts = () => {
-    return [...debts].sort((a, b) => b.apr - a.apr);
+    const today = new Date();
+    
+    return [...debts].sort((a, b) => {
+      // Calculate effective APR considering promotional periods
+      const getEffectiveAPR = (debt: Debt) => {
+        if (debt.promotional_apr && debt.promotional_apr_end_date) {
+          const endDate = new Date(debt.promotional_apr_end_date);
+          if (endDate > today) {
+            // Promotional period is active
+            return debt.promotional_apr;
+          }
+        }
+        // Use regular APR if promotional period ended or not applicable
+        return debt.regular_apr || debt.apr;
+      };
+
+      const aprA = getEffectiveAPR(a);
+      const aprB = getEffectiveAPR(b);
+
+      // Prioritize debts with promotional APR ending soon
+      if (a.promotional_apr_end_date && b.promotional_apr_end_date) {
+        const endDateA = new Date(a.promotional_apr_end_date);
+        const endDateB = new Date(b.promotional_apr_end_date);
+        
+        const monthsUntilEndA = (endDateA.getTime() - today.getTime()) / (1000 * 60 * 60 * 24 * 30);
+        const monthsUntilEndB = (endDateB.getTime() - today.getTime()) / (1000 * 60 * 60 * 24 * 30);
+        
+        // If both have promo ending within 3 months, prioritize the one ending sooner
+        if (monthsUntilEndA < 3 && monthsUntilEndB < 3) {
+          return monthsUntilEndA - monthsUntilEndB;
+        }
+      }
+
+      // Otherwise, sort by effective APR (highest first)
+      return aprB - aprA;
+    });
   };
 
   const calculateInterestSavings = () => {
@@ -111,6 +149,7 @@ export const EnhancedDebtAdvisor = ({ debts, extraPayment, language }: EnhancedD
     const recommendations: string[] = [];
     const sortedDebts = prioritizeDebts();
     const extraAmount = parseFloat(customExtraPayment) || 0;
+    const today = new Date();
 
     if (debts.length === 0) {
       return [language === 'en' 
@@ -118,23 +157,55 @@ export const EnhancedDebtAdvisor = ({ debts, extraPayment, language }: EnhancedD
         : "No hay deudas registradas. ¡Estás libre de deudas!"];
     }
 
-    if (extraAmount > 0) {
+    // Check for promotional APR ending soon
+    const promoEndingSoon = debts.filter(d => {
+      if (!d.promotional_apr_end_date) return false;
+      const endDate = new Date(d.promotional_apr_end_date);
+      const monthsUntilEnd = (endDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24 * 30);
+      return monthsUntilEnd > 0 && monthsUntilEnd <= 3;
+    });
+
+    if (promoEndingSoon.length > 0) {
+      const debt = promoEndingSoon[0];
+      const endDate = new Date(debt.promotional_apr_end_date!);
+      const regularAPR = debt.regular_apr || debt.apr;
       recommendations.push(
         language === 'en'
-          ? `Apply £${extraAmount.toFixed(2)} extra to your debt with the highest APR (${sortedDebts[0].name} at ${sortedDebts[0].apr}%) to save on interest.`
-          : `Aplica £${extraAmount.toFixed(2)} extra a tu deuda con el APR más alto (${sortedDebts[0].name} al ${sortedDebts[0].apr}%) para ahorrar en intereses.`
+          ? `URGENT: ${debt.name}'s promotional APR (${debt.promotional_apr}%) ends ${endDate.toLocaleDateString()}. APR will increase to ${regularAPR}%. Prioritize this debt!`
+          : `URGENTE: El APR promocional de ${debt.name} (${debt.promotional_apr}%) termina ${endDate.toLocaleDateString()}. El APR aumentará a ${regularAPR}%. ¡Prioriza esta deuda!`
+      );
+    }
+
+    if (extraAmount > 0) {
+      const topDebt = sortedDebts[0];
+      const effectiveAPR = topDebt.promotional_apr && topDebt.promotional_apr_end_date && new Date(topDebt.promotional_apr_end_date) > today
+        ? topDebt.promotional_apr
+        : (topDebt.regular_apr || topDebt.apr);
+      
+      recommendations.push(
+        language === 'en'
+          ? `Apply £${extraAmount.toFixed(2)} extra to ${topDebt.name} (current APR: ${effectiveAPR}%) to save on interest.`
+          : `Aplica £${extraAmount.toFixed(2)} extra a ${topDebt.name} (APR actual: ${effectiveAPR}%) para ahorrar en intereses.`
       );
     }
 
     if (sortedDebts.length > 1) {
+      const firstDebt = sortedDebts[0];
+      const secondDebt = sortedDebts[1];
       recommendations.push(
         language === 'en'
-          ? `Focus on paying off ${sortedDebts[0].name} first (${sortedDebts[0].apr}% APR), then move to ${sortedDebts[1].name}.`
-          : `Enfócate en pagar ${sortedDebts[0].name} primero (${sortedDebts[0].apr}% APR), luego pasa a ${sortedDebts[1].name}.`
+          ? `Focus on ${firstDebt.name} first, then move to ${secondDebt.name}.`
+          : `Enfócate en ${firstDebt.name} primero, luego pasa a ${secondDebt.name}.`
       );
     }
 
-    const highAPRDebts = debts.filter(d => d.apr > 15);
+    const highAPRDebts = debts.filter(d => {
+      const effectiveAPR = d.promotional_apr && d.promotional_apr_end_date && new Date(d.promotional_apr_end_date) > today
+        ? d.promotional_apr
+        : (d.regular_apr || d.apr);
+      return effectiveAPR > 15;
+    });
+    
     if (highAPRDebts.length > 0) {
       recommendations.push(
         language === 'en'
@@ -278,19 +349,30 @@ export const EnhancedDebtAdvisor = ({ debts, extraPayment, language }: EnhancedD
               {language === 'en' ? 'Recommended Payoff Order (Avalanche Method)' : 'Orden de Pago Recomendado (Método Avalancha)'}
             </h3>
             <div className="space-y-2">
-              {prioritizeDebts().map((debt, index) => (
-                <div key={debt.name} className="flex items-center gap-3 p-3 bg-secondary/50 rounded-lg">
-                  <div className="flex-shrink-0 w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-bold">
-                    {index + 1}
+              {prioritizeDebts().map((debt, index) => {
+                const today = new Date();
+                const hasPromo = debt.promotional_apr && debt.promotional_apr_end_date && new Date(debt.promotional_apr_end_date) > today;
+                const effectiveAPR = hasPromo ? debt.promotional_apr : (debt.regular_apr || debt.apr);
+                
+                return (
+                  <div key={debt.name} className="flex items-center gap-3 p-3 bg-secondary/50 rounded-lg">
+                    <div className="flex-shrink-0 w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center font-bold">
+                      {index + 1}
+                    </div>
+                    <div className="flex-1">
+                      <p className="font-medium">{debt.name}</p>
+                      <p className="text-sm text-muted-foreground">
+                        £{debt.balance.toFixed(2)} @ {effectiveAPR}% APR
+                        {hasPromo && (
+                          <span className="ml-2 text-xs text-orange-600 dark:text-orange-400">
+                            ({language === 'en' ? 'Promo until' : 'Promo hasta'} {new Date(debt.promotional_apr_end_date!).toLocaleDateString()})
+                          </span>
+                        )}
+                      </p>
+                    </div>
                   </div>
-                  <div className="flex-1">
-                    <p className="font-medium">{debt.name}</p>
-                    <p className="text-sm text-muted-foreground">
-                      £{debt.balance.toFixed(2)} @ {debt.apr}% APR
-                    </p>
-                  </div>
-                </div>
-              ))}
+                );
+              })}
             </div>
           </div>
         )}

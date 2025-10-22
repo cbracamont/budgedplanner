@@ -321,7 +321,7 @@ export const EnhancedSavingsManager = ({ language, availableToSave }: SavingsMan
 
             <div className="space-y-2">
               <Label htmlFor="emergency-fund">
-                {language === 'en' ? 'Emergency Fund (3-6 months of expenses)' : 'Fondo de Emergencia (3-6 meses de gastos)'}
+                {language === 'en' ? 'Emergency Fund Current Amount' : 'Monto Actual del Fondo de Emergencia'}
               </Label>
               <Input
                 id="emergency-fund"
@@ -332,6 +332,11 @@ export const EnhancedSavingsManager = ({ language, availableToSave }: SavingsMan
                 placeholder="0.00"
                 className="text-lg font-medium"
               />
+              <p className="text-xs text-muted-foreground">
+                {language === 'en' 
+                  ? 'Separate from your general savings goals' 
+                  : 'Separado de tus metas de ahorro generales'}
+              </p>
             </div>
 
             <Button onClick={updateSavings} className="w-full">

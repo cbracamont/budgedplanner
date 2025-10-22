@@ -23,6 +23,9 @@ interface PaymentItem {
   isInstallment?: boolean;
   startDate?: string | null;
   endDate?: string | null;
+  // Progress tracking for installments
+  currentInstallment?: number;
+  totalInstallments?: number;
 }
 
 interface CalendarViewProps {
@@ -229,6 +232,11 @@ const getPaymentsForDay = (day: number) => {
                       >
                         <div className="font-medium truncate leading-tight">{payment.name}</div>
                         <div className="font-semibold leading-tight">{formatCurrency(payment.amount)}</div>
+                        {payment.currentInstallment && payment.totalInstallments && (
+                          <div className="text-[7px] md:text-[10px] text-muted-foreground leading-tight">
+                            {payment.currentInstallment}/{payment.totalInstallments}
+                          </div>
+                        )}
                       </button>
                     ))}
                   </div>

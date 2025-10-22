@@ -14,6 +14,8 @@ import { CalendarView } from "@/components/CalendarView";
 import { LanguageToggle } from "@/components/LanguageToggle";
 import { FinancialAdvisor } from "@/components/FinancialAdvisor";
 import { ExcelManager } from "@/components/ExcelManager";
+import { DailyRecommendations } from "@/components/DailyRecommendations";
+import { SavingsGoalsManager } from "@/components/SavingsGoalsManager";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Calculator, LogOut } from "lucide-react";
@@ -31,6 +33,9 @@ const Index = ({ onWallpaperChange }: IndexProps = {}) => {
   const [totalDebts, setTotalDebts] = useState(0);
   const [totalFixedExpenses, setTotalFixedExpenses] = useState(0);
   const [totalVariableExpenses, setTotalVariableExpenses] = useState(0);
+  const [totalSavings, setTotalSavings] = useState(0);
+  const [emergencyFund, setEmergencyFund] = useState(0);
+  const [emergencyFundTarget, setEmergencyFundTarget] = useState(0);
   const [chartType, setChartType] = useState<ChartType>('bar');
   
   // Data for calendar and advisor
@@ -91,19 +96,27 @@ const Index = ({ onWallpaperChange }: IndexProps = {}) => {
     if (!user) return;
     
     const loadData = async () => {
-      const [incomeResult, debtResult, fixedResult] = await Promise.all([
+      const [incomeResult, debtResult, fixedResult, savingsResult] = await Promise.all([
         supabase.from("income_sources").select("*").order("created_at"),
         supabase.from("debts").select("*").order("created_at"),
-        supabase.from("fixed_expenses").select("*").order("created_at")
+        supabase.from("fixed_expenses").select("*").order("created_at"),
+        supabase.from("savings").select("*").eq("user_id", user.id).maybeSingle()
       ]);
       
       if (incomeResult.data) setIncomeData(incomeResult.data);
       if (debtResult.data) setDebtData(debtResult.data);
       if (fixedResult.data) setFixedExpensesData(fixedResult.data);
+      if (savingsResult.data) {
+        setTotalSavings(savingsResult.data.total_accumulated || 0);
+        setEmergencyFund(savingsResult.data.emergency_fund || 0);
+        // Calculate emergency fund target (3-6 months of expenses)
+        const monthlyExpenses = totalFixedExpenses + totalVariableExpenses;
+        setEmergencyFundTarget(monthlyExpenses * 4); // Default to 4 months
+      }
     };
     
     loadData();
-  }, [user]);
+  }, [user, totalFixedExpenses, totalVariableExpenses]);
 
   // Calculate payments for calendar with IDs and source tables
   const calendarPayments = [
@@ -115,17 +128,33 @@ const Index = ({ onWallpaperChange }: IndexProps = {}) => {
       category: 'income' as const,
       sourceTable: 'income_sources' as const
     })),
-    ...debtData.map(debt => ({
-      id: debt.id,
-      name: debt.name,
-      amount: debt.minimum_payment,
-      dueDay: debt.payment_day,
-      category: 'debt' as const,
-      sourceTable: 'debts' as const,
-      isInstallment: debt.is_installment,
-      startDate: debt.start_date,
-      endDate: debt.end_date
-    })),
+    ...debtData.map(debt => {
+      // Calculate current installment if applicable
+      let currentInstallment = undefined;
+      let totalInstallments = undefined;
+      
+      if (debt.is_installment && debt.start_date && debt.number_of_installments) {
+        const startDate = new Date(debt.start_date);
+        const today = new Date();
+        const monthsPassed = Math.max(0, Math.floor((today.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24 * 30)));
+        currentInstallment = Math.min(monthsPassed + 1, debt.number_of_installments);
+        totalInstallments = debt.number_of_installments;
+      }
+      
+      return {
+        id: debt.id,
+        name: debt.name,
+        amount: debt.minimum_payment,
+        dueDay: debt.payment_day,
+        category: 'debt' as const,
+        sourceTable: 'debts' as const,
+        isInstallment: debt.is_installment,
+        startDate: debt.start_date,
+        endDate: debt.end_date,
+        currentInstallment,
+        totalInstallments
+      };
+    }),
     ...fixedExpensesData.map(expense => ({
       id: expense.id,
       name: expense.name,
@@ -143,7 +172,10 @@ const Index = ({ onWallpaperChange }: IndexProps = {}) => {
     name: debt.name,
     balance: debt.balance,
     apr: debt.apr,
-    minimumPayment: debt.minimum_payment
+    minimumPayment: debt.minimum_payment,
+    promotional_apr: debt.promotional_apr,
+    promotional_apr_end_date: debt.promotional_apr_end_date,
+    regular_apr: debt.regular_apr
   }));
 
   const availableForDebt = totalIncome - totalDebts - totalFixedExpenses - totalVariableExpenses;
@@ -184,6 +216,19 @@ const Index = ({ onWallpaperChange }: IndexProps = {}) => {
           </TabsList>
 
           <TabsContent value="dashboard" className="space-y-6">
+            {/* Daily Recommendation */}
+            <DailyRecommendations
+              language={language}
+              totalIncome={totalIncome}
+              totalDebts={totalDebts}
+              totalFixedExpenses={totalFixedExpenses}
+              totalVariableExpenses={totalVariableExpenses}
+              totalSavings={totalSavings}
+              debts={debtAdvisorData}
+              emergencyFund={emergencyFund}
+              emergencyFundTarget={emergencyFundTarget}
+            />
+
             {/* Financial Charts */}
             <EnhancedFinancialCharts
               totalIncome={totalIncome}
@@ -201,6 +246,7 @@ const Index = ({ onWallpaperChange }: IndexProps = {}) => {
                 <FixedExpensesManager language={language} onExpensesChange={setTotalFixedExpenses} />
                 <VariableExpensesManager onExpensesChange={setTotalVariableExpenses} language={language} />
                 <EnhancedSavingsManager language={language} availableToSave={availableForSavings} />
+                <SavingsGoalsManager language={language} availableForSavings={availableForSavings} />
               </div>
 
               <div className="lg:col-span-1">
