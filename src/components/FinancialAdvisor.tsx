@@ -2,7 +2,7 @@ import { useState, useRef, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Brain, Send, Loader2 } from "lucide-react";
+import { Brain, Send, Loader2, FileText } from "lucide-react";
 import { Language } from "@/lib/i18n";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -31,13 +31,14 @@ export const FinancialAdvisor = ({ language }: FinancialAdvisorProps) => {
     }
   }, [messages]);
 
-  const sendMessage = async (e: React.FormEvent) => {
+  const sendMessage = async (e: React.FormEvent, customPrompt?: string) => {
     e.preventDefault();
-    if (!input.trim() || isLoading) return;
+    const messageContent = customPrompt || input.trim();
+    if (!messageContent || isLoading) return;
 
-    const userMessage: Message = { role: 'user', content: input };
+    const userMessage: Message = { role: 'user', content: messageContent };
     setMessages(prev => [...prev, userMessage]);
-    setInput("");
+    if (!customPrompt) setInput("");
     setIsLoading(true);
 
     try {
@@ -66,6 +67,14 @@ export const FinancialAdvisor = ({ language }: FinancialAdvisorProps) => {
     }
   };
 
+  const generateActionPlan = (e: React.FormEvent) => {
+    const prompt = language === 'en'
+      ? "Based on my financial data, please generate a detailed action plan document with the following sections:\n\n1. **Executive Summary**: Brief overview of my current financial situation\n2. **Short-term Goals (1-3 months)**: Specific actions I should take immediately\n3. **Medium-term Goals (3-6 months)**: Steps to improve my financial health\n4. **Long-term Goals (6-12 months)**: Strategic financial objectives\n5. **Debt Management Strategy**: Specific plan for managing and reducing debts\n6. **Savings Strategy**: Plan for building emergency fund and savings goals\n7. **Budget Optimization**: Recommendations for reducing expenses and increasing savings\n8. **Action Items Checklist**: A prioritized list of concrete steps to take\n\nPlease format this as a professional document that I can save and reference."
+      : "Basándote en mis datos financieros, genera un documento detallado de plan de acción con las siguientes secciones:\n\n1. **Resumen Ejecutivo**: Breve descripción de mi situación financiera actual\n2. **Objetivos a Corto Plazo (1-3 meses)**: Acciones específicas que debo tomar inmediatamente\n3. **Objetivos a Mediano Plazo (3-6 meses)**: Pasos para mejorar mi salud financiera\n4. **Objetivos a Largo Plazo (6-12 meses)**: Objetivos financieros estratégicos\n5. **Estrategia de Manejo de Deudas**: Plan específico para gestionar y reducir deudas\n6. **Estrategia de Ahorro**: Plan para construir fondo de emergencia y metas de ahorro\n7. **Optimización de Presupuesto**: Recomendaciones para reducir gastos y aumentar ahorros\n8. **Lista de Acciones**: Una lista priorizada de pasos concretos a seguir\n\nPor favor, formatea esto como un documento profesional que pueda guardar y consultar.";
+
+    sendMessage(e, prompt);
+  };
+
   return (
     <Card className="shadow-medium">
       <CardHeader>
@@ -82,6 +91,17 @@ export const FinancialAdvisor = ({ language }: FinancialAdvisorProps) => {
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
+        <div className="flex gap-2">
+          <Button
+            onClick={generateActionPlan}
+            disabled={isLoading}
+            variant="outline"
+            className="w-full"
+          >
+            <FileText className="h-4 w-4 mr-2" />
+            {language === 'en' ? 'Generate Action Plan' : 'Generar Plan de Acción'}
+          </Button>
+        </div>
         <ScrollArea className="h-[400px] w-full rounded-md border p-4" ref={scrollRef}>
           <div className="space-y-4">
             {messages.length === 0 && (
