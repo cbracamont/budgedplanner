@@ -1,6 +1,6 @@
 import { useState, useEffect, useMemo } from "react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { ChevronDown } from "lucide-react";
+import { ChevronDown, TrendingUp } from "lucide-react";
 import { 
   useIncomeSources, 
   useDebts, 
@@ -236,8 +236,8 @@ const Index = ({ onWallpaperChange }: IndexProps = {}) => {
       <div className="max-w-7xl mx-auto">
         <header className="text-center mb-12">
           <div className="flex items-center justify-center gap-3 mb-4">
-            <div className="p-3 bg-gradient-primary rounded-xl shadow-medium">
-              <Calculator className="h-8 w-8 text-primary-foreground" />
+            <div className="p-3 bg-gradient-gold rounded-xl shadow-gold">
+              <Calculator className="h-8 w-8 text-foreground" />
             </div>
             <CategoryNameEditor language={language} />
             <LanguageToggle language={language} onLanguageChange={setLanguage} />
@@ -290,10 +290,13 @@ const Index = ({ onWallpaperChange }: IndexProps = {}) => {
             <div className="grid lg:grid-cols-3 gap-6">
               <div className="lg:col-span-2 space-y-6">
                 <Collapsible defaultOpen>
-                  <CollapsibleTrigger className="w-full">
-                    <div className="flex items-center justify-between w-full mb-4">
-                      <h2 className="text-xl font-semibold">{getCategoryName('income')}</h2>
-                      <ChevronDown className="h-5 w-5 transition-transform duration-200 [[data-state=open]>&]:rotate-180" />
+                  <CollapsibleTrigger className="w-full group">
+                    <div className="flex items-center justify-between w-full p-4 rounded-xl bg-gradient-gold shadow-gold hover:shadow-premium transition-all duration-300 mb-4">
+                      <h2 className="text-xl font-bold text-foreground flex items-center gap-2">
+                        <TrendingUp className="h-5 w-5 text-primary" />
+                        {getCategoryName('income')}
+                      </h2>
+                      <ChevronDown className="h-5 w-5 text-primary transition-transform duration-300 group-data-[state=open]:rotate-180" />
                     </div>
                   </CollapsibleTrigger>
                   <CollapsibleContent>
@@ -302,10 +305,13 @@ const Index = ({ onWallpaperChange }: IndexProps = {}) => {
                 </Collapsible>
 
                 <Collapsible defaultOpen>
-                  <CollapsibleTrigger className="w-full">
-                    <div className="flex items-center justify-between w-full mb-4">
-                      <h2 className="text-xl font-semibold">{getCategoryName('debts')}</h2>
-                      <ChevronDown className="h-5 w-5 transition-transform duration-200 [[data-state=open]>&]:rotate-180" />
+                  <CollapsibleTrigger className="w-full group">
+                    <div className="flex items-center justify-between w-full p-4 rounded-xl bg-gradient-debt shadow-gold hover:shadow-premium transition-all duration-300 mb-4">
+                      <h2 className="text-xl font-bold text-debt-foreground flex items-center gap-2">
+                        <TrendingUp className="h-5 w-5" />
+                        {getCategoryName('debts')}
+                      </h2>
+                      <ChevronDown className="h-5 w-5 text-debt-foreground transition-transform duration-300 group-data-[state=open]:rotate-180" />
                     </div>
                   </CollapsibleTrigger>
                   <CollapsibleContent>
@@ -314,10 +320,13 @@ const Index = ({ onWallpaperChange }: IndexProps = {}) => {
                 </Collapsible>
 
                 <Collapsible defaultOpen>
-                  <CollapsibleTrigger className="w-full">
-                    <div className="flex items-center justify-between w-full mb-4">
-                      <h2 className="text-xl font-semibold">{getCategoryName('fixedExpenses')}</h2>
-                      <ChevronDown className="h-5 w-5 transition-transform duration-200 [[data-state=open]>&]:rotate-180" />
+                  <CollapsibleTrigger className="w-full group">
+                    <div className="flex items-center justify-between w-full p-4 rounded-xl bg-gradient-accent shadow-gold hover:shadow-premium transition-all duration-300 mb-4">
+                      <h2 className="text-xl font-bold text-accent-foreground flex items-center gap-2">
+                        <TrendingUp className="h-5 w-5" />
+                        {getCategoryName('fixedExpenses')}
+                      </h2>
+                      <ChevronDown className="h-5 w-5 text-accent-foreground transition-transform duration-300 group-data-[state=open]:rotate-180" />
                     </div>
                   </CollapsibleTrigger>
                   <CollapsibleContent>
@@ -326,10 +335,13 @@ const Index = ({ onWallpaperChange }: IndexProps = {}) => {
                 </Collapsible>
 
                 <Collapsible defaultOpen>
-                  <CollapsibleTrigger className="w-full">
-                    <div className="flex items-center justify-between w-full mb-4">
-                      <h2 className="text-xl font-semibold">{getCategoryName('variableExpenses')}</h2>
-                      <ChevronDown className="h-5 w-5 transition-transform duration-200 [[data-state=open]>&]:rotate-180" />
+                  <CollapsibleTrigger className="w-full group">
+                    <div className="flex items-center justify-between w-full p-4 rounded-xl bg-gradient-accent shadow-gold hover:shadow-premium transition-all duration-300 mb-4">
+                      <h2 className="text-xl font-bold text-accent-foreground flex items-center gap-2">
+                        <TrendingUp className="h-5 w-5" />
+                        {getCategoryName('variableExpenses')}
+                      </h2>
+                      <ChevronDown className="h-5 w-5 text-accent-foreground transition-transform duration-300 group-data-[state=open]:rotate-180" />
                     </div>
                   </CollapsibleTrigger>
                   <CollapsibleContent>
@@ -338,10 +350,13 @@ const Index = ({ onWallpaperChange }: IndexProps = {}) => {
                 </Collapsible>
 
                 <Collapsible defaultOpen>
-                  <CollapsibleTrigger className="w-full">
-                    <div className="flex items-center justify-between w-full mb-4">
-                      <h2 className="text-xl font-semibold">{getCategoryName('emergencyFund')}</h2>
-                      <ChevronDown className="h-5 w-5 transition-transform duration-200 [[data-state=open]>&]:rotate-180" />
+                  <CollapsibleTrigger className="w-full group">
+                    <div className="flex items-center justify-between w-full p-4 rounded-xl bg-gradient-income shadow-gold hover:shadow-premium transition-all duration-300 mb-4">
+                      <h2 className="text-xl font-bold text-income-foreground flex items-center gap-2">
+                        <TrendingUp className="h-5 w-5" />
+                        {getCategoryName('emergencyFund')}
+                      </h2>
+                      <ChevronDown className="h-5 w-5 text-income-foreground transition-transform duration-300 group-data-[state=open]:rotate-180" />
                     </div>
                   </CollapsibleTrigger>
                   <CollapsibleContent>
@@ -354,10 +369,13 @@ const Index = ({ onWallpaperChange }: IndexProps = {}) => {
                 </Collapsible>
 
                 <Collapsible defaultOpen>
-                  <CollapsibleTrigger className="w-full">
-                    <div className="flex items-center justify-between w-full mb-4">
-                      <h2 className="text-xl font-semibold">{getCategoryName('savingsGoals')}</h2>
-                      <ChevronDown className="h-5 w-5 transition-transform duration-200 [[data-state=open]>&]:rotate-180" />
+                  <CollapsibleTrigger className="w-full group">
+                    <div className="flex items-center justify-between w-full p-4 rounded-xl bg-gradient-gold shadow-gold hover:shadow-premium transition-all duration-300 mb-4">
+                      <h2 className="text-xl font-bold text-foreground flex items-center gap-2">
+                        <TrendingUp className="h-5 w-5 text-primary" />
+                        {getCategoryName('savingsGoals')}
+                      </h2>
+                      <ChevronDown className="h-5 w-5 text-primary transition-transform duration-300 group-data-[state=open]:rotate-180" />
                     </div>
                   </CollapsibleTrigger>
                   <CollapsibleContent>
