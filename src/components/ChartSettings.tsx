@@ -1,8 +1,10 @@
+import { useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Label } from "@/components/ui/label";
 import { RadioGroup, RadioGroupItem } from "@/components/ui/radio-group";
 import { BarChart3 } from "lucide-react";
 import { Language } from "@/lib/i18n";
+import { supabase } from "@/integrations/supabase/client";
 
 export type ChartType = 'bar' | 'pie' | 'timeline' | 'heatmap';
 
@@ -13,6 +15,33 @@ interface ChartSettingsProps {
 }
 
 export const ChartSettings = ({ language, selectedChart, onChartChange }: ChartSettingsProps) => {
+  
+  useEffect(() => {
+    saveChartPreference(selectedChart);
+  }, [selectedChart]);
+
+  const saveChartPreference = async (chartType: ChartType) => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
+    const { data: existing } = await supabase
+      .from('app_settings')
+      .select('id')
+      .eq('user_id', user.id)
+      .maybeSingle();
+
+    if (existing) {
+      await supabase
+        .from('app_settings')
+        .update({ chart_type: chartType })
+        .eq('user_id', user.id);
+    } else {
+      await supabase
+        .from('app_settings')
+        .insert({ user_id: user.id, chart_type: chartType });
+    }
+  };
+
   const chartOptions = [
     { 
       value: 'bar' as ChartType, 

@@ -9,10 +9,11 @@ import { EnhancedFinancialCharts } from "@/components/EnhancedFinancialCharts";
 import { WallpaperSettings } from "@/components/WallpaperSettings";
 import { ChartSettings, ChartType } from "@/components/ChartSettings";
 import { BudgetSummary } from "@/components/BudgetSummary";
-import { ImprovedDebtForecast } from "@/components/ImprovedDebtForecast";
 import { EnhancedDebtAdvisor } from "@/components/EnhancedDebtAdvisor";
 import { CalendarView } from "@/components/CalendarView";
 import { LanguageToggle } from "@/components/LanguageToggle";
+import { FinancialAdvisor } from "@/components/FinancialAdvisor";
+import { ExcelManager } from "@/components/ExcelManager";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Calculator, LogOut } from "lucide-react";
@@ -51,8 +52,38 @@ const Index = ({ onWallpaperChange }: IndexProps = {}) => {
     return () => subscription.unsubscribe();
   }, []);
 
+  const loadChartPreference = async (userId: string) => {
+    const { data } = await supabase
+      .from('app_settings')
+      .select('chart_type')
+      .eq('user_id', userId)
+      .maybeSingle();
+
+    if (data?.chart_type) {
+      setChartType(data.chart_type as ChartType);
+    }
+  };
+
   const handleSignOut = async () => {
     await supabase.auth.signOut();
+  };
+
+  const reloadData = () => {
+    if (user) {
+      const loadData = async () => {
+        const [incomeResult, debtResult, fixedResult] = await Promise.all([
+          supabase.from("income_sources").select("*").order("created_at"),
+          supabase.from("debts").select("*").order("created_at"),
+          supabase.from("fixed_expenses").select("*").order("created_at")
+        ]);
+        
+        if (incomeResult.data) setIncomeData(incomeResult.data);
+        if (debtResult.data) setDebtData(debtResult.data);
+        if (fixedResult.data) setFixedExpensesData(fixedResult.data);
+      };
+      
+      loadData();
+    }
   };
 
   // Load data for calendar and advisor
@@ -187,21 +218,25 @@ const Index = ({ onWallpaperChange }: IndexProps = {}) => {
             <CalendarView payments={calendarPayments} language={language} />
           </TabsContent>
 
-          <TabsContent value="advisor">
+          <TabsContent value="advisor" className="space-y-6">
             <EnhancedDebtAdvisor 
               debts={debtAdvisorData.map((d, i) => ({ ...d, id: debtData[i]?.id }))} 
               extraPayment={availableForDebt > 0 ? availableForDebt : 0}
               language={language} 
             />
+            <FinancialAdvisor language={language} />
           </TabsContent>
 
           <TabsContent value="settings" className="space-y-6">
-            <ChartSettings 
-              language={language}
-              selectedChart={chartType}
-              onChartChange={setChartType}
-            />
-            <WallpaperSettings language={language} onWallpaperChange={onWallpaperChange || (() => {})} />
+            <div className="grid md:grid-cols-2 gap-6">
+              <ChartSettings 
+                language={language}
+                selectedChart={chartType}
+                onChartChange={setChartType}
+              />
+              <WallpaperSettings language={language} onWallpaperChange={onWallpaperChange || (() => {})} />
+            </div>
+            <ExcelManager language={language} onDataImported={reloadData} />
           </TabsContent>
         </Tabs>
 

@@ -16,6 +16,7 @@ export type Database = {
     Tables: {
       app_settings: {
         Row: {
+          chart_type: string | null
           created_at: string
           id: string
           updated_at: string
@@ -23,6 +24,7 @@ export type Database = {
           wallpaper_url: string | null
         }
         Insert: {
+          chart_type?: string | null
           created_at?: string
           id?: string
           updated_at?: string
@@ -30,6 +32,7 @@ export type Database = {
           wallpaper_url?: string | null
         }
         Update: {
+          chart_type?: string | null
           created_at?: string
           id?: string
           updated_at?: string

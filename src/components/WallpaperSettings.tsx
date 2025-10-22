@@ -40,9 +40,7 @@ export const WallpaperSettings = ({ language, onWallpaperChange }: WallpaperSett
     }
   };
 
-  const saveWallpaper = async () => {
-    if (!wallpaperUrl.trim()) return;
-
+  const applyWallpaper = async (url: string) => {
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
 
@@ -55,27 +53,34 @@ export const WallpaperSettings = ({ language, onWallpaperChange }: WallpaperSett
     if (existing) {
       const { error } = await supabase
         .from('app_settings')
-        .update({ wallpaper_url: wallpaperUrl })
+        .update({ wallpaper_url: url })
         .eq('user_id', user.id);
 
-      if (error) {
-        toast({ title: "Error", description: "Failed to update wallpaper", variant: "destructive" });
-        return;
-      }
+      if (error) throw error;
     } else {
       const { error } = await supabase
         .from('app_settings')
-        .insert({ user_id: user.id, wallpaper_url: wallpaperUrl });
+        .insert({ user_id: user.id, wallpaper_url: url });
 
-      if (error) {
-        toast({ title: "Error", description: "Failed to save wallpaper", variant: "destructive" });
-        return;
-      }
+      if (error) throw error;
     }
 
-    setCurrentWallpaper(wallpaperUrl);
-    onWallpaperChange(wallpaperUrl);
-    toast({ title: "Success", description: "Wallpaper updated successfully" });
+    setCurrentWallpaper(url);
+    onWallpaperChange(url);
+  };
+
+  const saveWallpaper = async () => {
+    if (!wallpaperUrl.trim()) return;
+    setIsUploading(true);
+
+    try {
+      await applyWallpaper(wallpaperUrl);
+      toast({ title: "Success", description: "Wallpaper updated successfully" });
+    } catch (error) {
+      toast({ title: "Error", description: "Failed to update wallpaper", variant: "destructive" });
+    } finally {
+      setIsUploading(false);
+    }
   };
 
   const removeWallpaper = async () => {
@@ -108,62 +113,32 @@ export const WallpaperSettings = ({ language, onWallpaperChange }: WallpaperSett
     }
 
     setIsUploading(true);
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) {
-      setIsUploading(false);
-      return;
-    }
+    
+    try {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("Not authenticated");
 
-    const fileExt = file.name.split('.').pop();
-    const fileName = `${user.id}/${Date.now()}.${fileExt}`;
+      const fileExt = file.name.split('.').pop();
+      const fileName = `${user.id}/${Date.now()}.${fileExt}`;
 
-    const { error: uploadError } = await supabase.storage
-      .from('wallpapers')
-      .upload(fileName, file, { upsert: true });
+      const { error: uploadError } = await supabase.storage
+        .from('wallpapers')
+        .upload(fileName, file, { upsert: true });
 
-    if (uploadError) {
+      if (uploadError) throw uploadError;
+
+      const { data: { publicUrl } } = supabase.storage
+        .from('wallpapers')
+        .getPublicUrl(fileName);
+
+      await applyWallpaper(publicUrl);
+      toast({ title: "Success", description: "Wallpaper uploaded successfully" });
+    } catch (error) {
+      console.error(error);
       toast({ title: "Error", description: "Failed to upload image", variant: "destructive" });
+    } finally {
       setIsUploading(false);
-      return;
     }
-
-    const { data: { publicUrl } } = supabase.storage
-      .from('wallpapers')
-      .getPublicUrl(fileName);
-
-    const { data: existing } = await supabase
-      .from('app_settings')
-      .select('id')
-      .eq('user_id', user.id)
-      .maybeSingle();
-
-    if (existing) {
-      const { error } = await supabase
-        .from('app_settings')
-        .update({ wallpaper_url: publicUrl })
-        .eq('user_id', user.id);
-
-      if (error) {
-        toast({ title: "Error", description: "Failed to save wallpaper", variant: "destructive" });
-        setIsUploading(false);
-        return;
-      }
-    } else {
-      const { error } = await supabase
-        .from('app_settings')
-        .insert({ user_id: user.id, wallpaper_url: publicUrl });
-
-      if (error) {
-        toast({ title: "Error", description: "Failed to save wallpaper", variant: "destructive" });
-        setIsUploading(false);
-        return;
-      }
-    }
-
-    setCurrentWallpaper(publicUrl);
-    onWallpaperChange(publicUrl);
-    setIsUploading(false);
-    toast({ title: "Success", description: "Wallpaper uploaded successfully" });
   };
 
   return (
@@ -250,31 +225,10 @@ export const WallpaperSettings = ({ language, onWallpaperChange }: WallpaperSett
             </p>
           </div>
 
-          <Button onClick={saveWallpaper} className="w-full" disabled={!wallpaperUrl.trim()}>
-            {language === 'en' ? 'Apply URL Wallpaper' : 'Aplicar Fondo por URL'}
-          </Button>
-        </div>
-
-          <div className="space-y-2">
-            <Label htmlFor="wallpaper-url">
-              {language === 'en' ? 'Image URL' : 'URL de Imagen'}
-            </Label>
-            <Input
-              id="wallpaper-url"
-              type="url"
-              value={wallpaperUrl}
-              onChange={(e) => setWallpaperUrl(e.target.value)}
-              placeholder="https://example.com/image.jpg"
-            />
-            <p className="text-xs text-muted-foreground">
-              {language === 'en' 
-                ? 'Enter a URL to an image you want to use as wallpaper' 
-                : 'Ingresa la URL de una imagen que quieras usar como fondo'}
-            </p>
-          </div>
-
-          <Button onClick={saveWallpaper} className="w-full" disabled={!wallpaperUrl.trim()}>
-            {language === 'en' ? 'Apply URL Wallpaper' : 'Aplicar Fondo por URL'}
+          <Button onClick={saveWallpaper} className="w-full" disabled={!wallpaperUrl.trim() || isUploading}>
+            {isUploading 
+              ? (language === 'en' ? 'Applying...' : 'Aplicando...') 
+              : (language === 'en' ? 'Apply URL Wallpaper' : 'Aplicar Fondo por URL')}
           </Button>
         </div>
       </CardContent>
