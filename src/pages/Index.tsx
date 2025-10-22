@@ -269,7 +269,7 @@ const Index = ({ onWallpaperChange }: IndexProps = {}) => {
               totalDebts={totalDebts}
               totalFixedExpenses={totalFixedExpenses}
               totalVariableExpenses={totalVariableExpenses}
-              totalSavingsContributions={totalSavingsContributions}
+              totalSavingsAccumulated={emergencyFund + totalSavings}
               language={language}
               chartType={chartType}
             />

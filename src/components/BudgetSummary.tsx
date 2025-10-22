@@ -15,8 +15,8 @@ interface BudgetSummaryProps {
 export const BudgetSummary = ({ totalIncome, totalDebts, totalFixedExpenses, totalVariableExpenses, totalSavingsGoals, monthlyEmergencyContribution, language }: BudgetSummaryProps) => {
   const t = (key: string) => getTranslation(language, key);
   const totalExpenses = totalDebts + totalFixedExpenses + totalVariableExpenses;
-  const totalSavings = totalSavingsGoals + monthlyEmergencyContribution;
-  const monthlyBalance = totalIncome - totalExpenses - totalSavings;
+  const monthlySavingsCommitments = totalSavingsGoals + monthlyEmergencyContribution;
+  const monthlyBalance = totalIncome - totalExpenses - monthlySavingsCommitments;
   const estimatedSavings = monthlyBalance > 0 ? monthlyBalance : 0;
   const weeklyBalance = monthlyBalance / 4;
   const isPositive = monthlyBalance >= 0;
@@ -47,22 +47,18 @@ export const BudgetSummary = ({ totalIncome, totalDebts, totalFixedExpenses, tot
                 <p>{t('debts')}: {formatCurrency(totalDebts)}</p>
                 <p>{t('fixed')}: {formatCurrency(totalFixedExpenses)}</p>
                 <p>{t('variable')}: {formatCurrency(totalVariableExpenses)}</p>
-              </div>
-            </div>
-            <div className="space-y-1">
-              <p className="text-sm text-muted-foreground">{language === 'en' ? 'Total Savings' : 'Ahorros Totales'}</p>
-              <p className="text-2xl font-bold text-success">
-                {formatCurrency(totalSavings)}
-              </p>
-              <div className="text-xs text-muted-foreground space-y-0.5 pt-2">
-                <p className="flex items-center gap-1">
-                  <PiggyBank className="h-3 w-3" />
-                  {language === 'en' ? 'Goals' : 'Metas'}: {formatCurrency(totalSavingsGoals)}
-                </p>
-                <p className="flex items-center gap-1">
-                  <Shield className="h-3 w-3" />
-                  {language === 'en' ? 'Emergency' : 'Emergencia'}: {formatCurrency(monthlyEmergencyContribution)}
-                </p>
+                {monthlySavingsCommitments > 0 && (
+                  <>
+                    <p className="flex items-center gap-1 pt-1 border-t border-muted mt-1">
+                      <PiggyBank className="h-3 w-3" />
+                      {language === 'en' ? 'Savings Goals' : 'Metas de Ahorro'}: {formatCurrency(totalSavingsGoals)}
+                    </p>
+                    <p className="flex items-center gap-1">
+                      <Shield className="h-3 w-3" />
+                      {language === 'en' ? 'Emergency Fund' : 'Fondo de Emergencia'}: {formatCurrency(monthlyEmergencyContribution)}
+                    </p>
+                  </>
+                )}
               </div>
             </div>
           </div>

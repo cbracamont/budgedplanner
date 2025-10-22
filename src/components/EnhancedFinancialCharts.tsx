@@ -9,7 +9,7 @@ interface EnhancedFinancialChartsProps {
   totalDebts: number;
   totalFixedExpenses: number;
   totalVariableExpenses: number;
-  totalSavingsContributions: number;
+  totalSavingsAccumulated: number;
   language: Language;
   chartType: ChartType;
 }
@@ -19,17 +19,17 @@ export const EnhancedFinancialCharts = ({
   totalDebts,
   totalFixedExpenses,
   totalVariableExpenses,
-  totalSavingsContributions,
+  totalSavingsAccumulated,
   language,
   chartType
 }: EnhancedFinancialChartsProps) => {
-  const availableForSavings = totalIncome - (totalDebts + totalFixedExpenses + totalVariableExpenses + totalSavingsContributions);
+  const availableForSavings = totalIncome - (totalDebts + totalFixedExpenses + totalVariableExpenses);
 
   const pieData = [
     { name: language === 'en' ? 'Debts' : 'Deudas', value: totalDebts, color: 'hsl(var(--debt))' },
     { name: language === 'en' ? 'Fixed Expenses' : 'Gastos Fijos', value: totalFixedExpenses, color: 'hsl(var(--warning))' },
     { name: language === 'en' ? 'Variable Expenses' : 'Gastos Variables', value: totalVariableExpenses, color: 'hsl(var(--primary))' },
-    { name: language === 'en' ? 'Savings' : 'Ahorros', value: totalSavingsContributions, color: 'hsl(var(--success))' },
+    { name: language === 'en' ? 'Accumulated Savings' : 'Ahorros Acumulados', value: totalSavingsAccumulated, color: 'hsl(var(--success))' },
     { name: language === 'en' ? 'Available' : 'Disponible', value: Math.max(0, availableForSavings), color: 'hsl(var(--muted))' }
   ].filter(item => item.value > 0);
 
@@ -45,8 +45,8 @@ export const EnhancedFinancialCharts = ({
       fill: 'hsl(var(--destructive))'
     },
     {
-      name: language === 'en' ? 'Savings' : 'Ahorros',
-      value: totalSavingsContributions,
+      name: language === 'en' ? 'Accumulated Savings' : 'Ahorros Acumulados',
+      value: totalSavingsAccumulated,
       fill: 'hsl(var(--success))'
     },
     {
@@ -70,8 +70,8 @@ export const EnhancedFinancialCharts = ({
     { category: language === 'en' ? 'Debts' : 'Deudas', amount: totalDebts },
     { category: language === 'en' ? 'Fixed' : 'Fijos', amount: totalFixedExpenses },
     { category: language === 'en' ? 'Variable' : 'Variables', amount: totalVariableExpenses },
-    { category: language === 'en' ? 'Savings' : 'Ahorros', amount: totalSavingsContributions },
-  ];
+    { category: language === 'en' ? 'Accumulated Savings' : 'Ahorros Acumulados', amount: totalSavingsAccumulated },
+  ].filter(item => item.amount > 0);
 
   const renderChart = () => {
     switch (chartType) {
