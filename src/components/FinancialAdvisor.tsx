@@ -86,6 +86,7 @@ export const FinancialAdvisor = ({ language }: FinancialAdvisorProps) => {
           <div className="space-y-4">
             {messages.length === 0 && (
               <div className="text-center text-muted-foreground py-8">
+                <div className="text-4xl mb-2">🤖💰</div>
                 {language === 'en' 
                   ? 'Ask me anything about your finances!' 
                   : '¡Pregúntame lo que quieras sobre tus finanzas!'}
@@ -94,8 +95,11 @@ export const FinancialAdvisor = ({ language }: FinancialAdvisorProps) => {
             {messages.map((msg, idx) => (
               <div
                 key={idx}
-                className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'}`}
+                className={`flex ${msg.role === 'user' ? 'justify-end' : 'justify-start'} gap-2`}
               >
+                {msg.role === 'assistant' && (
+                  <div className="text-2xl mt-1">🤖</div>
+                )}
                 <div
                   className={`max-w-[80%] rounded-lg px-4 py-2 ${
                     msg.role === 'user'
@@ -109,10 +113,14 @@ export const FinancialAdvisor = ({ language }: FinancialAdvisorProps) => {
                     </ReactMarkdown>
                   </div>
                 </div>
+                {msg.role === 'user' && (
+                  <div className="text-2xl mt-1">👤</div>
+                )}
               </div>
             ))}
             {isLoading && (
-              <div className="flex justify-start">
+              <div className="flex justify-start gap-2">
+                <div className="text-2xl mt-1">🤖</div>
                 <div className="bg-muted rounded-lg px-4 py-2">
                   <Loader2 className="h-4 w-4 animate-spin" />
                 </div>
