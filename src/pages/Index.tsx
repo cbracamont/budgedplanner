@@ -167,7 +167,6 @@ const Index = ({ onWallpaperChange }: IndexProps = {}) => {
                 <FixedExpensesManager language={language} onExpensesChange={setTotalFixedExpenses} />
                 <VariableExpensesManager onExpensesChange={setTotalVariableExpenses} language={language} />
                 <EnhancedSavingsManager language={language} availableToSave={availableForSavings} />
-                <ImprovedDebtForecast totalDebts={totalDebts} language={language} />
               </div>
 
               <div className="lg:col-span-1">

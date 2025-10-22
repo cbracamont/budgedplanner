@@ -25,6 +25,48 @@ export const EnhancedDebtAdvisor = ({ debts, extraPayment, language }: EnhancedD
   const [selectedDebtId, setSelectedDebtId] = useState<string>("");
   const [customExtraPayment, setCustomExtraPayment] = useState(extraPayment.toString());
 
+  // Calculate total debt-free date for ALL debts
+  const calculateTotalDebtFreeDate = () => {
+    if (debts.length === 0) return null;
+    
+    let remainingDebts = [...debts].map(d => ({ ...d }));
+    let month = 0;
+    const monthlyPayment = debts.reduce((sum, d) => sum + d.minimumPayment, 0) + (parseFloat(customExtraPayment) || 0);
+    
+    // Sort debts by APR (Avalanche method)
+    remainingDebts.sort((a, b) => b.apr - a.apr);
+    
+    while (remainingDebts.some(d => d.balance > 0)) {
+      month++;
+      if (month > 1200) break; // Safety check (100 years max)
+      
+      let extraAvailable = parseFloat(customExtraPayment) || 0;
+      
+      // Apply minimum payments
+      remainingDebts.forEach(debt => {
+        if (debt.balance > 0) {
+          const monthlyRate = debt.apr / 100 / 12;
+          const interest = debt.balance * monthlyRate;
+          const payment = Math.min(debt.minimumPayment, debt.balance + interest);
+          debt.balance = debt.balance + interest - payment;
+        }
+      });
+      
+      // Apply extra payment to highest APR debt
+      for (let i = 0; i < remainingDebts.length && extraAvailable > 0; i++) {
+        if (remainingDebts[i].balance > 0) {
+          const payment = Math.min(extraAvailable, remainingDebts[i].balance);
+          remainingDebts[i].balance -= payment;
+          extraAvailable -= payment;
+        }
+      }
+    }
+    
+    const debtFreeDate = new Date();
+    debtFreeDate.setMonth(debtFreeDate.getMonth() + month);
+    return debtFreeDate;
+  };
+
   const calculateDebtFreeDate = (debt: Debt, additionalPayment: number = 0) => {
     const monthlyPayment = debt.minimumPayment + additionalPayment;
     const monthlyRate = debt.apr / 100 / 12;
@@ -104,6 +146,7 @@ export const EnhancedDebtAdvisor = ({ debts, extraPayment, language }: EnhancedD
     return recommendations;
   };
 
+  const totalDebtFreeDate = calculateTotalDebtFreeDate();
   const selectedDebt = debts.find(d => d.name === selectedDebtId);
   const monthsToPayoff = selectedDebt ? calculateDebtFreeDate(selectedDebt, parseFloat(customExtraPayment) || 0) : 0;
   const debtFreeDate = selectedDebt ? new Date(Date.now() + monthsToPayoff * 30 * 24 * 60 * 60 * 1000) : null;
@@ -157,16 +200,41 @@ export const EnhancedDebtAdvisor = ({ debts, extraPayment, language }: EnhancedD
           </div>
         </div>
 
-        {/* Projected Debt-Free Date */}
-        {selectedDebt && parseFloat(customExtraPayment) > 0 && (
+        {/* Total Debt-Free Date */}
+        {totalDebtFreeDate && debts.length > 0 && (
           <div className="p-4 bg-success/10 rounded-lg border border-success/20">
             <div className="flex items-start gap-3">
               <Calendar className="h-5 w-5 text-success mt-1" />
               <div className="space-y-2">
                 <p className="font-semibold text-foreground">
-                  {language === 'en' ? 'Projected Debt-Free Date for' : 'Fecha Proyectada Libre de Deuda para'} {selectedDebt.name}:
+                  {language === 'en' ? 'Projected Debt-Free Date (All Debts):' : 'Fecha Proyectada Libre de Todas las Deudas:'}
                 </p>
                 <p className="text-2xl font-bold text-success">
+                  {totalDebtFreeDate?.toLocaleDateString(language === 'en' ? 'en-GB' : 'es-ES', { 
+                    month: 'long', 
+                    year: 'numeric' 
+                  })}
+                </p>
+                <p className="text-sm text-muted-foreground">
+                  {language === 'en' 
+                    ? 'Combining all debts with current payment strategy' 
+                    : 'Combinando todas las deudas con la estrategia de pago actual'}
+                </p>
+              </div>
+            </div>
+          </div>
+        )}
+
+        {/* Projected Debt-Free Date for Individual Debt */}
+        {selectedDebt && parseFloat(customExtraPayment) > 0 && (
+          <div className="p-4 bg-primary/10 rounded-lg border border-primary/20">
+            <div className="flex items-start gap-3">
+              <Calendar className="h-5 w-5 text-primary mt-1" />
+              <div className="space-y-2">
+                <p className="font-semibold text-foreground">
+                  {language === 'en' ? 'Individual Debt Payoff for' : 'Pago Individual de Deuda para'} {selectedDebt.name}:
+                </p>
+                <p className="text-2xl font-bold text-primary">
                   {debtFreeDate?.toLocaleDateString(language === 'en' ? 'en-GB' : 'es-ES', { 
                     month: 'long', 
                     year: 'numeric' 

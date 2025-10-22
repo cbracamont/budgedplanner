@@ -49,7 +49,12 @@ export const VariableExpensesManager = ({ onExpensesChange, language }: Variable
       .eq('user_id', user.id);
 
     if (!error && data) {
-      setExpenses(data);
+      // Map to ensure name exists with fallback
+      setExpenses(data.map(exp => ({
+        id: exp.id,
+        name: exp.name || 'Unnamed Expense',
+        amount: exp.amount
+      })));
     }
   };
 

@@ -254,6 +254,7 @@ export type Database = {
           category_id: string | null
           created_at: string
           id: string
+          name: string | null
           updated_at: string
           user_id: string
         }
@@ -262,6 +263,7 @@ export type Database = {
           category_id?: string | null
           created_at?: string
           id?: string
+          name?: string | null
           updated_at?: string
           user_id: string
         }
@@ -270,6 +272,7 @@ export type Database = {
           category_id?: string | null
           created_at?: string
           id?: string
+          name?: string | null
           updated_at?: string
           user_id?: string
         }
