@@ -29,6 +29,7 @@ import { ExcelManager } from "@/components/ExcelManager";
 import { DailyRecommendations } from "@/components/DailyRecommendations";
 import { SavingsGoalsManager } from "@/components/SavingsGoalsManager";
 import { CategoryNameEditor } from "@/components/CategoryNameEditor";
+import { DisclaimerBanner } from "@/components/DisclaimerBanner";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Calculator, LogOut } from "lucide-react";
@@ -232,7 +233,12 @@ const Index = ({ onWallpaperChange }: IndexProps = {}) => {
   const availableForSavings = totalIncome - totalDebts - totalFixedExpenses - totalVariableExpenses - totalSavingsContributions;
 
   if (!user) {
-    return <Auth />;
+    return (
+      <>
+        <Auth />
+        <DisclaimerBanner language={language} />
+      </>
+    );
   }
 
   return (
@@ -455,6 +461,7 @@ const Index = ({ onWallpaperChange }: IndexProps = {}) => {
           <p>{t('calculationsNote')}</p>
         </footer>
       </div>
+      <DisclaimerBanner language={language} />
     </div>
   );
 };
