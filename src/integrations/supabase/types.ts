@@ -219,6 +219,8 @@ export type Database = {
           goal_description: string | null
           goal_name: string
           id: string
+          is_active: boolean | null
+          monthly_contribution: number | null
           target_amount: number
           target_date: string | null
           updated_at: string
@@ -230,6 +232,8 @@ export type Database = {
           goal_description?: string | null
           goal_name: string
           id?: string
+          is_active?: boolean | null
+          monthly_contribution?: number | null
           target_amount?: number
           target_date?: string | null
           updated_at?: string
@@ -241,6 +245,8 @@ export type Database = {
           goal_description?: string | null
           goal_name?: string
           id?: string
+          is_active?: boolean | null
+          monthly_contribution?: number | null
           target_amount?: number
           target_date?: string | null
           updated_at?: string
