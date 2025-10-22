@@ -42,7 +42,7 @@ export const WallpaperSettings = ({ language, onWallpaperChange }: WallpaperSett
 
   const applyWallpaper = async (url: string) => {
     const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
+    if (!user) return false;
 
     const { data: existing } = await supabase
       .from('app_settings')
@@ -66,7 +66,9 @@ export const WallpaperSettings = ({ language, onWallpaperChange }: WallpaperSett
     }
 
     setCurrentWallpaper(url);
+    setWallpaperUrl("");
     onWallpaperChange(url);
+    return true;
   };
 
   const saveWallpaper = async () => {

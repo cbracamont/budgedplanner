@@ -92,7 +92,7 @@ export const DebtsManager = ({ language, onDebtsChange }: DebtsManagerProps) => 
     };
 
     if (isInstallment) {
-      debtData.total_amount = parseFloat(parseFloat(newDebt.total_amount).toFixed(2));
+      debtData.total_amount = debtData.balance;
       debtData.number_of_installments = parseInt(newDebt.number_of_installments);
       debtData.installment_amount = parseFloat(parseFloat(newDebt.installment_amount).toFixed(2));
       debtData.start_date = newDebt.start_date;
@@ -259,18 +259,6 @@ export const DebtsManager = ({ language, onDebtsChange }: DebtsManagerProps) => 
             {isInstallment && (
               <>
                 <div className="space-y-2">
-                  <Label htmlFor="total-amount">{language === 'en' ? 'Total Amount' : 'Monto Total'}</Label>
-                  <Input
-                    id="total-amount"
-                    type="number"
-                    step="0.01"
-                    placeholder="0.00"
-                    value={newDebt.total_amount}
-                    onChange={(e) => setNewDebt({ ...newDebt, total_amount: e.target.value })}
-                    required
-                  />
-                </div>
-                <div className="space-y-2">
                   <Label htmlFor="num-installments">{language === 'en' ? 'Number of Installments' : 'Número de Cuotas'}</Label>
                   <Input
                     id="num-installments"
@@ -279,7 +267,7 @@ export const DebtsManager = ({ language, onDebtsChange }: DebtsManagerProps) => 
                     value={newDebt.number_of_installments}
                     onChange={(e) => {
                       const numInstallments = parseInt(e.target.value);
-                      const totalAmt = parseFloat(newDebt.total_amount);
+                      const balance = parseFloat(newDebt.balance);
                       const startDate = newDebt.start_date;
                       let endDate = "";
                       
@@ -292,8 +280,8 @@ export const DebtsManager = ({ language, onDebtsChange }: DebtsManagerProps) => 
                       setNewDebt({ 
                         ...newDebt, 
                         number_of_installments: e.target.value,
-                        installment_amount: (!isNaN(totalAmt) && numInstallments > 0) 
-                          ? (totalAmt / numInstallments).toFixed(2) 
+                        installment_amount: (!isNaN(balance) && numInstallments > 0) 
+                          ? (balance / numInstallments).toFixed(2) 
                           : "",
                         end_date: endDate
                       });
