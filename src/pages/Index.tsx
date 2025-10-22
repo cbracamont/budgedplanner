@@ -147,7 +147,12 @@ const Index = ({ onWallpaperChange }: IndexProps = {}) => {
     queryClient.invalidateQueries({ queryKey: ["savings"] });
   };
 
-  const totalSavingsContributions = totalActiveSavingsGoals + monthlyEmergencyContribution;
+  const monthlySavingsGoal = useMemo(() => 
+    savings?.monthly_goal || 0,
+    [savings]
+  );
+
+  const totalSavingsContributions = totalActiveSavingsGoals + monthlyEmergencyContribution + monthlySavingsGoal;
 
   // Calculate payments for calendar with IDs and source tables
   const calendarPayments = [

@@ -22,6 +22,7 @@ export const SavingsManager = ({ language, availableToSave }: SavingsManagerProp
   const [monthlyGoal, setMonthlyGoal] = useState("");
   const [totalAccumulated, setTotalAccumulated] = useState(0);
   const [savingsId, setSavingsId] = useState<string | null>(null);
+  const [customSavingsAmount, setCustomSavingsAmount] = useState("");
 
   useEffect(() => {
     loadSavings();
@@ -122,6 +123,33 @@ export const SavingsManager = ({ language, availableToSave }: SavingsManagerProp
               £{availableToSave.toFixed(2)}
             </span>
           </div>
+        </div>
+
+        {/* Custom Amount to Save This Month */}
+        <div className="space-y-3">
+          <Label htmlFor="custom-savings" className="text-base font-semibold flex items-center gap-2">
+            <TrendingUp className="h-4 w-4 text-primary" />
+            {language === 'en' ? 'Amount to Save This Month' : 'Monto a Ahorrar Este Mes'}
+          </Label>
+          <div className="flex gap-2">
+            <Input
+              id="custom-savings"
+              type="number"
+              step="0.01"
+              value={customSavingsAmount}
+              onChange={(e) => setCustomSavingsAmount(e.target.value)}
+              placeholder={availableToSave.toFixed(2)}
+              className="text-lg font-medium"
+            />
+            <Button onClick={() => setCustomSavingsAmount(availableToSave.toFixed(2))} variant="outline">
+              {language === 'en' ? 'Use Available' : 'Usar Disponible'}
+            </Button>
+          </div>
+          <p className="text-xs text-muted-foreground">
+            {language === 'en' 
+              ? 'This amount will be deducted from your monthly budget' 
+              : 'Este monto será descontado de tu presupuesto mensual'}
+          </p>
         </div>
 
         {/* Monthly Goal */}
