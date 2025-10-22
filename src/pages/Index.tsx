@@ -15,7 +15,8 @@ import { IncomeManager } from "@/components/IncomeManager";
 import { DebtsManager } from "@/components/DebtsManager";
 import { FixedExpensesManager } from "@/components/FixedExpensesManager";
 import { VariableExpensesManager } from "@/components/VariableExpensesManager";
-import { EnhancedSavingsManager } from "@/components/EnhancedSavingsManager";
+import { EmergencyFundManager } from "@/components/EmergencyFundManager";
+import { GeneralSavingsManager } from "@/components/GeneralSavingsManager";
 import { EnhancedFinancialCharts } from "@/components/EnhancedFinancialCharts";
 import { WallpaperSettings } from "@/components/WallpaperSettings";
 import { ChartSettings, ChartType } from "@/components/ChartSettings";
@@ -351,19 +352,36 @@ const Index = ({ onWallpaperChange }: IndexProps = {}) => {
 
                 <Collapsible defaultOpen>
                   <CollapsibleTrigger className="w-full group">
+                    <div className="flex items-center justify-between w-full p-4 rounded-xl bg-gradient-to-r from-warning/20 to-warning/10 border-l-4 border-warning shadow-gold hover:shadow-premium transition-all duration-300 mb-4">
+                      <h2 className="text-xl font-bold text-foreground flex items-center gap-2">
+                        <TrendingUp className="h-5 w-5 text-warning" />
+                        {getCategoryName('emergencyFund')}
+                      </h2>
+                      <ChevronDown className="h-5 w-5 text-warning transition-transform duration-300 group-data-[state=open]:rotate-180" />
+                    </div>
+                  </CollapsibleTrigger>
+                  <CollapsibleContent>
+                    <EmergencyFundManager 
+                      language={language} 
+                      totalExpenses={totalFixedExpenses + totalVariableExpenses}
+                    />
+                  </CollapsibleContent>
+                </Collapsible>
+
+                <Collapsible defaultOpen>
+                  <CollapsibleTrigger className="w-full group">
                     <div className="flex items-center justify-between w-full p-4 rounded-xl bg-gradient-income shadow-gold hover:shadow-premium transition-all duration-300 mb-4">
                       <h2 className="text-xl font-bold text-income-foreground flex items-center gap-2">
                         <TrendingUp className="h-5 w-5" />
-                        {getCategoryName('emergencyFund')}
+                        {getCategoryName('savings')}
                       </h2>
                       <ChevronDown className="h-5 w-5 text-income-foreground transition-transform duration-300 group-data-[state=open]:rotate-180" />
                     </div>
                   </CollapsibleTrigger>
                   <CollapsibleContent>
-                    <EnhancedSavingsManager 
+                    <GeneralSavingsManager 
                       language={language} 
                       availableToSave={availableForSavings}
-                      totalExpenses={totalFixedExpenses + totalVariableExpenses}
                     />
                   </CollapsibleContent>
                 </Collapsible>
