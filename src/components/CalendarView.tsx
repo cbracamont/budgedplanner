@@ -13,10 +13,10 @@ interface PaymentItem {
   name: string;
   amount: number;
   dueDay: number;
-  category: 'income' | 'debt' | 'fixed' | 'variable';
+  category: 'income' | 'debt' | 'fixed' | 'variable' | 'savings';
   status?: 'pending' | 'paid' | 'partial';
   id?: string;
-  sourceTable?: 'income_sources' | 'debts' | 'fixed_expenses';
+  sourceTable?: 'income_sources' | 'debts' | 'fixed_expenses' | 'savings_goals';
   isAnnual?: boolean;
   paymentMonth?: number;
   // New fields to control visibility for installment debts
@@ -26,6 +26,9 @@ interface PaymentItem {
   // Progress tracking for installments
   currentInstallment?: number;
   totalInstallments?: number;
+  // For savings goals
+  targetDate?: string | null;
+  isRecurring?: boolean;
 }
 
 interface CalendarViewProps {
@@ -63,6 +66,12 @@ const getPaymentsForDay = (day: number) => {
       if (p.startDate && currentDate < new Date(p.startDate)) return false;
       if (p.endDate && currentDate > new Date(p.endDate)) return false;
     }
+    // For savings goals, show only until target date
+    if (p.category === 'savings' && p.targetDate) {
+      const currentDate = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), day);
+      const targetDate = new Date(p.targetDate);
+      if (currentDate > targetDate) return false;
+    }
     return true;
   }).map(p => {
     // Calculate current installment number for installment debts
@@ -74,6 +83,20 @@ const getPaymentsForDay = (day: number) => {
       const currentInstallment = Math.min(monthsDiff, p.totalInstallments);
       return { ...p, currentInstallment };
     }
+    // Calculate installment number for savings goals
+    if (p.category === 'savings' && p.targetDate) {
+      const today = new Date();
+      const targetDate = new Date(p.targetDate);
+      const currentDate = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), day);
+      
+      const totalMonths = Math.ceil((targetDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24 * 30));
+      const monthsPassed = Math.floor((currentDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24 * 30)) + 1;
+      
+      const currentInstallment = Math.max(1, monthsPassed);
+      const totalInstallments = Math.max(1, totalMonths);
+      
+      return { ...p, currentInstallment, totalInstallments };
+    }
     return p;
   });
 };
@@ -84,6 +107,7 @@ const getPaymentsForDay = (day: number) => {
       case 'debt': return 'bg-debt/20 text-debt border-debt';
       case 'fixed': return 'bg-warning/20 text-warning border-warning';
       case 'variable': return 'bg-primary/20 text-primary border-primary';
+      case 'savings': return 'bg-success/20 text-success border-success';
       default: return 'bg-muted text-muted-foreground border-border';
     }
   };
@@ -258,7 +282,7 @@ const getPaymentsForDay = (day: number) => {
 
           {/* Legend */}
           <div className="mt-4 md:mt-6 pt-3 md:pt-4 border-t border-border">
-            <div className="grid grid-cols-2 md:grid-cols-4 gap-2 md:gap-3">
+            <div className="grid grid-cols-2 md:grid-cols-5 gap-2 md:gap-3">
               <div className="flex items-center gap-1.5 md:gap-2">
                 <div className="w-3 h-3 md:w-4 md:h-4 rounded bg-income border border-income"></div>
                 <span className="text-xs md:text-sm text-muted-foreground">{t('income')}</span>
@@ -274,6 +298,10 @@ const getPaymentsForDay = (day: number) => {
               <div className="flex items-center gap-1.5 md:gap-2">
                 <div className="w-3 h-3 md:w-4 md:h-4 rounded bg-primary border border-primary"></div>
                 <span className="text-xs md:text-sm text-muted-foreground">{t('variable')}</span>
+              </div>
+              <div className="flex items-center gap-1.5 md:gap-2">
+                <div className="w-3 h-3 md:w-4 md:h-4 rounded bg-success border border-success"></div>
+                <span className="text-xs md:text-sm text-muted-foreground">{language === 'en' ? 'Savings' : 'Ahorros'}</span>
               </div>
             </div>
           </div>

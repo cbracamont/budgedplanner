@@ -42,6 +42,7 @@ const Index = ({ onWallpaperChange }: IndexProps = {}) => {
   const [incomeData, setIncomeData] = useState<any[]>([]);
   const [debtData, setDebtData] = useState<any[]>([]);
   const [fixedExpensesData, setFixedExpensesData] = useState<any[]>([]);
+  const [savingsGoalsData, setSavingsGoalsData] = useState<any[]>([]);
   
   const t = (key: string) => getTranslation(language, key);
 
@@ -96,16 +97,18 @@ const Index = ({ onWallpaperChange }: IndexProps = {}) => {
     if (!user) return;
     
     const loadData = async () => {
-      const [incomeResult, debtResult, fixedResult, savingsResult] = await Promise.all([
+      const [incomeResult, debtResult, fixedResult, savingsResult, savingsGoalsResult] = await Promise.all([
         supabase.from("income_sources").select("*").order("created_at"),
         supabase.from("debts").select("*").order("created_at"),
         supabase.from("fixed_expenses").select("*").order("created_at"),
-        supabase.from("savings").select("*").eq("user_id", user.id).maybeSingle()
+        supabase.from("savings").select("*").eq("user_id", user.id).maybeSingle(),
+        supabase.from("savings_goals").select("*").eq("is_active", true).order("created_at")
       ]);
       
       if (incomeResult.data) setIncomeData(incomeResult.data);
       if (debtResult.data) setDebtData(debtResult.data);
       if (fixedResult.data) setFixedExpensesData(fixedResult.data);
+      if (savingsGoalsResult.data) setSavingsGoalsData(savingsGoalsResult.data);
       if (savingsResult.data) {
         setTotalSavings(savingsResult.data.total_accumulated || 0);
         setEmergencyFund(savingsResult.data.emergency_fund || 0);
@@ -117,6 +120,11 @@ const Index = ({ onWallpaperChange }: IndexProps = {}) => {
     
     loadData();
   }, [user, totalFixedExpenses, totalVariableExpenses]);
+
+  // Calculate total active savings contributions
+  const totalActiveSavingsContributions = savingsGoalsData.reduce((sum, goal) => 
+    sum + (goal.monthly_contribution || 0), 0
+  );
 
   // Calculate payments for calendar with IDs and source tables
   const calendarPayments = [
@@ -164,6 +172,16 @@ const Index = ({ onWallpaperChange }: IndexProps = {}) => {
       sourceTable: 'fixed_expenses' as const,
       isAnnual: expense.frequency_type === 'annual',
       paymentMonth: expense.payment_month
+    })),
+    ...savingsGoalsData.map(goal => ({
+      id: goal.id,
+      name: goal.goal_name,
+      amount: goal.monthly_contribution || 0,
+      dueDay: 1, // First day of month
+      category: 'savings' as const,
+      sourceTable: 'savings_goals' as const,
+      targetDate: goal.target_date,
+      isRecurring: true
     }))
   ];
 
@@ -178,7 +196,7 @@ const Index = ({ onWallpaperChange }: IndexProps = {}) => {
     regular_apr: debt.regular_apr
   }));
 
-  const availableForDebt = totalIncome - totalDebts - totalFixedExpenses - totalVariableExpenses;
+  const availableForDebt = totalIncome - totalDebts - totalFixedExpenses - totalVariableExpenses - totalActiveSavingsContributions;
   const availableForSavings = totalIncome - totalDebts - totalFixedExpenses - totalVariableExpenses;
 
   if (!user) {
