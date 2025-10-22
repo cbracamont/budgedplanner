@@ -9,6 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 import { ScrollArea } from "@/components/ui/scroll-area";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import ReactMarkdown from "react-markdown";
+import { z } from "zod";
 
 interface Message {
   role: 'user' | 'assistant';
@@ -24,6 +25,10 @@ interface Conversation {
 interface FinancialAdvisorProps {
   language: Language;
 }
+
+const messageSchema = z.object({
+  content: z.string().trim().min(1).max(2000, "Message must be less than 2000 characters")
+});
 
 export const FinancialAdvisor = ({ language }: FinancialAdvisorProps) => {
   const { toast } = useToast();
@@ -157,6 +162,17 @@ export const FinancialAdvisor = ({ language }: FinancialAdvisorProps) => {
     e.preventDefault();
     const messageContent = customPrompt || input.trim();
     if (!messageContent || isLoading) return;
+
+    // Validate message length
+    const validation = messageSchema.safeParse({ content: messageContent });
+    if (!validation.success) {
+      toast({
+        title: language === 'en' ? "Message too long" : "Mensaje muy largo",
+        description: language === 'en' ? "Maximum 2000 characters allowed" : "Máximo 2000 caracteres permitidos",
+        variant: "destructive"
+      });
+      return;
+    }
 
     // Create conversation if none exists
     if (!currentConversationId) {

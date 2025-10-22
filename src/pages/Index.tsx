@@ -47,6 +47,7 @@ const Index = ({ onWallpaperChange }: IndexProps = {}) => {
 
   const [language, setLanguage] = useState<Language>('en');
   const [user, setUser] = useState<any>(null);
+  const [authLoading, setAuthLoading] = useState(true);
   const [chartType, setChartType] = useState<ChartType>('bar');
   const queryClient = useQueryClient();
   const { getCategoryName } = useCategoryNames(language);
@@ -117,10 +118,12 @@ const Index = ({ onWallpaperChange }: IndexProps = {}) => {
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null);
+      setAuthLoading(false);
     });
 
     const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null);
+      setAuthLoading(false);
     });
 
     return () => subscription.unsubscribe();
@@ -231,6 +234,21 @@ const Index = ({ onWallpaperChange }: IndexProps = {}) => {
 
   const availableForDebt = totalIncome - totalDebts - totalFixedExpenses - totalVariableExpenses - totalSavingsContributions;
   const availableForSavings = totalIncome - totalDebts - totalFixedExpenses - totalVariableExpenses - totalSavingsContributions;
+
+  if (authLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center bg-background">
+        <div className="text-center space-y-4">
+          <div className="animate-pulse">
+            <Calculator className="h-12 w-12 mx-auto text-primary" />
+          </div>
+          <p className="text-muted-foreground">
+            {language === 'en' ? 'Loading...' : 'Cargando...'}
+          </p>
+        </div>
+      </div>
+    );
+  }
 
   if (!user) {
     return (
