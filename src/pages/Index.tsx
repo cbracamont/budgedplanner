@@ -34,6 +34,7 @@ const Index = ({ onWallpaperChange }: IndexProps = {}) => {
   const [totalFixedExpenses, setTotalFixedExpenses] = useState(0);
   const [totalVariableExpenses, setTotalVariableExpenses] = useState(0);
   const [totalSavings, setTotalSavings] = useState(0);
+  const [totalActiveSavingsGoals, setTotalActiveSavingsGoals] = useState(0);
   const [emergencyFund, setEmergencyFund] = useState(0);
   const [emergencyFundTarget, setEmergencyFundTarget] = useState(0);
   const [chartType, setChartType] = useState<ChartType>('bar');
@@ -122,9 +123,12 @@ const Index = ({ onWallpaperChange }: IndexProps = {}) => {
   }, [user, totalFixedExpenses, totalVariableExpenses]);
 
   // Calculate total active savings contributions
-  const totalActiveSavingsContributions = savingsGoalsData.reduce((sum, goal) => 
-    sum + (goal.monthly_contribution || 0), 0
-  );
+  useEffect(() => {
+    const totalContributions = savingsGoalsData.reduce((sum, goal) => 
+      sum + (goal.monthly_contribution || 0), 0
+    );
+    setTotalActiveSavingsGoals(totalContributions);
+  }, [savingsGoalsData]);
 
   // Calculate payments for calendar with IDs and source tables
   const calendarPayments = [
@@ -196,8 +200,8 @@ const Index = ({ onWallpaperChange }: IndexProps = {}) => {
     regular_apr: debt.regular_apr
   }));
 
-  const availableForDebt = totalIncome - totalDebts - totalFixedExpenses - totalVariableExpenses - totalActiveSavingsContributions;
-  const availableForSavings = totalIncome - totalDebts - totalFixedExpenses - totalVariableExpenses;
+  const availableForDebt = totalIncome - totalDebts - totalFixedExpenses - totalVariableExpenses - totalActiveSavingsGoals;
+  const availableForSavings = totalIncome - totalDebts - totalFixedExpenses - totalVariableExpenses - totalActiveSavingsGoals;
 
   if (!user) {
     return <Auth />;
@@ -282,6 +286,7 @@ const Index = ({ onWallpaperChange }: IndexProps = {}) => {
                     totalDebts={totalDebts}
                     totalFixedExpenses={totalFixedExpenses}
                     totalVariableExpenses={totalVariableExpenses}
+                    totalSavingsGoals={totalActiveSavingsGoals}
                     language={language}
                   />
                 </div>

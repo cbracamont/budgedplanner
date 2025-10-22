@@ -7,13 +7,14 @@ interface BudgetSummaryProps {
   totalDebts: number;
   totalFixedExpenses: number;
   totalVariableExpenses: number;
+  totalSavingsGoals: number;
   language: Language;
 }
 
-export const BudgetSummary = ({ totalIncome, totalDebts, totalFixedExpenses, totalVariableExpenses, language }: BudgetSummaryProps) => {
+export const BudgetSummary = ({ totalIncome, totalDebts, totalFixedExpenses, totalVariableExpenses, totalSavingsGoals, language }: BudgetSummaryProps) => {
   const t = (key: string) => getTranslation(language, key);
   const totalExpenses = totalDebts + totalFixedExpenses + totalVariableExpenses;
-  const monthlyBalance = totalIncome - totalExpenses;
+  const monthlyBalance = totalIncome - totalExpenses - totalSavingsGoals;
   const estimatedSavings = monthlyBalance > 0 ? monthlyBalance : 0;
   const weeklyBalance = monthlyBalance / 4;
   const isPositive = monthlyBalance >= 0;
@@ -44,6 +45,7 @@ export const BudgetSummary = ({ totalIncome, totalDebts, totalFixedExpenses, tot
                 <p>{t('debts')}: {formatCurrency(totalDebts)}</p>
                 <p>{t('fixed')}: {formatCurrency(totalFixedExpenses)}</p>
                 <p>{t('variable')}: {formatCurrency(totalVariableExpenses)}</p>
+                <p>{language === 'en' ? 'Savings Goals' : 'Metas de Ahorro'}: {formatCurrency(totalSavingsGoals)}</p>
               </div>
             </div>
           </div>
