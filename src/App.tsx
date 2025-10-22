@@ -29,7 +29,13 @@ const App = () => {
 
     if (data?.wallpaper_url) {
       setWallpaperUrl(data.wallpaper_url);
+    } else {
+      setWallpaperUrl(null);
     }
+  };
+
+  const handleWallpaperChange = (url: string | null) => {
+    setWallpaperUrl(url);
   };
 
   return (
@@ -48,7 +54,7 @@ const App = () => {
           <Sonner />
           <BrowserRouter>
             <Routes>
-              <Route path="/" element={<Index onWallpaperChange={setWallpaperUrl} />} />
+              <Route path="/" element={<Index onWallpaperChange={handleWallpaperChange} />} />
               <Route path="*" element={<NotFound />} />
             </Routes>
           </BrowserRouter>
