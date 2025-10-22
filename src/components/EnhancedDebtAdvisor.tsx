@@ -4,7 +4,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
-import { TrendingDown, Lightbulb, Calendar, DollarSign } from "lucide-react";
+import { TrendingDown, Lightbulb, Calendar, PoundSterling } from "lucide-react";
 import { Language } from "@/lib/i18n";
 
 interface Debt {
@@ -169,7 +169,7 @@ export const EnhancedDebtAdvisor = ({ debts, extraPayment, language }: EnhancedD
         <div className="space-y-4 p-4 bg-secondary/50 rounded-lg">
           <div className="space-y-2">
             <Label htmlFor="debt-select" className="flex items-center gap-2">
-              <DollarSign className="h-4 w-4 text-primary" />
+              <PoundSterling className="h-4 w-4 text-primary" />
               {language === 'en' ? 'Apply Extra Payment To:' : 'Aplicar Pago Extra A:'}
             </Label>
             <Select value={selectedDebtId} onValueChange={setSelectedDebtId}>

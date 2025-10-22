@@ -56,7 +56,14 @@ export const FixedExpensesManager = ({ language, onExpensesChange }: FixedExpens
   }, []);
 
   useEffect(() => {
-    const total = expenses.reduce((sum, expense) => sum + expense.amount, 0);
+    const currentMonth = new Date().getMonth() + 1;
+    const total = expenses.reduce((sum, expense) => {
+      // Only include annual expenses if the current month matches their payment month
+      if (expense.frequency_type === 'annual') {
+        return sum + (expense.payment_month === currentMonth ? expense.amount : 0);
+      }
+      return sum + expense.amount;
+    }, 0);
     onExpensesChange(total);
   }, [expenses, onExpensesChange]);
 
