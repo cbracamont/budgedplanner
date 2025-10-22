@@ -38,7 +38,6 @@ export const SavingsGoalsManager = ({ language, availableForSavings, availableBu
   
   const [formData, setFormData] = useState({
     goal_name: "",
-    goal_description: "",
     target_amount: "",
     current_amount: "",
     target_date: ""
@@ -66,7 +65,6 @@ export const SavingsGoalsManager = ({ language, availableForSavings, availableBu
   const resetForm = () => {
     setFormData({
       goal_name: "",
-      goal_description: "",
       target_amount: "",
       current_amount: "",
       target_date: ""
@@ -80,7 +78,6 @@ export const SavingsGoalsManager = ({ language, availableForSavings, availableBu
 
     const goalData = {
       goal_name: formData.goal_name,
-      goal_description: formData.goal_description,
       target_amount: parseFloat(formData.target_amount) || 0,
       current_amount: parseFloat(formData.current_amount) || 0,
       target_date: formData.target_date || null
@@ -135,7 +132,6 @@ export const SavingsGoalsManager = ({ language, availableForSavings, availableBu
     setEditingGoal(goal);
     setFormData({
       goal_name: goal.goal_name,
-      goal_description: goal.goal_description || "",
       target_amount: goal.target_amount.toString(),
       current_amount: goal.current_amount.toString(),
       target_date: goal.target_date || ""
@@ -229,33 +225,27 @@ export const SavingsGoalsManager = ({ language, availableForSavings, availableBu
                     placeholder={language === 'en' ? 'e.g., Vacation, House Down Payment' : 'ej., Vacaciones, Enganche de Casa'}
                   />
                 </div>
-                <div className="space-y-2">
-                  <Label>{language === 'en' ? 'Description (optional)' : 'Descripción (opcional)'}</Label>
-                  <Input
-                    value={formData.goal_description}
-                    onChange={(e) => setFormData({...formData, goal_description: e.target.value})}
-                    placeholder={language === 'en' ? 'Additional details' : 'Detalles adicionales'}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>{language === 'en' ? 'Target Amount (£)' : 'Monto Objetivo (£)'}</Label>
-                  <Input
-                    type="number"
-                    step="0.01"
-                    value={formData.target_amount}
-                    onChange={(e) => setFormData({...formData, target_amount: e.target.value})}
-                    placeholder="0.00"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>{language === 'en' ? 'Current Amount (£)' : 'Monto Actual (£)'}</Label>
-                  <Input
-                    type="number"
-                    step="0.01"
-                    value={formData.current_amount}
-                    onChange={(e) => setFormData({...formData, current_amount: e.target.value})}
-                    placeholder="0.00"
-                  />
+                <div className="grid grid-cols-2 gap-4">
+                  <div className="space-y-2">
+                    <Label>{language === 'en' ? 'Current Savings (£)' : 'Ahorros Actuales (£)'}</Label>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      value={formData.current_amount}
+                      onChange={(e) => setFormData({...formData, current_amount: e.target.value})}
+                      placeholder="0.00"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>{language === 'en' ? 'Target Amount (£)' : 'Monto Objetivo (£)'}</Label>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      value={formData.target_amount}
+                      onChange={(e) => setFormData({...formData, target_amount: e.target.value})}
+                      placeholder="0.00"
+                    />
+                  </div>
                 </div>
                 <div className="space-y-2">
                   <Label>{language === 'en' ? 'Target Date (optional)' : 'Fecha Objetivo (opcional)'}</Label>
@@ -317,9 +307,6 @@ export const SavingsGoalsManager = ({ language, availableForSavings, availableBu
                           </Badge>
                         )}
                       </div>
-                      {goal.goal_description && (
-                        <p className="text-sm text-muted-foreground">{goal.goal_description}</p>
-                      )}
                     </div>
                     <div className="flex gap-1">
                       <Button variant="ghost" size="icon" onClick={() => handleEditGoal(goal)}>
