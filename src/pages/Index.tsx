@@ -35,6 +35,7 @@ const Index = ({ onWallpaperChange }: IndexProps = {}) => {
   const [totalVariableExpenses, setTotalVariableExpenses] = useState(0);
   const [totalSavings, setTotalSavings] = useState(0);
   const [totalActiveSavingsGoals, setTotalActiveSavingsGoals] = useState(0);
+  const [monthlyEmergencyContribution, setMonthlyEmergencyContribution] = useState(0);
   const [emergencyFund, setEmergencyFund] = useState(0);
   const [emergencyFundTarget, setEmergencyFundTarget] = useState(0);
   const [chartType, setChartType] = useState<ChartType>('bar');
@@ -113,9 +114,18 @@ const Index = ({ onWallpaperChange }: IndexProps = {}) => {
       if (savingsResult.data) {
         setTotalSavings(savingsResult.data.total_accumulated || 0);
         setEmergencyFund(savingsResult.data.emergency_fund || 0);
-        // Calculate emergency fund target (3-6 months of expenses)
+        
+        // Get monthly emergency contribution
         const monthlyExpenses = totalFixedExpenses + totalVariableExpenses;
-        setEmergencyFundTarget(monthlyExpenses * 4); // Default to 4 months
+        const emergencyFundTarget = monthlyExpenses * 4; // 4 months of expenses
+        const remainingForEmergency = Math.max(0, emergencyFundTarget - (savingsResult.data.emergency_fund || 0));
+        
+        // Calculate suggested monthly contribution (spread over 12 months)
+        const suggestedMonthly = remainingForEmergency > 0 ? remainingForEmergency / 12 : 0;
+        setMonthlyEmergencyContribution(suggestedMonthly);
+        
+        // Calculate emergency fund target (3-6 months of expenses)
+        setEmergencyFundTarget(emergencyFundTarget);
       }
     };
     
@@ -129,6 +139,8 @@ const Index = ({ onWallpaperChange }: IndexProps = {}) => {
     );
     setTotalActiveSavingsGoals(totalContributions);
   }, [savingsGoalsData]);
+
+  const totalSavingsContributions = totalActiveSavingsGoals + monthlyEmergencyContribution;
 
   // Calculate payments for calendar with IDs and source tables
   const calendarPayments = [
@@ -200,8 +212,8 @@ const Index = ({ onWallpaperChange }: IndexProps = {}) => {
     regular_apr: debt.regular_apr
   }));
 
-  const availableForDebt = totalIncome - totalDebts - totalFixedExpenses - totalVariableExpenses - totalActiveSavingsGoals;
-  const availableForSavings = totalIncome - totalDebts - totalFixedExpenses - totalVariableExpenses - totalActiveSavingsGoals;
+  const availableForDebt = totalIncome - totalDebts - totalFixedExpenses - totalVariableExpenses - totalSavingsContributions;
+  const availableForSavings = totalIncome - totalDebts - totalFixedExpenses - totalVariableExpenses - totalSavingsContributions;
 
   if (!user) {
     return <Auth />;
@@ -257,6 +269,7 @@ const Index = ({ onWallpaperChange }: IndexProps = {}) => {
               totalDebts={totalDebts}
               totalFixedExpenses={totalFixedExpenses}
               totalVariableExpenses={totalVariableExpenses}
+              totalSavingsContributions={totalSavingsContributions}
               language={language}
               chartType={chartType}
             />
@@ -287,6 +300,7 @@ const Index = ({ onWallpaperChange }: IndexProps = {}) => {
                     totalFixedExpenses={totalFixedExpenses}
                     totalVariableExpenses={totalVariableExpenses}
                     totalSavingsGoals={totalActiveSavingsGoals}
+                    monthlyEmergencyContribution={monthlyEmergencyContribution}
                     language={language}
                   />
                 </div>

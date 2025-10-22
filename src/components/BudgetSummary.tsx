@@ -1,5 +1,5 @@
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Calendar, CalendarDays, PiggyBank, TrendingUp } from "lucide-react";
+import { Calendar, CalendarDays, PiggyBank, TrendingUp, Shield } from "lucide-react";
 import { formatCurrency, getTranslation, Language } from "@/lib/i18n";
 
 interface BudgetSummaryProps {
@@ -8,13 +8,15 @@ interface BudgetSummaryProps {
   totalFixedExpenses: number;
   totalVariableExpenses: number;
   totalSavingsGoals: number;
+  monthlyEmergencyContribution: number;
   language: Language;
 }
 
-export const BudgetSummary = ({ totalIncome, totalDebts, totalFixedExpenses, totalVariableExpenses, totalSavingsGoals, language }: BudgetSummaryProps) => {
+export const BudgetSummary = ({ totalIncome, totalDebts, totalFixedExpenses, totalVariableExpenses, totalSavingsGoals, monthlyEmergencyContribution, language }: BudgetSummaryProps) => {
   const t = (key: string) => getTranslation(language, key);
   const totalExpenses = totalDebts + totalFixedExpenses + totalVariableExpenses;
-  const monthlyBalance = totalIncome - totalExpenses - totalSavingsGoals;
+  const totalSavings = totalSavingsGoals + monthlyEmergencyContribution;
+  const monthlyBalance = totalIncome - totalExpenses - totalSavings;
   const estimatedSavings = monthlyBalance > 0 ? monthlyBalance : 0;
   const weeklyBalance = monthlyBalance / 4;
   const isPositive = monthlyBalance >= 0;
@@ -45,7 +47,22 @@ export const BudgetSummary = ({ totalIncome, totalDebts, totalFixedExpenses, tot
                 <p>{t('debts')}: {formatCurrency(totalDebts)}</p>
                 <p>{t('fixed')}: {formatCurrency(totalFixedExpenses)}</p>
                 <p>{t('variable')}: {formatCurrency(totalVariableExpenses)}</p>
-                <p>{language === 'en' ? 'Savings Goals' : 'Metas de Ahorro'}: {formatCurrency(totalSavingsGoals)}</p>
+              </div>
+            </div>
+            <div className="space-y-1">
+              <p className="text-sm text-muted-foreground">{language === 'en' ? 'Total Savings' : 'Ahorros Totales'}</p>
+              <p className="text-2xl font-bold text-success">
+                {formatCurrency(totalSavings)}
+              </p>
+              <div className="text-xs text-muted-foreground space-y-0.5 pt-2">
+                <p className="flex items-center gap-1">
+                  <PiggyBank className="h-3 w-3" />
+                  {language === 'en' ? 'Goals' : 'Metas'}: {formatCurrency(totalSavingsGoals)}
+                </p>
+                <p className="flex items-center gap-1">
+                  <Shield className="h-3 w-3" />
+                  {language === 'en' ? 'Emergency' : 'Emergencia'}: {formatCurrency(monthlyEmergencyContribution)}
+                </p>
               </div>
             </div>
           </div>

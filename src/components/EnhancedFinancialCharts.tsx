@@ -9,6 +9,7 @@ interface EnhancedFinancialChartsProps {
   totalDebts: number;
   totalFixedExpenses: number;
   totalVariableExpenses: number;
+  totalSavingsContributions: number;
   language: Language;
   chartType: ChartType;
 }
@@ -18,16 +19,18 @@ export const EnhancedFinancialCharts = ({
   totalDebts,
   totalFixedExpenses,
   totalVariableExpenses,
+  totalSavingsContributions,
   language,
   chartType
 }: EnhancedFinancialChartsProps) => {
-  const availableForSavings = totalIncome - (totalDebts + totalFixedExpenses + totalVariableExpenses);
+  const availableForSavings = totalIncome - (totalDebts + totalFixedExpenses + totalVariableExpenses + totalSavingsContributions);
 
   const pieData = [
     { name: language === 'en' ? 'Debts' : 'Deudas', value: totalDebts, color: 'hsl(var(--debt))' },
     { name: language === 'en' ? 'Fixed Expenses' : 'Gastos Fijos', value: totalFixedExpenses, color: 'hsl(var(--warning))' },
     { name: language === 'en' ? 'Variable Expenses' : 'Gastos Variables', value: totalVariableExpenses, color: 'hsl(var(--primary))' },
-    { name: language === 'en' ? 'Available' : 'Disponible', value: Math.max(0, availableForSavings), color: 'hsl(var(--success))' }
+    { name: language === 'en' ? 'Savings' : 'Ahorros', value: totalSavingsContributions, color: 'hsl(var(--success))' },
+    { name: language === 'en' ? 'Available' : 'Disponible', value: Math.max(0, availableForSavings), color: 'hsl(var(--muted))' }
   ].filter(item => item.value > 0);
 
   const barData = [
@@ -42,9 +45,14 @@ export const EnhancedFinancialCharts = ({
       fill: 'hsl(var(--destructive))'
     },
     {
+      name: language === 'en' ? 'Savings' : 'Ahorros',
+      value: totalSavingsContributions,
+      fill: 'hsl(var(--success))'
+    },
+    {
       name: language === 'en' ? 'Available' : 'Disponible',
       value: Math.max(0, availableForSavings),
-      fill: 'hsl(var(--success))'
+      fill: 'hsl(var(--muted))'
     }
   ];
 
@@ -62,6 +70,7 @@ export const EnhancedFinancialCharts = ({
     { category: language === 'en' ? 'Debts' : 'Deudas', amount: totalDebts },
     { category: language === 'en' ? 'Fixed' : 'Fijos', amount: totalFixedExpenses },
     { category: language === 'en' ? 'Variable' : 'Variables', amount: totalVariableExpenses },
+    { category: language === 'en' ? 'Savings' : 'Ahorros', amount: totalSavingsContributions },
   ];
 
   const renderChart = () => {
