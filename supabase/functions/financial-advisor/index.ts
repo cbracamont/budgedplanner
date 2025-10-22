@@ -50,9 +50,18 @@ serve(async (req) => {
     // Calculate totals
     const totalIncome = incomeData.data?.reduce((sum, i) => sum + Number(i.amount), 0) || 0;
     const totalDebts = debtsData.data?.reduce((sum, d) => sum + Number(d.minimum_payment), 0) || 0;
-    const totalFixed = fixedExpensesData.data?.reduce((sum, e) => sum + Number(e.amount), 0) || 0;
+    const currentMonth = new Date().getMonth() + 1;
+    const totalFixed = fixedExpensesData.data?.reduce((sum, e) => {
+      const amount = Number(e.amount) || 0;
+      if (e.frequency_type === 'annual') {
+        return sum + (e.payment_month === currentMonth ? amount : 0);
+      }
+      return sum + amount;
+    }, 0) || 0;
     const totalVariable = variableExpensesData.data?.reduce((sum, e) => sum + Number(e.amount), 0) || 0;
-    const totalSavingsGoals = savingsGoalsData.data?.reduce((sum, g) => sum + Number(g.monthly_contribution || 0), 0) || 0;
+    const totalSavingsGoals = savingsGoalsData.data
+      ?.filter((g) => !!g.is_active)
+      .reduce((sum, g) => sum + Number(g.monthly_contribution || 0), 0) || 0;
     const monthlyEmergencyContribution = Number(savingsData.data?.monthly_emergency_contribution || 0);
     const totalExpenses = totalDebts + totalFixed + totalVariable;
     const monthlySavingsCommitments = totalSavingsGoals + monthlyEmergencyContribution;
