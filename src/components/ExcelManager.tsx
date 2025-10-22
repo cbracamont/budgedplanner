@@ -152,6 +152,14 @@ export const ExcelManager = ({ language, onDataImported }: ExcelManagerProps) =>
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("Not authenticated");
 
+      // Delete existing data before importing
+      await Promise.all([
+        supabase.from('income_sources').delete().eq('user_id', user.id),
+        supabase.from('debts').delete().eq('user_id', user.id),
+        supabase.from('fixed_expenses').delete().eq('user_id', user.id),
+        supabase.from('variable_expenses').delete().eq('user_id', user.id),
+      ]);
+
       const data = await file.arrayBuffer();
       const wb = XLSX.read(data);
 
