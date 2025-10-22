@@ -194,13 +194,11 @@ export const EnhancedDebtAdvisor = ({ debts, extraPayment, language }: EnhancedD
               type="number"
               step="0.01"
               value={customExtraPayment}
-              onChange={(e) => {
-                const value = e.target.value;
-                if (value === '') {
-                  setCustomExtraPayment('');
-                } else {
-                  const num = parseFloat(value);
-                  setCustomExtraPayment(isNaN(num) ? '' : num.toFixed(2));
+              onChange={(e) => setCustomExtraPayment(e.target.value)}
+              onBlur={(e) => {
+                const value = parseFloat(e.target.value);
+                if (!isNaN(value)) {
+                  setCustomExtraPayment(value.toFixed(2));
                 }
               }}
               placeholder="0.00"

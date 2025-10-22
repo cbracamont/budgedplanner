@@ -98,19 +98,21 @@ export const WallpaperSettings = ({ language, onWallpaperChange }: WallpaperSett
     toast({ title: "Success", description: "Wallpaper removed successfully" });
   };
 
-  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
-    const file = e.target.files?.[0];
+  const handleFileUpload = async (event: React.ChangeEvent<HTMLInputElement>) => {
+    const file = event.target.files?.[0];
     if (!file) return;
 
     if (!file.type.startsWith('image/')) {
-      toast({ title: "Error", description: "Please upload an image file", variant: "destructive" });
+      toast({ title: "Error", description: "Please select an image file", variant: "destructive" });
       return;
     }
 
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
-
     setIsUploading(true);
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) {
+      setIsUploading(false);
+      return;
+    }
 
     const fileExt = file.name.split('.').pop();
     const fileName = `${user.id}/${Date.now()}.${fileExt}`;
@@ -197,7 +199,7 @@ export const WallpaperSettings = ({ language, onWallpaperChange }: WallpaperSett
         <div className="space-y-4">
           <div className="space-y-2">
             <Label>
-              {language === 'en' ? 'Upload Image from PC' : 'Subir Imagen desde PC'}
+              {language === 'en' ? 'Upload from PC' : 'Subir desde PC'}
             </Label>
             <input
               ref={fileInputRef}
@@ -215,7 +217,7 @@ export const WallpaperSettings = ({ language, onWallpaperChange }: WallpaperSett
               <Upload className="mr-2 h-4 w-4" />
               {isUploading 
                 ? (language === 'en' ? 'Uploading...' : 'Subiendo...') 
-                : (language === 'en' ? 'Choose File' : 'Elegir Archivo')}
+                : (language === 'en' ? 'Choose Image' : 'Seleccionar Imagen')}
             </Button>
           </div>
 
@@ -248,8 +250,8 @@ export const WallpaperSettings = ({ language, onWallpaperChange }: WallpaperSett
             </p>
           </div>
 
-          <Button onClick={saveWallpaper} className="w-full">
-            {language === 'en' ? 'Apply Wallpaper' : 'Aplicar Fondo'}
+          <Button onClick={saveWallpaper} className="w-full" disabled={!wallpaperUrl.trim()}>
+            {language === 'en' ? 'Apply URL Wallpaper' : 'Aplicar Fondo por URL'}
           </Button>
         </div>
       </CardContent>
