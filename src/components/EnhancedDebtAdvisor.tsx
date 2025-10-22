@@ -88,35 +88,24 @@ export const EnhancedDebtAdvisor = ({ debts, extraPayment, language }: EnhancedD
     return [...debts].sort((a, b) => {
       // Calculate effective APR considering promotional periods
       const getEffectiveAPR = (debt: Debt) => {
-        if (debt.promotional_apr && debt.promotional_apr_end_date) {
+        if (debt.promotional_apr !== undefined && debt.promotional_apr_end_date) {
           const endDate = new Date(debt.promotional_apr_end_date);
           if (endDate > today) {
-            // Promotional period is active
+            // Promotional period is active - use promotional APR
             return debt.promotional_apr;
+          } else {
+            // Promotional period ended - use regular APR
+            return debt.regular_apr || debt.apr;
           }
         }
-        // Use regular APR if promotional period ended or not applicable
-        return debt.regular_apr || debt.apr;
+        // No promotional APR - use standard APR
+        return debt.apr;
       };
 
       const aprA = getEffectiveAPR(a);
       const aprB = getEffectiveAPR(b);
 
-      // Prioritize debts with promotional APR ending soon
-      if (a.promotional_apr_end_date && b.promotional_apr_end_date) {
-        const endDateA = new Date(a.promotional_apr_end_date);
-        const endDateB = new Date(b.promotional_apr_end_date);
-        
-        const monthsUntilEndA = (endDateA.getTime() - today.getTime()) / (1000 * 60 * 60 * 24 * 30);
-        const monthsUntilEndB = (endDateB.getTime() - today.getTime()) / (1000 * 60 * 60 * 24 * 30);
-        
-        // If both have promo ending within 3 months, prioritize the one ending sooner
-        if (monthsUntilEndA < 3 && monthsUntilEndB < 3) {
-          return monthsUntilEndA - monthsUntilEndB;
-        }
-      }
-
-      // Otherwise, sort by effective APR (highest first)
+      // Sort by effective APR (highest first) - Avalanche method
       return aprB - aprA;
     });
   };
