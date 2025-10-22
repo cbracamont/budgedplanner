@@ -6,7 +6,7 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Progress } from "@/components/ui/progress";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { PiggyBank, TrendingUp, History, Pencil, Trash2, Shield } from "lucide-react";
+import { PiggyBank, TrendingUp, CalendarDays, Shield } from "lucide-react";
 import { formatCurrency, getTranslation, Language } from "@/lib/i18n";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -33,14 +33,12 @@ export const EnhancedSavingsManager = ({ language, availableToSave, totalExpense
   const [monthlyGoal, setMonthlyGoal] = useState("");
   const [totalAccumulated, setTotalAccumulated] = useState(0);
   const [savingsId, setSavingsId] = useState<string | null>(null);
-  const [savingsHistory, setSavingsHistory] = useState<SavingsHistoryEntry[]>([]);
-  const [editingEntry, setEditingEntry] = useState<SavingsHistoryEntry | null>(null);
-  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [goalName, setGoalName] = useState("");
   const [goalDescription, setGoalDescription] = useState("");
   const [emergencyFund, setEmergencyFund] = useState("");
   const [emergencyFundMonths, setEmergencyFundMonths] = useState<number>(4);
   const [monthlyEmergencyContribution, setMonthlyEmergencyContribution] = useState("");
+  const [projectionMonths, setProjectionMonths] = useState<number>(12);
 
   const currentMonth = new Date().toLocaleDateString(language === 'en' ? 'en-GB' : 'es-ES', { 
     month: 'long', 
@@ -60,7 +58,6 @@ export const EnhancedSavingsManager = ({ language, availableToSave, totalExpense
 
   useEffect(() => {
     loadSavings();
-    loadSavingsHistory();
   }, []);
 
   const loadSavings = async () => {
@@ -84,19 +81,27 @@ export const EnhancedSavingsManager = ({ language, availableToSave, totalExpense
     }
   };
 
-  const loadSavingsHistory = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
-
-    const { data, error } = await supabase
-      .from('savings_history')
-      .select('*')
-      .eq('user_id', user.id)
-      .order('month_year', { ascending: false });
-
-    if (!error && data) {
-      setSavingsHistory(data);
+  const generateProjections = () => {
+    const monthlyGoalValue = parseFloat(monthlyGoal) || 0;
+    const projections = [];
+    let accumulated = totalAccumulated;
+    
+    for (let i = 1; i <= projectionMonths; i++) {
+      accumulated += monthlyGoalValue;
+      const futureDate = new Date();
+      futureDate.setMonth(futureDate.getMonth() + i);
+      
+      projections.push({
+        month: futureDate.toLocaleDateString(language === 'en' ? 'en-GB' : 'es-ES', { 
+          month: 'long', 
+          year: 'numeric' 
+        }),
+        monthlyAmount: monthlyGoalValue,
+        accumulated: accumulated
+      });
     }
+    
+    return projections;
   };
 
   const updateSavings = async () => {
@@ -152,39 +157,6 @@ export const EnhancedSavingsManager = ({ language, availableToSave, totalExpense
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
 
-    const now = new Date();
-    const monthYear = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
-
-    const { data: existing } = await supabase
-      .from('savings_history')
-      .select('*')
-      .eq('user_id', user.id)
-      .eq('month_year', monthYear)
-      .maybeSingle();
-
-    if (existing) {
-      toast({ 
-        title: "Info", 
-        description: language === 'en' ? 'Savings for this month already recorded' : 'Ahorros de este mes ya registrados',
-        variant: "default"
-      });
-      return;
-    }
-
-    const { error } = await supabase
-      .from('savings_history')
-      .insert({
-        user_id: user.id,
-        month_year: monthYear,
-        amount: availableToSave,
-        notes: `${currentMonth}`
-      });
-
-    if (error) {
-      toast({ title: "Error", description: "Failed to save monthly record", variant: "destructive" });
-      return;
-    }
-
     const newTotal = totalAccumulated + availableToSave;
     await supabase
       .from('savings')
@@ -192,69 +164,8 @@ export const EnhancedSavingsManager = ({ language, availableToSave, totalExpense
       .eq('id', savingsId);
 
     setTotalAccumulated(newTotal);
-    loadSavingsHistory();
-    toast({ title: "Success", description: "Monthly savings saved to history" });
-  };
-
-  const updateHistoryEntry = async () => {
-    if (!editingEntry) return;
-
-    const { error } = await supabase
-      .from('savings_history')
-      .update({ amount: editingEntry.amount, notes: editingEntry.notes })
-      .eq('id', editingEntry.id);
-
-    if (error) {
-      toast({ title: "Error", description: "Failed to update entry", variant: "destructive" });
-      return;
-    }
-
-    const { data } = await supabase
-      .from('savings_history')
-      .select('amount')
-      .eq('user_id', (await supabase.auth.getUser()).data.user?.id);
-
-    const newTotal = data?.reduce((sum, entry) => sum + parseFloat(entry.amount.toString()), 0) || 0;
-    
-    await supabase
-      .from('savings')
-      .update({ total_accumulated: newTotal })
-      .eq('id', savingsId);
-
-    setTotalAccumulated(newTotal);
-    setIsEditDialogOpen(false);
-    setEditingEntry(null);
-    loadSavingsHistory();
-    toast({ title: "Success", description: "Entry updated successfully" });
-  };
-
-  const deleteHistoryEntry = async (id: string, amount: number) => {
-    const { error } = await supabase
-      .from('savings_history')
-      .delete()
-      .eq('id', id);
-
-    if (error) {
-      toast({ title: "Error", description: "Failed to delete entry", variant: "destructive" });
-      return;
-    }
-
-    const newTotal = totalAccumulated - amount;
-    await supabase
-      .from('savings')
-      .update({ total_accumulated: newTotal })
-      .eq('id', savingsId);
-
-    setTotalAccumulated(newTotal);
-    loadSavingsHistory();
-    toast({ title: "Success", description: "Entry deleted successfully" });
-  };
-
-  const formatMonthYear = (dateStr: string) => {
-    const date = new Date(dateStr);
-    const month = monthNames[language][date.getMonth()];
-    const year = date.getFullYear();
-    return `${month} ${year}`;
+    toast({ title: "Success", description: "Monthly savings added to total" });
+    queryClient.invalidateQueries({ queryKey: ["savings"] });
   };
 
   return (
@@ -454,72 +365,37 @@ export const EnhancedSavingsManager = ({ language, availableToSave, totalExpense
             </div>
           </div>
 
-          {/* Savings History */}
+          {/* Savings Projections */}
           <div className="space-y-3">
-            <div className="flex items-center gap-2">
-              <History className="h-4 w-4 text-primary" />
-              <h3 className="font-semibold">{language === 'en' ? 'Savings History' : 'Historial de Ahorros'}</h3>
+            <div className="flex items-center justify-between">
+              <div className="flex items-center gap-2">
+                <CalendarDays className="h-4 w-4 text-primary" />
+                <h3 className="font-semibold">{language === 'en' ? 'Savings Projections' : 'Proyecciones de Ahorro'}</h3>
+              </div>
+              <Select value={projectionMonths.toString()} onValueChange={(v) => setProjectionMonths(parseInt(v))}>
+                <SelectTrigger className="w-32">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="6">6 {language === 'en' ? 'months' : 'meses'}</SelectItem>
+                  <SelectItem value="12">12 {language === 'en' ? 'months' : 'meses'}</SelectItem>
+                  <SelectItem value="24">24 {language === 'en' ? 'months' : 'meses'}</SelectItem>
+                  <SelectItem value="36">36 {language === 'en' ? 'months' : 'meses'}</SelectItem>
+                </SelectContent>
+              </Select>
             </div>
-            <div className="space-y-2 max-h-60 overflow-y-auto">
-              {savingsHistory.map((entry) => (
-                <div key={entry.id} className="flex items-center justify-between p-3 bg-secondary/50 rounded-lg">
+            <div className="space-y-2 max-h-80 overflow-y-auto">
+              {generateProjections().map((projection, index) => (
+                <div key={index} className="flex items-center justify-between p-3 bg-secondary/50 rounded-lg">
                   <div className="flex-1">
-                    <p className="font-medium">{formatMonthYear(entry.month_year)}</p>
-                    <p className="text-sm text-muted-foreground">£{parseFloat(entry.amount.toString()).toFixed(2)}</p>
+                    <p className="font-medium">{projection.month}</p>
+                    <p className="text-sm text-muted-foreground">
+                      {language === 'en' ? 'Monthly:' : 'Mensual:'} £{projection.monthlyAmount.toFixed(2)}
+                    </p>
                   </div>
-                  <div className="flex gap-1">
-                    <Dialog open={isEditDialogOpen && editingEntry?.id === entry.id} onOpenChange={(open) => {
-                      setIsEditDialogOpen(open);
-                      if (!open) setEditingEntry(null);
-                    }}>
-                      <DialogTrigger asChild>
-                        <Button
-                          variant="ghost"
-                          size="icon"
-                          onClick={() => {
-                            setEditingEntry(entry);
-                            setIsEditDialogOpen(true);
-                          }}
-                        >
-                          <Pencil className="h-4 w-4" />
-                        </Button>
-                      </DialogTrigger>
-                      <DialogContent>
-                        <DialogHeader>
-                          <DialogTitle>{language === 'en' ? 'Edit Savings Entry' : 'Editar Entrada de Ahorros'}</DialogTitle>
-                        </DialogHeader>
-                        {editingEntry && (
-                          <div className="space-y-4">
-                            <div className="space-y-2">
-                              <Label>{language === 'en' ? 'Amount' : 'Monto'}</Label>
-                              <Input
-                                type="number"
-                                step="0.01"
-                                value={editingEntry.amount}
-                                onChange={(e) => setEditingEntry({...editingEntry, amount: parseFloat(e.target.value)})}
-                              />
-                            </div>
-                            <div className="space-y-2">
-                              <Label>{language === 'en' ? 'Notes' : 'Notas'}</Label>
-                              <Input
-                                value={editingEntry.notes || ''}
-                                onChange={(e) => setEditingEntry({...editingEntry, notes: e.target.value})}
-                              />
-                            </div>
-                            <Button onClick={updateHistoryEntry} className="w-full">
-                              {language === 'en' ? 'Update' : 'Actualizar'}
-                            </Button>
-                          </div>
-                        )}
-                      </DialogContent>
-                    </Dialog>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => deleteHistoryEntry(entry.id, parseFloat(entry.amount.toString()))}
-                    >
-                      <Trash2 className="h-4 w-4 text-destructive" />
-                    </Button>
+                  <div className="text-right">
+                    <p className="text-sm text-muted-foreground">{language === 'en' ? 'Accumulated' : 'Acumulado'}</p>
+                    <p className="font-bold text-success">£{projection.accumulated.toFixed(2)}</p>
                   </div>
                 </div>
               ))}
