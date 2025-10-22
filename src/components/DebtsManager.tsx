@@ -24,6 +24,9 @@ interface Debt {
   installment_amount?: number;
   start_date?: string;
   end_date?: string;
+  promotional_apr?: number;
+  promotional_apr_end_date?: string;
+  regular_apr?: number;
 }
 
 interface DebtsManagerProps {
@@ -47,9 +50,13 @@ export const DebtsManager = ({ language, onDebtsChange }: DebtsManagerProps) => 
     number_of_installments: "",
     installment_amount: "",
     start_date: "",
-    end_date: ""
+    end_date: "",
+    promotional_apr: "",
+    promotional_apr_end_date: "",
+    regular_apr: ""
   });
   const [isInstallment, setIsInstallment] = useState(false);
+  const [hasPromotionalAPR, setHasPromotionalAPR] = useState(false);
   const [editingDebt, setEditingDebt] = useState<Debt | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
 
@@ -99,6 +106,12 @@ export const DebtsManager = ({ language, onDebtsChange }: DebtsManagerProps) => 
       debtData.end_date = newDebt.end_date;
     }
 
+    if (hasPromotionalAPR) {
+      debtData.promotional_apr = parseFloat(parseFloat(newDebt.promotional_apr).toFixed(2));
+      debtData.promotional_apr_end_date = newDebt.promotional_apr_end_date;
+      debtData.regular_apr = parseFloat(parseFloat(newDebt.regular_apr).toFixed(2));
+    }
+
     const { error } = await supabase.from("debts").insert(debtData);
 
     if (error) {
@@ -107,9 +120,11 @@ export const DebtsManager = ({ language, onDebtsChange }: DebtsManagerProps) => 
       setNewDebt({ 
         name: "", bank: "", balance: "", apr: "", minimum_payment: "", payment_day: "1",
         is_installment: false, total_amount: "", number_of_installments: "", 
-        installment_amount: "", start_date: "", end_date: ""
+        installment_amount: "", start_date: "", end_date: "",
+        promotional_apr: "", promotional_apr_end_date: "", regular_apr: ""
       });
       setIsInstallment(false);
+      setHasPromotionalAPR(false);
       loadDebts();
       toast({ title: "Success", description: "Debt added" });
     }
@@ -335,6 +350,61 @@ export const DebtsManager = ({ language, onDebtsChange }: DebtsManagerProps) => 
               </>
             )}
           </div>
+          
+          <div className="flex items-center space-x-2 mt-4 border-t pt-4">
+            <input 
+              type="checkbox" 
+              id="has-promotional-apr" 
+              checked={hasPromotionalAPR}
+              onChange={(e) => setHasPromotionalAPR(e.target.checked)}
+              className="h-4 w-4"
+            />
+            <Label htmlFor="has-promotional-apr">
+              {language === 'en' ? 'Has Promotional APR' : 'Tiene APR Promocional'}
+            </Label>
+          </div>
+
+          {hasPromotionalAPR && (
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-3 bg-blue-50/50 dark:bg-blue-950/20 p-4 rounded-lg">
+              <div className="space-y-2">
+                <Label htmlFor="promotional-apr">{language === 'en' ? 'Promotional APR (%)' : 'APR Promocional (%)'}</Label>
+                <Input
+                  id="promotional-apr"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  placeholder="0.00"
+                  value={newDebt.promotional_apr}
+                  onChange={(e) => setNewDebt({ ...newDebt, promotional_apr: e.target.value })}
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="promotional-end-date">{language === 'en' ? 'Promotion End Date' : 'Fecha de Fin de Promoción'}</Label>
+                <Input
+                  id="promotional-end-date"
+                  type="date"
+                  value={newDebt.promotional_apr_end_date}
+                  onChange={(e) => setNewDebt({ ...newDebt, promotional_apr_end_date: e.target.value })}
+                  required
+                />
+              </div>
+              <div className="space-y-2">
+                <Label htmlFor="regular-apr">{language === 'en' ? 'Regular APR (%)' : 'APR Regular (%)'}</Label>
+                <Input
+                  id="regular-apr"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  placeholder="0.00"
+                  value={newDebt.regular_apr}
+                  onChange={(e) => setNewDebt({ ...newDebt, regular_apr: e.target.value })}
+                  required
+                />
+              </div>
+            </div>
+          )}
+
           <Button type="submit" className="w-full">
             <Plus className="mr-2 h-4 w-4" />
             {language === 'en' ? 'Add Debt' : 'Agregar Deuda'}
@@ -366,6 +436,13 @@ export const DebtsManager = ({ language, onDebtsChange }: DebtsManagerProps) => 
                     <p className="text-xs text-muted-foreground">
                       {language === 'en' ? 'Balance:' : 'Balance:'} £{debt.balance.toFixed(2)} • APR: {debt.apr}%
                     </p>
+                    {debt.promotional_apr && debt.promotional_apr_end_date && (
+                      <p className="text-xs text-blue-600 dark:text-blue-400">
+                        {language === 'en' ? 'Promo APR:' : 'APR Promo:'} {debt.promotional_apr}% 
+                        {language === 'en' ? ' until ' : ' hasta '}{new Date(debt.promotional_apr_end_date).toLocaleDateString(language === 'en' ? 'en-GB' : 'es-ES')}
+                        {language === 'en' ? ', then ' : ', luego '}{debt.regular_apr}%
+                      </p>
+                    )}
                   </>
                 )}
               </div>

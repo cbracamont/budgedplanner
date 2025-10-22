@@ -31,6 +31,9 @@ export const EnhancedSavingsManager = ({ language, availableToSave }: SavingsMan
   const [savingsHistory, setSavingsHistory] = useState<SavingsHistoryEntry[]>([]);
   const [editingEntry, setEditingEntry] = useState<SavingsHistoryEntry | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [goalName, setGoalName] = useState("");
+  const [goalDescription, setGoalDescription] = useState("");
+  const [emergencyFund, setEmergencyFund] = useState("");
 
   const currentMonth = new Date().toLocaleDateString(language === 'en' ? 'en-GB' : 'es-ES', { 
     month: 'long', 
@@ -61,6 +64,9 @@ export const EnhancedSavingsManager = ({ language, availableToSave }: SavingsMan
       setSavingsId(data.id);
       setMonthlyGoal(data.monthly_goal.toString());
       setTotalAccumulated(data.total_accumulated);
+      setGoalName(data.goal_name || "");
+      setGoalDescription(data.goal_description || "");
+      setEmergencyFund(data.emergency_fund?.toString() || "");
     }
   };
 
@@ -84,11 +90,17 @@ export const EnhancedSavingsManager = ({ language, availableToSave }: SavingsMan
     if (!user) return;
 
     const goalValue = parseFloat(monthlyGoal) || 0;
+    const emergencyValue = parseFloat(emergencyFund) || 0;
 
     if (savingsId) {
       const { error } = await supabase
         .from('savings')
-        .update({ monthly_goal: goalValue })
+        .update({ 
+          monthly_goal: goalValue,
+          goal_name: goalName,
+          goal_description: goalDescription,
+          emergency_fund: emergencyValue
+        })
         .eq('id', savingsId);
 
       if (error) {
@@ -98,7 +110,13 @@ export const EnhancedSavingsManager = ({ language, availableToSave }: SavingsMan
     } else {
       const { data, error } = await supabase
         .from('savings')
-        .insert({ user_id: user.id, monthly_goal: goalValue })
+        .insert({ 
+          user_id: user.id, 
+          monthly_goal: goalValue,
+          goal_name: goalName,
+          goal_description: goalDescription,
+          emergency_fund: emergencyValue
+        })
         .select()
         .single();
 
@@ -254,36 +272,111 @@ export const EnhancedSavingsManager = ({ language, availableToSave }: SavingsMan
           </div>
         </div>
 
-        {/* Monthly Goal */}
-        <div className="space-y-3">
-          <Label htmlFor="monthly-goal" className="text-base font-semibold flex items-center gap-2">
+        {/* Savings Goals Section */}
+        <div className="space-y-4 p-4 bg-muted/50 rounded-lg">
+          <Label className="text-base font-semibold flex items-center gap-2">
             <TrendingUp className="h-4 w-4 text-primary" />
-            {language === 'en' ? 'Monthly Savings Goal' : 'Meta de Ahorro Mensual'}
+            {language === 'en' ? 'Savings Goals' : 'Metas de Ahorro'}
           </Label>
-          <div className="flex gap-2">
-            <Input
-              id="monthly-goal"
-              type="number"
-              step="0.01"
-              value={monthlyGoal}
-              onChange={(e) => setMonthlyGoal(e.target.value)}
-              placeholder="0.00"
-              className="text-lg font-medium"
-            />
-            <Button onClick={updateSavings}>
-              {language === 'en' ? 'Set Goal' : 'Establecer Meta'}
+          
+          <div className="space-y-3">
+            <div className="space-y-2">
+              <Label htmlFor="goal-name">
+                {language === 'en' ? 'Savings Goal (e.g., Vacation, House, Education)' : 'Objetivo de Ahorro (ej. Vacaciones, Vivienda, Educación)'}
+              </Label>
+              <Input
+                id="goal-name"
+                value={goalName}
+                onChange={(e) => setGoalName(e.target.value)}
+                placeholder={language === 'en' ? 'Enter your savings goal' : 'Ingresa tu objetivo de ahorro'}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="goal-description">
+                {language === 'en' ? 'Goal Description' : 'Descripción del Objetivo'}
+              </Label>
+              <Input
+                id="goal-description"
+                value={goalDescription}
+                onChange={(e) => setGoalDescription(e.target.value)}
+                placeholder={language === 'en' ? 'Optional details about your goal' : 'Detalles opcionales sobre tu objetivo'}
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="monthly-goal">
+                {language === 'en' ? 'Monthly Savings Goal' : 'Meta de Ahorro Mensual'}
+              </Label>
+              <Input
+                id="monthly-goal"
+                type="number"
+                step="0.01"
+                value={monthlyGoal}
+                onChange={(e) => setMonthlyGoal(e.target.value)}
+                placeholder="0.00"
+                className="text-lg font-medium"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="emergency-fund">
+                {language === 'en' ? 'Emergency Fund (3-6 months of expenses)' : 'Fondo de Emergencia (3-6 meses de gastos)'}
+              </Label>
+              <Input
+                id="emergency-fund"
+                type="number"
+                step="0.01"
+                value={emergencyFund}
+                onChange={(e) => setEmergencyFund(e.target.value)}
+                placeholder="0.00"
+                className="text-lg font-medium"
+              />
+            </div>
+
+            <Button onClick={updateSavings} className="w-full">
+              {language === 'en' ? 'Save Goals' : 'Guardar Metas'}
             </Button>
           </div>
         </div>
 
-        {/* Total Accumulated */}
-        <div className="p-4 bg-gradient-income text-income-foreground rounded-lg">
-          <div className="space-y-2">
-            <p className="text-sm opacity-90">
-              {language === 'en' ? 'Total Accumulated' : 'Total Acumulado'}
-            </p>
-            <p className="text-3xl font-bold">£{totalAccumulated.toFixed(2)}</p>
+        {/* Total Accumulated and Emergency Fund Status */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          <div className="p-4 bg-gradient-income text-income-foreground rounded-lg">
+            <div className="space-y-2">
+              <p className="text-sm opacity-90">
+                {language === 'en' ? 'Total Accumulated' : 'Total Acumulado'}
+              </p>
+              <p className="text-3xl font-bold">£{totalAccumulated.toFixed(2)}</p>
+              {goalName && (
+                <p className="text-sm opacity-80">
+                  {language === 'en' ? 'Goal:' : 'Objetivo:'} {goalName}
+                </p>
+              )}
+            </div>
           </div>
+
+          {parseFloat(emergencyFund) > 0 && (
+            <div className="p-4 bg-orange-100 dark:bg-orange-950/30 text-orange-900 dark:text-orange-100 rounded-lg">
+              <div className="space-y-2">
+                <p className="text-sm font-medium">
+                  {language === 'en' ? 'Emergency Fund Target' : 'Meta Fondo de Emergencia'}
+                </p>
+                <p className="text-2xl font-bold">£{parseFloat(emergencyFund).toFixed(2)}</p>
+                <div className="mt-2">
+                  <div className="w-full bg-orange-200 dark:bg-orange-900/50 rounded-full h-2">
+                    <div 
+                      className="bg-orange-600 dark:bg-orange-500 h-2 rounded-full transition-all"
+                      style={{ width: `${Math.min(100, (totalAccumulated / parseFloat(emergencyFund)) * 100)}%` }}
+                    />
+                  </div>
+                  <p className="text-xs mt-1">
+                    {Math.min(100, ((totalAccumulated / parseFloat(emergencyFund)) * 100)).toFixed(1)}% {language === 'en' ? 'complete' : 'completo'}
+                  </p>
+                </div>
+              </div>
+            </div>
+          )}
         </div>
 
         {/* Savings History */}

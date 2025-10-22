@@ -55,6 +55,9 @@ export type Database = {
           name: string
           number_of_installments: number | null
           payment_day: number
+          promotional_apr: number | null
+          promotional_apr_end_date: string | null
+          regular_apr: number | null
           start_date: string | null
           total_amount: number | null
           updated_at: string
@@ -73,6 +76,9 @@ export type Database = {
           name: string
           number_of_installments?: number | null
           payment_day: number
+          promotional_apr?: number | null
+          promotional_apr_end_date?: string | null
+          regular_apr?: number | null
           start_date?: string | null
           total_amount?: number | null
           updated_at?: string
@@ -91,6 +97,9 @@ export type Database = {
           name?: string
           number_of_installments?: number | null
           payment_day?: number
+          promotional_apr?: number | null
+          promotional_apr_end_date?: string | null
+          regular_apr?: number | null
           start_date?: string | null
           total_amount?: number | null
           updated_at?: string
@@ -170,6 +179,9 @@ export type Database = {
       savings: {
         Row: {
           created_at: string
+          emergency_fund: number | null
+          goal_description: string | null
+          goal_name: string | null
           id: string
           monthly_goal: number
           total_accumulated: number
@@ -178,6 +190,9 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          emergency_fund?: number | null
+          goal_description?: string | null
+          goal_name?: string | null
           id?: string
           monthly_goal?: number
           total_accumulated?: number
@@ -186,6 +201,9 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          emergency_fund?: number | null
+          goal_description?: string | null
+          goal_name?: string | null
           id?: string
           monthly_goal?: number
           total_accumulated?: number
