@@ -64,6 +64,17 @@ const getPaymentsForDay = (day: number) => {
       if (p.endDate && currentDate > new Date(p.endDate)) return false;
     }
     return true;
+  }).map(p => {
+    // Calculate current installment number for installment debts
+    if (p.category === 'debt' && p.isInstallment && p.startDate && p.totalInstallments) {
+      const startDate = new Date(p.startDate);
+      const currentDate = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), day);
+      const monthsDiff = (currentDate.getFullYear() - startDate.getFullYear()) * 12 + 
+                        (currentDate.getMonth() - startDate.getMonth()) + 1;
+      const currentInstallment = Math.min(monthsDiff, p.totalInstallments);
+      return { ...p, currentInstallment };
+    }
+    return p;
   });
 };
 

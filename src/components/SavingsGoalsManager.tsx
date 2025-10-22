@@ -4,7 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Target, Plus, Trash2, Pencil, Calendar, TrendingUp } from "lucide-react";
+import { Target, Plus, Trash2, Pencil, Calendar, TrendingUp, CheckCircle2 } from "lucide-react";
+import { Badge } from "@/components/ui/badge";
 import { Language } from "@/lib/i18n";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -16,14 +17,18 @@ interface SavingsGoal {
   target_amount: number;
   current_amount: number;
   target_date?: string;
+  monthly_contribution?: number;
+  is_active?: boolean;
 }
 
 interface SavingsGoalsManagerProps {
   language: Language;
   availableForSavings: number;
+  availableBudget: number;
+  onBudgetAllocation?: (allocatedAmount: number) => void;
 }
 
-export const SavingsGoalsManager = ({ language, availableForSavings }: SavingsGoalsManagerProps) => {
+export const SavingsGoalsManager = ({ language, availableForSavings, availableBudget, onBudgetAllocation }: SavingsGoalsManagerProps) => {
   const { toast } = useToast();
   const [goals, setGoals] = useState<SavingsGoal[]>([]);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
@@ -149,6 +154,39 @@ export const SavingsGoalsManager = ({ language, availableForSavings }: SavingsGo
     return remaining / monthsRemaining;
   };
 
+  const activateGoalContribution = async (goalId: string, monthlyAmount: number) => {
+    const { error } = await supabase
+      .from('savings_goals')
+      .update({ 
+        monthly_contribution: monthlyAmount,
+        is_active: true 
+      })
+      .eq('id', goalId);
+
+    if (error) {
+      toast({
+        title: "Error",
+        description: "Failed to activate contribution",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    toast({
+      title: language === 'en' ? "Success" : "Éxito",
+      description: language === 'en' 
+        ? `Monthly contribution of £${monthlyAmount.toFixed(2)} activated` 
+        : `Aporte mensual de £${monthlyAmount.toFixed(2)} activado`,
+    });
+
+    loadGoals();
+    if (onBudgetAllocation) {
+      const totalAllocated = goals.reduce((sum, g) => 
+        sum + (g.monthly_contribution || 0), monthlyAmount);
+      onBudgetAllocation(totalAllocated);
+    }
+  };
+
   return (
     <Card className="shadow-medium">
       <CardHeader className="bg-gradient-primary text-primary-foreground">
@@ -265,7 +303,15 @@ export const SavingsGoalsManager = ({ language, availableForSavings }: SavingsGo
                 <div key={goal.id} className="p-4 bg-secondary/50 rounded-lg space-y-3">
                   <div className="flex items-start justify-between">
                     <div className="flex-1">
-                      <h4 className="font-semibold text-lg">{goal.goal_name}</h4>
+                      <div className="flex items-center gap-2">
+                        <h4 className="font-semibold text-lg">{goal.goal_name}</h4>
+                        {goal.is_active && (
+                          <Badge variant="default" className="bg-success text-success-foreground">
+                            <CheckCircle2 className="h-3 w-3 mr-1" />
+                            {language === 'en' ? 'Active' : 'Activo'}
+                          </Badge>
+                        )}
+                      </div>
                       {goal.goal_description && (
                         <p className="text-sm text-muted-foreground">{goal.goal_description}</p>
                       )}
@@ -342,6 +388,50 @@ export const SavingsGoalsManager = ({ language, availableForSavings }: SavingsGo
                       </div>
                     )}
                   </div>
+
+                  {/* Suggested monthly contribution */}
+                  {goal.target_date && suggestedMonthly > 0 && !goal.is_active && (
+                    <div className="pt-3 border-t space-y-2">
+                      <div className="flex justify-between items-center">
+                        <div>
+                          <p className="text-sm font-medium">
+                            {language === 'en' ? 'Suggested monthly' : 'Sugerencia mensual'}
+                          </p>
+                          <p className="text-xs text-muted-foreground">
+                            {language === 'en' 
+                              ? 'To reach your goal on time' 
+                              : 'Para alcanzar tu meta a tiempo'}
+                          </p>
+                        </div>
+                        <span className="text-lg font-bold text-primary">
+                          £{suggestedMonthly.toFixed(2)}
+                        </span>
+                      </div>
+                      <Button
+                        onClick={() => activateGoalContribution(goal.id, suggestedMonthly)}
+                        className="w-full"
+                        disabled={suggestedMonthly > availableBudget}
+                      >
+                        {suggestedMonthly > availableBudget
+                          ? (language === 'en' ? 'Insufficient budget' : 'Presupuesto insuficiente')
+                          : (language === 'en' ? 'Accept & Activate' : 'Aceptar y Activar')}
+                      </Button>
+                    </div>
+                  )}
+
+                  {/* Active contribution display */}
+                  {goal.is_active && goal.monthly_contribution && (
+                    <div className="pt-3 border-t bg-success/5 -mx-4 -mb-3 px-4 pb-3 rounded-b-lg">
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm font-medium text-success">
+                          {language === 'en' ? 'Monthly contribution' : 'Aporte mensual'}
+                        </span>
+                        <span className="text-lg font-bold text-success">
+                          £{goal.monthly_contribution.toFixed(2)}
+                        </span>
+                      </div>
+                    </div>
+                  )}
                 </div>
               );
             })

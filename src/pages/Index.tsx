@@ -245,8 +245,16 @@ const Index = ({ onWallpaperChange }: IndexProps = {}) => {
                 <DebtsManager language={language} onDebtsChange={setTotalDebts} />
                 <FixedExpensesManager language={language} onExpensesChange={setTotalFixedExpenses} />
                 <VariableExpensesManager onExpensesChange={setTotalVariableExpenses} language={language} />
-                <EnhancedSavingsManager language={language} availableToSave={availableForSavings} />
-                <SavingsGoalsManager language={language} availableForSavings={availableForSavings} />
+                <EnhancedSavingsManager 
+                  language={language} 
+                  availableToSave={availableForSavings}
+                  totalExpenses={totalFixedExpenses + totalVariableExpenses}
+                />
+                <SavingsGoalsManager 
+                  language={language} 
+                  availableForSavings={availableForSavings}
+                  availableBudget={totalIncome - totalFixedExpenses - totalVariableExpenses - totalDebts}
+                />
               </div>
 
               <div className="lg:col-span-1">

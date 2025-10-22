@@ -3,15 +3,18 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Progress } from "@/components/ui/progress";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { PiggyBank, TrendingUp, History, Pencil, Trash2 } from "lucide-react";
-import { getTranslation, Language } from "@/lib/i18n";
+import { PiggyBank, TrendingUp, History, Pencil, Trash2, Shield } from "lucide-react";
+import { formatCurrency, getTranslation, Language } from "@/lib/i18n";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 
 interface SavingsManagerProps {
   language: Language;
   availableToSave: number;
+  totalExpenses: number;
 }
 
 interface SavingsHistoryEntry {
@@ -21,7 +24,7 @@ interface SavingsHistoryEntry {
   notes?: string;
 }
 
-export const EnhancedSavingsManager = ({ language, availableToSave }: SavingsManagerProps) => {
+export const EnhancedSavingsManager = ({ language, availableToSave, totalExpenses }: SavingsManagerProps) => {
   const t = (key: string) => getTranslation(language, key);
   const { toast } = useToast();
   
@@ -34,6 +37,8 @@ export const EnhancedSavingsManager = ({ language, availableToSave }: SavingsMan
   const [goalName, setGoalName] = useState("");
   const [goalDescription, setGoalDescription] = useState("");
   const [emergencyFund, setEmergencyFund] = useState("");
+  const [emergencyFundMonths, setEmergencyFundMonths] = useState<number>(4);
+  const [monthlyEmergencyContribution, setMonthlyEmergencyContribution] = useState("");
 
   const currentMonth = new Date().toLocaleDateString(language === 'en' ? 'en-GB' : 'es-ES', { 
     month: 'long', 
@@ -44,6 +49,12 @@ export const EnhancedSavingsManager = ({ language, availableToSave }: SavingsMan
     en: ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'],
     es: ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre']
   };
+
+  const emergencyFundTarget = totalExpenses * emergencyFundMonths;
+  const emergencyFundProgress = emergencyFundTarget > 0 
+    ? (parseFloat(emergencyFund || "0") / emergencyFundTarget) * 100 
+    : 0;
+  const remainingForEmergencyFund = Math.max(0, emergencyFundTarget - parseFloat(emergencyFund || "0"));
 
   useEffect(() => {
     loadSavings();
@@ -138,7 +149,6 @@ export const EnhancedSavingsManager = ({ language, availableToSave }: SavingsMan
     const now = new Date();
     const monthYear = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-01`;
 
-    // Check if entry already exists for this month
     const { data: existing } = await supabase
       .from('savings_history')
       .select('*')
@@ -169,7 +179,6 @@ export const EnhancedSavingsManager = ({ language, availableToSave }: SavingsMan
       return;
     }
 
-    // Update total accumulated
     const newTotal = totalAccumulated + availableToSave;
     await supabase
       .from('savings')
@@ -194,7 +203,6 @@ export const EnhancedSavingsManager = ({ language, availableToSave }: SavingsMan
       return;
     }
 
-    // Recalculate total
     const { data } = await supabase
       .from('savings_history')
       .select('amount')
@@ -244,109 +252,188 @@ export const EnhancedSavingsManager = ({ language, availableToSave }: SavingsMan
   };
 
   return (
-    <Card className="shadow-medium border-muted">
-      <CardHeader className="bg-gradient-income text-income-foreground">
-        <div className="flex items-center gap-2">
-          <PiggyBank className="h-5 w-5" />
-          <CardTitle>{language === 'en' ? 'Savings' : 'Ahorros'}</CardTitle>
-        </div>
-        <CardDescription className="text-income-foreground/80">
-          {language === 'en' ? 'Manage your savings goals and history' : 'Gestiona tus metas e historial de ahorro'}
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="pt-6 space-y-6">
-        {/* Available to Save */}
-        <div className="p-4 bg-muted/50 rounded-lg">
-          <div className="flex flex-col gap-2">
-            <span className="text-sm text-muted-foreground">
-              {language === 'en' ? `Available to Save - ${currentMonth}` : `Disponible para Ahorrar - ${currentMonth}`}
-            </span>
-            <div className="flex items-center justify-between">
-              <span className={`text-2xl font-bold ${availableToSave >= 0 ? 'text-success' : 'text-destructive'}`}>
-                £{availableToSave.toFixed(2)}
+    <>
+      {/* Emergency Fund Section */}
+      <Card className="shadow-medium mb-6">
+        <CardHeader className="bg-gradient-to-r from-warning/20 to-warning/10 border-l-4 border-warning rounded-t-xl">
+          <div className="flex items-center gap-2">
+            <Shield className="h-5 w-5 text-warning" />
+            <CardTitle className="text-xl">
+              {language === 'en' ? 'Emergency Fund' : 'Fondo de Emergencia'}
+            </CardTitle>
+          </div>
+          <CardDescription>
+            {language === 'en' 
+              ? 'Build a safety net for unexpected expenses' 
+              : 'Construye una red de seguridad para gastos inesperados'}
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="pt-6 space-y-6">
+          {/* Emergency Fund Target Selection */}
+          <div>
+            <Label>
+              {language === 'en' 
+                ? 'Emergency Fund Target (Months of Expenses)' 
+                : 'Objetivo del Fondo (Meses de Gastos)'}
+            </Label>
+            <Select value={emergencyFundMonths.toString()} onValueChange={(v) => setEmergencyFundMonths(parseInt(v))}>
+              <SelectTrigger className="mt-2">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="3">3 {language === 'en' ? 'months' : 'meses'}</SelectItem>
+                <SelectItem value="4">4 {language === 'en' ? 'months' : 'meses'}</SelectItem>
+                <SelectItem value="5">5 {language === 'en' ? 'months' : 'meses'}</SelectItem>
+                <SelectItem value="6">6 {language === 'en' ? 'months' : 'meses'}</SelectItem>
+              </SelectContent>
+            </Select>
+            <p className="text-sm text-muted-foreground mt-2">
+              {language === 'en'
+                ? `Target: ${formatCurrency(emergencyFundTarget)} (${emergencyFundMonths} months of expenses)`
+                : `Objetivo: ${formatCurrency(emergencyFundTarget)} (${emergencyFundMonths} meses de gastos)`}
+            </p>
+          </div>
+
+          {/* Current Emergency Fund */}
+          <div>
+            <Label htmlFor="emergencyFund">
+              {language === 'en' ? 'Current Emergency Fund' : 'Fondo de Emergencia Actual'}
+            </Label>
+            <Input
+              id="emergencyFund"
+              type="number"
+              step="0.01"
+              value={emergencyFund}
+              onChange={(e) => setEmergencyFund(e.target.value)}
+              className="mt-2"
+            />
+          </div>
+
+          {/* Monthly Contribution */}
+          <div>
+            <Label htmlFor="monthlyEmergencyContribution">
+              {language === 'en' 
+                ? 'Monthly Contribution to Emergency Fund' 
+                : 'Aporte Mensual al Fondo de Emergencia'}
+            </Label>
+            <Input
+              id="monthlyEmergencyContribution"
+              type="number"
+              step="0.01"
+              value={monthlyEmergencyContribution}
+              onChange={(e) => setMonthlyEmergencyContribution(e.target.value)}
+              className="mt-2"
+              placeholder={language === 'en' ? 'Amount to save monthly' : 'Monto a ahorrar mensualmente'}
+            />
+          </div>
+
+          {/* Progress */}
+          <div className="space-y-2">
+            <div className="flex justify-between text-sm">
+              <span className="text-muted-foreground">
+                {language === 'en' ? 'Progress' : 'Progreso'}
               </span>
-              <Button onClick={saveCurrentMonth} size="sm">
-                {language === 'en' ? 'Save This Month' : 'Guardar Este Mes'}
+              <span className="font-semibold">
+                {formatCurrency(parseFloat(emergencyFund || "0"))} / {formatCurrency(emergencyFundTarget)}
+              </span>
+            </div>
+            <Progress value={emergencyFundProgress} className="h-3" />
+            <p className="text-sm text-muted-foreground">
+              {language === 'en'
+                ? `${emergencyFundProgress.toFixed(1)}% complete - ${formatCurrency(remainingForEmergencyFund)} remaining`
+                : `${emergencyFundProgress.toFixed(1)}% completo - ${formatCurrency(remainingForEmergencyFund)} restante`}
+            </p>
+          </div>
+
+          <Button onClick={updateSavings} className="w-full">
+            {language === 'en' ? 'Save Emergency Fund Settings' : 'Guardar Configuración del Fondo'}
+          </Button>
+        </CardContent>
+      </Card>
+
+      {/* General Savings Section */}
+      <Card className="shadow-medium border-muted">
+        <CardHeader className="bg-gradient-income text-income-foreground">
+          <div className="flex items-center gap-2">
+            <PiggyBank className="h-5 w-5" />
+            <CardTitle>{language === 'en' ? 'Savings' : 'Ahorros'}</CardTitle>
+          </div>
+          <CardDescription className="text-income-foreground/80">
+            {language === 'en' ? 'Manage your savings goals and history' : 'Gestiona tus metas e historial de ahorro'}
+          </CardDescription>
+        </CardHeader>
+        <CardContent className="pt-6 space-y-6">
+          {/* Available to Save */}
+          <div className="p-4 bg-muted/50 rounded-lg">
+            <div className="flex flex-col gap-2">
+              <span className="text-sm text-muted-foreground">
+                {language === 'en' ? `Available to Save - ${currentMonth}` : `Disponible para Ahorrar - ${currentMonth}`}
+              </span>
+              <div className="flex items-center justify-between">
+                <span className={`text-2xl font-bold ${availableToSave >= 0 ? 'text-success' : 'text-destructive'}`}>
+                  £{availableToSave.toFixed(2)}
+                </span>
+                <Button onClick={saveCurrentMonth} size="sm">
+                  {language === 'en' ? 'Save This Month' : 'Guardar Este Mes'}
+                </Button>
+              </div>
+            </div>
+          </div>
+
+          {/* Savings Goals Section */}
+          <div className="space-y-4 p-4 bg-muted/50 rounded-lg">
+            <Label className="text-base font-semibold flex items-center gap-2">
+              <TrendingUp className="h-4 w-4 text-primary" />
+              {language === 'en' ? 'Savings Goals' : 'Metas de Ahorro'}
+            </Label>
+            
+            <div className="space-y-3">
+              <div className="space-y-2">
+                <Label htmlFor="goal-name">
+                  {language === 'en' ? 'Savings Goal (e.g., Vacation, House, Education)' : 'Objetivo de Ahorro (ej. Vacaciones, Vivienda, Educación)'}
+                </Label>
+                <Input
+                  id="goal-name"
+                  value={goalName}
+                  onChange={(e) => setGoalName(e.target.value)}
+                  placeholder={language === 'en' ? 'Enter your savings goal' : 'Ingresa tu objetivo de ahorro'}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="goal-description">
+                  {language === 'en' ? 'Goal Description' : 'Descripción del Objetivo'}
+                </Label>
+                <Input
+                  id="goal-description"
+                  value={goalDescription}
+                  onChange={(e) => setGoalDescription(e.target.value)}
+                  placeholder={language === 'en' ? 'Optional details about your goal' : 'Detalles opcionales sobre tu objetivo'}
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="monthly-goal">
+                  {language === 'en' ? 'Monthly Savings Goal' : 'Meta de Ahorro Mensual'}
+                </Label>
+                <Input
+                  id="monthly-goal"
+                  type="number"
+                  step="0.01"
+                  value={monthlyGoal}
+                  onChange={(e) => setMonthlyGoal(e.target.value)}
+                  placeholder="0.00"
+                  className="text-lg font-medium"
+                />
+              </div>
+
+              <Button onClick={updateSavings} className="w-full">
+                {language === 'en' ? 'Save Goals' : 'Guardar Metas'}
               </Button>
             </div>
           </div>
-        </div>
 
-        {/* Savings Goals Section */}
-        <div className="space-y-4 p-4 bg-muted/50 rounded-lg">
-          <Label className="text-base font-semibold flex items-center gap-2">
-            <TrendingUp className="h-4 w-4 text-primary" />
-            {language === 'en' ? 'Savings Goals' : 'Metas de Ahorro'}
-          </Label>
-          
-          <div className="space-y-3">
-            <div className="space-y-2">
-              <Label htmlFor="goal-name">
-                {language === 'en' ? 'Savings Goal (e.g., Vacation, House, Education)' : 'Objetivo de Ahorro (ej. Vacaciones, Vivienda, Educación)'}
-              </Label>
-              <Input
-                id="goal-name"
-                value={goalName}
-                onChange={(e) => setGoalName(e.target.value)}
-                placeholder={language === 'en' ? 'Enter your savings goal' : 'Ingresa tu objetivo de ahorro'}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="goal-description">
-                {language === 'en' ? 'Goal Description' : 'Descripción del Objetivo'}
-              </Label>
-              <Input
-                id="goal-description"
-                value={goalDescription}
-                onChange={(e) => setGoalDescription(e.target.value)}
-                placeholder={language === 'en' ? 'Optional details about your goal' : 'Detalles opcionales sobre tu objetivo'}
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="monthly-goal">
-                {language === 'en' ? 'Monthly Savings Goal' : 'Meta de Ahorro Mensual'}
-              </Label>
-              <Input
-                id="monthly-goal"
-                type="number"
-                step="0.01"
-                value={monthlyGoal}
-                onChange={(e) => setMonthlyGoal(e.target.value)}
-                placeholder="0.00"
-                className="text-lg font-medium"
-              />
-            </div>
-
-            <div className="space-y-2">
-              <Label htmlFor="emergency-fund">
-                {language === 'en' ? 'Emergency Fund Current Amount' : 'Monto Actual del Fondo de Emergencia'}
-              </Label>
-              <Input
-                id="emergency-fund"
-                type="number"
-                step="0.01"
-                value={emergencyFund}
-                onChange={(e) => setEmergencyFund(e.target.value)}
-                placeholder="0.00"
-                className="text-lg font-medium"
-              />
-              <p className="text-xs text-muted-foreground">
-                {language === 'en' 
-                  ? 'Separate from your general savings goals' 
-                  : 'Separado de tus metas de ahorro generales'}
-              </p>
-            </div>
-
-            <Button onClick={updateSavings} className="w-full">
-              {language === 'en' ? 'Save Goals' : 'Guardar Metas'}
-            </Button>
-          </div>
-        </div>
-
-        {/* Total Accumulated and Emergency Fund Status */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+          {/* Total Accumulated */}
           <div className="p-4 bg-gradient-income text-income-foreground rounded-lg">
             <div className="space-y-2">
               <p className="text-sm opacity-90">
@@ -361,101 +448,79 @@ export const EnhancedSavingsManager = ({ language, availableToSave }: SavingsMan
             </div>
           </div>
 
-          {parseFloat(emergencyFund) > 0 && (
-            <div className="p-4 bg-orange-100 dark:bg-orange-950/30 text-orange-900 dark:text-orange-100 rounded-lg">
-              <div className="space-y-2">
-                <p className="text-sm font-medium">
-                  {language === 'en' ? 'Emergency Fund Target' : 'Meta Fondo de Emergencia'}
-                </p>
-                <p className="text-2xl font-bold">£{parseFloat(emergencyFund).toFixed(2)}</p>
-                <div className="mt-2">
-                  <div className="w-full bg-orange-200 dark:bg-orange-900/50 rounded-full h-2">
-                    <div 
-                      className="bg-orange-600 dark:bg-orange-500 h-2 rounded-full transition-all"
-                      style={{ width: `${Math.min(100, (totalAccumulated / parseFloat(emergencyFund)) * 100)}%` }}
-                    />
-                  </div>
-                  <p className="text-xs mt-1">
-                    {Math.min(100, ((totalAccumulated / parseFloat(emergencyFund)) * 100)).toFixed(1)}% {language === 'en' ? 'complete' : 'completo'}
-                  </p>
-                </div>
-              </div>
+          {/* Savings History */}
+          <div className="space-y-3">
+            <div className="flex items-center gap-2">
+              <History className="h-4 w-4 text-primary" />
+              <h3 className="font-semibold">{language === 'en' ? 'Savings History' : 'Historial de Ahorros'}</h3>
             </div>
-          )}
-        </div>
-
-        {/* Savings History */}
-        <div className="space-y-3">
-          <div className="flex items-center gap-2">
-            <History className="h-4 w-4 text-primary" />
-            <h3 className="font-semibold">{language === 'en' ? 'Savings History' : 'Historial de Ahorros'}</h3>
-          </div>
-          <div className="space-y-2 max-h-60 overflow-y-auto">
-            {savingsHistory.map((entry) => (
-              <div key={entry.id} className="flex items-center justify-between p-3 bg-secondary/50 rounded-lg">
-                <div className="flex-1">
-                  <p className="font-medium">{formatMonthYear(entry.month_year)}</p>
-                  <p className="text-sm text-muted-foreground">£{parseFloat(entry.amount.toString()).toFixed(2)}</p>
-                </div>
-                <div className="flex gap-1">
-                  <Dialog open={isEditDialogOpen && editingEntry?.id === entry.id} onOpenChange={(open) => {
-                    setIsEditDialogOpen(open);
-                    if (!open) setEditingEntry(null);
-                  }}>
-                    <DialogTrigger asChild>
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={() => {
-                          setEditingEntry(entry);
-                          setIsEditDialogOpen(true);
-                        }}
-                      >
-                        <Pencil className="h-4 w-4" />
-                      </Button>
-                    </DialogTrigger>
-                    <DialogContent>
-                      <DialogHeader>
-                        <DialogTitle>{language === 'en' ? 'Edit Savings Entry' : 'Editar Entrada de Ahorros'}</DialogTitle>
-                      </DialogHeader>
-                      {editingEntry && (
-                        <div className="space-y-4">
-                          <div className="space-y-2">
-                            <Label>{language === 'en' ? 'Amount' : 'Monto'}</Label>
-                            <Input
-                              type="number"
-                              step="0.01"
-                              value={editingEntry.amount}
-                              onChange={(e) => setEditingEntry({...editingEntry, amount: parseFloat(e.target.value)})}
-                            />
+            <div className="space-y-2 max-h-60 overflow-y-auto">
+              {savingsHistory.map((entry) => (
+                <div key={entry.id} className="flex items-center justify-between p-3 bg-secondary/50 rounded-lg">
+                  <div className="flex-1">
+                    <p className="font-medium">{formatMonthYear(entry.month_year)}</p>
+                    <p className="text-sm text-muted-foreground">£{parseFloat(entry.amount.toString()).toFixed(2)}</p>
+                  </div>
+                  <div className="flex gap-1">
+                    <Dialog open={isEditDialogOpen && editingEntry?.id === entry.id} onOpenChange={(open) => {
+                      setIsEditDialogOpen(open);
+                      if (!open) setEditingEntry(null);
+                    }}>
+                      <DialogTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={() => {
+                            setEditingEntry(entry);
+                            setIsEditDialogOpen(true);
+                          }}
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                      </DialogTrigger>
+                      <DialogContent>
+                        <DialogHeader>
+                          <DialogTitle>{language === 'en' ? 'Edit Savings Entry' : 'Editar Entrada de Ahorros'}</DialogTitle>
+                        </DialogHeader>
+                        {editingEntry && (
+                          <div className="space-y-4">
+                            <div className="space-y-2">
+                              <Label>{language === 'en' ? 'Amount' : 'Monto'}</Label>
+                              <Input
+                                type="number"
+                                step="0.01"
+                                value={editingEntry.amount}
+                                onChange={(e) => setEditingEntry({...editingEntry, amount: parseFloat(e.target.value)})}
+                              />
+                            </div>
+                            <div className="space-y-2">
+                              <Label>{language === 'en' ? 'Notes' : 'Notas'}</Label>
+                              <Input
+                                value={editingEntry.notes || ''}
+                                onChange={(e) => setEditingEntry({...editingEntry, notes: e.target.value})}
+                              />
+                            </div>
+                            <Button onClick={updateHistoryEntry} className="w-full">
+                              {language === 'en' ? 'Update' : 'Actualizar'}
+                            </Button>
                           </div>
-                          <div className="space-y-2">
-                            <Label>{language === 'en' ? 'Notes' : 'Notas'}</Label>
-                            <Input
-                              value={editingEntry.notes || ''}
-                              onChange={(e) => setEditingEntry({...editingEntry, notes: e.target.value})}
-                            />
-                          </div>
-                          <Button onClick={updateHistoryEntry} className="w-full">
-                            {language === 'en' ? 'Update' : 'Actualizar'}
-                          </Button>
-                        </div>
-                      )}
-                    </DialogContent>
-                  </Dialog>
-                  <Button
-                    variant="ghost"
-                    size="icon"
-                    onClick={() => deleteHistoryEntry(entry.id, parseFloat(entry.amount.toString()))}
-                  >
-                    <Trash2 className="h-4 w-4 text-destructive" />
-                  </Button>
+                        )}
+                      </DialogContent>
+                    </Dialog>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => deleteHistoryEntry(entry.id, parseFloat(entry.amount.toString()))}
+                    >
+                      <Trash2 className="h-4 w-4 text-destructive" />
+                    </Button>
+                  </div>
                 </div>
-              </div>
-            ))}
+              ))}
+            </div>
           </div>
-        </div>
-      </CardContent>
-    </Card>
+        </CardContent>
+      </Card>
+    </>
   );
 };
