@@ -254,6 +254,29 @@ export const WallpaperSettings = ({ language, onWallpaperChange }: WallpaperSett
             {language === 'en' ? 'Apply URL Wallpaper' : 'Aplicar Fondo por URL'}
           </Button>
         </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="wallpaper-url">
+              {language === 'en' ? 'Image URL' : 'URL de Imagen'}
+            </Label>
+            <Input
+              id="wallpaper-url"
+              type="url"
+              value={wallpaperUrl}
+              onChange={(e) => setWallpaperUrl(e.target.value)}
+              placeholder="https://example.com/image.jpg"
+            />
+            <p className="text-xs text-muted-foreground">
+              {language === 'en' 
+                ? 'Enter a URL to an image you want to use as wallpaper' 
+                : 'Ingresa la URL de una imagen que quieras usar como fondo'}
+            </p>
+          </div>
+
+          <Button onClick={saveWallpaper} className="w-full" disabled={!wallpaperUrl.trim()}>
+            {language === 'en' ? 'Apply URL Wallpaper' : 'Aplicar Fondo por URL'}
+          </Button>
+        </div>
       </CardContent>
     </Card>
   );
