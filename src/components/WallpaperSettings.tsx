@@ -19,6 +19,7 @@ export const WallpaperSettings = ({ language, onWallpaperChange }: WallpaperSett
   const [currentWallpaper, setCurrentWallpaper] = useState<string | null>(null);
   const [isUploading, setIsUploading] = useState(false);
   const fileInputRef = useRef<HTMLInputElement>(null);
+  const [uploadedWallpaperUrl, setUploadedWallpaperUrl] = useState<string | null>(null);
 
   useEffect(() => {
     loadSettings();
@@ -133,8 +134,8 @@ export const WallpaperSettings = ({ language, onWallpaperChange }: WallpaperSett
         .from('wallpapers')
         .getPublicUrl(fileName);
 
-      await applyWallpaper(publicUrl);
-      toast({ title: "Success", description: "Wallpaper uploaded successfully" });
+      setUploadedWallpaperUrl(publicUrl);
+      toast({ title: language === 'en' ? 'Image uploaded' : 'Imagen subida', description: language === 'en' ? 'Click Apply to set as wallpaper' : 'Haz clic en Aplicar para usarla como fondo' });
     } catch (error) {
       console.error(error);
       toast({ title: "Error", description: "Failed to upload image", variant: "destructive" });

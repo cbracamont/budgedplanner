@@ -19,6 +19,10 @@ interface PaymentItem {
   sourceTable?: 'income_sources' | 'debts' | 'fixed_expenses';
   isAnnual?: boolean;
   paymentMonth?: number;
+  // New fields to control visibility for installment debts
+  isInstallment?: boolean;
+  startDate?: string | null;
+  endDate?: string | null;
 }
 
 interface CalendarViewProps {
@@ -42,17 +46,23 @@ export const CalendarView = ({ payments, language }: CalendarViewProps) => {
     return new Date(date.getFullYear(), date.getMonth(), 1).getDay();
   };
 
-  const getPaymentsForDay = (day: number) => {
-    const currentMonthNumber = currentMonth.getMonth() + 1;
-    return payments.filter(p => {
-      if (p.dueDay !== day) return false;
-      // For annual payments, only show in the specified month
-      if (p.isAnnual && p.paymentMonth) {
-        return p.paymentMonth === currentMonthNumber;
-      }
-      return true;
-    });
-  };
+const getPaymentsForDay = (day: number) => {
+  const currentMonthNumber = currentMonth.getMonth() + 1;
+  return payments.filter(p => {
+    if (p.dueDay !== day) return false;
+    // For annual payments, only show in the specified month
+    if (p.isAnnual && p.paymentMonth) {
+      if (p.paymentMonth !== currentMonthNumber) return false;
+    }
+    // For installment debts, respect start and end dates
+    if (p.category === 'debt' && p.isInstallment) {
+      const currentDate = new Date(currentMonth.getFullYear(), currentMonth.getMonth(), day);
+      if (p.startDate && currentDate < new Date(p.startDate)) return false;
+      if (p.endDate && currentDate > new Date(p.endDate)) return false;
+    }
+    return true;
+  });
+};
 
   const getCategoryColor = (category: string) => {
     switch (category) {

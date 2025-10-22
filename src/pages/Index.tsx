@@ -121,7 +121,10 @@ const Index = ({ onWallpaperChange }: IndexProps = {}) => {
       amount: debt.minimum_payment,
       dueDay: debt.payment_day,
       category: 'debt' as const,
-      sourceTable: 'debts' as const
+      sourceTable: 'debts' as const,
+      isInstallment: debt.is_installment,
+      startDate: debt.start_date,
+      endDate: debt.end_date
     })),
     ...fixedExpensesData.map(expense => ({
       id: expense.id,
