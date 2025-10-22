@@ -68,6 +68,12 @@ ${debtsData.data?.map(d => `- ${d.name}: Balance £${d.balance}, APR ${d.apr}%, 
 
 Ingresos:
 ${incomeData.data?.map(i => `- ${i.name}: £${i.amount}`).join('\n') || 'Sin ingresos'}
+
+Gastos fijos:
+${fixedExpensesData.data?.map(e => `- ${e.name}: £${e.amount} (${e.frequency_type})`).join('\n') || 'Sin gastos fijos'}
+
+Gastos variables:
+${variableExpensesData.data?.map(e => `- ${e.name || 'Sin nombre'}: £${e.amount}`).join('\n') || 'Sin gastos variables'}
     `;
 
     const systemPrompt = `Eres un asesor financiero experto especializado en finanzas personales del Reino Unido. Tu objetivo es ayudar al usuario a:
