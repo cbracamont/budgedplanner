@@ -115,16 +115,13 @@ const Index = ({ onWallpaperChange }: IndexProps = {}) => {
         setTotalSavings(savingsResult.data.total_accumulated || 0);
         setEmergencyFund(savingsResult.data.emergency_fund || 0);
         
-        // Get monthly emergency contribution
-        const monthlyExpenses = totalFixedExpenses + totalVariableExpenses;
-        const emergencyFundTarget = monthlyExpenses * 4; // 4 months of expenses
-        const remainingForEmergency = Math.max(0, emergencyFundTarget - (savingsResult.data.emergency_fund || 0));
-        
-        // Calculate suggested monthly contribution (spread over 12 months)
-        const suggestedMonthly = remainingForEmergency > 0 ? remainingForEmergency / 12 : 0;
-        setMonthlyEmergencyContribution(suggestedMonthly);
+        // Only set emergency contribution if user has actively set a monthly goal for it
+        // Otherwise it's just a suggestion and shouldn't be deducted from budget
+        setMonthlyEmergencyContribution(0); // User needs to manually set this
         
         // Calculate emergency fund target (3-6 months of expenses)
+        const monthlyExpenses = totalFixedExpenses + totalVariableExpenses;
+        const emergencyFundTarget = monthlyExpenses * 4;
         setEmergencyFundTarget(emergencyFundTarget);
       }
     };
