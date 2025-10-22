@@ -537,9 +537,10 @@ export const DebtsManager = ({ language, onDebtsChange }: DebtsManagerProps) => 
                           <Input
                             id="edit-debt-apr"
                             type="number"
+                            min="0"
                             step="0.01"
-                            value={editingDebt?.apr || ''}
-                            onChange={(e) => setEditingDebt(editingDebt ? {...editingDebt, apr: parseFloat(e.target.value)} : null)}
+                            value={editingDebt?.apr ?? ''}
+                            onChange={(e) => setEditingDebt(editingDebt ? {...editingDebt, apr: parseFloat(e.target.value) || 0} : null)}
                             required
                           />
                         </div>
