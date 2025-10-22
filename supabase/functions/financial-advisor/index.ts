@@ -38,12 +38,13 @@ serve(async (req) => {
     }
 
     // Fetch user's financial data
-    const [incomeData, debtsData, fixedExpensesData, variableExpensesData, savingsData] = await Promise.all([
+    const [incomeData, debtsData, fixedExpensesData, variableExpensesData, savingsData, savingsGoalsData] = await Promise.all([
       supabase.from('income_sources').select('*').eq('user_id', user.id),
       supabase.from('debts').select('*').eq('user_id', user.id),
       supabase.from('fixed_expenses').select('*').eq('user_id', user.id),
       supabase.from('variable_expenses').select('*').eq('user_id', user.id),
       supabase.from('savings').select('*').eq('user_id', user.id).maybeSingle(),
+      supabase.from('savings_goals').select('*').eq('user_id', user.id),
     ]);
 
     // Calculate totals
@@ -51,7 +52,11 @@ serve(async (req) => {
     const totalDebts = debtsData.data?.reduce((sum, d) => sum + Number(d.minimum_payment), 0) || 0;
     const totalFixed = fixedExpensesData.data?.reduce((sum, e) => sum + Number(e.amount), 0) || 0;
     const totalVariable = variableExpensesData.data?.reduce((sum, e) => sum + Number(e.amount), 0) || 0;
-    const monthlySavings = savingsData.data?.monthly_goal || 0;
+    const totalSavingsGoals = savingsGoalsData.data?.reduce((sum, g) => sum + Number(g.monthly_contribution || 0), 0) || 0;
+    const monthlyEmergencyContribution = Number(savingsData.data?.monthly_emergency_contribution || 0);
+    const totalExpenses = totalDebts + totalFixed + totalVariable;
+    const monthlySavingsCommitments = totalSavingsGoals + monthlyEmergencyContribution;
+    const monthlyBalance = totalIncome - totalExpenses - monthlySavingsCommitments;
 
     // Prepare financial context
     const financialContext = `
@@ -60,8 +65,9 @@ Usuario con los siguientes datos financieros mensuales:
 - Deudas (pago mínimo): £${totalDebts.toFixed(2)}
 - Gastos fijos: £${totalFixed.toFixed(2)}
 - Gastos variables: £${totalVariable.toFixed(2)}
-- Meta de ahorro mensual: £${monthlySavings.toFixed(2)}
-- Balance disponible: £${(totalIncome - totalDebts - totalFixed - totalVariable).toFixed(2)}
+- Metas de ahorro mensuales: £${totalSavingsGoals.toFixed(2)}
+- Contribución a fondo de emergencia: £${monthlyEmergencyContribution.toFixed(2)}
+- Balance disponible mensual: £${monthlyBalance.toFixed(2)}
 
 Detalles de deudas:
 ${debtsData.data?.map(d => `- ${d.name}: Balance £${d.balance}, APR ${d.apr}%, Pago mínimo £${d.minimum_payment}`).join('\n') || 'Sin deudas'}
