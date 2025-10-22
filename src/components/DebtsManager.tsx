@@ -94,8 +94,6 @@ export const DebtsManager = ({ language, onDebtsChange }: DebtsManagerProps) => 
       name: newDebt.name,
       bank: newDebt.bank || null,
       balance: parseFloat(parseFloat(newDebt.balance).toFixed(2)),
-      apr: parseFloat(parseFloat(newDebt.apr).toFixed(2)),
-      minimum_payment: parseFloat(parseFloat(newDebt.minimum_payment).toFixed(2)),
       payment_day: parseInt(newDebt.payment_day),
       is_installment: isInstallment
     };
@@ -106,12 +104,19 @@ export const DebtsManager = ({ language, onDebtsChange }: DebtsManagerProps) => 
       debtData.installment_amount = parseFloat(parseFloat(newDebt.installment_amount).toFixed(2));
       debtData.start_date = newDebt.start_date;
       debtData.end_date = newDebt.end_date;
+      debtData.apr = 0;
+      debtData.minimum_payment = debtData.installment_amount;
+    } else {
+      debtData.minimum_payment = parseFloat(parseFloat(newDebt.minimum_payment).toFixed(2));
     }
 
     if (hasPromotionalAPR) {
       debtData.promotional_apr = parseFloat(parseFloat(newDebt.promotional_apr).toFixed(2));
       debtData.promotional_apr_end_date = newDebt.promotional_apr_end_date;
       debtData.regular_apr = parseFloat(parseFloat(newDebt.regular_apr).toFixed(2));
+      debtData.apr = debtData.promotional_apr;
+    } else if (!isInstallment) {
+      debtData.apr = parseFloat(parseFloat(newDebt.apr).toFixed(2));
     }
 
     const { error } = await supabase.from("debts").insert(debtData);
@@ -237,31 +242,35 @@ export const DebtsManager = ({ language, onDebtsChange }: DebtsManagerProps) => 
                 required
               />
             </div>
-            <div className="space-y-2">
-              <Label htmlFor="debt-apr">{t('interestRate')}</Label>
-              <Input
-                id="debt-apr"
-                type="number"
-                min="0"
-                step="0.01"
-                placeholder="0.00"
-                value={newDebt.apr}
-                onChange={(e) => setNewDebt({ ...newDebt, apr: e.target.value })}
-                required
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="debt-payment">{t('minimumPayment')}</Label>
-              <Input
-                id="debt-payment"
-                type="number"
-                step="0.01"
-                placeholder="0.00"
-                value={newDebt.minimum_payment}
-                onChange={(e) => setNewDebt({ ...newDebt, minimum_payment: e.target.value })}
-                required
-              />
-            </div>
+            {!isInstallment && !hasPromotionalAPR && (
+              <div className="space-y-2">
+                <Label htmlFor="debt-apr">{t('interestRate')}</Label>
+                <Input
+                  id="debt-apr"
+                  type="number"
+                  min="0"
+                  step="0.01"
+                  placeholder="0.00"
+                  value={newDebt.apr}
+                  onChange={(e) => setNewDebt({ ...newDebt, apr: e.target.value })}
+                  required
+                />
+              </div>
+            )}
+            {!isInstallment && (
+              <div className="space-y-2">
+                <Label htmlFor="debt-payment">{t('minimumPayment')}</Label>
+                <Input
+                  id="debt-payment"
+                  type="number"
+                  step="0.01"
+                  placeholder="0.00"
+                  value={newDebt.minimum_payment}
+                  onChange={(e) => setNewDebt({ ...newDebt, minimum_payment: e.target.value })}
+                  required
+                />
+              </div>
+            )}
             <div className="space-y-2">
               <Label htmlFor="debt-day">
                 {language === 'en' ? 'Payment Day' : 'Día de Pago'}
@@ -438,11 +447,27 @@ export const DebtsManager = ({ language, onDebtsChange }: DebtsManagerProps) => 
                       {debt.bank && `${debt.bank} • `}
                       £{debt.minimum_payment.toFixed(2)}/month • {language === 'en' ? 'Day' : 'Día'} {debt.payment_day}
                     </p>
-                    <p className="text-xs text-muted-foreground">
-                      {language === 'en' ? 'Balance:' : 'Balance:'} £{debt.balance.toFixed(2)} • APR: {debt.apr}%
-                    </p>
+                    {debt.promotional_apr && debt.promotional_apr_end_date ? (
+                      <>
+                        <p className="text-xs text-muted-foreground">
+                          {language === 'en' ? 'Balance:' : 'Balance:'} £{debt.balance.toFixed(2)}
+                        </p>
+                        <p className="text-xs text-blue-600 dark:text-blue-400 font-medium">
+                          {language === 'en' ? '🎯 Promotional APR:' : '🎯 APR Promocional:'} {debt.promotional_apr}% 
+                          {language === 'en' ? ' until ' : ' hasta '} 
+                          {new Date(debt.promotional_apr_end_date).toLocaleDateString(language === 'en' ? 'en-GB' : 'es-ES')}
+                        </p>
+                        <p className="text-xs text-muted-foreground">
+                          {language === 'en' ? 'Then APR:' : 'Luego APR:'} {debt.regular_apr}%
+                        </p>
+                      </>
+                    ) : (
+                      <p className="text-xs text-muted-foreground">
+                        {language === 'en' ? 'Balance:' : 'Balance:'} £{debt.balance.toFixed(2)} • APR: {debt.apr}%
+                      </p>
+                    )}
                     {debt.promotional_apr && debt.promotional_apr_end_date && (
-                      <p className="text-xs text-blue-600 dark:text-blue-400">
+                      <p className="text-xs text-blue-600 dark:text-blue-400 hidden">
                         {language === 'en' ? 'Promo APR:' : 'APR Promo:'} {debt.promotional_apr}% 
                         {language === 'en' ? ' until ' : ' hasta '}{new Date(debt.promotional_apr_end_date).toLocaleDateString(language === 'en' ? 'en-GB' : 'es-ES')}
                         {language === 'en' ? ', then ' : ', luego '}{debt.regular_apr}%
