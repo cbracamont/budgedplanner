@@ -292,12 +292,12 @@ const Index = ({ onWallpaperChange }: IndexProps = {}) => {
               <div className="lg:col-span-2 space-y-6">
                 <Collapsible defaultOpen>
                   <CollapsibleTrigger className="w-full group">
-                    <div className="flex items-center justify-between w-full p-4 rounded-xl bg-gradient-gold shadow-gold hover:shadow-premium transition-all duration-300 mb-4">
-                      <h2 className="text-xl font-bold text-foreground flex items-center gap-2">
-                        <TrendingUp className="h-5 w-5 text-primary" />
+                    <div className="flex items-center justify-between w-full p-4 rounded-xl bg-gradient-income shadow-gold hover:shadow-premium transition-all duration-300 mb-4">
+                      <h2 className="text-xl font-bold text-income-foreground flex items-center gap-2">
+                        <TrendingUp className="h-5 w-5" />
                         {getCategoryName('income')}
                       </h2>
-                      <ChevronDown className="h-5 w-5 text-primary transition-transform duration-300 group-data-[state=open]:rotate-180" />
+                      <ChevronDown className="h-5 w-5 text-income-foreground transition-transform duration-300 group-data-[state=open]:rotate-180" />
                     </div>
                   </CollapsibleTrigger>
                   <CollapsibleContent>
@@ -337,12 +337,12 @@ const Index = ({ onWallpaperChange }: IndexProps = {}) => {
 
                 <Collapsible defaultOpen>
                   <CollapsibleTrigger className="w-full group">
-                    <div className="flex items-center justify-between w-full p-4 rounded-xl bg-gradient-accent shadow-gold hover:shadow-premium transition-all duration-300 mb-4">
-                      <h2 className="text-xl font-bold text-accent-foreground flex items-center gap-2">
+                    <div className="flex items-center justify-between w-full p-4 rounded-xl bg-gradient-expenses shadow-gold hover:shadow-premium transition-all duration-300 mb-4">
+                      <h2 className="text-xl font-bold text-expenses-foreground flex items-center gap-2">
                         <TrendingUp className="h-5 w-5" />
                         {getCategoryName('variableExpenses')}
                       </h2>
-                      <ChevronDown className="h-5 w-5 text-accent-foreground transition-transform duration-300 group-data-[state=open]:rotate-180" />
+                      <ChevronDown className="h-5 w-5 text-expenses-foreground transition-transform duration-300 group-data-[state=open]:rotate-180" />
                     </div>
                   </CollapsibleTrigger>
                   <CollapsibleContent>
@@ -352,12 +352,12 @@ const Index = ({ onWallpaperChange }: IndexProps = {}) => {
 
                 <Collapsible defaultOpen>
                   <CollapsibleTrigger className="w-full group">
-                    <div className="flex items-center justify-between w-full p-4 rounded-xl bg-gradient-to-r from-warning/20 to-warning/10 border-l-4 border-warning shadow-gold hover:shadow-premium transition-all duration-300 mb-4">
-                      <h2 className="text-xl font-bold text-foreground flex items-center gap-2">
-                        <TrendingUp className="h-5 w-5 text-warning" />
+                    <div className="flex items-center justify-between w-full p-4 rounded-xl bg-gradient-warning shadow-gold hover:shadow-premium transition-all duration-300 mb-4">
+                      <h2 className="text-xl font-bold text-warning-foreground flex items-center gap-2">
+                        <TrendingUp className="h-5 w-5" />
                         {getCategoryName('emergencyFund')}
                       </h2>
-                      <ChevronDown className="h-5 w-5 text-warning transition-transform duration-300 group-data-[state=open]:rotate-180" />
+                      <ChevronDown className="h-5 w-5 text-warning-foreground transition-transform duration-300 group-data-[state=open]:rotate-180" />
                     </div>
                   </CollapsibleTrigger>
                   <CollapsibleContent>
@@ -397,7 +397,7 @@ const Index = ({ onWallpaperChange }: IndexProps = {}) => {
                     </div>
                   </CollapsibleTrigger>
                   <CollapsibleContent>
-                    <SavingsGoalsManager 
+                    <SavingsGoalsManager
                       language={language} 
                       availableForSavings={availableForSavings}
                       availableBudget={totalIncome - totalFixedExpenses - totalVariableExpenses - totalDebts}
