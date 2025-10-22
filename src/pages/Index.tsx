@@ -30,7 +30,7 @@ import { DailyRecommendations } from "@/components/DailyRecommendations";
 import { SavingsGoalsManager } from "@/components/SavingsGoalsManager";
 import { CategoryNameEditor } from "@/components/CategoryNameEditor";
 import { DisclaimerBanner } from "@/components/DisclaimerBanner";
-import { SubscriptionManager } from "@/components/SubscriptionManager";
+
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Calculator, LogOut } from "lucide-react";
@@ -464,7 +464,6 @@ const Index = ({ onWallpaperChange }: IndexProps = {}) => {
           </TabsContent>
 
           <TabsContent value="settings" className="space-y-6">
-            <SubscriptionManager language={language} />
             <div className="grid md:grid-cols-2 gap-6">
               <ChartSettings 
                 language={language}
