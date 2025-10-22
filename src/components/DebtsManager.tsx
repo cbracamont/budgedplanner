@@ -18,6 +18,12 @@ interface Debt {
   apr: number;
   minimum_payment: number;
   payment_day: number;
+  is_installment?: boolean;
+  total_amount?: number;
+  number_of_installments?: number;
+  installment_amount?: number;
+  start_date?: string;
+  end_date?: string;
 }
 
 interface DebtsManagerProps {
@@ -35,8 +41,15 @@ export const DebtsManager = ({ language, onDebtsChange }: DebtsManagerProps) => 
     balance: "",
     apr: "",
     minimum_payment: "",
-    payment_day: "1"
+    payment_day: "1",
+    is_installment: false,
+    total_amount: "",
+    number_of_installments: "",
+    installment_amount: "",
+    start_date: "",
+    end_date: ""
   });
+  const [isInstallment, setIsInstallment] = useState(false);
   const [editingDebt, setEditingDebt] = useState<Debt | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
 
@@ -67,20 +80,36 @@ export const DebtsManager = ({ language, onDebtsChange }: DebtsManagerProps) => 
     const { data: { user } } = await supabase.auth.getUser();
     if (!user) return;
 
-    const { error } = await supabase.from("debts").insert({
+    const debtData: any = {
       user_id: user.id,
       name: newDebt.name,
       bank: newDebt.bank || null,
-      balance: parseFloat(newDebt.balance),
-      apr: parseFloat(newDebt.apr),
-      minimum_payment: parseFloat(newDebt.minimum_payment),
+      balance: parseFloat(parseFloat(newDebt.balance).toFixed(2)),
+      apr: parseFloat(parseFloat(newDebt.apr).toFixed(2)),
+      minimum_payment: parseFloat(parseFloat(newDebt.minimum_payment).toFixed(2)),
       payment_day: parseInt(newDebt.payment_day),
-    });
+      is_installment: isInstallment
+    };
+
+    if (isInstallment) {
+      debtData.total_amount = parseFloat(parseFloat(newDebt.total_amount).toFixed(2));
+      debtData.number_of_installments = parseInt(newDebt.number_of_installments);
+      debtData.installment_amount = parseFloat(parseFloat(newDebt.installment_amount).toFixed(2));
+      debtData.start_date = newDebt.start_date;
+      debtData.end_date = newDebt.end_date;
+    }
+
+    const { error } = await supabase.from("debts").insert(debtData);
 
     if (error) {
       toast({ title: "Error", description: error.message, variant: "destructive" });
     } else {
-      setNewDebt({ name: "", bank: "", balance: "", apr: "", minimum_payment: "", payment_day: "1" });
+      setNewDebt({ 
+        name: "", bank: "", balance: "", apr: "", minimum_payment: "", payment_day: "1",
+        is_installment: false, total_amount: "", number_of_installments: "", 
+        installment_amount: "", start_date: "", end_date: ""
+      });
+      setIsInstallment(false);
       loadDebts();
       toast({ title: "Success", description: "Debt added" });
     }
@@ -136,6 +165,18 @@ export const DebtsManager = ({ language, onDebtsChange }: DebtsManagerProps) => 
       </CardHeader>
       <CardContent className="pt-6 space-y-6">
         <form onSubmit={addDebt} className="space-y-4 p-4 bg-secondary/50 rounded-lg">
+          <div className="flex items-center space-x-2 mb-4">
+            <input 
+              type="checkbox" 
+              id="is-installment" 
+              checked={isInstallment}
+              onChange={(e) => setIsInstallment(e.target.checked)}
+              className="h-4 w-4"
+            />
+            <Label htmlFor="is-installment">
+              {language === 'en' ? 'Installment Payment' : 'Pago en Cuotas'}
+            </Label>
+          </div>
           <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
             <div className="space-y-2">
               <Label htmlFor="debt-name">
@@ -214,6 +255,74 @@ export const DebtsManager = ({ language, onDebtsChange }: DebtsManagerProps) => 
                 required
               />
             </div>
+            {isInstallment && (
+              <>
+                <div className="space-y-2">
+                  <Label htmlFor="total-amount">{language === 'en' ? 'Total Amount' : 'Monto Total'}</Label>
+                  <Input
+                    id="total-amount"
+                    type="number"
+                    step="0.01"
+                    placeholder="0.00"
+                    value={newDebt.total_amount}
+                    onChange={(e) => setNewDebt({ ...newDebt, total_amount: e.target.value })}
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="num-installments">{language === 'en' ? 'Number of Installments' : 'Número de Cuotas'}</Label>
+                  <Input
+                    id="num-installments"
+                    type="number"
+                    min="1"
+                    value={newDebt.number_of_installments}
+                    onChange={(e) => {
+                      const numInstallments = parseInt(e.target.value);
+                      const totalAmt = parseFloat(newDebt.total_amount);
+                      setNewDebt({ 
+                        ...newDebt, 
+                        number_of_installments: e.target.value,
+                        installment_amount: (!isNaN(totalAmt) && numInstallments > 0) 
+                          ? (totalAmt / numInstallments).toFixed(2) 
+                          : ""
+                      });
+                    }}
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="installment-amount">{language === 'en' ? 'Amount per Installment' : 'Monto por Cuota'}</Label>
+                  <Input
+                    id="installment-amount"
+                    type="number"
+                    step="0.01"
+                    placeholder="0.00"
+                    value={newDebt.installment_amount}
+                    readOnly
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="start-date">{language === 'en' ? 'Start Date' : 'Fecha de Inicio'}</Label>
+                  <Input
+                    id="start-date"
+                    type="date"
+                    value={newDebt.start_date}
+                    onChange={(e) => setNewDebt({ ...newDebt, start_date: e.target.value })}
+                    required
+                  />
+                </div>
+                <div className="space-y-2">
+                  <Label htmlFor="end-date">{language === 'en' ? 'End Date' : 'Fecha de Finalización'}</Label>
+                  <Input
+                    id="end-date"
+                    type="date"
+                    value={newDebt.end_date}
+                    onChange={(e) => setNewDebt({ ...newDebt, end_date: e.target.value })}
+                    required
+                  />
+                </div>
+              </>
+            )}
           </div>
           <Button type="submit" className="w-full">
             <Plus className="mr-2 h-4 w-4" />
@@ -226,13 +335,28 @@ export const DebtsManager = ({ language, onDebtsChange }: DebtsManagerProps) => 
             <div key={debt.id} className="flex items-center justify-between p-3 bg-secondary/50 rounded-lg">
               <div className="flex-1">
                 <p className="font-medium">{debt.name}</p>
-                <p className="text-sm text-muted-foreground">
-                  {debt.bank && `${debt.bank} • `}
-                  £{debt.minimum_payment.toFixed(2)}/month • {language === 'en' ? 'Day' : 'Día'} {debt.payment_day}
-                </p>
-                <p className="text-xs text-muted-foreground">
-                  {language === 'en' ? 'Balance:' : 'Balance:'} £{debt.balance.toFixed(2)} • APR: {debt.apr}%
-                </p>
+                {debt.is_installment ? (
+                  <>
+                    <p className="text-sm text-muted-foreground">
+                      {debt.bank && `${debt.bank} • `}
+                      £{debt.installment_amount?.toFixed(2)}/installment • {language === 'en' ? 'Day' : 'Día'} {debt.payment_day}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {language === 'en' ? 'Total:' : 'Total:'} £{debt.total_amount?.toFixed(2)} • 
+                      {debt.number_of_installments} {language === 'en' ? 'installments' : 'cuotas'}
+                    </p>
+                  </>
+                ) : (
+                  <>
+                    <p className="text-sm text-muted-foreground">
+                      {debt.bank && `${debt.bank} • `}
+                      £{debt.minimum_payment.toFixed(2)}/month • {language === 'en' ? 'Day' : 'Día'} {debt.payment_day}
+                    </p>
+                    <p className="text-xs text-muted-foreground">
+                      {language === 'en' ? 'Balance:' : 'Balance:'} £{debt.balance.toFixed(2)} • APR: {debt.apr}%
+                    </p>
+                  </>
+                )}
               </div>
               <div className="flex gap-1">
                 <Dialog open={isEditDialogOpen && editingDebt?.id === debt.id} onOpenChange={(open) => {

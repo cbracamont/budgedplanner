@@ -5,8 +5,9 @@ import { DebtsManager } from "@/components/DebtsManager";
 import { FixedExpensesManager } from "@/components/FixedExpensesManager";
 import { VariableExpensesManager } from "@/components/VariableExpensesManager";
 import { EnhancedSavingsManager } from "@/components/EnhancedSavingsManager";
-import { FinancialCharts } from "@/components/FinancialCharts";
+import { EnhancedFinancialCharts } from "@/components/EnhancedFinancialCharts";
 import { WallpaperSettings } from "@/components/WallpaperSettings";
+import { ChartSettings, ChartType } from "@/components/ChartSettings";
 import { BudgetSummary } from "@/components/BudgetSummary";
 import { ImprovedDebtForecast } from "@/components/ImprovedDebtForecast";
 import { EnhancedDebtAdvisor } from "@/components/EnhancedDebtAdvisor";
@@ -29,6 +30,7 @@ const Index = ({ onWallpaperChange }: IndexProps = {}) => {
   const [totalDebts, setTotalDebts] = useState(0);
   const [totalFixedExpenses, setTotalFixedExpenses] = useState(0);
   const [totalVariableExpenses, setTotalVariableExpenses] = useState(0);
+  const [chartType, setChartType] = useState<ChartType>('bar');
   
   // Data for calendar and advisor
   const [incomeData, setIncomeData] = useState<any[]>([]);
@@ -96,7 +98,9 @@ const Index = ({ onWallpaperChange }: IndexProps = {}) => {
       amount: expense.amount,
       dueDay: expense.payment_day,
       category: 'fixed' as const,
-      sourceTable: 'fixed_expenses' as const
+      sourceTable: 'fixed_expenses' as const,
+      isAnnual: expense.frequency_type === 'annual',
+      paymentMonth: expense.payment_month
     }))
   ];
 
@@ -147,12 +151,13 @@ const Index = ({ onWallpaperChange }: IndexProps = {}) => {
 
           <TabsContent value="dashboard" className="space-y-6">
             {/* Financial Charts */}
-            <FinancialCharts
+            <EnhancedFinancialCharts
               totalIncome={totalIncome}
               totalDebts={totalDebts}
               totalFixedExpenses={totalFixedExpenses}
               totalVariableExpenses={totalVariableExpenses}
               language={language}
+              chartType={chartType}
             />
             
             <div className="grid lg:grid-cols-3 gap-6">
@@ -191,7 +196,12 @@ const Index = ({ onWallpaperChange }: IndexProps = {}) => {
             />
           </TabsContent>
 
-          <TabsContent value="settings">
+          <TabsContent value="settings" className="space-y-6">
+            <ChartSettings 
+              language={language}
+              selectedChart={chartType}
+              onChartChange={setChartType}
+            />
             <WallpaperSettings language={language} onWallpaperChange={onWallpaperChange || (() => {})} />
           </TabsContent>
         </Tabs>

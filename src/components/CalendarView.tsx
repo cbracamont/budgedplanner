@@ -17,6 +17,8 @@ interface PaymentItem {
   status?: 'pending' | 'paid' | 'partial';
   id?: string;
   sourceTable?: 'income_sources' | 'debts' | 'fixed_expenses';
+  isAnnual?: boolean;
+  paymentMonth?: number;
 }
 
 interface CalendarViewProps {
@@ -41,7 +43,15 @@ export const CalendarView = ({ payments, language }: CalendarViewProps) => {
   };
 
   const getPaymentsForDay = (day: number) => {
-    return payments.filter(p => p.dueDay === day);
+    const currentMonthNumber = currentMonth.getMonth() + 1;
+    return payments.filter(p => {
+      if (p.dueDay !== day) return false;
+      // For annual payments, only show in the specified month
+      if (p.isAnnual && p.paymentMonth) {
+        return p.paymentMonth === currentMonthNumber;
+      }
+      return true;
+    });
   };
 
   const getCategoryColor = (category: string) => {

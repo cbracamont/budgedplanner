@@ -44,10 +44,16 @@ export type Database = {
           balance: number
           bank: string | null
           created_at: string
+          end_date: string | null
           id: string
+          installment_amount: number | null
+          is_installment: boolean | null
           minimum_payment: number
           name: string
+          number_of_installments: number | null
           payment_day: number
+          start_date: string | null
+          total_amount: number | null
           updated_at: string
           user_id: string
         }
@@ -56,10 +62,16 @@ export type Database = {
           balance: number
           bank?: string | null
           created_at?: string
+          end_date?: string | null
           id?: string
+          installment_amount?: number | null
+          is_installment?: boolean | null
           minimum_payment: number
           name: string
+          number_of_installments?: number | null
           payment_day: number
+          start_date?: string | null
+          total_amount?: number | null
           updated_at?: string
           user_id: string
         }
@@ -68,10 +80,16 @@ export type Database = {
           balance?: number
           bank?: string | null
           created_at?: string
+          end_date?: string | null
           id?: string
+          installment_amount?: number | null
+          is_installment?: boolean | null
           minimum_payment?: number
           name?: string
+          number_of_installments?: number | null
           payment_day?: number
+          start_date?: string | null
+          total_amount?: number | null
           updated_at?: string
           user_id?: string
         }
