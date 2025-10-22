@@ -2,16 +2,23 @@ import { useState, useRef, useEffect } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { Brain, Send, Loader2, FileText } from "lucide-react";
+import { Brain, Send, Loader2, FileText, Trash2, Plus, MessageSquare } from "lucide-react";
 import { Language } from "@/lib/i18n";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import ReactMarkdown from "react-markdown";
 
 interface Message {
   role: 'user' | 'assistant';
   content: string;
+}
+
+interface Conversation {
+  id: string;
+  title: string | null;
+  created_at: string;
 }
 
 interface FinancialAdvisorProps {
@@ -23,6 +30,9 @@ export const FinancialAdvisor = ({ language }: FinancialAdvisorProps) => {
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [conversations, setConversations] = useState<Conversation[]>([]);
+  const [currentConversationId, setCurrentConversationId] = useState<string | null>(null);
+  const [showConversations, setShowConversations] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
@@ -31,13 +41,136 @@ export const FinancialAdvisor = ({ language }: FinancialAdvisorProps) => {
     }
   }, [messages]);
 
+  useEffect(() => {
+    loadConversations();
+  }, []);
+
+  const loadConversations = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('chat_conversations')
+        .select('id, title, created_at')
+        .order('updated_at', { ascending: false });
+
+      if (error) throw error;
+      setConversations(data || []);
+    } catch (error) {
+      console.error('Error loading conversations:', error);
+    }
+  };
+
+  const createNewConversation = async () => {
+    try {
+      const { data, error } = await supabase
+        .from('chat_conversations')
+        .insert([{ 
+          user_id: (await supabase.auth.getUser()).data.user?.id,
+          title: `Conversación del ${new Date().toLocaleDateString()}`
+        }])
+        .select()
+        .single();
+
+      if (error) throw error;
+      
+      setCurrentConversationId(data.id);
+      setMessages([]);
+      loadConversations();
+      
+      toast({
+        title: language === 'en' ? "New Conversation" : "Nueva Conversación",
+        description: language === 'en' ? "Started a new conversation" : "Se inició una nueva conversación"
+      });
+    } catch (error) {
+      console.error('Error creating conversation:', error);
+      toast({
+        title: "Error",
+        description: language === 'en' ? "Failed to create conversation" : "Error al crear conversación",
+        variant: "destructive"
+      });
+    }
+  };
+
+  const loadConversation = async (conversationId: string) => {
+    try {
+      const { data, error } = await supabase
+        .from('chat_messages')
+        .select('role, content')
+        .eq('conversation_id', conversationId)
+        .order('created_at');
+
+      if (error) throw error;
+      
+      setMessages((data || []).map(msg => ({
+        role: msg.role as 'user' | 'assistant',
+        content: msg.content
+      })));
+      setCurrentConversationId(conversationId);
+      setShowConversations(false);
+    } catch (error) {
+      console.error('Error loading conversation:', error);
+    }
+  };
+
+  const deleteConversation = async (conversationId: string) => {
+    try {
+      const { error } = await supabase
+        .from('chat_conversations')
+        .delete()
+        .eq('id', conversationId);
+
+      if (error) throw error;
+      
+      if (currentConversationId === conversationId) {
+        setCurrentConversationId(null);
+        setMessages([]);
+      }
+      
+      loadConversations();
+      
+      toast({
+        title: language === 'en' ? "Conversation Deleted" : "Conversación Eliminada",
+        description: language === 'en' ? "The conversation has been deleted" : "La conversación ha sido eliminada"
+      });
+    } catch (error) {
+      console.error('Error deleting conversation:', error);
+    }
+  };
+
+  const saveMessage = async (role: 'user' | 'assistant', content: string) => {
+    if (!currentConversationId) return;
+
+    try {
+      await supabase
+        .from('chat_messages')
+        .insert([{
+          conversation_id: currentConversationId,
+          user_id: (await supabase.auth.getUser()).data.user?.id,
+          role,
+          content
+        }]);
+    } catch (error) {
+      console.error('Error saving message:', error);
+    }
+  };
+
   const sendMessage = async (e: React.FormEvent, customPrompt?: string) => {
     e.preventDefault();
     const messageContent = customPrompt || input.trim();
     if (!messageContent || isLoading) return;
 
+    // Create conversation if none exists
+    if (!currentConversationId) {
+      await createNewConversation();
+      // Wait a bit for the conversation to be created
+      await new Promise(resolve => setTimeout(resolve, 100));
+    }
+
     const userMessage: Message = { role: 'user', content: messageContent };
     setMessages(prev => [...prev, userMessage]);
+    
+    // Save user message
+    await saveMessage('user', messageContent);
+    
     if (!customPrompt) setInput("");
     setIsLoading(true);
 
@@ -53,6 +186,9 @@ export const FinancialAdvisor = ({ language }: FinancialAdvisorProps) => {
         content: data.choices[0].message.content
       };
       setMessages(prev => [...prev, assistantMessage]);
+      
+      // Save assistant message
+      await saveMessage('assistant', assistantMessage.content);
     } catch (error) {
       console.error('Error:', error);
       toast({
@@ -78,11 +214,67 @@ export const FinancialAdvisor = ({ language }: FinancialAdvisorProps) => {
   return (
     <Card className="shadow-medium">
       <CardHeader>
-        <div className="flex items-center gap-2">
-          <Brain className="h-5 w-5 text-primary" />
-          <CardTitle>
-            {language === 'en' ? 'AI Financial Chat' : 'Chat Financiero AI'}
-          </CardTitle>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Brain className="h-5 w-5 text-primary" />
+            <CardTitle>
+              {language === 'en' ? 'AI Financial Chat' : 'Chat Financiero AI'}
+            </CardTitle>
+          </div>
+          <div className="flex items-center gap-2">
+            <Dialog open={showConversations} onOpenChange={setShowConversations}>
+              <DialogTrigger asChild>
+                <Button variant="outline" size="sm">
+                  <MessageSquare className="h-4 w-4 mr-2" />
+                  {language === 'en' ? 'Conversations' : 'Conversaciones'}
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="max-w-md">
+                <DialogHeader>
+                  <DialogTitle>
+                    {language === 'en' ? 'Chat Conversations' : 'Conversaciones del Chat'}
+                  </DialogTitle>
+                </DialogHeader>
+                <div className="space-y-2">
+                  <Button
+                    onClick={createNewConversation}
+                    className="w-full justify-start"
+                    variant="outline"
+                  >
+                    <Plus className="h-4 w-4 mr-2" />
+                    {language === 'en' ? 'New Conversation' : 'Nueva Conversación'}
+                  </Button>
+                  <ScrollArea className="h-[300px]">
+                    <div className="space-y-1">
+                      {conversations.map((conv) => (
+                        <div key={conv.id} className="flex items-center gap-2">
+                          <Button
+                            variant={currentConversationId === conv.id ? "default" : "ghost"}
+                            size="sm"
+                            className="flex-1 justify-start truncate"
+                            onClick={() => loadConversation(conv.id)}
+                          >
+                            {conv.title || `${language === 'en' ? 'Conversation' : 'Conversación'} ${new Date(conv.created_at).toLocaleDateString()}`}
+                          </Button>
+                          <Button
+                            variant="ghost"
+                            size="sm"
+                            onClick={() => deleteConversation(conv.id)}
+                          >
+                            <Trash2 className="h-4 w-4" />
+                          </Button>
+                        </div>
+                      ))}
+                    </div>
+                  </ScrollArea>
+                </div>
+              </DialogContent>
+            </Dialog>
+            <Button onClick={createNewConversation} variant="outline" size="sm">
+              <Plus className="h-4 w-4 mr-2" />
+              {language === 'en' ? 'New' : 'Nuevo'}
+            </Button>
+          </div>
         </div>
         <CardDescription>
           {language === 'en' 

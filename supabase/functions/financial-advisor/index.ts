@@ -67,28 +67,31 @@ serve(async (req) => {
     const monthlySavingsCommitments = totalSavingsGoals + monthlyEmergencyContribution;
     const monthlyBalance = totalIncome - totalExpenses - monthlySavingsCommitments;
 
-    // Prepare financial context
+    // Prepare financial context (exactly same rules as dashboard)
     const financialContext = `
-Usuario con los siguientes datos financieros mensuales:
+REGLAS: Usa estrictamente los TOTALES OFICIALES provistos abajo; no los recalcules a partir de los listados. Si detectas discrepancias, prioriza "Balance disponible mensual".
+
+Totales oficiales (mismo cálculo que el dashboard):
 - Ingresos totales: £${totalIncome.toFixed(2)}
 - Deudas (pago mínimo): £${totalDebts.toFixed(2)}
-- Gastos fijos: £${totalFixed.toFixed(2)}
+- Gastos fijos considerados este mes: £${totalFixed.toFixed(2)} (gastos ANUALES solo si payment_month == ${currentMonth})
 - Gastos variables: £${totalVariable.toFixed(2)}
-- Metas de ahorro mensuales: £${totalSavingsGoals.toFixed(2)}
+- Metas de ahorro ACTIVAS: £${totalSavingsGoals.toFixed(2)}
 - Contribución a fondo de emergencia: £${monthlyEmergencyContribution.toFixed(2)}
 - Balance disponible mensual: £${monthlyBalance.toFixed(2)}
 
-Detalles de deudas:
-${debtsData.data?.map(d => `- ${d.name}: Balance £${d.balance}, APR ${d.apr}%, Pago mínimo £${d.minimum_payment}`).join('\n') || 'Sin deudas'}
+Listado informativo:
+Deudas:
+${debtsData.data?.map(d => `- ${d.name}: Balance £${Number(d.balance).toFixed(2)}, APR ${Number(d.apr).toFixed(2)}%, Pago mínimo £${Number(d.minimum_payment).toFixed(2)}`).join('\n') || 'Sin deudas'}
 
 Ingresos:
-${incomeData.data?.map(i => `- ${i.name}: £${i.amount}`).join('\n') || 'Sin ingresos'}
+${incomeData.data?.map(i => `- ${i.name}: £${Number(i.amount).toFixed(2)}`).join('\n') || 'Sin ingresos'}
 
-Gastos fijos:
-${fixedExpensesData.data?.map(e => `- ${e.name}: £${e.amount} (${e.frequency_type})`).join('\n') || 'Sin gastos fijos'}
+Gastos fijos (marcados si se incluyen este mes):
+${fixedExpensesData.data?.map(e => `- ${e.name}: £${Number(e.amount).toFixed(2)} (${e.frequency_type}${e.frequency_type === 'annual' ? (e.payment_month === currentMonth ? ' - incluido este mes' : ' - no incluido este mes') : ''})`).join('\n') || 'Sin gastos fijos'}
 
 Gastos variables:
-${variableExpensesData.data?.map(e => `- ${e.name || 'Sin nombre'}: £${e.amount}`).join('\n') || 'Sin gastos variables'}
+${variableExpensesData.data?.map(e => `- ${e.name || 'Sin nombre'}: £${Number(e.amount).toFixed(2)}`).join('\n') || 'Sin gastos variables'}
     `;
 
     const systemPrompt = `Eres un asesor financiero experto especializado en finanzas personales del Reino Unido. Tu objetivo es ayudar al usuario a:
@@ -97,8 +100,11 @@ ${variableExpensesData.data?.map(e => `- ${e.name || 'Sin nombre'}: £${e.amount
 - Mejorar sus ahorros y alcanzar metas financieras
 - Tomar decisiones financieras inteligentes basadas en su situación
 
-Proporciona consejos prácticos, específicos y accionables. Usa datos concretos cuando sea posible.
-Sé amigable, empático y alentador. Responde en español.
+REGLAS ESTRICTAS:
+- Usa EXCLUSIVAMENTE los "Totales oficiales" del contexto como fuente de verdad. No vuelvas a sumar de los listados.
+- Si muestras un desglose, respeta las marcas "incluido/no incluido este mes" para gastos fijos anuales.
+- Cuando des cifras, muéstralas exactamente como están en los totales oficiales.
+- Responde en español con consejos claros y accionables.
 
 Contexto financiero del usuario:
 ${financialContext}`;
