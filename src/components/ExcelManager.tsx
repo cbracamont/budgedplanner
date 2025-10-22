@@ -6,6 +6,36 @@ import { Language } from "@/lib/i18n";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import * as XLSX from 'xlsx';
+import { z } from 'zod';
+
+const incomeSchema = z.object({
+  name: z.string().trim().min(1, "Name is required").max(100, "Name must be less than 100 characters"),
+  amount: z.number().positive("Amount must be positive").max(1000000, "Amount is too large"),
+  payment_day: z.number().int().min(1).max(31)
+});
+
+const debtSchema = z.object({
+  name: z.string().trim().min(1, "Name is required").max(100, "Name must be less than 100 characters"),
+  bank: z.string().max(100).nullable(),
+  balance: z.number().nonnegative("Balance cannot be negative").max(10000000, "Balance is too large"),
+  apr: z.number().min(0).max(100, "APR must be between 0 and 100"),
+  minimum_payment: z.number().nonnegative("Minimum payment cannot be negative").max(100000, "Payment is too large"),
+  payment_day: z.number().int().min(1).max(31)
+});
+
+const fixedExpenseSchema = z.object({
+  name: z.string().trim().min(1, "Name is required").max(100, "Name must be less than 100 characters"),
+  amount: z.number().positive("Amount must be positive").max(100000, "Amount is too large"),
+  frequency_type: z.enum(['monthly', 'weekly', 'yearly']),
+  payment_day: z.number().int().min(1).max(31)
+});
+
+const variableExpenseSchema = z.object({
+  name: z.string().trim().min(1, "Name is required").max(100, "Name must be less than 100 characters"),
+  amount: z.number().positive("Amount must be positive").max(100000, "Amount is too large")
+});
+
+const MAX_FILE_SIZE = 5 * 1024 * 1024; // 5MB
 
 interface ExcelManagerProps {
   language: Language;
@@ -106,6 +136,17 @@ export const ExcelManager = ({ language, onDataImported }: ExcelManagerProps) =>
     const file = e.target.files?.[0];
     if (!file) return;
 
+    // Validate file size
+    if (file.size > MAX_FILE_SIZE) {
+      toast({
+        title: "Error",
+        description: language === 'en' ? 'File size must be less than 5MB' : 'El archivo debe ser menor a 5MB',
+        variant: "destructive"
+      });
+      if (fileInputRef.current) fileInputRef.current.value = '';
+      return;
+    }
+
     setIsProcessing(true);
     try {
       const { data: { user } } = await supabase.auth.getUser();
@@ -114,59 +155,119 @@ export const ExcelManager = ({ language, onDataImported }: ExcelManagerProps) =>
       const data = await file.arrayBuffer();
       const wb = XLSX.read(data);
 
+      let validationErrors: string[] = [];
+
       // Process each sheet
       for (const sheetName of wb.SheetNames) {
         const ws = wb.Sheets[sheetName];
         const jsonData = XLSX.utils.sheet_to_json(ws);
 
         if ((sheetName === 'Ingresos' || sheetName === 'Income') && jsonData.length > 0) {
-          const incomeData = jsonData.map((row: any) => ({
-            user_id: user.id,
-            name: row.Nombre || row.Name || 'Sin nombre',
-            amount: Number(row.Monto || row.Amount) || 0,
-            payment_day: Number(row['Día de Pago'] || row['Payment Day']) || 1
-          }));
-          await supabase.from('income_sources').insert(incomeData);
+          const validatedData = [];
+          for (let i = 0; i < jsonData.length; i++) {
+            const row: any = jsonData[i];
+            try {
+              const validated = incomeSchema.parse({
+                name: (row.Nombre || row.Name || '').toString().trim(),
+                amount: Number(row.Monto || row.Amount),
+                payment_day: Number(row['Día de Pago'] || row['Payment Day']) || 1
+              });
+              validatedData.push({ ...validated, user_id: user.id });
+            } catch (error) {
+              if (error instanceof z.ZodError) {
+                validationErrors.push(`Income row ${i + 1}: ${error.errors[0].message}`);
+              }
+            }
+          }
+          if (validatedData.length > 0) {
+            await supabase.from('income_sources').insert(validatedData);
+          }
         }
 
         if ((sheetName === 'Deudas' || sheetName === 'Debts') && jsonData.length > 0) {
-          const debtsData = jsonData.map((row: any) => ({
-            user_id: user.id,
-            name: row.Nombre || row.Name || 'Sin nombre',
-            bank: row.Banco || row.Bank || null,
-            balance: Number(row.Balance) || 0,
-            apr: Number(row['APR %']) || 0,
-            minimum_payment: Number(row['Pago Mínimo'] || row['Minimum Payment']) || 0,
-            payment_day: Number(row['Día de Pago'] || row['Payment Day']) || 1
-          }));
-          await supabase.from('debts').insert(debtsData);
+          const validatedData = [];
+          for (let i = 0; i < jsonData.length; i++) {
+            const row: any = jsonData[i];
+            try {
+              const validated = debtSchema.parse({
+                name: (row.Nombre || row.Name || '').toString().trim(),
+                bank: row.Banco || row.Bank || null,
+                balance: Number(row.Balance) || 0,
+                apr: Number(row['APR %']) || 0,
+                minimum_payment: Number(row['Pago Mínimo'] || row['Minimum Payment']) || 0,
+                payment_day: Number(row['Día de Pago'] || row['Payment Day']) || 1
+              });
+              validatedData.push({ ...validated, user_id: user.id });
+            } catch (error) {
+              if (error instanceof z.ZodError) {
+                validationErrors.push(`Debt row ${i + 1}: ${error.errors[0].message}`);
+              }
+            }
+          }
+          if (validatedData.length > 0) {
+            await supabase.from('debts').insert(validatedData);
+          }
         }
 
         if ((sheetName === 'Gastos Fijos' || sheetName === 'Fixed Expenses') && jsonData.length > 0) {
-          const fixedData = jsonData.map((row: any) => ({
-            user_id: user.id,
-            name: row.Nombre || row.Name || 'Sin nombre',
-            amount: Number(row.Monto || row.Amount) || 0,
-            frequency_type: row.Frecuencia || row.Frequency || 'monthly',
-            payment_day: Number(row['Día de Pago'] || row['Payment Day']) || 1
-          }));
-          await supabase.from('fixed_expenses').insert(fixedData);
+          const validatedData = [];
+          for (let i = 0; i < jsonData.length; i++) {
+            const row: any = jsonData[i];
+            try {
+              const validated = fixedExpenseSchema.parse({
+                name: (row.Nombre || row.Name || '').toString().trim(),
+                amount: Number(row.Monto || row.Amount),
+                frequency_type: row.Frecuencia || row.Frequency || 'monthly',
+                payment_day: Number(row['Día de Pago'] || row['Payment Day']) || 1
+              });
+              validatedData.push({ ...validated, user_id: user.id });
+            } catch (error) {
+              if (error instanceof z.ZodError) {
+                validationErrors.push(`Fixed expense row ${i + 1}: ${error.errors[0].message}`);
+              }
+            }
+          }
+          if (validatedData.length > 0) {
+            await supabase.from('fixed_expenses').insert(validatedData);
+          }
         }
 
         if ((sheetName === 'Gastos Variables' || sheetName === 'Variable Expenses') && jsonData.length > 0) {
-          const variableData = jsonData.map((row: any) => ({
-            user_id: user.id,
-            name: row.Nombre || row.Name || 'Sin nombre',
-            amount: Number(row.Monto || row.Amount) || 0
-          }));
-          await supabase.from('variable_expenses').insert(variableData);
+          const validatedData = [];
+          for (let i = 0; i < jsonData.length; i++) {
+            const row: any = jsonData[i];
+            try {
+              const validated = variableExpenseSchema.parse({
+                name: (row.Nombre || row.Name || '').toString().trim(),
+                amount: Number(row.Monto || row.Amount)
+              });
+              validatedData.push({ ...validated, user_id: user.id });
+            } catch (error) {
+              if (error instanceof z.ZodError) {
+                validationErrors.push(`Variable expense row ${i + 1}: ${error.errors[0].message}`);
+              }
+            }
+          }
+          if (validatedData.length > 0) {
+            await supabase.from('variable_expenses').insert(validatedData);
+          }
         }
       }
 
-      toast({
-        title: language === 'en' ? 'Success' : 'Éxito',
-        description: language === 'en' ? 'Data imported successfully' : 'Datos importados exitosamente'
-      });
+      if (validationErrors.length > 0) {
+        toast({
+          title: language === 'en' ? 'Partial Import' : 'Importación Parcial',
+          description: language === 'en' 
+            ? `Some rows had errors: ${validationErrors.slice(0, 3).join(', ')}${validationErrors.length > 3 ? '...' : ''}` 
+            : `Algunos registros tuvieron errores: ${validationErrors.slice(0, 3).join(', ')}${validationErrors.length > 3 ? '...' : ''}`,
+          variant: "destructive"
+        });
+      } else {
+        toast({
+          title: language === 'en' ? 'Success' : 'Éxito',
+          description: language === 'en' ? 'Data imported successfully' : 'Datos importados exitosamente'
+        });
+      }
       
       onDataImported();
     } catch (error) {

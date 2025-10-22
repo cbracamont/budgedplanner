@@ -7,6 +7,12 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { useToast } from "@/hooks/use-toast";
 import { LogIn, UserPlus } from "lucide-react";
+import { z } from "zod";
+
+const authSchema = z.object({
+  email: z.string().trim().email({ message: "Invalid email address" }).max(255, { message: "Email must be less than 255 characters" }),
+  password: z.string().min(6, { message: "Password must be at least 6 characters" }).max(128, { message: "Password must be less than 128 characters" })
+});
 
 export const Auth = () => {
   const [email, setEmail] = useState("");
@@ -18,21 +24,44 @@ export const Auth = () => {
     e.preventDefault();
     setLoading(true);
 
-    const { error } = await supabase.auth.signUp({
-      email,
-      password,
-    });
+    try {
+      const validation = authSchema.safeParse({ email, password });
+      
+      if (!validation.success) {
+        toast({
+          title: "Validation Error",
+          description: validation.error.errors[0].message,
+          variant: "destructive",
+        });
+        setLoading(false);
+        return;
+      }
 
-    if (error) {
+      const { error } = await supabase.auth.signUp({
+        email: validation.data.email,
+        password: validation.data.password,
+        options: {
+          emailRedirectTo: `${window.location.origin}/`
+        }
+      });
+
+      if (error) {
+        toast({
+          title: "Error",
+          description: error.message,
+          variant: "destructive",
+        });
+      } else {
+        toast({
+          title: "Success",
+          description: "Account created successfully! You can now log in.",
+        });
+      }
+    } catch (error) {
       toast({
         title: "Error",
-        description: error.message,
+        description: "An unexpected error occurred",
         variant: "destructive",
-      });
-    } else {
-      toast({
-        title: "Success",
-        description: "Account created successfully! You can now log in.",
       });
     }
     setLoading(false);
@@ -42,15 +71,35 @@ export const Auth = () => {
     e.preventDefault();
     setLoading(true);
 
-    const { error } = await supabase.auth.signInWithPassword({
-      email,
-      password,
-    });
+    try {
+      const validation = authSchema.safeParse({ email, password });
+      
+      if (!validation.success) {
+        toast({
+          title: "Validation Error",
+          description: validation.error.errors[0].message,
+          variant: "destructive",
+        });
+        setLoading(false);
+        return;
+      }
 
-    if (error) {
+      const { error } = await supabase.auth.signInWithPassword({
+        email: validation.data.email,
+        password: validation.data.password,
+      });
+
+      if (error) {
+        toast({
+          title: "Error",
+          description: error.message,
+          variant: "destructive",
+        });
+      }
+    } catch (error) {
       toast({
         title: "Error",
-        description: error.message,
+        description: "An unexpected error occurred",
         variant: "destructive",
       });
     }
