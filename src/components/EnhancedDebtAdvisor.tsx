@@ -24,9 +24,12 @@ interface EnhancedDebtAdvisorProps {
   language: Language;
 }
 
+type PayoffMethod = 'avalanche' | 'snowball' | 'hybrid';
+
 export const EnhancedDebtAdvisor = ({ debts, extraPayment, language }: EnhancedDebtAdvisorProps) => {
   const [selectedDebtId, setSelectedDebtId] = useState<string>("");
   const [customExtraPayment, setCustomExtraPayment] = useState(extraPayment.toString());
+  const [payoffMethod, setPayoffMethod] = useState<PayoffMethod>('avalanche');
 
   // Calculate total debt-free date for ALL debts
   const calculateTotalDebtFreeDate = () => {
@@ -105,8 +108,30 @@ export const EnhancedDebtAdvisor = ({ debts, extraPayment, language }: EnhancedD
       const aprA = getEffectiveAPR(a);
       const aprB = getEffectiveAPR(b);
 
-      // Sort by effective APR (highest first) - Avalanche method
-      return aprB - aprA;
+      // Apply selected payoff method
+      switch (payoffMethod) {
+        case 'avalanche':
+          // Highest APR first
+          return aprB - aprA;
+        
+        case 'snowball':
+          // Lowest balance first
+          return a.balance - b.balance;
+        
+        case 'hybrid':
+          // Balance debts under £500 by balance, rest by APR
+          const threshold = 500;
+          const aIsSmall = a.balance < threshold;
+          const bIsSmall = b.balance < threshold;
+          
+          if (aIsSmall && !bIsSmall) return -1;
+          if (!aIsSmall && bIsSmall) return 1;
+          if (aIsSmall && bIsSmall) return a.balance - b.balance;
+          return aprB - aprA;
+        
+        default:
+          return aprB - aprA;
+      }
     });
   };
 
@@ -225,6 +250,59 @@ export const EnhancedDebtAdvisor = ({ debts, extraPayment, language }: EnhancedD
         </CardDescription>
       </CardHeader>
       <CardContent className="pt-6 space-y-6">
+        {/* Payoff Method Selection */}
+        <div className="space-y-4 p-4 bg-primary/5 rounded-lg border border-primary/10">
+          <div className="space-y-2">
+            <Label htmlFor="payoff-method" className="flex items-center gap-2 text-base font-semibold">
+              <TrendingDown className="h-4 w-4 text-primary" />
+              {language === 'en' ? 'Debt Payoff Strategy:' : 'Estrategia de Pago de Deudas:'}
+            </Label>
+            <Select value={payoffMethod} onValueChange={(value) => setPayoffMethod(value as PayoffMethod)}>
+              <SelectTrigger id="payoff-method" className="bg-background">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent className="bg-background border border-border z-50">
+                <SelectItem value="avalanche">
+                  <div className="flex flex-col items-start py-1">
+                    <span className="font-medium">
+                      {language === 'en' ? 'Avalanche Method' : 'Método Avalancha'}
+                    </span>
+                    <span className="text-xs text-muted-foreground">
+                      {language === 'en' 
+                        ? 'Pay highest APR first (saves most interest)' 
+                        : 'Pagar primero el APR más alto (ahorra más intereses)'}
+                    </span>
+                  </div>
+                </SelectItem>
+                <SelectItem value="snowball">
+                  <div className="flex flex-col items-start py-1">
+                    <span className="font-medium">
+                      {language === 'en' ? 'Snowball Method' : 'Método Bola de Nieve'}
+                    </span>
+                    <span className="text-xs text-muted-foreground">
+                      {language === 'en' 
+                        ? 'Pay smallest balance first (quick wins)' 
+                        : 'Pagar primero el saldo más bajo (victorias rápidas)'}
+                    </span>
+                  </div>
+                </SelectItem>
+                <SelectItem value="hybrid">
+                  <div className="flex flex-col items-start py-1">
+                    <span className="font-medium">
+                      {language === 'en' ? 'Hybrid Method' : 'Método Híbrido'}
+                    </span>
+                    <span className="text-xs text-muted-foreground">
+                      {language === 'en' 
+                        ? 'Small debts first, then highest APR' 
+                        : 'Deudas pequeñas primero, luego APR más alto'}
+                    </span>
+                  </div>
+                </SelectItem>
+              </SelectContent>
+            </Select>
+          </div>
+        </div>
+
         {/* Extra Payment Allocation */}
         <div className="space-y-4 p-4 bg-secondary/50 rounded-lg">
           <div className="space-y-2">
@@ -233,10 +311,10 @@ export const EnhancedDebtAdvisor = ({ debts, extraPayment, language }: EnhancedD
               {language === 'en' ? 'Apply Extra Payment To:' : 'Aplicar Pago Extra A:'}
             </Label>
             <Select value={selectedDebtId} onValueChange={setSelectedDebtId}>
-              <SelectTrigger id="debt-select">
+              <SelectTrigger id="debt-select" className="bg-background">
                 <SelectValue placeholder={language === 'en' ? 'Select a debt' : 'Selecciona una deuda'} />
               </SelectTrigger>
-              <SelectContent>
+              <SelectContent className="bg-background border border-border z-50">
                 {debts.map((debt) => (
                   <SelectItem key={debt.name} value={debt.name}>
                     {debt.name} (£{debt.balance.toFixed(2)} @ {debt.apr}% APR)
@@ -335,7 +413,12 @@ export const EnhancedDebtAdvisor = ({ debts, extraPayment, language }: EnhancedD
         {debts.length > 0 && (
           <div className="space-y-3">
             <h3 className="font-semibold">
-              {language === 'en' ? 'Recommended Payoff Order (Avalanche Method)' : 'Orden de Pago Recomendado (Método Avalancha)'}
+              {language === 'en' ? 'Recommended Payoff Order' : 'Orden de Pago Recomendado'} 
+              {' '}({payoffMethod === 'avalanche' 
+                ? (language === 'en' ? 'Avalanche' : 'Avalancha')
+                : payoffMethod === 'snowball'
+                ? (language === 'en' ? 'Snowball' : 'Bola de Nieve')
+                : (language === 'en' ? 'Hybrid' : 'Híbrido')})
             </h3>
             <div className="space-y-2">
               {prioritizeDebts().map((debt, index) => {
