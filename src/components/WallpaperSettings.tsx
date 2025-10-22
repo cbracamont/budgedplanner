@@ -1,9 +1,9 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { ImageIcon, X } from "lucide-react";
+import { ImageIcon, X, Upload } from "lucide-react";
 import { Language } from "@/lib/i18n";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -17,6 +17,8 @@ export const WallpaperSettings = ({ language, onWallpaperChange }: WallpaperSett
   const { toast } = useToast();
   const [wallpaperUrl, setWallpaperUrl] = useState("");
   const [currentWallpaper, setCurrentWallpaper] = useState<string | null>(null);
+  const [isUploading, setIsUploading] = useState(false);
+  const fileInputRef = useRef<HTMLInputElement>(null);
 
   useEffect(() => {
     loadSettings();
@@ -96,6 +98,72 @@ export const WallpaperSettings = ({ language, onWallpaperChange }: WallpaperSett
     toast({ title: "Success", description: "Wallpaper removed successfully" });
   };
 
+  const handleFileUpload = async (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0];
+    if (!file) return;
+
+    if (!file.type.startsWith('image/')) {
+      toast({ title: "Error", description: "Please upload an image file", variant: "destructive" });
+      return;
+    }
+
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user) return;
+
+    setIsUploading(true);
+
+    const fileExt = file.name.split('.').pop();
+    const fileName = `${user.id}/${Date.now()}.${fileExt}`;
+
+    const { error: uploadError } = await supabase.storage
+      .from('wallpapers')
+      .upload(fileName, file, { upsert: true });
+
+    if (uploadError) {
+      toast({ title: "Error", description: "Failed to upload image", variant: "destructive" });
+      setIsUploading(false);
+      return;
+    }
+
+    const { data: { publicUrl } } = supabase.storage
+      .from('wallpapers')
+      .getPublicUrl(fileName);
+
+    const { data: existing } = await supabase
+      .from('app_settings')
+      .select('id')
+      .eq('user_id', user.id)
+      .maybeSingle();
+
+    if (existing) {
+      const { error } = await supabase
+        .from('app_settings')
+        .update({ wallpaper_url: publicUrl })
+        .eq('user_id', user.id);
+
+      if (error) {
+        toast({ title: "Error", description: "Failed to save wallpaper", variant: "destructive" });
+        setIsUploading(false);
+        return;
+      }
+    } else {
+      const { error } = await supabase
+        .from('app_settings')
+        .insert({ user_id: user.id, wallpaper_url: publicUrl });
+
+      if (error) {
+        toast({ title: "Error", description: "Failed to save wallpaper", variant: "destructive" });
+        setIsUploading(false);
+        return;
+      }
+    }
+
+    setCurrentWallpaper(publicUrl);
+    onWallpaperChange(publicUrl);
+    setIsUploading(false);
+    toast({ title: "Success", description: "Wallpaper uploaded successfully" });
+  };
+
   return (
     <Card className="shadow-medium">
       <CardHeader>
@@ -126,27 +194,64 @@ export const WallpaperSettings = ({ language, onWallpaperChange }: WallpaperSett
           </div>
         )}
         
-        <div className="space-y-2">
-          <Label htmlFor="wallpaper-url">
-            {language === 'en' ? 'Image URL' : 'URL de Imagen'}
-          </Label>
-          <Input
-            id="wallpaper-url"
-            type="url"
-            value={wallpaperUrl}
-            onChange={(e) => setWallpaperUrl(e.target.value)}
-            placeholder="https://example.com/image.jpg"
-          />
-          <p className="text-xs text-muted-foreground">
-            {language === 'en' 
-              ? 'Enter a URL to an image you want to use as wallpaper' 
-              : 'Ingresa la URL de una imagen que quieras usar como fondo'}
-          </p>
-        </div>
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <Label>
+              {language === 'en' ? 'Upload Image from PC' : 'Subir Imagen desde PC'}
+            </Label>
+            <input
+              ref={fileInputRef}
+              type="file"
+              accept="image/*"
+              onChange={handleFileUpload}
+              className="hidden"
+            />
+            <Button 
+              onClick={() => fileInputRef.current?.click()} 
+              className="w-full"
+              disabled={isUploading}
+              variant="outline"
+            >
+              <Upload className="mr-2 h-4 w-4" />
+              {isUploading 
+                ? (language === 'en' ? 'Uploading...' : 'Subiendo...') 
+                : (language === 'en' ? 'Choose File' : 'Elegir Archivo')}
+            </Button>
+          </div>
 
-        <Button onClick={saveWallpaper} className="w-full">
-          {language === 'en' ? 'Apply Wallpaper' : 'Aplicar Fondo'}
-        </Button>
+          <div className="relative">
+            <div className="absolute inset-0 flex items-center">
+              <span className="w-full border-t" />
+            </div>
+            <div className="relative flex justify-center text-xs uppercase">
+              <span className="bg-background px-2 text-muted-foreground">
+                {language === 'en' ? 'Or' : 'O'}
+              </span>
+            </div>
+          </div>
+
+          <div className="space-y-2">
+            <Label htmlFor="wallpaper-url">
+              {language === 'en' ? 'Image URL' : 'URL de Imagen'}
+            </Label>
+            <Input
+              id="wallpaper-url"
+              type="url"
+              value={wallpaperUrl}
+              onChange={(e) => setWallpaperUrl(e.target.value)}
+              placeholder="https://example.com/image.jpg"
+            />
+            <p className="text-xs text-muted-foreground">
+              {language === 'en' 
+                ? 'Enter a URL to an image you want to use as wallpaper' 
+                : 'Ingresa la URL de una imagen que quieras usar como fondo'}
+            </p>
+          </div>
+
+          <Button onClick={saveWallpaper} className="w-full">
+            {language === 'en' ? 'Apply Wallpaper' : 'Aplicar Fondo'}
+          </Button>
+        </div>
       </CardContent>
     </Card>
   );

@@ -279,12 +279,22 @@ export const DebtsManager = ({ language, onDebtsChange }: DebtsManagerProps) => 
                     onChange={(e) => {
                       const numInstallments = parseInt(e.target.value);
                       const totalAmt = parseFloat(newDebt.total_amount);
+                      const startDate = newDebt.start_date;
+                      let endDate = "";
+                      
+                      if (startDate && numInstallments > 0) {
+                        const start = new Date(startDate);
+                        start.setMonth(start.getMonth() + numInstallments);
+                        endDate = start.toISOString().split('T')[0];
+                      }
+                      
                       setNewDebt({ 
                         ...newDebt, 
                         number_of_installments: e.target.value,
                         installment_amount: (!isNaN(totalAmt) && numInstallments > 0) 
                           ? (totalAmt / numInstallments).toFixed(2) 
-                          : ""
+                          : "",
+                        end_date: endDate
                       });
                     }}
                     required
@@ -307,7 +317,19 @@ export const DebtsManager = ({ language, onDebtsChange }: DebtsManagerProps) => 
                     id="start-date"
                     type="date"
                     value={newDebt.start_date}
-                    onChange={(e) => setNewDebt({ ...newDebt, start_date: e.target.value })}
+                    onChange={(e) => {
+                      const startDate = e.target.value;
+                      const numInstallments = parseInt(newDebt.number_of_installments);
+                      let endDate = "";
+                      
+                      if (startDate && numInstallments > 0) {
+                        const start = new Date(startDate);
+                        start.setMonth(start.getMonth() + numInstallments);
+                        endDate = start.toISOString().split('T')[0];
+                      }
+                      
+                      setNewDebt({ ...newDebt, start_date: startDate, end_date: endDate });
+                    }}
                     required
                   />
                 </div>
@@ -317,8 +339,8 @@ export const DebtsManager = ({ language, onDebtsChange }: DebtsManagerProps) => 
                     id="end-date"
                     type="date"
                     value={newDebt.end_date}
-                    onChange={(e) => setNewDebt({ ...newDebt, end_date: e.target.value })}
-                    required
+                    readOnly
+                    className="bg-muted"
                   />
                 </div>
               </>

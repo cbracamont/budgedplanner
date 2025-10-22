@@ -269,7 +269,7 @@ export const formatCurrency = (amount: number): string => {
 export const ukBanks = [
   "Barclays", "HSBC", "Lloyds", "NatWest", "Santander", 
   "Nationwide", "Halifax", "TSB", "Monzo", "Starling", 
-  "Revolut", "Metro Bank", "First Direct", "Virgin Money"
+  "Revolut", "Metro Bank", "First Direct", "Virgin Money", "Other"
 ];
 
 export const ukSupermarkets = [
