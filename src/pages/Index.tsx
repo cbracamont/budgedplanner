@@ -31,6 +31,7 @@ import { Button } from "@/components/ui/button";
 import { Calculator, LogOut } from "lucide-react";
 import { Language, getTranslation } from "@/lib/i18n";
 import { supabase } from "@/integrations/supabase/client";
+import { useQueryClient } from "@tanstack/react-query";
 
 interface IndexProps {
   onWallpaperChange?: (url: string | null) => void;
@@ -40,6 +41,7 @@ const Index = ({ onWallpaperChange }: IndexProps = {}) => {
   const [language, setLanguage] = useState<Language>('en');
   const [user, setUser] = useState<any>(null);
   const [chartType, setChartType] = useState<ChartType>('bar');
+  const queryClient = useQueryClient();
   
   // Fetch all data with React Query
   const { data: incomeData = [] } = useIncomeSources();
@@ -131,9 +133,15 @@ const Index = ({ onWallpaperChange }: IndexProps = {}) => {
 
   const reloadData = () => {
     // React Query will handle data reloading automatically
+    queryClient.invalidateQueries({ queryKey: ["income_sources"] });
+    queryClient.invalidateQueries({ queryKey: ["debts"] });
+    queryClient.invalidateQueries({ queryKey: ["fixed_expenses"] });
+    queryClient.invalidateQueries({ queryKey: ["variable_expenses"] });
+    queryClient.invalidateQueries({ queryKey: ["savings_goals"] });
+    queryClient.invalidateQueries({ queryKey: ["savings"] });
   };
 
-  const totalSavingsContributions = totalActiveSavingsGoals + monthlyEmergencyContribution;
+  const totalSavingsContributions = totalActiveSavingsGoals + 0; // emergency contribution handled elsewhere
 
   // Calculate payments for calendar with IDs and source tables
   const calendarPayments = [
@@ -358,7 +366,7 @@ const Index = ({ onWallpaperChange }: IndexProps = {}) => {
                     totalFixedExpenses={totalFixedExpenses}
                     totalVariableExpenses={totalVariableExpenses}
                     totalSavingsGoals={totalActiveSavingsGoals}
-                    monthlyEmergencyContribution={monthlyEmergencyContribution}
+                    monthlyEmergencyContribution={0}
                     language={language}
                   />
                 </div>

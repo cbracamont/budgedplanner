@@ -8,6 +8,7 @@ import { ShoppingCart, Trash2, Plus, Pencil } from "lucide-react";
 import { getTranslation, Language } from "@/lib/i18n";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useQueryClient } from "@tanstack/react-query";
 
 interface VariableExpense {
   id: string;
@@ -23,6 +24,7 @@ interface VariableExpensesManagerProps {
 export const VariableExpensesManager = ({ onExpensesChange, language }: VariableExpensesManagerProps) => {
   const t = (key: string) => getTranslation(language, key);
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   
   const [expenses, setExpenses] = useState<VariableExpense[]>([]);
   const [name, setName] = useState("");
@@ -79,10 +81,11 @@ export const VariableExpensesManager = ({ onExpensesChange, language }: Variable
       return;
     }
 
-    setExpenses([...expenses, data]);
-    setName("");
-    setAmount("");
-    toast({ title: "Success", description: "Expense added successfully" });
+  setExpenses([...expenses, data]);
+  setName("");
+  setAmount("");
+  queryClient.invalidateQueries({ queryKey: ["variable_expenses"] });
+  toast({ title: "Success", description: "Expense added successfully" });
   };
 
   const deleteExpense = async (expenseId: string) => {
@@ -96,8 +99,9 @@ export const VariableExpensesManager = ({ onExpensesChange, language }: Variable
       return;
     }
 
-    setExpenses(expenses.filter(e => e.id !== expenseId));
-    toast({ title: "Success", description: "Expense deleted successfully" });
+  setExpenses(expenses.filter(e => e.id !== expenseId));
+  queryClient.invalidateQueries({ queryKey: ["variable_expenses"] });
+  toast({ title: "Success", description: "Expense deleted successfully" });
   };
 
   const updateExpense = async () => {
@@ -116,10 +120,11 @@ export const VariableExpensesManager = ({ onExpensesChange, language }: Variable
       return;
     }
 
-    setExpenses(expenses.map(e => e.id === editingExpense.id ? editingExpense : e));
-    setIsEditExpenseDialogOpen(false);
-    setEditingExpense(null);
-    toast({ title: "Success", description: "Expense updated successfully" });
+  setExpenses(expenses.map(e => e.id === editingExpense.id ? editingExpense : e));
+  setIsEditExpenseDialogOpen(false);
+  setEditingExpense(null);
+  queryClient.invalidateQueries({ queryKey: ["variable_expenses"] });
+  toast({ title: "Success", description: "Expense updated successfully" });
   };
 
   return (

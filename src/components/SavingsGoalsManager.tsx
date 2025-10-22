@@ -9,6 +9,7 @@ import { Badge } from "@/components/ui/badge";
 import { Language } from "@/lib/i18n";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useQueryClient } from "@tanstack/react-query";
 
 interface SavingsGoal {
   id: string;
@@ -32,6 +33,7 @@ export const SavingsGoalsManager = ({ language, availableForSavings, availableBu
   const { toast } = useToast();
   const [goals, setGoals] = useState<SavingsGoal[]>([]);
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const queryClient = useQueryClient();
   const [editingGoal, setEditingGoal] = useState<SavingsGoal | null>(null);
   
   const [formData, setFormData] = useState({
@@ -110,6 +112,7 @@ export const SavingsGoalsManager = ({ language, availableForSavings, availableBu
     resetForm();
     setIsAddDialogOpen(false);
     loadGoals();
+    queryClient.invalidateQueries({ queryKey: ["savings_goals"] });
   };
 
   const handleDeleteGoal = async (id: string) => {
@@ -123,8 +126,9 @@ export const SavingsGoalsManager = ({ language, availableForSavings, availableBu
       return;
     }
 
-    toast({ title: "Success", description: "Goal deleted successfully" });
-    loadGoals();
+  toast({ title: "Success", description: "Goal deleted successfully" });
+  loadGoals();
+  queryClient.invalidateQueries({ queryKey: ["savings_goals"] });
   };
 
   const handleEditGoal = (goal: SavingsGoal) => {
@@ -178,8 +182,9 @@ export const SavingsGoalsManager = ({ language, availableForSavings, availableBu
         ? `Monthly contribution of £${monthlyAmount.toFixed(2)} activated` 
         : `Aporte mensual de £${monthlyAmount.toFixed(2)} activado`,
     });
-
+  
     loadGoals();
+    queryClient.invalidateQueries({ queryKey: ["savings_goals"] });
     if (onBudgetAllocation) {
       const totalAllocated = goals.reduce((sum, g) => 
         sum + (g.monthly_contribution || 0), monthlyAmount);

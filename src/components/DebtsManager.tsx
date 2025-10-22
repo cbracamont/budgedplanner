@@ -9,6 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 import { CreditCard, Plus, Trash2, Pencil } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { getTranslation, Language, ukBanks } from "@/lib/i18n";
+import { useQueryClient } from "@tanstack/react-query";
 
 interface Debt {
   id: string;
@@ -38,6 +39,7 @@ export const DebtsManager = ({ language, onDebtsChange }: DebtsManagerProps) => 
   const t = (key: string) => getTranslation(language, key);
   const { toast } = useToast();
   const [debts, setDebts] = useState<Debt[]>([]);
+  const queryClient = useQueryClient();
   const [newDebt, setNewDebt] = useState({
     name: "",
     bank: "",
@@ -126,6 +128,7 @@ export const DebtsManager = ({ language, onDebtsChange }: DebtsManagerProps) => 
       setIsInstallment(false);
       setHasPromotionalAPR(false);
       loadDebts();
+      queryClient.invalidateQueries({ queryKey: ["debts"] });
       toast({ title: "Success", description: "Debt added" });
     }
   };
@@ -137,6 +140,7 @@ export const DebtsManager = ({ language, onDebtsChange }: DebtsManagerProps) => 
       toast({ title: "Error", description: error.message, variant: "destructive" });
     } else {
       loadDebts();
+      queryClient.invalidateQueries({ queryKey: ["debts"] });
       toast({ title: "Success", description: "Debt deleted" });
     }
   };
@@ -163,6 +167,7 @@ export const DebtsManager = ({ language, onDebtsChange }: DebtsManagerProps) => 
       setIsEditDialogOpen(false);
       setEditingDebt(null);
       loadDebts();
+      queryClient.invalidateQueries({ queryKey: ["debts"] });
       toast({ title: "Success", description: "Debt updated" });
     }
   };

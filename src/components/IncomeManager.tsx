@@ -5,6 +5,7 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useQueryClient } from "@tanstack/react-query";
 import { TrendingUp, Plus, Trash2, Pencil } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { getTranslation, Language } from "@/lib/i18n";
@@ -24,6 +25,7 @@ interface IncomeManagerProps {
 export const IncomeManager = ({ language, onIncomeChange }: IncomeManagerProps) => {
   const t = (key: string) => getTranslation(language, key);
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   const [incomeSources, setIncomeSources] = useState<IncomeSource[]>([]);
   const [newIncome, setNewIncome] = useState({ name: "", amount: "", payment_day: "1" });
   const [editingIncome, setEditingIncome] = useState<IncomeSource | null>(null);
@@ -68,6 +70,7 @@ export const IncomeManager = ({ language, onIncomeChange }: IncomeManagerProps) 
     } else {
       setNewIncome({ name: "", amount: "", payment_day: "1" });
       loadIncomeSources();
+      queryClient.invalidateQueries({ queryKey: ["income_sources"] });
       toast({ title: "Success", description: "Income source added" });
     }
   };
@@ -79,6 +82,7 @@ export const IncomeManager = ({ language, onIncomeChange }: IncomeManagerProps) 
       toast({ title: "Error", description: error.message, variant: "destructive" });
     } else {
       loadIncomeSources();
+      queryClient.invalidateQueries({ queryKey: ["income_sources"] });
       toast({ title: "Success", description: "Income source deleted" });
     }
   };
@@ -102,6 +106,7 @@ export const IncomeManager = ({ language, onIncomeChange }: IncomeManagerProps) 
       setIsEditDialogOpen(false);
       setEditingIncome(null);
       loadIncomeSources();
+      queryClient.invalidateQueries({ queryKey: ["income_sources"] });
       toast({ title: "Success", description: "Income source updated" });
     }
   };

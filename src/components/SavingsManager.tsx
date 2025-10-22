@@ -7,6 +7,7 @@ import { PiggyBank, TrendingUp } from "lucide-react";
 import { getTranslation, Language } from "@/lib/i18n";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
+import { useQueryClient } from "@tanstack/react-query";
 
 interface SavingsManagerProps {
   language: Language;
@@ -16,6 +17,7 @@ interface SavingsManagerProps {
 export const SavingsManager = ({ language, availableToSave }: SavingsManagerProps) => {
   const t = (key: string) => getTranslation(language, key);
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   
   const [monthlyGoal, setMonthlyGoal] = useState("");
   const [totalAccumulated, setTotalAccumulated] = useState(0);
@@ -74,6 +76,7 @@ export const SavingsManager = ({ language, availableToSave }: SavingsManagerProp
     }
 
     toast({ title: "Success", description: "Savings goal updated successfully" });
+    queryClient.invalidateQueries({ queryKey: ["savings"] });
   };
 
   const addToSavings = async () => {
@@ -92,8 +95,9 @@ export const SavingsManager = ({ language, availableToSave }: SavingsManagerProp
       return;
     }
 
-    setTotalAccumulated(newTotal);
-    toast({ title: "Success", description: "Monthly savings added to total" });
+  setTotalAccumulated(newTotal);
+  toast({ title: "Success", description: "Monthly savings added to total" });
+  queryClient.invalidateQueries({ queryKey: ["savings"] });
   };
 
   return (

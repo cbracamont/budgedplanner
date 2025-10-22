@@ -9,6 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 import { Home, Plus, Trash2, Pencil } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { getTranslation, Language } from "@/lib/i18n";
+import { useQueryClient } from "@tanstack/react-query";
 
 interface FixedExpense {
   id: string;
@@ -33,6 +34,7 @@ const monthNames = {
 export const FixedExpensesManager = ({ language, onExpensesChange }: FixedExpensesManagerProps) => {
   const t = (key: string) => getTranslation(language, key);
   const { toast } = useToast();
+  const queryClient = useQueryClient();
   const [expenses, setExpenses] = useState<FixedExpense[]>([]);
   const [newExpense, setNewExpense] = useState({
     name: "",
@@ -102,6 +104,7 @@ export const FixedExpensesManager = ({ language, onExpensesChange }: FixedExpens
     } else {
       setNewExpense({ name: "", amount: "", payment_day: "1", frequency_type: "monthly", payment_month: null });
       loadExpenses();
+      queryClient.invalidateQueries({ queryKey: ["fixed_expenses"] });
       toast({ title: "Success", description: "Expense added" });
     }
   };
@@ -113,6 +116,7 @@ export const FixedExpensesManager = ({ language, onExpensesChange }: FixedExpens
       toast({ title: "Error", description: "Failed to delete expense", variant: "destructive" });
     } else {
       loadExpenses();
+      queryClient.invalidateQueries({ queryKey: ["fixed_expenses"] });
       toast({ title: "Success", description: "Expense deleted" });
     }
   };
@@ -138,6 +142,7 @@ export const FixedExpensesManager = ({ language, onExpensesChange }: FixedExpens
       setIsEditDialogOpen(false);
       setEditingExpense(null);
       loadExpenses();
+      queryClient.invalidateQueries({ queryKey: ["fixed_expenses"] });
       toast({ title: "Success", description: "Expense updated" });
     }
   };
