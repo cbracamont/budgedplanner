@@ -17,6 +17,7 @@ export type Database = {
       app_settings: {
         Row: {
           chart_type: string | null
+          color_theme: string | null
           created_at: string
           id: string
           updated_at: string
@@ -25,6 +26,7 @@ export type Database = {
         }
         Insert: {
           chart_type?: string | null
+          color_theme?: string | null
           created_at?: string
           id?: string
           updated_at?: string
@@ -33,6 +35,7 @@ export type Database = {
         }
         Update: {
           chart_type?: string | null
+          color_theme?: string | null
           created_at?: string
           id?: string
           updated_at?: string
