@@ -38,49 +38,49 @@ export const ExcelManager = ({ language, onDataImported }: ExcelManagerProps) =>
       // Add sheets
       if (income.data) {
         const ws1 = XLSX.utils.json_to_sheet(income.data.map(i => ({
-          Nombre: i.name,
-          Monto: i.amount,
-          'Día de Pago': i.payment_day
+          [language === 'en' ? 'Name' : 'Nombre']: i.name,
+          [language === 'en' ? 'Amount' : 'Monto']: i.amount,
+          [language === 'en' ? 'Payment Day' : 'Día de Pago']: i.payment_day
         })));
-        XLSX.utils.book_append_sheet(wb, ws1, "Ingresos");
+        XLSX.utils.book_append_sheet(wb, ws1, language === 'en' ? 'Income' : 'Ingresos');
       }
 
       if (debts.data) {
         const ws2 = XLSX.utils.json_to_sheet(debts.data.map(d => ({
-          Nombre: d.name,
-          Banco: d.bank,
-          Balance: d.balance,
-          'APR %': d.apr,
-          'Pago Mínimo': d.minimum_payment,
-          'Día de Pago': d.payment_day
+          [language === 'en' ? 'Name' : 'Nombre']: d.name,
+          [language === 'en' ? 'Bank' : 'Banco']: d.bank,
+          [language === 'en' ? 'Balance' : 'Balance']: d.balance,
+          [language === 'en' ? 'APR %' : 'APR %']: d.apr,
+          [language === 'en' ? 'Minimum Payment' : 'Pago Mínimo']: d.minimum_payment,
+          [language === 'en' ? 'Payment Day' : 'Día de Pago']: d.payment_day
         })));
-        XLSX.utils.book_append_sheet(wb, ws2, "Deudas");
+        XLSX.utils.book_append_sheet(wb, ws2, language === 'en' ? 'Debts' : 'Deudas');
       }
 
       if (fixedExp.data) {
         const ws3 = XLSX.utils.json_to_sheet(fixedExp.data.map(e => ({
-          Nombre: e.name,
-          Monto: e.amount,
-          Frecuencia: e.frequency_type,
-          'Día de Pago': e.payment_day
+          [language === 'en' ? 'Name' : 'Nombre']: e.name,
+          [language === 'en' ? 'Amount' : 'Monto']: e.amount,
+          [language === 'en' ? 'Frequency' : 'Frecuencia']: e.frequency_type,
+          [language === 'en' ? 'Payment Day' : 'Día de Pago']: e.payment_day
         })));
-        XLSX.utils.book_append_sheet(wb, ws3, "Gastos Fijos");
+        XLSX.utils.book_append_sheet(wb, ws3, language === 'en' ? 'Fixed Expenses' : 'Gastos Fijos');
       }
 
       if (variableExp.data) {
         const ws4 = XLSX.utils.json_to_sheet(variableExp.data.map(e => ({
-          Nombre: e.name,
-          Monto: e.amount
+          [language === 'en' ? 'Name' : 'Nombre']: e.name,
+          [language === 'en' ? 'Amount' : 'Monto']: e.amount
         })));
-        XLSX.utils.book_append_sheet(wb, ws4, "Gastos Variables");
+        XLSX.utils.book_append_sheet(wb, ws4, language === 'en' ? 'Variable Expenses' : 'Gastos Variables');
       }
 
       if (savings.data) {
         const ws5 = XLSX.utils.json_to_sheet([{
-          'Meta Mensual': savings.data[0]?.monthly_goal || 0,
-          'Total Acumulado': savings.data[0]?.total_accumulated || 0
+          [language === 'en' ? 'Monthly Goal' : 'Meta Mensual']: savings.data[0]?.monthly_goal || 0,
+          [language === 'en' ? 'Total Accumulated' : 'Total Acumulado']: savings.data[0]?.total_accumulated || 0
         }]);
-        XLSX.utils.book_append_sheet(wb, ws5, "Ahorros");
+        XLSX.utils.book_append_sheet(wb, ws5, language === 'en' ? 'Savings' : 'Ahorros');
       }
 
       // Generate and download
@@ -119,45 +119,45 @@ export const ExcelManager = ({ language, onDataImported }: ExcelManagerProps) =>
         const ws = wb.Sheets[sheetName];
         const jsonData = XLSX.utils.sheet_to_json(ws);
 
-        if (sheetName === 'Ingresos' && jsonData.length > 0) {
+        if ((sheetName === 'Ingresos' || sheetName === 'Income') && jsonData.length > 0) {
           const incomeData = jsonData.map((row: any) => ({
             user_id: user.id,
-            name: row.Nombre || 'Sin nombre',
-            amount: Number(row.Monto) || 0,
-            payment_day: Number(row['Día de Pago']) || 1
+            name: row.Nombre || row.Name || 'Sin nombre',
+            amount: Number(row.Monto || row.Amount) || 0,
+            payment_day: Number(row['Día de Pago'] || row['Payment Day']) || 1
           }));
           await supabase.from('income_sources').insert(incomeData);
         }
 
-        if (sheetName === 'Deudas' && jsonData.length > 0) {
+        if ((sheetName === 'Deudas' || sheetName === 'Debts') && jsonData.length > 0) {
           const debtsData = jsonData.map((row: any) => ({
             user_id: user.id,
-            name: row.Nombre || 'Sin nombre',
-            bank: row.Banco || null,
+            name: row.Nombre || row.Name || 'Sin nombre',
+            bank: row.Banco || row.Bank || null,
             balance: Number(row.Balance) || 0,
             apr: Number(row['APR %']) || 0,
-            minimum_payment: Number(row['Pago Mínimo']) || 0,
-            payment_day: Number(row['Día de Pago']) || 1
+            minimum_payment: Number(row['Pago Mínimo'] || row['Minimum Payment']) || 0,
+            payment_day: Number(row['Día de Pago'] || row['Payment Day']) || 1
           }));
           await supabase.from('debts').insert(debtsData);
         }
 
-        if (sheetName === 'Gastos Fijos' && jsonData.length > 0) {
+        if ((sheetName === 'Gastos Fijos' || sheetName === 'Fixed Expenses') && jsonData.length > 0) {
           const fixedData = jsonData.map((row: any) => ({
             user_id: user.id,
-            name: row.Nombre || 'Sin nombre',
-            amount: Number(row.Monto) || 0,
-            frequency_type: row.Frecuencia || 'monthly',
-            payment_day: Number(row['Día de Pago']) || 1
+            name: row.Nombre || row.Name || 'Sin nombre',
+            amount: Number(row.Monto || row.Amount) || 0,
+            frequency_type: row.Frecuencia || row.Frequency || 'monthly',
+            payment_day: Number(row['Día de Pago'] || row['Payment Day']) || 1
           }));
           await supabase.from('fixed_expenses').insert(fixedData);
         }
 
-        if (sheetName === 'Gastos Variables' && jsonData.length > 0) {
+        if ((sheetName === 'Gastos Variables' || sheetName === 'Variable Expenses') && jsonData.length > 0) {
           const variableData = jsonData.map((row: any) => ({
             user_id: user.id,
-            name: row.Nombre || 'Sin nombre',
-            amount: Number(row.Monto) || 0
+            name: row.Nombre || row.Name || 'Sin nombre',
+            amount: Number(row.Monto || row.Amount) || 0
           }));
           await supabase.from('variable_expenses').insert(variableData);
         }

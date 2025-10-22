@@ -197,6 +197,27 @@ export const WallpaperSettings = ({ language, onWallpaperChange }: WallpaperSett
                 ? (language === 'en' ? 'Uploading...' : 'Subiendo...') 
                 : (language === 'en' ? 'Choose Image' : 'Seleccionar Imagen')}
             </Button>
+            
+            {uploadedWallpaperUrl && (
+              <Button
+                onClick={async () => {
+                  setIsUploading(true);
+                  try {
+                    await applyWallpaper(uploadedWallpaperUrl);
+                    setUploadedWallpaperUrl(null);
+                    toast({ title: language === 'en' ? 'Success' : 'Éxito', description: language === 'en' ? 'Wallpaper applied successfully' : 'Fondo aplicado exitosamente' });
+                  } catch (error) {
+                    toast({ title: "Error", description: language === 'en' ? 'Failed to apply wallpaper' : 'Error al aplicar fondo', variant: "destructive" });
+                  } finally {
+                    setIsUploading(false);
+                  }
+                }}
+                className="w-full"
+                disabled={isUploading}
+              >
+                {language === 'en' ? 'Apply Uploaded Image' : 'Aplicar Imagen Subida'}
+              </Button>
+            )}
           </div>
 
           <div className="relative">
