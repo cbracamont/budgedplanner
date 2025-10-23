@@ -10,6 +10,8 @@ import { LogIn, UserPlus, KeyRound } from "lucide-react";
 import { z } from "zod";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Checkbox } from "@/components/ui/checkbox";
+import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { AlertTriangle } from "lucide-react";
 
 const authSchema = z.object({
   email: z.string().trim().email({ message: "Invalid email address" }).max(255, { message: "Email must be less than 255 characters" }),
@@ -24,6 +26,61 @@ export const Auth = () => {
   const [resetEmail, setResetEmail] = useState("");
   const [acceptedDisclaimer, setAcceptedDisclaimer] = useState(false);
   const { toast } = useToast();
+
+  const disclaimerContent = `**IMPORTANT LEGAL NOTICE - PLEASE READ CAREFULLY**
+
+This application ("Family Budget UK") is provided for informational and educational purposes only. By using this application, you acknowledge and agree to the following:
+
+**1. NOT FINANCIAL ADVICE**
+This tool does not provide financial, investment, tax, or legal advice. The information, calculations, recommendations, and AI-generated content provided by this application are for general informational purposes only and should not be construed as professional financial advice.
+
+**2. NO REGULATED FINANCIAL SERVICE**
+This application is not regulated by the Financial Conduct Authority (FCA) or any other regulatory body in the United Kingdom or elsewhere. We are not authorized to provide regulated financial advice or services.
+
+**3. USER RESPONSIBILITY**
+You are solely responsible for your financial decisions. Before making any financial decisions, you should:
+- Consult with a qualified and FCA-regulated financial advisor
+- Conduct your own research and due diligence
+- Consider your individual circumstances, risk tolerance, and financial goals
+
+**4. NO GUARANTEE OF ACCURACY**
+While we strive for accuracy, we make no representations or warranties regarding the accuracy, completeness, or reliability of:
+- Calculations and projections
+- AI-generated recommendations
+- Budget suggestions
+- Debt management strategies
+- Savings projections
+
+**5. AI LIMITATIONS**
+The AI financial feature uses automated algorithms and may:
+- Provide incomplete or inaccurate information
+- Not consider all relevant factors in your situation
+- Generate responses that are not suitable for your circumstances
+- Make errors in calculations or recommendations
+
+**6. NO LIABILITY**
+To the fullest extent permitted by law, we disclaim all liability for any losses, damages, or adverse consequences arising from:
+- Your use of this application
+- Reliance on any information or recommendations provided
+- Financial decisions made based on this tool
+- Any errors, omissions, or technical issues
+
+**7. DATA SECURITY**
+While we implement security measures, you use this application at your own risk. We are not liable for any data breaches or unauthorized access to your information.
+
+**8. THIRD-PARTY SERVICES**
+This application uses third-party services (including AI models). We are not responsible for the performance, availability, or content provided by third parties.
+
+**9. UK REGULATIONS**
+This disclaimer is governed by the laws of England and Wales. If you reside outside the UK, you should ensure compliance with your local financial regulations.
+
+**10. CHANGES TO SERVICE**
+We reserve the right to modify, suspend, or discontinue this service at any time without notice.
+
+**SEEK PROFESSIONAL ADVICE**
+For personalized financial advice, please consult with an FCA-authorized financial advisor. You can find regulated advisors at: https://register.fca.org.uk/
+
+By signing up or clicking "I Understand and Accept", you confirm that you have read, understood, and agree to this disclaimer.`;
 
   const handleSignUp = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -291,7 +348,30 @@ export const Auth = () => {
                     htmlFor="disclaimer"
                     className="text-sm leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
                   >
-                    I accept the disclaimer and understand that this app is for informational purposes only
+                    I accept the{" "}
+                    <Dialog>
+                      <DialogTrigger asChild>
+                        <button
+                          type="button"
+                          className="underline text-primary hover:text-primary/80"
+                          onClick={(e) => e.preventDefault()}
+                        >
+                          disclaimer
+                        </button>
+                      </DialogTrigger>
+                      <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
+                        <DialogHeader>
+                          <DialogTitle className="flex items-center gap-2">
+                            <AlertTriangle className="h-5 w-5 text-warning" />
+                            Important Legal Disclaimer
+                          </DialogTitle>
+                          <DialogDescription className="text-left whitespace-pre-line pt-4">
+                            {disclaimerContent}
+                          </DialogDescription>
+                        </DialogHeader>
+                      </DialogContent>
+                    </Dialog>
+                    {" "}and understand that this app is for informational purposes only
                   </label>
                 </div>
                 <Button type="submit" className="w-full" disabled={loading || !acceptedDisclaimer}>
