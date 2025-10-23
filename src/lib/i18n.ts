@@ -1,4 +1,4 @@
-export type Language = 'en' | 'es';
+export type Language = 'en' | 'es' | 'pt' | 'pl' | 'ro';
 
 export const translations = {
   en: {
@@ -254,6 +254,387 @@ export const translations = {
       yearly: "Anual"
     },
     calculationsNote: "Los cálculos son estimaciones basadas en la información proporcionada",
+  },
+  pt: {
+    // App title
+    appTitle: "Orçamento Familiar UK",
+    appDescription: "Gerencie as finanças da sua família com clareza. Acompanhe rendimentos, dívidas e despesas para planejar o seu futuro financeiro.",
+    
+    // Navigation
+    dashboard: "Painel",
+    calendar: "Calendário de Pagamentos",
+    debtAdvisor: "Previsão Financeira",
+    scenarios: "Cenários E Se",
+    
+    // Categories
+    emergencyFund: "Fundo de Emergência",
+    savings: "Poupanças",
+    savingsGoals: "Metas de Poupança",
+    
+    // Income
+    income: "Rendimentos",
+    salary: "Salário",
+    tips: "Gorjetas / Rendimento Extra",
+    universalCredit: "Universal Credit",
+    childBenefit: "Child Benefit",
+    freelance: "Rendimento Freelance",
+    totalIncome: "Rendimento Total",
+    updateIncome: "Atualizar Rendimentos",
+    
+    // Debts
+    debts: "Dívidas e Empréstimos",
+    personalLoan: "Empréstimo Pessoal",
+    carFinance: "Financiamento de Carro",
+    creditCards: "Cartões de Crédito",
+    mortgage: "Hipoteca",
+    totalDebts: "Dívidas Totais",
+    updateDebts: "Atualizar Dívidas",
+    bank: "Banco / Fornecedor",
+    selectBank: "Selecionar banco",
+    interestRate: "Taxa de Juros (APR %)",
+    remainingTerm: "Prazo Restante (meses)",
+    minimumPayment: "Pagamento Mensal Mínimo",
+    
+    // Fixed Expenses
+    fixedExpenses: "Despesas Fixas Mensais",
+    rent: "Renda/Hipoteca",
+    councilTax: "Council Tax",
+    utilities: "Serviços (Gás, Eletricidade, Água)",
+    internet: "Internet e TV",
+    mobilePhone: "Telemóvel",
+    insurance: "Seguros",
+    childcare: "Cuidados Infantis",
+    otherFixed: "Outras Despesas Fixas",
+    updateFixedExpenses: "Atualizar Despesas Fixas",
+    provider: "Fornecedor",
+    selectProvider: "Selecionar fornecedor",
+    paymentFrequency: "Frequência de Pagamento",
+    
+    // Variable Expenses
+    variableExpenses: "Despesas Variáveis Mensais",
+    groceries: "Compras de Comida",
+    supermarket: "Supermercado",
+    selectSupermarket: "Selecionar supermercado",
+    dining: "Restaurantes e Takeaway",
+    transport: "Transporte e Combustível",
+    shopping: "Compras e Artigos Pessoais",
+    entertainment: "Entretenimento e Lazer",
+    education: "Educação",
+    health: "Saúde e Farmácia",
+    updateVariableExpenses: "Atualizar Despesas Variáveis",
+    
+    // Budget Summary
+    financialSummary: "Resumo Financeiro",
+    totalExpenses: "Despesas Totais",
+    monthlyBudget: "Orçamento Mensal",
+    weeklyBudget: "Orçamento Semanal",
+    estimatedSavings: "Poupança Estimada",
+    availableToSave: "Disponível para poupar ou gastar",
+    monthlyDeficit: "Déficit mensal",
+    weeklyApprox: "Aproximadamente por semana",
+    monthlySavingsPotential: "Potencial de poupança mensal",
+    noSavingsAvailable: "Sem poupanças disponíveis - as despesas excedem o rendimento",
+    
+    // Debt Forecast
+    debtPayoffForecast: "Previsão de Pagamento de Dívidas",
+    debtPayoffDescription: "Calcule quanto tempo levará para pagar as suas dívidas",
+    extraMonthlyPayment: "Pagamento Mensal Extra para Dívidas",
+    extraPaymentDescription: "Valor adicional que pode alocar mensalmente para pagar dívidas",
+    calculatePayoffTime: "Calcular Tempo de Pagamento",
+    estimatedPayoffTime: "Tempo Estimado de Pagamento",
+    year: "ano",
+    years: "anos",
+    month: "mês",
+    months: "meses",
+    lessThanMonth: "Menos de 1 mês",
+    monthsInTotal: "meses no total",
+    noDebts: "Excelente! Não tem dívidas registadas.",
+    
+    // Calendar
+    paymentCalendar: "Calendário de Pagamentos",
+    calendarDescription: "Visualize os seus rendimentos e datas de pagamento",
+    dueDate: "Data de Vencimento",
+    amount: "Valor",
+    category: "Categoria",
+    
+    // Financial Analysis
+    debtAdvisorTitle: "Previsão Financeira",
+    debtAdvisorDescription: "Recomendações inteligentes para ficar livre de dívidas mais rápido",
+    debtFreeDate: "Data Projetada Livre de Dívidas",
+    recommendedStrategy: "Estratégia Recomendada",
+    payoffOrder: "Ordem de Pagamento Sugerida",
+    potentialSavings: "Poupança Potencial em Juros",
+    
+    // Scenario Simulator
+    scenarioSimulator: "Simulador de Cenários",
+    scenarioDescription: "Compare diferentes decisões financeiras",
+    currentScenario: "Cenário Atual",
+    simulatedScenario: "Cenário Simulado",
+    addScenario: "Adicionar Cenário",
+    
+    // Common
+    fixed: "Fixo",
+    variable: "Variável",
+    frequency: {
+      monthly: "Mensal",
+      quarterly: "Trimestral",
+      yearly: "Anual"
+    },
+    calculationsNote: "Os cálculos são estimativas baseadas nas informações fornecidas",
+  },
+  pl: {
+    // App title
+    appTitle: "Budżet Rodzinny UK",
+    appDescription: "Zarządzaj finansami swojej rodziny z jasnością. Śledź dochody, długi i wydatki, aby zaplanować swoją przyszłość finansową.",
+    
+    // Navigation
+    dashboard: "Panel",
+    calendar: "Kalendarz Płatności",
+    debtAdvisor: "Prognoza Finansowa",
+    scenarios: "Scenariusze Co Jeśli",
+    
+    // Categories
+    emergencyFund: "Fundusz Awaryjny",
+    savings: "Oszczędności",
+    savingsGoals: "Cele Oszczędnościowe",
+    
+    // Income
+    income: "Dochody",
+    salary: "Pensja",
+    tips: "napiwki / Dodatkowy Dochód",
+    universalCredit: "Universal Credit",
+    childBenefit: "Child Benefit",
+    freelance: "Dochód Freelance",
+    totalIncome: "Całkowity Dochód",
+    updateIncome: "Zaktualizuj Dochody",
+    
+    // Debts
+    debts: "Długi i Pożyczki",
+    personalLoan: "Pożyczka Osobista",
+    carFinance: "Finansowanie Samochodu",
+    creditCards: "Karty Kredytowe",
+    mortgage: "Kredyt Hipoteczny",
+    totalDebts: "Całkowite Długi",
+    updateDebts: "Zaktualizuj Długi",
+    bank: "Bank / Dostawca",
+    selectBank: "Wybierz bank",
+    interestRate: "Stopa Procentowa (APR %)",
+    remainingTerm: "Pozostały Okres (miesiące)",
+    minimumPayment: "Minimalna Płatność Miesięczna",
+    
+    // Fixed Expenses
+    fixedExpenses: "Stałe Wydatki Miesięczne",
+    rent: "Czynsz/Kredyt Hipoteczny",
+    councilTax: "Council Tax",
+    utilities: "Usługi (Gaz, Prąd, Woda)",
+    internet: "Internet i TV",
+    mobilePhone: "Telefon Komórkowy",
+    insurance: "Ubezpieczenie",
+    childcare: "Opieka nad Dziećmi",
+    otherFixed: "Inne Stałe Wydatki",
+    updateFixedExpenses: "Zaktualizuj Stałe Wydatki",
+    provider: "Dostawca",
+    selectProvider: "Wybierz dostawcę",
+    paymentFrequency: "Częstotliwość Płatności",
+    
+    // Variable Expenses
+    variableExpenses: "Zmienne Wydatki Miesięczne",
+    groceries: "Zakupy Spożywcze",
+    supermarket: "Supermarket",
+    selectSupermarket: "Wybierz supermarket",
+    dining: "Restauracje i Jedzenie na Wynos",
+    transport: "Transport i Paliwo",
+    shopping: "Zakupy i Artykuły Osobiste",
+    entertainment: "Rozrywka i Wypoczynek",
+    education: "Edukacja",
+    health: "Zdrowie i Apteka",
+    updateVariableExpenses: "Zaktualizuj Zmienne Wydatki",
+    
+    // Budget Summary
+    financialSummary: "Podsumowanie Finansowe",
+    totalExpenses: "Całkowite Wydatki",
+    monthlyBudget: "Budżet Miesięczny",
+    weeklyBudget: "Budżet Tygodniowy",
+    estimatedSavings: "Szacowane Oszczędności",
+    availableToSave: "Dostępne do oszczędzania lub wydania",
+    monthlyDeficit: "Deficyt miesięczny",
+    weeklyApprox: "Około tygodniowo",
+    monthlySavingsPotential: "Potencjał oszczędności miesięcznych",
+    noSavingsAvailable: "Brak dostępnych oszczędności - wydatki przekraczają dochody",
+    
+    // Debt Forecast
+    debtPayoffForecast: "Prognoza Spłaty Długów",
+    debtPayoffDescription: "Oblicz, ile czasu zajmie spłata Twoich długów",
+    extraMonthlyPayment: "Dodatkowa Miesięczna Płatność na Długi",
+    extraPaymentDescription: "Dodatkowa kwota, którą możesz przeznaczyć co miesiąc na spłatę długów",
+    calculatePayoffTime: "Oblicz Czas Spłaty",
+    estimatedPayoffTime: "Szacowany Czas Spłaty",
+    year: "rok",
+    years: "lat",
+    month: "miesiąc",
+    months: "miesięcy",
+    lessThanMonth: "Mniej niż 1 miesiąc",
+    monthsInTotal: "miesięcy w sumie",
+    noDebts: "Świetnie! Nie masz zarejestrowanych długów.",
+    
+    // Calendar
+    paymentCalendar: "Kalendarz Płatności",
+    calendarDescription: "Zobacz swoje dochody i harmonogram płatności",
+    dueDate: "Termin Płatności",
+    amount: "Kwota",
+    category: "Kategoria",
+    
+    // Financial Analysis
+    debtAdvisorTitle: "Prognoza Finansowa",
+    debtAdvisorDescription: "Inteligentne rekomendacje, aby pozbyć się długów szybciej",
+    debtFreeDate: "Przewidywana Data Wolności od Długów",
+    recommendedStrategy: "Zalecana Strategia",
+    payoffOrder: "Sugerowana Kolejność Spłat",
+    potentialSavings: "Potencjalne Oszczędności na Odsetkach",
+    
+    // Scenario Simulator
+    scenarioSimulator: "Symulator Scenariuszy",
+    scenarioDescription: "Porównaj różne decyzje finansowe",
+    currentScenario: "Obecny Scenariusz",
+    simulatedScenario: "Symulowany Scenariusz",
+    addScenario: "Dodaj Scenariusz",
+    
+    // Common
+    fixed: "Stały",
+    variable: "Zmienny",
+    frequency: {
+      monthly: "Miesięcznie",
+      quarterly: "Kwartalnie",
+      yearly: "Rocznie"
+    },
+    calculationsNote: "Obliczenia są szacunkami opartymi na podanych informacjach",
+  },
+  ro: {
+    // App title
+    appTitle: "Buget Familial UK",
+    appDescription: "Gestionați finanțele familiei dvs. cu claritate. Urmăriți veniturile, datoriile și cheltuielile pentru a vă planifica viitorul financiar.",
+    
+    // Navigation
+    dashboard: "Panou",
+    calendar: "Calendar Plăți",
+    debtAdvisor: "Prognoză Financiară",
+    scenarios: "Scenarii Ce-Ar Fi Dacă",
+    
+    // Categories
+    emergencyFund: "Fond de Urgență",
+    savings: "Economii",
+    savingsGoals: "Obiective de Economisire",
+    
+    // Income
+    income: "Venituri",
+    salary: "Salariu",
+    tips: "Bacșișuri / Venituri Extra",
+    universalCredit: "Universal Credit",
+    childBenefit: "Child Benefit",
+    freelance: "Venituri Freelance",
+    totalIncome: "Venit Total",
+    updateIncome: "Actualizați Veniturile",
+    
+    // Debts
+    debts: "Datorii și Împrumuturi",
+    personalLoan: "Împrumut Personal",
+    carFinance: "Finanțare Auto",
+    creditCards: "Carduri de Credit",
+    mortgage: "Ipotecă",
+    totalDebts: "Datorii Totale",
+    updateDebts: "Actualizați Datoriile",
+    bank: "Bancă / Furnizor",
+    selectBank: "Selectați banca",
+    interestRate: "Rata Dobânzii (APR %)",
+    remainingTerm: "Termen Rămas (luni)",
+    minimumPayment: "Plată Lunară Minimă",
+    
+    // Fixed Expenses
+    fixedExpenses: "Cheltuieli Fixe Lunare",
+    rent: "Chirie/Ipotecă",
+    councilTax: "Council Tax",
+    utilities: "Utilități (Gaz, Electricitate, Apă)",
+    internet: "Internet și TV",
+    mobilePhone: "Telefon Mobil",
+    insurance: "Asigurări",
+    childcare: "Îngrijire Copii",
+    otherFixed: "Alte Cheltuieli Fixe",
+    updateFixedExpenses: "Actualizați Cheltuielile Fixe",
+    provider: "Furnizor",
+    selectProvider: "Selectați furnizorul",
+    paymentFrequency: "Frecvență Plată",
+    
+    // Variable Expenses
+    variableExpenses: "Cheltuieli Variabile Lunare",
+    groceries: "Cumpărături Alimente",
+    supermarket: "Supermarket",
+    selectSupermarket: "Selectați supermarketul",
+    dining: "Restaurante și Mâncare la Pachet",
+    transport: "Transport și Combustibil",
+    shopping: "Cumpărături și Articole Personale",
+    entertainment: "Divertisment și Timp Liber",
+    education: "Educație",
+    health: "Sănătate și Farmacie",
+    updateVariableExpenses: "Actualizați Cheltuielile Variabile",
+    
+    // Budget Summary
+    financialSummary: "Rezumat Financiar",
+    totalExpenses: "Cheltuieli Totale",
+    monthlyBudget: "Buget Lunar",
+    weeklyBudget: "Buget Săptămânal",
+    estimatedSavings: "Economii Estimate",
+    availableToSave: "Disponibil pentru economisit sau cheltuit",
+    monthlyDeficit: "Deficit lunar",
+    weeklyApprox: "Aproximativ pe săptămână",
+    monthlySavingsPotential: "Potențial de economisire lunar",
+    noSavingsAvailable: "Fără economii disponibile - cheltuielile depășesc veniturile",
+    
+    // Debt Forecast
+    debtPayoffForecast: "Prognoză Plată Datorii",
+    debtPayoffDescription: "Calculați cât timp va dura să vă plătiți datoriile",
+    extraMonthlyPayment: "Plată Lunară Suplimentară pentru Datorii",
+    extraPaymentDescription: "Suma suplimentară pe care o puteți aloca lunar pentru plata datoriilor",
+    calculatePayoffTime: "Calculați Timpul de Plată",
+    estimatedPayoffTime: "Timp Estimat de Plată",
+    year: "an",
+    years: "ani",
+    month: "lună",
+    months: "luni",
+    lessThanMonth: "Mai puțin de 1 lună",
+    monthsInTotal: "luni în total",
+    noDebts: "Excelent! Nu aveți datorii înregistrate.",
+    
+    // Calendar
+    paymentCalendar: "Calendar Plăți",
+    calendarDescription: "Vizualizați veniturile și programul de plăți",
+    dueDate: "Data Scadentă",
+    amount: "Sumă",
+    category: "Categorie",
+    
+    // Financial Analysis
+    debtAdvisorTitle: "Prognoză Financiară",
+    debtAdvisorDescription: "Recomandări inteligente pentru a scăpa de datorii mai repede",
+    debtFreeDate: "Data Proiectată Fără Datorii",
+    recommendedStrategy: "Strategie Recomandată",
+    payoffOrder: "Ordine de Plată Sugerată",
+    potentialSavings: "Economii Potențiale la Dobânzi",
+    
+    // Scenario Simulator
+    scenarioSimulator: "Simulator de Scenarii",
+    scenarioDescription: "Comparați diferite decizii financiare",
+    currentScenario: "Scenariul Actual",
+    simulatedScenario: "Scenariul Simulat",
+    addScenario: "Adăugați Scenariu",
+    
+    // Common
+    fixed: "Fix",
+    variable: "Variabil",
+    frequency: {
+      monthly: "Lunar",
+      quarterly: "Trimestrial",
+      yearly: "Anual"
+    },
+    calculationsNote: "Calculele sunt estimări bazate pe informațiile furnizate",
   }
 };
 
