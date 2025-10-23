@@ -57,11 +57,6 @@ export const ChartSettings = ({ language, selectedChart, onChartChange }: ChartS
       value: 'timeline' as ChartType, 
       label: { en: 'Cash Flow Timeline', es: 'Línea de Tiempo de Flujo de Caja', pt: 'Linha do Tempo de Fluxo de Caixa', pl: 'Oś Czasu Przepływów Pieniężnych', ro: 'Cronologia Fluxului de Numerar' }[language],
       description: { en: 'Track monthly cash flow', es: 'Seguimiento del flujo mensual', pt: 'Acompanhe o fluxo mensal', pl: 'Śledź miesięczny przepływ gotówki', ro: 'Urmăriți fluxul lunar de numerar' }[language]
-    },
-    { 
-      value: 'heatmap' as ChartType, 
-      label: { en: 'Monthly Expense Heatmap', es: 'Mapa de Calor Mensual de Gastos', pt: 'Mapa de Calor Mensal de Despesas', pl: 'Miesięczna Mapa Cieplna Wydatków', ro: 'Hartă Termică Lunară a Cheltuielilor' }[language],
-      description: { en: 'Visualize spending patterns', es: 'Visualiza patrones de gasto', pt: 'Visualize padrões de gastos', pl: 'Wizualizuj wzorce wydatków', ro: 'Vizualizați modelele de cheltuieli' }[language]
     }
   ];
 

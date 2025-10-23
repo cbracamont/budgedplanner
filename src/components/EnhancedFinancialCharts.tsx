@@ -1,8 +1,9 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { BarChart, Bar, PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip, XAxis, YAxis, LineChart, Line, CartesianGrid } from "recharts";
-import { TrendingUp } from "lucide-react";
+import { TrendingUp, TrendingDown, Smile, Heart, Target } from "lucide-react";
 import { Language } from "@/lib/i18n";
 import { ChartType } from "./ChartSettings";
+import { Alert, AlertDescription } from "@/components/ui/alert";
 
 interface EnhancedFinancialChartsProps {
   totalIncome: number;
@@ -25,34 +26,70 @@ export const EnhancedFinancialCharts = ({
 }: EnhancedFinancialChartsProps) => {
   const availableForSavings = totalIncome - (totalDebts + totalFixedExpenses + totalVariableExpenses);
 
+  const motivationalMessages = {
+    en: [
+      { icon: Smile, text: "Every penny saved is a step towards your dreams!", color: "text-green-600" },
+      { icon: Heart, text: "Your future self will thank you for today's decisions", color: "text-pink-600" },
+      { icon: Target, text: "Small steps lead to big achievements", color: "text-blue-600" },
+      { icon: TrendingUp, text: "You're building a stronger financial future", color: "text-purple-600" }
+    ],
+    es: [
+      { icon: Smile, text: "¡Cada centavo ahorrado es un paso hacia tus sueños!", color: "text-green-600" },
+      { icon: Heart, text: "Tu yo del futuro te agradecerá las decisiones de hoy", color: "text-pink-600" },
+      { icon: Target, text: "Los pequeños pasos conducen a grandes logros", color: "text-blue-600" },
+      { icon: TrendingUp, text: "Estás construyendo un futuro financiero más fuerte", color: "text-purple-600" }
+    ],
+    pt: [
+      { icon: Smile, text: "Cada centavo economizado é um passo rumo aos seus sonhos!", color: "text-green-600" },
+      { icon: Heart, text: "Seu eu do futuro agradecerá pelas decisões de hoje", color: "text-pink-600" },
+      { icon: Target, text: "Pequenos passos levam a grandes conquistas", color: "text-blue-600" },
+      { icon: TrendingUp, text: "Você está construindo um futuro financeiro mais forte", color: "text-purple-600" }
+    ],
+    pl: [
+      { icon: Smile, text: "Każdy zaoszczędzony grosz to krok w kierunku Twoich marzeń!", color: "text-green-600" },
+      { icon: Heart, text: "Twoje przyszłe ja podziękuje Ci za dzisiejsze decyzje", color: "text-pink-600" },
+      { icon: Target, text: "Małe kroki prowadzą do wielkich osiągnięć", color: "text-blue-600" },
+      { icon: TrendingUp, text: "Budujesz silniejszą przyszłość finansową", color: "text-purple-600" }
+    ],
+    ro: [
+      { icon: Smile, text: "Fiecare ban economisit este un pas către visele tale!", color: "text-green-600" },
+      { icon: Heart, text: "Sinele tău viitor îți va mulțumi pentru deciziile de astăzi", color: "text-pink-600" },
+      { icon: Target, text: "Pașii mici duc la realizări mari", color: "text-blue-600" },
+      { icon: TrendingUp, text: "Construiești un viitor financiar mai puternic", color: "text-purple-600" }
+    ]
+  };
+
+  const randomMessage = motivationalMessages[language][Math.floor(Math.random() * motivationalMessages[language].length)];
+  const MessageIcon = randomMessage.icon;
+
   const pieData = [
-    { name: language === 'en' ? 'Debts' : 'Deudas', value: totalDebts, color: 'hsl(var(--debt))' },
-    { name: language === 'en' ? 'Fixed Expenses' : 'Gastos Fijos', value: totalFixedExpenses, color: 'hsl(var(--warning))' },
-    { name: language === 'en' ? 'Variable Expenses' : 'Gastos Variables', value: totalVariableExpenses, color: 'hsl(var(--primary))' },
-    { name: language === 'en' ? 'Accumulated Savings' : 'Ahorros Acumulados', value: totalSavingsAccumulated, color: 'hsl(var(--success))' },
-    { name: language === 'en' ? 'Available' : 'Disponible', value: Math.max(0, availableForSavings), color: 'hsl(var(--muted))' }
+    { name: { en: 'Debts', es: 'Deudas', pt: 'Dívidas', pl: 'Długi', ro: 'Datorii' }[language], value: totalDebts, color: 'hsl(var(--primary))' },
+    { name: { en: 'Fixed Expenses', es: 'Gastos Fijos', pt: 'Despesas Fixas', pl: 'Stałe Wydatki', ro: 'Cheltuieli Fixe' }[language], value: totalFixedExpenses, color: 'hsl(var(--primary) / 0.7)' },
+    { name: { en: 'Variable Expenses', es: 'Gastos Variables', pt: 'Despesas Variáveis', pl: 'Zmienne Wydatki', ro: 'Cheltuieli Variabile' }[language], value: totalVariableExpenses, color: 'hsl(var(--primary) / 0.5)' },
+    { name: { en: 'Accumulated Savings', es: 'Ahorros Acumulados', pt: 'Poupanças Acumuladas', pl: 'Zgromadzone Oszczędności', ro: 'Economii Acumulate' }[language], value: totalSavingsAccumulated, color: 'hsl(var(--primary) / 0.3)' },
+    { name: { en: 'Available', es: 'Disponible', pt: 'Disponível', pl: 'Dostępne', ro: 'Disponibil' }[language], value: Math.max(0, availableForSavings), color: 'hsl(var(--primary-glow))' }
   ].filter(item => item.value > 0);
 
   const barData = [
     {
-      name: language === 'en' ? 'Income' : 'Ingresos',
+      name: { en: 'Income', es: 'Ingresos', pt: 'Receitas', pl: 'Dochody', ro: 'Venituri' }[language],
       value: totalIncome,
-      fill: 'hsl(var(--income))'
+      fill: 'hsl(var(--primary))'
     },
     {
-      name: language === 'en' ? 'Expenses' : 'Gastos',
+      name: { en: 'Expenses', es: 'Gastos', pt: 'Despesas', pl: 'Wydatki', ro: 'Cheltuieli' }[language],
       value: totalDebts + totalFixedExpenses + totalVariableExpenses,
-      fill: 'hsl(var(--destructive))'
+      fill: 'hsl(var(--primary) / 0.6)'
     },
     {
-      name: language === 'en' ? 'Accumulated Savings' : 'Ahorros Acumulados',
+      name: { en: 'Accumulated Savings', es: 'Ahorros Acumulados', pt: 'Poupanças Acumuladas', pl: 'Zgromadzone Oszczędności', ro: 'Economii Acumulate' }[language],
       value: totalSavingsAccumulated,
-      fill: 'hsl(var(--success))'
+      fill: 'hsl(var(--primary-glow))'
     },
     {
-      name: language === 'en' ? 'Available' : 'Disponible',
+      name: { en: 'Available', es: 'Disponible', pt: 'Disponível', pl: 'Dostępne', ro: 'Disponibil' }[language],
       value: Math.max(0, availableForSavings),
-      fill: 'hsl(var(--muted))'
+      fill: 'hsl(var(--primary) / 0.3)'
     }
   ];
 
@@ -60,219 +97,231 @@ export const EnhancedFinancialCharts = ({
     const date = new Date();
     date.setMonth(date.getMonth() - (5 - i));
     return {
-      month: date.toLocaleDateString(language === 'en' ? 'en-GB' : 'es-ES', { month: 'short' }),
+      month: date.toLocaleDateString(language === 'en' ? 'en-GB' : language === 'es' ? 'es-ES' : language === 'pt' ? 'pt-PT' : language === 'pl' ? 'pl-PL' : 'ro-RO', { month: 'short' }),
       income: totalIncome * (0.9 + Math.random() * 0.2),
       expenses: (totalDebts + totalFixedExpenses + totalVariableExpenses) * (0.9 + Math.random() * 0.2),
     };
   });
 
-  const heatmapData = [
-    { category: language === 'en' ? 'Debts' : 'Deudas', amount: totalDebts },
-    { category: language === 'en' ? 'Fixed' : 'Fijos', amount: totalFixedExpenses },
-    { category: language === 'en' ? 'Variable' : 'Variables', amount: totalVariableExpenses },
-    { category: language === 'en' ? 'Accumulated Savings' : 'Ahorros Acumulados', amount: totalSavingsAccumulated },
-  ].filter(item => item.amount > 0);
-
   const renderChart = () => {
     switch (chartType) {
       case 'bar':
         return (
-          <Card className="shadow-medium border-primary/20 bg-gradient-to-br from-background via-background to-primary/5">
-            <CardHeader className="bg-primary/10 border-b border-primary/20 backdrop-blur-sm">
-              <div className="flex items-center gap-2">
-                <TrendingUp className="h-5 w-5 text-primary" />
-                <CardTitle className="text-2xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
-                  {language === 'en' ? 'Financial Overview' : 'Resumen Financiero'}
-                </CardTitle>
-              </div>
-              <CardDescription>
-                {language === 'en' ? 'Income, expenses, and available balance' : 'Ingresos, gastos y saldo disponible'}
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="pt-6">
-              <ResponsiveContainer width="100%" height={280}>
-                <BarChart data={barData}>
-                  <CartesianGrid strokeDasharray="3 3" className="stroke-muted/30" opacity={0.1} />
-                  <XAxis 
-                    dataKey="name" 
-                    className="text-xs font-semibold"
-                    tick={{ fill: 'hsl(var(--foreground))' }}
-                  />
-                  <YAxis 
-                    className="text-xs font-semibold"
-                    tick={{ fill: 'hsl(var(--foreground))' }}
-                  />
-                  <Tooltip 
-                    formatter={(value: number) => [`£${value.toFixed(2)}`, '']}
-                    contentStyle={{ 
-                      background: 'hsl(var(--card))',
-                      border: '1px solid hsl(var(--primary)/0.3)',
-                      borderRadius: '8px',
-                      boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
-                    }}
-                    labelStyle={{ color: 'hsl(var(--foreground))', fontWeight: 'bold' }}
-                  />
-                  <Bar dataKey="value" radius={[8, 8, 0, 0]} animationDuration={800}>
-                    {barData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.fill} />
-                    ))}
-                  </Bar>
-                </BarChart>
-              </ResponsiveContainer>
-            </CardContent>
-          </Card>
+          <div className="space-y-4">
+            <Card className="shadow-medium border-primary/20 bg-gradient-to-br from-background via-background to-primary/5">
+              <CardHeader className="bg-primary/10 border-b border-primary/20 backdrop-blur-sm">
+                <div className="flex items-center gap-2">
+                  <TrendingUp className="h-5 w-5 text-primary" />
+                  <CardTitle className="text-2xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
+                    {{ en: 'Financial Overview', es: 'Resumen Financiero', pt: 'Resumo Financeiro', pl: 'Przegląd Finansowy', ro: 'Prezentare Financiară' }[language]}
+                  </CardTitle>
+                </div>
+                <CardDescription>
+                  {{ en: 'Income, expenses, and available balance', es: 'Ingresos, gastos y saldo disponible', pt: 'Receitas, despesas e saldo disponível', pl: 'Dochody, wydatki i dostępne saldo', ro: 'Venituri, cheltuieli și sold disponibil' }[language]}
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="pt-6">
+                <ResponsiveContainer width="100%" height={280}>
+                  <BarChart data={barData}>
+                    <CartesianGrid strokeDasharray="3 3" className="stroke-muted/30" opacity={0.1} />
+                    <XAxis 
+                      dataKey="name" 
+                      className="text-xs font-semibold"
+                      tick={{ fill: 'hsl(var(--foreground))' }}
+                    />
+                    <YAxis 
+                      className="text-xs font-semibold"
+                      tick={{ fill: 'hsl(var(--foreground))' }}
+                    />
+                    <Tooltip 
+                      formatter={(value: number) => [`£${value.toFixed(2)}`, '']}
+                      contentStyle={{ 
+                        background: 'hsl(var(--card))',
+                        border: '1px solid hsl(var(--primary)/0.3)',
+                        borderRadius: '8px',
+                        boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+                      }}
+                      labelStyle={{ color: 'hsl(var(--foreground))', fontWeight: 'bold' }}
+                    />
+                    <Bar dataKey="value" radius={[8, 8, 0, 0]} animationDuration={800}>
+                      {barData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.fill} />
+                      ))}
+                    </Bar>
+                  </BarChart>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
+            
+            <Alert className="border-primary/30 bg-primary/5">
+              <MessageIcon className={`h-5 w-5 ${randomMessage.color}`} />
+              <AlertDescription className="text-base font-medium ml-2">
+                {randomMessage.text}
+              </AlertDescription>
+            </Alert>
+
+            <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+              <Card className="bg-gradient-to-br from-primary/10 to-primary/5 border-primary/20">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-sm font-medium text-muted-foreground">
+                    {{ en: 'Total Income', es: 'Ingresos Totales', pt: 'Receita Total', pl: 'Całkowity Dochód', ro: 'Venit Total' }[language]}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold text-primary">£{totalIncome.toFixed(2)}</div>
+                </CardContent>
+              </Card>
+
+              <Card className="bg-gradient-to-br from-primary/10 to-primary/5 border-primary/20">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-sm font-medium text-muted-foreground">
+                    {{ en: 'Total Expenses', es: 'Gastos Totales', pt: 'Despesas Totais', pl: 'Całkowite Wydatki', ro: 'Cheltuieli Totale' }[language]}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-2xl font-bold text-primary/70">
+                    £{(totalDebts + totalFixedExpenses + totalVariableExpenses).toFixed(2)}
+                  </div>
+                </CardContent>
+              </Card>
+
+              <Card className="bg-gradient-to-br from-primary-glow/10 to-primary-glow/5 border-primary-glow/20">
+                <CardHeader className="pb-3">
+                  <CardTitle className="text-sm font-medium text-muted-foreground">
+                    {{ en: 'Available to Save', es: 'Disponible para Ahorrar', pt: 'Disponível para Poupar', pl: 'Dostępne do Oszczędzenia', ro: 'Disponibil pentru Economii' }[language]}
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className={`text-2xl font-bold ${availableForSavings >= 0 ? 'text-primary-glow' : 'text-destructive'} flex items-center gap-2`}>
+                    {availableForSavings >= 0 ? <TrendingUp className="h-5 w-5" /> : <TrendingDown className="h-5 w-5" />}
+                    £{Math.abs(availableForSavings).toFixed(2)}
+                  </div>
+                </CardContent>
+              </Card>
+            </div>
+          </div>
         );
 
       case 'pie':
         return (
-          <Card className="shadow-medium border-primary/20 bg-gradient-to-br from-background via-background to-primary/5">
-            <CardHeader className="bg-primary/10 border-b border-primary/20 backdrop-blur-sm">
-              <CardTitle className="text-2xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
-                {language === 'en' ? 'Expense Distribution' : 'Distribución de Gastos'}
-              </CardTitle>
-              <CardDescription>
-                {language === 'en' ? 'How your income is allocated' : 'Cómo se distribuyen tus ingresos'}
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="pt-6">
-              <ResponsiveContainer width="100%" height={280}>
-                <PieChart>
-                  <Pie
-                    data={pieData}
-                    cx="50%"
-                    cy="50%"
-                    labelLine={false}
-                    label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
-                    outerRadius={100}
-                    fill="#8884d8"
-                    dataKey="value"
-                    animationDuration={800}
-                  >
-                    {pieData.map((entry, index) => (
-                      <Cell key={`cell-${index}`} fill={entry.color} />
-                    ))}
-                  </Pie>
-                  <Tooltip 
-                    formatter={(value: number) => [`£${value.toFixed(2)}`, '']}
-                    contentStyle={{ 
-                      background: 'hsl(var(--card))',
-                      border: '1px solid hsl(var(--primary)/0.3)',
-                      borderRadius: '8px',
-                      boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
-                    }}
-                    labelStyle={{ color: 'hsl(var(--foreground))', fontWeight: 'bold' }}
-                  />
-                </PieChart>
-              </ResponsiveContainer>
-            </CardContent>
-          </Card>
+          <div className="space-y-4">
+            <Card className="shadow-medium border-primary/20 bg-gradient-to-br from-background via-background to-primary/5">
+              <CardHeader className="bg-primary/10 border-b border-primary/20 backdrop-blur-sm">
+                <CardTitle className="text-2xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
+                  {{ en: 'Expense Distribution', es: 'Distribución de Gastos', pt: 'Distribuição de Despesas', pl: 'Rozkład Wydatków', ro: 'Distribuția Cheltuielilor' }[language]}
+                </CardTitle>
+                <CardDescription>
+                  {{ en: 'How your income is allocated', es: 'Cómo se distribuyen tus ingresos', pt: 'Como sua receita está alocada', pl: 'Jak rozdzielony jest Twój dochód', ro: 'Cum sunt alocate veniturile' }[language]}
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="pt-6">
+                <ResponsiveContainer width="100%" height={280}>
+                  <PieChart>
+                    <Pie
+                      data={pieData}
+                      cx="50%"
+                      cy="50%"
+                      labelLine={false}
+                      label={({ name, percent }) => `${name}: ${(percent * 100).toFixed(0)}%`}
+                      outerRadius={100}
+                      fill="#8884d8"
+                      dataKey="value"
+                      animationDuration={800}
+                    >
+                      {pieData.map((entry, index) => (
+                        <Cell key={`cell-${index}`} fill={entry.color} />
+                      ))}
+                    </Pie>
+                    <Tooltip 
+                      formatter={(value: number) => [`£${value.toFixed(2)}`, '']}
+                      contentStyle={{ 
+                        background: 'hsl(var(--card))',
+                        border: '1px solid hsl(var(--primary)/0.3)',
+                        borderRadius: '8px',
+                        boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+                      }}
+                      labelStyle={{ color: 'hsl(var(--foreground))', fontWeight: 'bold' }}
+                    />
+                  </PieChart>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
+
+            <Alert className="border-primary/30 bg-primary/5">
+              <MessageIcon className={`h-5 w-5 ${randomMessage.color}`} />
+              <AlertDescription className="text-base font-medium ml-2">
+                {randomMessage.text}
+              </AlertDescription>
+            </Alert>
+          </div>
         );
 
       case 'timeline':
         return (
-          <Card className="shadow-medium border-primary/20 bg-gradient-to-br from-background via-background to-primary/5">
-            <CardHeader className="bg-primary/10 border-b border-primary/20 backdrop-blur-sm">
-              <CardTitle className="text-2xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
-                {language === 'en' ? 'Cash Flow Timeline' : 'Línea de Tiempo de Flujo de Caja'}
-              </CardTitle>
-              <CardDescription>
-                {language === 'en' ? '6-month cash flow trend' : 'Tendencia de flujo de caja de 6 meses'}
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="pt-6">
-              <ResponsiveContainer width="100%" height={280}>
-                <LineChart data={timelineData}>
-                  <CartesianGrid strokeDasharray="3 3" className="stroke-muted/30" opacity={0.1} />
-                  <XAxis 
-                    dataKey="month" 
-                    className="text-xs font-semibold"
-                    tick={{ fill: 'hsl(var(--foreground))' }}
-                  />
-                  <YAxis 
-                    className="text-xs font-semibold"
-                    tick={{ fill: 'hsl(var(--foreground))' }}
-                  />
-                  <Tooltip 
-                    formatter={(value: number) => [`£${value.toFixed(2)}`, '']}
-                    contentStyle={{ 
-                      background: 'hsl(var(--card))',
-                      border: '1px solid hsl(var(--primary)/0.3)',
-                      borderRadius: '8px',
-                      boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
-                    }}
-                    labelStyle={{ color: 'hsl(var(--foreground))', fontWeight: 'bold' }}
-                  />
-                  <Legend />
-                  <Line 
-                    type="monotone" 
-                    dataKey="income" 
-                    stroke="hsl(var(--income))" 
-                    strokeWidth={3}
-                    dot={{ fill: 'hsl(var(--income))', r: 5 }}
-                    animationDuration={800}
-                    name={language === 'en' ? 'Income' : 'Ingresos'}
-                  />
-                  <Line 
-                    type="monotone" 
-                    dataKey="expenses" 
-                    stroke="hsl(var(--destructive))" 
-                    strokeWidth={3}
-                    dot={{ fill: 'hsl(var(--destructive))', r: 5 }}
-                    animationDuration={800}
-                    name={language === 'en' ? 'Expenses' : 'Gastos'}
-                  />
-                </LineChart>
-              </ResponsiveContainer>
-            </CardContent>
-          </Card>
-        );
+          <div className="space-y-4">
+            <Card className="shadow-medium border-primary/20 bg-gradient-to-br from-background via-background to-primary/5">
+              <CardHeader className="bg-primary/10 border-b border-primary/20 backdrop-blur-sm">
+                <CardTitle className="text-2xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
+                  {{ en: 'Cash Flow Timeline', es: 'Línea de Tiempo de Flujo de Caja', pt: 'Linha do Tempo de Fluxo de Caixa', pl: 'Oś Czasu Przepływów Pieniężnych', ro: 'Cronologia Fluxului de Numerar' }[language]}
+                </CardTitle>
+                <CardDescription>
+                  {{ en: '6-month cash flow trend', es: 'Tendencia de flujo de caja de 6 meses', pt: 'Tendência de fluxo de caixa de 6 meses', pl: 'Trend przepływów pieniężnych z 6 miesięcy', ro: 'Tendința fluxului de numerar pe 6 luni' }[language]}
+                </CardDescription>
+              </CardHeader>
+              <CardContent className="pt-6">
+                <ResponsiveContainer width="100%" height={280}>
+                  <LineChart data={timelineData}>
+                    <CartesianGrid strokeDasharray="3 3" className="stroke-muted/30" opacity={0.1} />
+                    <XAxis 
+                      dataKey="month" 
+                      className="text-xs font-semibold"
+                      tick={{ fill: 'hsl(var(--foreground))' }}
+                    />
+                    <YAxis 
+                      className="text-xs font-semibold"
+                      tick={{ fill: 'hsl(var(--foreground))' }}
+                    />
+                    <Tooltip 
+                      formatter={(value: number) => [`£${value.toFixed(2)}`, '']}
+                      contentStyle={{ 
+                        background: 'hsl(var(--card))',
+                        border: '1px solid hsl(var(--primary)/0.3)',
+                        borderRadius: '8px',
+                        boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
+                      }}
+                      labelStyle={{ color: 'hsl(var(--foreground))', fontWeight: 'bold' }}
+                    />
+                    <Legend />
+                    <Line 
+                      type="monotone" 
+                      dataKey="income" 
+                      stroke="hsl(var(--primary))" 
+                      strokeWidth={3}
+                      dot={{ fill: 'hsl(var(--primary))', r: 5 }}
+                      animationDuration={800}
+                      name={{ en: 'Income', es: 'Ingresos', pt: 'Receitas', pl: 'Dochody', ro: 'Venituri' }[language]}
+                    />
+                    <Line 
+                      type="monotone" 
+                      dataKey="expenses" 
+                      stroke="hsl(var(--primary) / 0.5)" 
+                      strokeWidth={3}
+                      dot={{ fill: 'hsl(var(--primary) / 0.5)', r: 5 }}
+                      animationDuration={800}
+                      name={{ en: 'Expenses', es: 'Gastos', pt: 'Despesas', pl: 'Wydatki', ro: 'Cheltuieli' }[language]}
+                    />
+                  </LineChart>
+                </ResponsiveContainer>
+              </CardContent>
+            </Card>
 
-      case 'heatmap':
-        return (
-          <Card className="shadow-medium border-primary/20 bg-gradient-to-br from-background via-background to-primary/5">
-            <CardHeader className="bg-primary/10 border-b border-primary/20 backdrop-blur-sm">
-              <CardTitle className="text-2xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
-                {language === 'en' ? 'Expense Heatmap' : 'Mapa de Calor de Gastos'}
-              </CardTitle>
-              <CardDescription>
-                {language === 'en' ? 'Spending intensity by category' : 'Intensidad de gasto por categoría'}
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="pt-6">
-              <ResponsiveContainer width="100%" height={280}>
-                <BarChart data={heatmapData} layout="horizontal">
-                  <CartesianGrid strokeDasharray="3 3" className="stroke-muted/30" opacity={0.1} />
-                  <XAxis 
-                    type="number"
-                    className="text-xs font-semibold"
-                    tick={{ fill: 'hsl(var(--foreground))' }}
-                  />
-                  <YAxis 
-                    type="category" 
-                    dataKey="category"
-                    className="text-xs font-semibold"
-                    tick={{ fill: 'hsl(var(--foreground))' }}
-                  />
-                  <Tooltip 
-                    formatter={(value: number) => [`£${value.toFixed(2)}`, '']}
-                    contentStyle={{ 
-                      background: 'hsl(var(--card))',
-                      border: '1px solid hsl(var(--primary)/0.3)',
-                      borderRadius: '8px',
-                      boxShadow: '0 4px 12px rgba(0,0,0,0.1)'
-                    }}
-                    labelStyle={{ color: 'hsl(var(--foreground))', fontWeight: 'bold' }}
-                  />
-                  <Bar 
-                    dataKey="amount" 
-                    fill="hsl(var(--primary))" 
-                    radius={[0, 8, 8, 0]}
-                    animationDuration={800}
-                  />
-                </BarChart>
-              </ResponsiveContainer>
-            </CardContent>
-          </Card>
+            <Alert className="border-primary/30 bg-primary/5">
+              <MessageIcon className={`h-5 w-5 ${randomMessage.color}`} />
+              <AlertDescription className="text-base font-medium ml-2">
+                {randomMessage.text}
+              </AlertDescription>
+            </Alert>
+          </div>
         );
 
       default:
