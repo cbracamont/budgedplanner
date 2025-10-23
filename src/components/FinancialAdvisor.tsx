@@ -294,8 +294,8 @@ export const FinancialAdvisor = ({ language }: FinancialAdvisorProps) => {
         </div>
         <CardDescription>
           {language === 'en' 
-            ? 'Get personalized financial advice based on your data' 
-            : 'Obtén consejos financieros personalizados basados en tus datos'}
+            ? 'Smart money moves and ask for guidance based on your data' 
+            : 'Movimientos inteligentes de dinero y pide orientación basada en tus datos'}
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -360,7 +360,7 @@ export const FinancialAdvisor = ({ language }: FinancialAdvisorProps) => {
           <Input
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder={language === 'en' ? 'Ask for advice...' : 'Pide un consejo...'}
+            placeholder={language === 'en' ? 'Ask for guidance...' : 'Pide orientación...'}
             disabled={isLoading}
           />
           <Button type="submit" disabled={isLoading || !input.trim()}>

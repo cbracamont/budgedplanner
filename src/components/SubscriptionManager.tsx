@@ -144,8 +144,8 @@ export const SubscriptionManager = ({ language }: SubscriptionManagerProps) => {
             )
           ) : (
             language === 'en'
-              ? 'Unlock unlimited AI financial advice and advanced features'
-              : 'Desbloquea asesoramiento financiero con IA ilimitado y funciones avanzadas'
+              ? 'Unlock unlimited AI smart money moves and advanced features'
+              : 'Desbloquea movimientos inteligentes de dinero con IA ilimitados y funciones avanzadas'
           )}
         </CardDescription>
       </CardHeader>
@@ -176,8 +176,8 @@ export const SubscriptionManager = ({ language }: SubscriptionManagerProps) => {
                   </p>
                   <p className="text-sm text-muted-foreground">
                     {language === 'en' 
-                      ? 'Get personalized financial advice anytime' 
-                      : 'Recibe asesoramiento financiero personalizado cuando quieras'}
+                      ? 'Get smart money moves and guidance anytime' 
+                      : 'Obtén movimientos inteligentes de dinero y orientación cuando quieras'}
                   </p>
                 </div>
               </div>
