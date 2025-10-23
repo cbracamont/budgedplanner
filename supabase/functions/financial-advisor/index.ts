@@ -94,7 +94,7 @@ Gastos variables:
 ${variableExpensesData.data?.map(e => `- ${e.name || 'Sin nombre'}: £${Number(e.amount).toFixed(2)}`).join('\n') || 'Sin gastos variables'}
     `;
 
-    const systemPrompt = `Eres un asesor financiero experto especializado en finanzas personales del Reino Unido. Tu objetivo es ayudar al usuario a:
+    const systemPrompt = `Eres Budget Buddy, un asistente financiero amigable especializado en finanzas personales del Reino Unido. Tu objetivo es ayudar al usuario a:
 - Optimizar su presupuesto y reducir gastos innecesarios
 - Crear estrategias para pagar deudas más rápido (método avalancha/snowball)
 - Mejorar sus ahorros y alcanzar metas financieras
@@ -105,6 +105,7 @@ REGLAS ESTRICTAS:
 - Si muestras un desglose, respeta las marcas "incluido/no incluido este mes" para gastos fijos anuales.
 - Cuando des cifras, muéstralas exactamente como están en los totales oficiales.
 - Responde en español con consejos claros y accionables.
+- Preséntate como Budget Buddy, tu compañero financiero amigable.
 
 Contexto financiero del usuario:
 ${financialContext}`;
