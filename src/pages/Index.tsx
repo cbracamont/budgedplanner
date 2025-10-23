@@ -33,7 +33,8 @@ import { DisclaimerBanner } from "@/components/DisclaimerBanner";
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { Calculator, LogOut } from "lucide-react";
+import { Calculator, LogOut, Menu, X } from "lucide-react";
+import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Language, getTranslation } from "@/lib/i18n";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
@@ -50,16 +51,20 @@ const Index = ({ onWallpaperChange }: IndexProps = {}) => {
   const [user, setUser] = useState<any>(null);
   const [authLoading, setAuthLoading] = useState(true);
   const [chartType, setChartType] = useState<ChartType>('bar');
+  const [activeTab, setActiveTab] = useState('dashboard');
+  const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const queryClient = useQueryClient();
   const { getCategoryName } = useCategoryNames(language);
   
   // Fetch all data with React Query
-  const { data: incomeData = [] } = useIncomeSources();
-  const { data: debtData = [] } = useDebts();
-  const { data: fixedExpensesData = [] } = useFixedExpenses();
-  const { data: variableExpensesData = [] } = useVariableExpenses();
-  const { data: savingsGoalsData = [] } = useSavingsGoals();
-  const { data: savings } = useSavings();
+  const { data: incomeData = [], isLoading: incomeLoading } = useIncomeSources();
+  const { data: debtData = [], isLoading: debtsLoading } = useDebts();
+  const { data: fixedExpensesData = [], isLoading: fixedLoading } = useFixedExpenses();
+  const { data: variableExpensesData = [], isLoading: variableLoading } = useVariableExpenses();
+  const { data: savingsGoalsData = [], isLoading: goalsLoading } = useSavingsGoals();
+  const { data: savings, isLoading: savingsLoading } = useSavings();
+  
+  const dataLoading = incomeLoading || debtsLoading || fixedLoading || variableLoading || goalsLoading || savingsLoading;
 
   // Calculate totals automatically from query data
   const totalIncome = useMemo(() => 
@@ -236,7 +241,7 @@ const Index = ({ onWallpaperChange }: IndexProps = {}) => {
   const availableForDebt = totalIncome - totalDebts - totalFixedExpenses - totalVariableExpenses - totalSavingsContributions;
   const availableForSavings = totalIncome - totalDebts - totalFixedExpenses - totalVariableExpenses - totalSavingsContributions;
 
-  if (authLoading) {
+  if (authLoading || (user && dataLoading)) {
     return (
       <div className="min-h-screen flex items-center justify-center bg-background">
         <div className="text-center space-y-4">
@@ -244,7 +249,7 @@ const Index = ({ onWallpaperChange }: IndexProps = {}) => {
             <Calculator className="h-12 w-12 mx-auto text-primary" />
           </div>
           <p className="text-muted-foreground">
-            {language === 'en' ? 'Loading...' : 'Cargando...'}
+            {language === 'en' ? 'Loading your financial data...' : 'Cargando tus datos financieros...'}
           </p>
         </div>
       </div>
@@ -283,13 +288,75 @@ const Index = ({ onWallpaperChange }: IndexProps = {}) => {
           </p>
         </header>
 
-        <Tabs defaultValue="dashboard" className="space-y-6">
-          <TabsList className="grid w-full grid-cols-4 lg:w-auto lg:inline-grid">
+        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+          {/* Desktop Navigation */}
+          <TabsList className="hidden md:grid w-full grid-cols-4 lg:w-auto lg:inline-grid">
             <TabsTrigger value="dashboard">{t('dashboard')}</TabsTrigger>
             <TabsTrigger value="calendar">{t('calendar')}</TabsTrigger>
             <TabsTrigger value="advisor">{t('debtAdvisor')}</TabsTrigger>
             <TabsTrigger value="settings">{language === 'en' ? 'Settings' : 'Ajustes'}</TabsTrigger>
           </TabsList>
+
+          {/* Mobile Navigation - Hamburger Menu */}
+          <div className="md:hidden flex items-center justify-between mb-4">
+            <h2 className="text-xl font-bold text-foreground">
+              {activeTab === 'dashboard' && t('dashboard')}
+              {activeTab === 'calendar' && t('calendar')}
+              {activeTab === 'advisor' && t('debtAdvisor')}
+              {activeTab === 'settings' && (language === 'en' ? 'Settings' : 'Ajustes')}
+            </h2>
+            <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
+              <SheetTrigger asChild>
+                <Button variant="outline" size="icon">
+                  <Menu className="h-5 w-5" />
+                </Button>
+              </SheetTrigger>
+              <SheetContent side="right" className="w-[250px]">
+                <nav className="flex flex-col gap-4 mt-8">
+                  <Button
+                    variant={activeTab === 'dashboard' ? 'default' : 'ghost'}
+                    className="justify-start"
+                    onClick={() => {
+                      setActiveTab('dashboard');
+                      setMobileMenuOpen(false);
+                    }}
+                  >
+                    {t('dashboard')}
+                  </Button>
+                  <Button
+                    variant={activeTab === 'calendar' ? 'default' : 'ghost'}
+                    className="justify-start"
+                    onClick={() => {
+                      setActiveTab('calendar');
+                      setMobileMenuOpen(false);
+                    }}
+                  >
+                    {t('calendar')}
+                  </Button>
+                  <Button
+                    variant={activeTab === 'advisor' ? 'default' : 'ghost'}
+                    className="justify-start"
+                    onClick={() => {
+                      setActiveTab('advisor');
+                      setMobileMenuOpen(false);
+                    }}
+                  >
+                    {t('debtAdvisor')}
+                  </Button>
+                  <Button
+                    variant={activeTab === 'settings' ? 'default' : 'ghost'}
+                    className="justify-start"
+                    onClick={() => {
+                      setActiveTab('settings');
+                      setMobileMenuOpen(false);
+                    }}
+                  >
+                    {language === 'en' ? 'Settings' : 'Ajustes'}
+                  </Button>
+                </nav>
+              </SheetContent>
+            </Sheet>
+          </div>
 
           <TabsContent value="dashboard" className="space-y-6">
             {/* Daily Recommendation */}
