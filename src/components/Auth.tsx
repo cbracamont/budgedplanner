@@ -9,6 +9,7 @@ import { useToast } from "@/hooks/use-toast";
 import { LogIn, UserPlus, KeyRound } from "lucide-react";
 import { z } from "zod";
 import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Checkbox } from "@/components/ui/checkbox";
 
 const authSchema = z.object({
   email: z.string().trim().email({ message: "Invalid email address" }).max(255, { message: "Email must be less than 255 characters" }),
@@ -21,6 +22,7 @@ export const Auth = () => {
   const [loading, setLoading] = useState(false);
   const [showResetPassword, setShowResetPassword] = useState(false);
   const [resetEmail, setResetEmail] = useState("");
+  const [acceptedDisclaimer, setAcceptedDisclaimer] = useState(false);
   const { toast } = useToast();
 
   const handleSignUp = async (e: React.FormEvent) => {
@@ -28,6 +30,16 @@ export const Auth = () => {
     setLoading(true);
 
     try {
+      if (!acceptedDisclaimer) {
+        toast({
+          title: "Disclaimer Required",
+          description: "You must accept the disclaimer to create an account",
+          variant: "destructive",
+        });
+        setLoading(false);
+        return;
+      }
+
       const validation = authSchema.safeParse({ email, password });
       
       if (!validation.success) {
@@ -118,8 +130,8 @@ export const Auth = () => {
       
       if (!emailValidation.success) {
         toast({
-          title: "Error de Validación",
-          description: "Por favor ingresa un email válido",
+          title: "Validation Error",
+          description: "Please enter a valid email address",
           variant: "destructive",
         });
         setLoading(false);
@@ -138,8 +150,8 @@ export const Auth = () => {
         });
       } else {
         toast({
-          title: "Éxito",
-          description: "Se ha enviado un enlace de recuperación a tu email",
+          title: "Success",
+          description: "A recovery link has been sent to your email",
         });
         setShowResetPassword(false);
         setResetEmail("");
@@ -147,7 +159,7 @@ export const Auth = () => {
     } catch (error) {
       toast({
         title: "Error",
-        description: "Ocurrió un error inesperado",
+        description: "An unexpected error occurred",
         variant: "destructive",
       });
     }
@@ -173,7 +185,7 @@ export const Auth = () => {
                 <div className="space-y-4">
                   <Alert>
                     <AlertDescription>
-                      Ingresa tu email y te enviaremos un enlace para restablecer tu contraseña
+                      Enter your email and we'll send you a link to reset your password
                     </AlertDescription>
                   </Alert>
                   <form onSubmit={handleResetPassword} className="space-y-4">
@@ -191,7 +203,7 @@ export const Auth = () => {
                     <div className="flex gap-2">
                       <Button type="submit" className="flex-1" disabled={loading}>
                         <KeyRound className="mr-2 h-4 w-4" />
-                        {loading ? "Enviando..." : "Enviar enlace"}
+                        {loading ? "Sending..." : "Send link"}
                       </Button>
                       <Button 
                         type="button" 
@@ -199,7 +211,7 @@ export const Auth = () => {
                         onClick={() => setShowResetPassword(false)}
                         disabled={loading}
                       >
-                        Cancelar
+                        Cancel
                       </Button>
                     </div>
                   </form>
@@ -238,7 +250,7 @@ export const Auth = () => {
                     className="w-full text-sm"
                     onClick={() => setShowResetPassword(true)}
                   >
-                    ¿Olvidaste tu contraseña?
+                    Forgot your password?
                   </Button>
                 </form>
               )}
@@ -269,7 +281,20 @@ export const Auth = () => {
                     minLength={6}
                   />
                 </div>
-                <Button type="submit" className="w-full" disabled={loading}>
+                <div className="flex items-start space-x-2 py-2">
+                  <Checkbox 
+                    id="disclaimer" 
+                    checked={acceptedDisclaimer}
+                    onCheckedChange={(checked) => setAcceptedDisclaimer(checked === true)}
+                  />
+                  <label
+                    htmlFor="disclaimer"
+                    className="text-sm leading-none peer-disabled:cursor-not-allowed peer-disabled:opacity-70"
+                  >
+                    I accept the disclaimer and understand that this app is for informational purposes only
+                  </label>
+                </div>
+                <Button type="submit" className="w-full" disabled={loading || !acceptedDisclaimer}>
                   <UserPlus className="mr-2 h-4 w-4" />
                   {loading ? "Creating account..." : "Sign Up"}
                 </Button>
