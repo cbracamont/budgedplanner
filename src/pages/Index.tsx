@@ -144,9 +144,19 @@ const Index = ({ onWallpaperChange }: IndexProps = {}) => {
       .maybeSingle();
 
     if (data?.chart_type) {
-      setChartType(data.chart_type as ChartType);
+      const preferred = data.chart_type as string;
+      const allowed: ChartType[] = ['bar', 'pie', 'timeline'];
+      setChartType(allowed.includes(preferred as ChartType) ? (preferred as ChartType) : 'bar');
+    } else {
+      setChartType('bar');
     }
   };
+
+  useEffect(() => {
+    if (user?.id) {
+      loadChartPreference(user.id);
+    }
+  }, [user?.id]);
 
   const handleSignOut = async () => {
     await supabase.auth.signOut();

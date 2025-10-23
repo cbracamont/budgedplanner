@@ -6,7 +6,7 @@ import { BarChart3 } from "lucide-react";
 import { Language } from "@/lib/i18n";
 import { supabase } from "@/integrations/supabase/client";
 
-export type ChartType = 'bar' | 'pie' | 'timeline' | 'heatmap';
+export type ChartType = 'bar' | 'pie' | 'timeline';
 
 interface ChartSettingsProps {
   language: Language;

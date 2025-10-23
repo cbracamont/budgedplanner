@@ -104,7 +104,8 @@ export const EnhancedFinancialCharts = ({
   });
 
   const renderChart = () => {
-    switch (chartType) {
+    const normalizedChart: ChartType = (chartType === 'bar' || chartType === 'pie' || chartType === 'timeline') ? chartType : 'bar';
+    switch (normalizedChart) {
       case 'bar':
         return (
           <div className="space-y-4">
