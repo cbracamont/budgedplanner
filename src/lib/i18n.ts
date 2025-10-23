@@ -9,7 +9,7 @@ export const translations = {
     // Navigation
     dashboard: "Dashboard",
     calendar: "Payment Calendar",
-    debtAdvisor: "Debt Free Forecast",
+    debtAdvisor: "Financial Forecast",
     scenarios: "What If Scenarios",
     
     // Categories
@@ -103,8 +103,8 @@ export const translations = {
     amount: "Amount",
     category: "Category",
     
-    // Debt Advisor
-    debtAdvisorTitle: "Debt Free Forecast",
+    // Financial Analysis
+    debtAdvisorTitle: "Financial Forecast",
     debtAdvisorDescription: "Smart recommendations to become debt-free faster",
     debtFreeDate: "Projected Debt-Free Date",
     recommendedStrategy: "Recommended Strategy",
@@ -136,7 +136,7 @@ export const translations = {
     // Navigation
     dashboard: "Panel",
     calendar: "Calendario de Pagos",
-    debtAdvisor: "Pronóstico Libre de Deudas",
+    debtAdvisor: "Pronóstico Financiero",
     scenarios: "Escenarios Qué Pasaría Si",
     
     // Categories
@@ -230,8 +230,8 @@ export const translations = {
     amount: "Cantidad",
     category: "Categoría",
     
-    // Debt Advisor
-    debtAdvisorTitle: "Pronóstico Libre de Deudas",
+    // Financial Analysis
+    debtAdvisorTitle: "Pronóstico Financiero",
     debtAdvisorDescription: "Recomendaciones inteligentes para liberarte de deudas más rápido",
     debtFreeDate: "Fecha Proyectada Libre de Deudas",
     recommendedStrategy: "Estrategia Recomendada",

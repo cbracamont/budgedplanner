@@ -27,7 +27,8 @@ export const DisclaimerBanner = ({ language }: DisclaimerBannerProps) => {
   const disclaimerContent = {
     en: {
       title: "Important Legal Disclaimer",
-      banner: "This tool does not provide financial advice. Please read our full disclaimer.",
+      banner: "By signing in, you automatically accept our disclaimer. This tool does not provide financial advice.",
+      termsLink: "Terms and Conditions",
       fullDisclaimer: `**IMPORTANT LEGAL NOTICE - PLEASE READ CAREFULLY**
 
 This application ("Family Budget UK") is provided for informational and educational purposes only. By using this application, you acknowledge and agree to the following:
@@ -53,7 +54,7 @@ While we strive for accuracy, we make no representations or warranties regarding
 - Savings projections
 
 **5. AI LIMITATIONS**
-The AI advisor feature uses automated algorithms and may:
+The AI financial feature uses automated algorithms and may:
 - Provide incomplete or inaccurate information
 - Not consider all relevant factors in your situation
 - Generate responses that are not suitable for your circumstances
@@ -81,14 +82,14 @@ We reserve the right to modify, suspend, or discontinue this service at any time
 **SEEK PROFESSIONAL ADVICE**
 For personalized financial advice, please consult with an FCA-authorized financial advisor. You can find regulated advisors at: https://register.fca.org.uk/
 
-By clicking "I Understand and Accept", you confirm that you have read, understood, and agree to this disclaimer.`,
+By signing in or clicking "I Understand and Accept", you confirm that you have read, understood, and agree to this disclaimer.`,
       accept: "I Understand and Accept",
-      viewFull: "View Full Disclaimer",
-      close: "Close"
+      viewFull: "View Full Disclaimer"
     },
     es: {
       title: "Aviso Legal Importante",
-      banner: "Esta herramienta no proporciona asesoramiento financiero. Por favor lee nuestro aviso legal completo.",
+      banner: "Al iniciar sesión, aceptas automáticamente nuestro aviso legal. Esta herramienta no proporciona asesoramiento financiero.",
+      termsLink: "Términos y Condiciones",
       fullDisclaimer: `**AVISO LEGAL IMPORTANTE - POR FAVOR LEA DETENIDAMENTE**
 
 Esta aplicación ("Family Budget UK") se proporciona únicamente con fines informativos y educativos. Al utilizar esta aplicación, usted reconoce y acepta lo siguiente:
@@ -114,7 +115,7 @@ Si bien nos esforzamos por la precisión, no hacemos representaciones ni garant�
 - Proyecciones de ahorro
 
 **5. LIMITACIONES DE LA IA**
-La función de asesor de IA utiliza algoritmos automatizados y puede:
+La función financiera de IA utiliza algoritmos automatizados y puede:
 - Proporcionar información incompleta o inexacta
 - No considerar todos los factores relevantes en su situación
 - Generar respuestas que no son adecuadas para sus circunstancias
@@ -142,10 +143,9 @@ Nos reservamos el derecho de modificar, suspender o descontinuar este servicio e
 **BUSQUE ASESORAMIENTO PROFESIONAL**
 Para asesoramiento financiero personalizado, consulte con un asesor financiero autorizado por la FCA. Puede encontrar asesores regulados en: https://register.fca.org.uk/
 
-Al hacer clic en "Entiendo y Acepto", confirma que ha leído, comprendido y acepta este aviso legal.`,
+Al iniciar sesión o hacer clic en "Entiendo y Acepto", confirma que ha leído, comprendido y acepta este aviso legal.`,
       accept: "Entiendo y Acepto",
-      viewFull: "Ver Aviso Legal Completo",
-      close: "Cerrar"
+      viewFull: "Ver Aviso Legal Completo"
     }
   };
 
@@ -158,7 +158,7 @@ Al hacer clic en "Entiendo y Acepto", confirma que ha leído, comprendido y acep
           <DialogTrigger asChild>
             <Button variant="outline" size="sm">
               <Info className="h-4 w-4 mr-2" />
-              {content.viewFull}
+              {content.termsLink}
             </Button>
           </DialogTrigger>
           <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
@@ -171,9 +171,6 @@ Al hacer clic en "Entiendo y Acepto", confirma que ha leído, comprendido y acep
                 {content.fullDisclaimer}
               </DialogDescription>
             </DialogHeader>
-            <div className="flex justify-end">
-              <Button variant="outline">{content.close}</Button>
-            </div>
           </DialogContent>
         </Dialog>
       </div>
