@@ -274,7 +274,6 @@ const Index = ({ onWallpaperChange }: IndexProps = {}) => {
             <div className="p-3 bg-gradient-gold rounded-xl shadow-gold">
               <Calculator className="h-8 w-8 text-foreground" />
             </div>
-            <CategoryNameEditor language={language} />
             <LanguageToggle language={language} onLanguageChange={setLanguage} />
             <Button variant="outline" size="sm" onClick={handleSignOut}>
               <LogOut className="mr-2 h-4 w-4" />
@@ -540,6 +539,7 @@ const Index = ({ onWallpaperChange }: IndexProps = {}) => {
               />
               <ThemeSettings language={language} onThemeChange={(theme) => console.log('Theme changed:', theme)} />
             </div>
+            <CategoryNameEditor language={language} />
             <ExcelManager language={language} onDataImported={reloadData} />
           </TabsContent>
         </Tabs>
