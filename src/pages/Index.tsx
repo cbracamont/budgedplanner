@@ -30,6 +30,7 @@ import { DailyRecommendations } from "@/components/DailyRecommendations";
 import { SavingsGoalsManager } from "@/components/SavingsGoalsManager";
 import { CategoryNameEditor } from "@/components/CategoryNameEditor";
 import { DisclaimerBanner } from "@/components/DisclaimerBanner";
+import { Footer } from "@/components/Footer";
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
@@ -548,6 +549,7 @@ const Index = ({ onWallpaperChange }: IndexProps = {}) => {
         </footer>
       </div>
       <DisclaimerBanner language={language} />
+      <Footer language={language} />
     </div>
   );
 };

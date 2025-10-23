@@ -1,33 +1,15 @@
-import { useState, useEffect } from "react";
-import { Alert, AlertDescription } from "@/components/ui/alert";
-import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { AlertTriangle, Info } from "lucide-react";
+import { AlertTriangle } from "lucide-react";
 import { Language } from "@/lib/i18n";
 
-interface DisclaimerBannerProps {
+interface FooterProps {
   language: Language;
 }
 
-export const DisclaimerBanner = ({ language }: DisclaimerBannerProps) => {
-  const [showBanner, setShowBanner] = useState(false);
-
-  useEffect(() => {
-    const hasAccepted = localStorage.getItem("disclaimer-accepted");
-    if (!hasAccepted) {
-      setShowBanner(true);
-    }
-  }, []);
-
-  const handleAccept = () => {
-    localStorage.setItem("disclaimer-accepted", "true");
-    setShowBanner(false);
-  };
-
+export const Footer = ({ language }: FooterProps) => {
   const disclaimerContent = {
     en: {
       title: "Important Legal Disclaimer",
-      banner: "By signing in, you automatically accept our disclaimer. This tool does not provide financial advice.",
       termsLink: "Terms and Conditions",
       fullDisclaimer: `**IMPORTANT LEGAL NOTICE - PLEASE READ CAREFULLY**
 
@@ -82,13 +64,10 @@ We reserve the right to modify, suspend, or discontinue this service at any time
 **SEEK PROFESSIONAL ADVICE**
 For personalized financial advice, please consult with an FCA-authorized financial advisor. You can find regulated advisors at: https://register.fca.org.uk/
 
-By signing in or clicking "I Understand and Accept", you confirm that you have read, understood, and agree to this disclaimer.`,
-      accept: "I Understand and Accept",
-      viewFull: "View Full Disclaimer"
+By signing in or clicking "I Understand and Accept", you confirm that you have read, understood, and agree to this disclaimer.`
     },
     es: {
       title: "Aviso Legal Importante",
-      banner: "Al iniciar sesión, aceptas automáticamente nuestro aviso legal. Esta herramienta no proporciona asesoramiento financiero.",
       termsLink: "Términos y Condiciones",
       fullDisclaimer: `**AVISO LEGAL IMPORTANTE - POR FAVOR LEA DETENIDAMENTE**
 
@@ -143,52 +122,34 @@ Nos reservamos el derecho de modificar, suspender o descontinuar este servicio e
 **BUSQUE ASESORAMIENTO PROFESIONAL**
 Para asesoramiento financiero personalizado, consulte con un asesor financiero autorizado por la FCA. Puede encontrar asesores regulados en: https://register.fca.org.uk/
 
-Al iniciar sesión o hacer clic en "Entiendo y Acepto", confirma que ha leído, comprendido y acepta este aviso legal.`,
-      accept: "Entiendo y Acepto",
-      viewFull: "Ver Aviso Legal Completo"
+Al iniciar sesión o hacer clic en "Entiendo y Acepto", confirma que ha leído, comprendido y acepta este aviso legal.`
     }
   };
 
   const content = disclaimerContent[language];
 
-  if (!showBanner) {
-    return null;
-  }
-
   return (
-    <div className="fixed bottom-0 left-0 right-0 z-50 p-4 bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 border-t">
-      <Alert variant="destructive">
-        <AlertTriangle className="h-4 w-4" />
-        <AlertDescription className="flex items-center justify-between gap-4">
-          <div className="flex-1">
-            <p className="font-semibold mb-2">{content.title}</p>
-            <p className="text-sm">{content.banner}</p>
-          </div>
-          <div className="flex gap-2">
-            <Dialog>
-              <DialogTrigger asChild>
-                <Button variant="outline" size="sm">
-                  {content.viewFull}
-                </Button>
-              </DialogTrigger>
-              <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
-                <DialogHeader>
-                  <DialogTitle className="flex items-center gap-2">
-                    <AlertTriangle className="h-5 w-5 text-warning" />
-                    {content.title}
-                  </DialogTitle>
-                  <DialogDescription className="text-left whitespace-pre-line pt-4">
-                    {content.fullDisclaimer}
-                  </DialogDescription>
-                </DialogHeader>
-              </DialogContent>
-            </Dialog>
-            <Button onClick={handleAccept} size="sm">
-              {content.accept}
-            </Button>
-          </div>
-        </AlertDescription>
-      </Alert>
-    </div>
+    <footer className="border-t bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/80 py-4 mt-8">
+      <div className="container mx-auto px-4 text-center text-sm text-muted-foreground">
+        <Dialog>
+          <DialogTrigger asChild>
+            <button className="hover:text-foreground underline transition-colors">
+              {content.termsLink}
+            </button>
+          </DialogTrigger>
+          <DialogContent className="max-w-3xl max-h-[80vh] overflow-y-auto">
+            <DialogHeader>
+              <DialogTitle className="flex items-center gap-2">
+                <AlertTriangle className="h-5 w-5 text-warning" />
+                {content.title}
+              </DialogTitle>
+              <DialogDescription className="text-left whitespace-pre-line pt-4">
+                {content.fullDisclaimer}
+              </DialogDescription>
+            </DialogHeader>
+          </DialogContent>
+        </Dialog>
+      </div>
+    </footer>
   );
 };
