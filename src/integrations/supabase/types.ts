@@ -147,6 +147,7 @@ export type Database = {
           name: string
           number_of_installments: number | null
           payment_day: number
+          profile_id: string | null
           promotional_apr: number | null
           promotional_apr_end_date: string | null
           regular_apr: number | null
@@ -168,6 +169,7 @@ export type Database = {
           name: string
           number_of_installments?: number | null
           payment_day: number
+          profile_id?: string | null
           promotional_apr?: number | null
           promotional_apr_end_date?: string | null
           regular_apr?: number | null
@@ -189,11 +191,50 @@ export type Database = {
           name?: string
           number_of_installments?: number | null
           payment_day?: number
+          profile_id?: string | null
           promotional_apr?: number | null
           promotional_apr_end_date?: string | null
           regular_apr?: number | null
           start_date?: string | null
           total_amount?: number | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "debts_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "financial_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      financial_profiles: {
+        Row: {
+          created_at: string
+          id: string
+          is_active: boolean
+          name: string
+          type: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name: string
+          type?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          is_active?: boolean
+          name?: string
+          type?: string
           updated_at?: string
           user_id?: string
         }
@@ -209,6 +250,7 @@ export type Database = {
           name: string
           payment_day: number
           payment_month: number | null
+          profile_id: string | null
           updated_at: string
           user_id: string
         }
@@ -221,6 +263,7 @@ export type Database = {
           name: string
           payment_day: number
           payment_month?: number | null
+          profile_id?: string | null
           updated_at?: string
           user_id: string
         }
@@ -233,10 +276,19 @@ export type Database = {
           name?: string
           payment_day?: number
           payment_month?: number | null
+          profile_id?: string | null
           updated_at?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "fixed_expenses_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "financial_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       income_sources: {
         Row: {
@@ -245,6 +297,7 @@ export type Database = {
           id: string
           name: string
           payment_day: number
+          profile_id: string | null
           updated_at: string
           user_id: string
         }
@@ -254,6 +307,7 @@ export type Database = {
           id?: string
           name: string
           payment_day: number
+          profile_id?: string | null
           updated_at?: string
           user_id: string
         }
@@ -263,10 +317,72 @@ export type Database = {
           id?: string
           name?: string
           payment_day?: number
+          profile_id?: string | null
           updated_at?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "income_sources_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "financial_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      notifications: {
+        Row: {
+          created_at: string
+          due_date: string | null
+          id: string
+          is_read: boolean
+          message: string
+          profile_id: string | null
+          related_id: string | null
+          related_table: string | null
+          title: string
+          type: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          due_date?: string | null
+          id?: string
+          is_read?: boolean
+          message: string
+          profile_id?: string | null
+          related_id?: string | null
+          related_table?: string | null
+          title: string
+          type?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          due_date?: string | null
+          id?: string
+          is_read?: boolean
+          message?: string
+          profile_id?: string | null
+          related_id?: string | null
+          related_table?: string | null
+          title?: string
+          type?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "notifications_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "financial_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       savings: {
         Row: {
@@ -277,6 +393,7 @@ export type Database = {
           id: string
           monthly_emergency_contribution: number | null
           monthly_goal: number
+          profile_id: string | null
           total_accumulated: number
           updated_at: string
           user_id: string
@@ -289,6 +406,7 @@ export type Database = {
           id?: string
           monthly_emergency_contribution?: number | null
           monthly_goal?: number
+          profile_id?: string | null
           total_accumulated?: number
           updated_at?: string
           user_id: string
@@ -301,11 +419,20 @@ export type Database = {
           id?: string
           monthly_emergency_contribution?: number | null
           monthly_goal?: number
+          profile_id?: string | null
           total_accumulated?: number
           updated_at?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "savings_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "financial_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       savings_goals: {
         Row: {
@@ -316,6 +443,7 @@ export type Database = {
           id: string
           is_active: boolean | null
           monthly_contribution: number | null
+          profile_id: string | null
           target_amount: number
           target_date: string | null
           updated_at: string
@@ -329,6 +457,7 @@ export type Database = {
           id?: string
           is_active?: boolean | null
           monthly_contribution?: number | null
+          profile_id?: string | null
           target_amount?: number
           target_date?: string | null
           updated_at?: string
@@ -342,12 +471,21 @@ export type Database = {
           id?: string
           is_active?: boolean | null
           monthly_contribution?: number | null
+          profile_id?: string | null
           target_amount?: number
           target_date?: string | null
           updated_at?: string
           user_id?: string
         }
-        Relationships: []
+        Relationships: [
+          {
+            foreignKeyName: "savings_goals_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "financial_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
       }
       savings_history: {
         Row: {
@@ -413,6 +551,7 @@ export type Database = {
           created_at: string
           id: string
           name: string | null
+          profile_id: string | null
           updated_at: string
           user_id: string
         }
@@ -422,6 +561,7 @@ export type Database = {
           created_at?: string
           id?: string
           name?: string | null
+          profile_id?: string | null
           updated_at?: string
           user_id: string
         }
@@ -431,6 +571,7 @@ export type Database = {
           created_at?: string
           id?: string
           name?: string | null
+          profile_id?: string | null
           updated_at?: string
           user_id?: string
         }
@@ -440,6 +581,13 @@ export type Database = {
             columns: ["category_id"]
             isOneToOne: false
             referencedRelation: "variable_expense_categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "variable_expenses_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "financial_profiles"
             referencedColumns: ["id"]
           },
         ]

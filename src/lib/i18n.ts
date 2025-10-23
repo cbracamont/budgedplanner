@@ -127,6 +127,26 @@ export const translations = {
       yearly: "Yearly"
     },
     calculationsNote: "Calculations are estimates based on the information provided",
+    
+    // Financial Profiles
+    financialProfiles: "Financial Profiles",
+    selectProfile: "Select Profile",
+    createNewProfile: "Create New Profile",
+    profileName: "Profile Name",
+    personal: "Personal",
+    family: "Family",
+    business: "Business",
+    createProfile: "Create Profile",
+    cannotDeleteLastProfile: "Cannot delete the last profile",
+    
+    // Notifications
+    notifications: "Notifications",
+    markAllRead: "Mark All Read",
+    markRead: "Mark Read",
+    new: "New",
+    dueDate: "Due Date",
+    noNotifications: "No notifications",
+    delete: "Delete",
   },
   es: {
     // App title
@@ -254,6 +274,26 @@ export const translations = {
       yearly: "Anual"
     },
     calculationsNote: "Los cálculos son estimaciones basadas en la información proporcionada",
+    
+    // Financial Profiles
+    financialProfiles: "Perfiles Financieros",
+    selectProfile: "Seleccionar Perfil",
+    createNewProfile: "Crear Nuevo Perfil",
+    profileName: "Nombre del Perfil",
+    personal: "Personal",
+    family: "Familiar",
+    business: "Negocio",
+    createProfile: "Crear Perfil",
+    cannotDeleteLastProfile: "No se puede eliminar el último perfil",
+    
+    // Notifications
+    notifications: "Notificaciones",
+    markAllRead: "Marcar Todo Leído",
+    markRead: "Marcar Leído",
+    new: "Nuevo",
+    dueDate: "Fecha de Vencimiento",
+    noNotifications: "Sin notificaciones",
+    delete: "Eliminar",
   },
   pt: {
     // App title
@@ -381,6 +421,26 @@ export const translations = {
       yearly: "Anual"
     },
     calculationsNote: "Os cálculos são estimativas baseadas nas informações fornecidas",
+    
+    // Financial Profiles
+    financialProfiles: "Perfis Financeiros",
+    selectProfile: "Selecionar Perfil",
+    createNewProfile: "Criar Novo Perfil",
+    profileName: "Nome do Perfil",
+    personal: "Pessoal",
+    family: "Família",
+    business: "Negócio",
+    createProfile: "Criar Perfil",
+    cannotDeleteLastProfile: "Não é possível excluir o último perfil",
+    
+    // Notifications
+    notifications: "Notificações",
+    markAllRead: "Marcar Tudo Lido",
+    markRead: "Marcar Lido",
+    new: "Novo",
+    dueDate: "Data de Vencimento",
+    noNotifications: "Sem notificações",
+    delete: "Excluir",
   },
   pl: {
     // App title
