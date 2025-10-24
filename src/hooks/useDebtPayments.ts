@@ -87,6 +87,37 @@ export const useAddDebtPayment = () => {
   });
 };
 
+// Update a debt payment
+export const useUpdateDebtPayment = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async ({ id, payment }: { id: string; payment: Partial<NewDebtPayment> }) => {
+      const { data, error } = await supabase
+        .from("debt_payments")
+        .update({
+          amount: payment.amount,
+          payment_date: payment.payment_date,
+          notes: payment.notes || null,
+        })
+        .eq("id", id)
+        .select()
+        .single();
+
+      if (error) throw error;
+      return data;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["debt_payments"] });
+      queryClient.invalidateQueries({ queryKey: ["debts"] });
+      toast.success("Payment updated successfully");
+    },
+    onError: (error) => {
+      toast.error("Failed to update payment: " + error.message);
+    },
+  });
+};
+
 // Delete a debt payment
 export const useDeleteDebtPayment = () => {
   const queryClient = useQueryClient();

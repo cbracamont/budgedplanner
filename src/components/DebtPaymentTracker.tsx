@@ -6,10 +6,10 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Receipt, Plus, Trash2, Calendar } from "lucide-react";
+import { Receipt, Plus, Trash2, Calendar, Edit } from "lucide-react";
 import { Language, getTranslation, formatCurrency } from "@/lib/i18n";
 import { useDebts } from "@/hooks/useFinancialData";
-import { useDebtPayments, useAddDebtPayment, useDeleteDebtPayment } from "@/hooks/useDebtPayments";
+import { useDebtPayments, useAddDebtPayment, useDeleteDebtPayment, useUpdateDebtPayment } from "@/hooks/useDebtPayments";
 import { format } from "date-fns";
 import { es, enGB } from "date-fns/locale";
 
@@ -22,9 +22,12 @@ export const DebtPaymentTracker = ({ language }: DebtPaymentTrackerProps) => {
   const { data: debts = [] } = useDebts();
   const { data: payments = [] } = useDebtPayments();
   const addPayment = useAddDebtPayment();
+  const updatePayment = useUpdateDebtPayment();
   const deletePayment = useDeleteDebtPayment();
 
   const [dialogOpen, setDialogOpen] = useState(false);
+  const [editDialogOpen, setEditDialogOpen] = useState(false);
+  const [editingPayment, setEditingPayment] = useState<any>(null);
   const [selectedDebtId, setSelectedDebtId] = useState<string>("");
   const [amount, setAmount] = useState<string>("");
   const [paymentDate, setPaymentDate] = useState<string>(format(new Date(), "yyyy-MM-dd"));
@@ -55,6 +58,37 @@ export const DebtPaymentTracker = ({ language }: DebtPaymentTrackerProps) => {
   const getDebtName = (debtId: string) => {
     const debt = debts.find((d) => d.id === debtId);
     return debt ? debt.name : "";
+  };
+
+  const handleEditClick = (payment: any) => {
+    setEditingPayment(payment);
+    setAmount(payment.amount.toString());
+    setPaymentDate(payment.payment_date);
+    setNotes(payment.notes || "");
+    setEditDialogOpen(true);
+  };
+
+  const handleUpdateSubmit = async (e: React.FormEvent) => {
+    e.preventDefault();
+
+    if (!editingPayment || !amount || parseFloat(amount) <= 0) {
+      return;
+    }
+
+    await updatePayment.mutateAsync({
+      id: editingPayment.id,
+      payment: {
+        amount: parseFloat(amount),
+        payment_date: paymentDate,
+        notes: notes || undefined,
+      },
+    });
+
+    setEditingPayment(null);
+    setAmount("");
+    setNotes("");
+    setPaymentDate(format(new Date(), "yyyy-MM-dd"));
+    setEditDialogOpen(false);
   };
 
   const locale = language === "es" ? es : enGB;
@@ -217,18 +251,111 @@ export const DebtPaymentTracker = ({ language }: DebtPaymentTrackerProps) => {
                     </p>
                   )}
                 </div>
-                <Button
-                  variant="ghost"
-                  size="sm"
-                  onClick={() => deletePayment.mutate(payment.id)}
-                  disabled={deletePayment.isPending}
-                >
-                  <Trash2 className="h-4 w-4 text-destructive" />
-                </Button>
+                <div className="flex gap-2">
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => handleEditClick(payment)}
+                  >
+                    <Edit className="h-4 w-4 text-primary" />
+                  </Button>
+                  <Button
+                    variant="ghost"
+                    size="sm"
+                    onClick={() => deletePayment.mutate(payment.id)}
+                    disabled={deletePayment.isPending}
+                  >
+                    <Trash2 className="h-4 w-4 text-destructive" />
+                  </Button>
+                </div>
               </div>
             ))}
           </div>
         )}
+
+        {/* Edit Payment Dialog */}
+        <Dialog open={editDialogOpen} onOpenChange={setEditDialogOpen}>
+          <DialogContent>
+            <DialogHeader>
+              <DialogTitle>
+                {language === "en" ? "Edit Payment" : "Editar Pago"}
+              </DialogTitle>
+              <DialogDescription>
+                {language === "en"
+                  ? "Update the payment details"
+                  : "Actualiza los detalles del pago"}
+              </DialogDescription>
+            </DialogHeader>
+            <form onSubmit={handleUpdateSubmit} className="space-y-4">
+              <div className="space-y-2">
+                <Label htmlFor="edit-debt">
+                  {language === "en" ? "Debt" : "Deuda"}
+                </Label>
+                <Input
+                  id="edit-debt"
+                  value={editingPayment ? getDebtName(editingPayment.debt_id) : ""}
+                  disabled
+                  className="bg-secondary"
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="edit-amount">
+                  {language === "en" ? "Payment Amount" : "Monto del Pago"}
+                </Label>
+                <Input
+                  id="edit-amount"
+                  type="number"
+                  step="0.01"
+                  placeholder="0.00"
+                  value={amount}
+                  onChange={(e) => setAmount(e.target.value)}
+                  required
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="edit-payment-date">
+                  {language === "en" ? "Payment Date" : "Fecha de Pago"}
+                </Label>
+                <Input
+                  id="edit-payment-date"
+                  type="date"
+                  value={paymentDate}
+                  onChange={(e) => setPaymentDate(e.target.value)}
+                  required
+                />
+              </div>
+
+              <div className="space-y-2">
+                <Label htmlFor="edit-notes">
+                  {language === "en" ? "Notes (optional)" : "Notas (opcional)"}
+                </Label>
+                <Textarea
+                  id="edit-notes"
+                  placeholder={
+                    language === "en"
+                      ? "Add any notes about this payment..."
+                      : "Agrega notas sobre este pago..."
+                  }
+                  value={notes}
+                  onChange={(e) => setNotes(e.target.value)}
+                  rows={3}
+                />
+              </div>
+
+              <Button type="submit" className="w-full" disabled={updatePayment.isPending}>
+                {updatePayment.isPending
+                  ? language === "en"
+                    ? "Updating..."
+                    : "Actualizando..."
+                  : language === "en"
+                  ? "Update Payment"
+                  : "Actualizar Pago"}
+              </Button>
+            </form>
+          </DialogContent>
+        </Dialog>
       </CardContent>
     </Card>
   );
