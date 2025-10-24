@@ -7,10 +7,10 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { Card } from "@/components/ui/card";
 import { UserCircle, Plus, Trash2, Check } from "lucide-react";
 import { useFinancialProfiles, useActiveProfile, useAddProfile, useSetActiveProfile, useDeleteProfile } from "@/hooks/useFinancialProfiles";
-import { getTranslation } from "@/lib/i18n";
+import { getTranslation, Language } from "@/lib/i18n";
 
 interface ProfileSelectorProps {
-  language: "en" | "es";
+  language: Language;
 }
 
 export const ProfileSelector = ({ language }: ProfileSelectorProps) => {

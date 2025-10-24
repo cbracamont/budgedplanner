@@ -24,6 +24,10 @@ import { BudgetSummary } from "@/components/BudgetSummary";
 import { EnhancedDebtAdvisor } from "@/components/EnhancedDebtAdvisor";
 import { CalendarView } from "@/components/CalendarView";
 import { LanguageToggle } from "@/components/LanguageToggle";
+import { DebtPaymentTracker } from "@/components/DebtPaymentTracker";
+import { DebtEvolutionChart } from "@/components/DebtEvolutionChart";
+import { ProfileSelector } from "@/components/ProfileSelector";
+import { NotificationCenter } from "@/components/NotificationCenter";
 import { FinancialAdvisor } from "@/components/FinancialAdvisor";
 import { ExcelManager } from "@/components/ExcelManager";
 import { DailyRecommendations } from "@/components/DailyRecommendations";
@@ -280,11 +284,13 @@ const Index = ({ onWallpaperChange }: IndexProps = {}) => {
     <div className="min-h-screen bg-background py-8 px-4 sm:px-6 lg:px-8">
       <div className="max-w-7xl mx-auto">
         <header className="text-center mb-12">
-          <div className="flex items-center justify-center gap-3 mb-4">
+          <div className="flex items-center justify-center gap-3 mb-4 flex-wrap">
             <div className="p-3 bg-gradient-gold rounded-xl shadow-gold">
               <Calculator className="h-8 w-8 text-foreground" />
             </div>
             <LanguageToggle language={language} onLanguageChange={setLanguage} />
+            <ProfileSelector language={language} />
+            <NotificationCenter language={language} />
             <Button variant="outline" size="sm" onClick={handleSignOut}>
               <LogOut className="mr-2 h-4 w-4" />
               {language === 'en' ? 'Sign Out' : 'Cerrar Sesión'}
@@ -537,6 +543,11 @@ const Index = ({ onWallpaperChange }: IndexProps = {}) => {
               extraPayment={availableForDebt > 0 ? availableForDebt : 0}
               language={language} 
             />
+            
+            <DebtEvolutionChart language={language} />
+            
+            <DebtPaymentTracker language={language} />
+            
             <FinancialAdvisor language={language} />
           </TabsContent>
 

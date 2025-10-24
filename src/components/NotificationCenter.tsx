@@ -5,12 +5,12 @@ import { Badge } from "@/components/ui/badge";
 import { Card } from "@/components/ui/card";
 import { Bell, Check, Trash2, CheckCheck } from "lucide-react";
 import { useNotifications, useUnreadNotifications, useMarkAsRead, useMarkAllAsRead, useDeleteNotification } from "@/hooks/useNotifications";
-import { getTranslation } from "@/lib/i18n";
+import { getTranslation, Language } from "@/lib/i18n";
 import { formatDistanceToNow } from "date-fns";
 import { es, enUS } from "date-fns/locale";
 
 interface NotificationCenterProps {
-  language: "en" | "es";
+  language: Language;
 }
 
 export const NotificationCenter = ({ language }: NotificationCenterProps) => {

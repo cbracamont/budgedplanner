@@ -146,6 +146,13 @@ export const translations = {
     newNotification: "New",
     noNotifications: "No notifications",
     deleteNotification: "Delete",
+    paymentHistory: "Payment History",
+    recordPayment: "Record Payment",
+    debtEvolution: "Debt Evolution",
+    currentTotalDebt: "Current Total Debt",
+    totalPaid: "Total Paid",
+    noPaymentHistory: "No payment history yet",
+    startRecordingPayments: "Start recording your debt payments to track progress",
   },
   es: {
     // App title
@@ -292,6 +299,13 @@ export const translations = {
     newNotification: "Nuevo",
     noNotifications: "Sin notificaciones",
     deleteNotification: "Eliminar",
+    paymentHistory: "Historial de Pagos",
+    recordPayment: "Registrar Pago",
+    debtEvolution: "Evolución de Deudas",
+    currentTotalDebt: "Deuda Total Actual",
+    totalPaid: "Total Pagado",
+    noPaymentHistory: "Aún no hay historial de pagos",
+    startRecordingPayments: "Comienza a registrar tus pagos para ver tu progreso",
   },
   pt: {
     // App title
@@ -438,6 +452,13 @@ export const translations = {
     newNotification: "Novo",
     noNotifications: "Sem notificações",
     deleteNotification: "Excluir",
+    paymentHistory: "Histórico de Pagamentos",
+    recordPayment: "Registrar Pagamento",
+    debtEvolution: "Evolução de Dívidas",
+    currentTotalDebt: "Dívida Total Atual",
+    totalPaid: "Total Pago",
+    noPaymentHistory: "Ainda não há histórico de pagamentos",
+    startRecordingPayments: "Comece a registrar seus pagamentos para acompanhar o progresso",
   },
   pl: {
     // App title
