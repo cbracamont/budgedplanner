@@ -143,10 +143,9 @@ export const translations = {
     notifications: "Notifications",
     markAllRead: "Mark All Read",
     markRead: "Mark Read",
-    new: "New",
-    dueDate: "Due Date",
+    newNotification: "New",
     noNotifications: "No notifications",
-    delete: "Delete",
+    deleteNotification: "Delete",
   },
   es: {
     // App title
@@ -290,10 +289,9 @@ export const translations = {
     notifications: "Notificaciones",
     markAllRead: "Marcar Todo Leído",
     markRead: "Marcar Leído",
-    new: "Nuevo",
-    dueDate: "Fecha de Vencimiento",
+    newNotification: "Nuevo",
     noNotifications: "Sin notificaciones",
-    delete: "Eliminar",
+    deleteNotification: "Eliminar",
   },
   pt: {
     // App title
@@ -437,10 +435,9 @@ export const translations = {
     notifications: "Notificações",
     markAllRead: "Marcar Tudo Lido",
     markRead: "Marcar Lido",
-    new: "Novo",
-    dueDate: "Data de Vencimento",
+    newNotification: "Novo",
     noNotifications: "Sem notificações",
-    delete: "Excluir",
+    deleteNotification: "Excluir",
   },
   pl: {
     // App title

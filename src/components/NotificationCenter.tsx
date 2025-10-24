@@ -104,7 +104,7 @@ export const NotificationCenter = ({ language }: NotificationCenterProps) => {
                       <p className="font-medium text-sm">{notification.title}</p>
                       {!notification.is_read && (
                         <Badge variant="secondary" className="h-5 text-xs">
-                          {getTranslation(language, "new")}
+                          {getTranslation(language, "newNotification")}
                         </Badge>
                       )}
                     </div>
@@ -138,7 +138,7 @@ export const NotificationCenter = ({ language }: NotificationCenterProps) => {
                     className="gap-1"
                   >
                     <Trash2 className="h-3 w-3" />
-                    {getTranslation(language, "delete")}
+                    {getTranslation(language, "deleteNotification")}
                   </Button>
                 </div>
               </Card>
