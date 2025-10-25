@@ -155,6 +155,12 @@ export const DebtPaymentTracker = ({ language }: DebtPaymentTrackerProps) => {
                     placeholder="0.00"
                     value={amount}
                     onChange={(e) => setAmount(e.target.value)}
+                    onBlur={(e) => {
+                      const value = parseFloat(e.target.value);
+                      if (!isNaN(value)) {
+                        setAmount(value.toFixed(2));
+                      }
+                    }}
                     required
                   />
                 </div>
@@ -310,6 +316,12 @@ export const DebtPaymentTracker = ({ language }: DebtPaymentTrackerProps) => {
                   placeholder="0.00"
                   value={amount}
                   onChange={(e) => setAmount(e.target.value)}
+                  onBlur={(e) => {
+                    const value = parseFloat(e.target.value);
+                    if (!isNaN(value)) {
+                      setAmount(value.toFixed(2));
+                    }
+                  }}
                   required
                 />
               </div>
