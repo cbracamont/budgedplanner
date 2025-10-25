@@ -24,6 +24,7 @@ export const ImprovedDebtForecast = ({ totalDebts, language }: DebtForecastProps
   const [extraPayment, setExtraPayment] = useState<string>("");
   const [debtFreeDate, setDebtFreeDate] = useState<Date | null>(null);
   const [monthsToPayOff, setMonthsToPayOff] = useState<number | null>(null);
+  const [interestSaved, setInterestSaved] = useState<number>(0);
 
   useEffect(() => {
     loadDebts();
@@ -52,39 +53,68 @@ export const ImprovedDebtForecast = ({ totalDebts, language }: DebtForecastProps
     }
 
     const extra = parseFloat(extraPayment) || 0;
-    let totalMonths = 0;
     
-    // Sort debts by APR (highest first) for avalanche method
-    const sortedDebts = [...debts].sort((a, b) => b.apr - a.apr);
-    let remainingExtra = extra;
-
-    sortedDebts.forEach((debt) => {
-      const monthlyPayment = debt.minimum_payment + remainingExtra;
-      const monthlyRate = debt.apr / 100 / 12;
+    // Calculate total months and interest with avalanche method
+    let remainingDebts = [...debts].map(d => ({ ...d }));
+    remainingDebts.sort((a, b) => b.apr - a.apr);
+    
+    let month = 0;
+    let totalInterestPaid = 0;
+    let totalInterestWithoutExtra = 0;
+    
+    // Calculate interest without extra payment first
+    let debtsForMinimum = [...debts].map(d => ({ ...d }));
+    let monthMin = 0;
+    while (debtsForMinimum.some(d => d.balance > 0)) {
+      monthMin++;
+      if (monthMin > 1200) break;
       
-      if (monthlyPayment <= 0) {
-        return;
-      }
-
-      let months = 0;
+      debtsForMinimum.forEach(debt => {
+        if (debt.balance > 0) {
+          const monthlyRate = debt.apr / 100 / 12;
+          const interest = debt.balance * monthlyRate;
+          totalInterestWithoutExtra += interest;
+          const payment = Math.min(debt.minimum_payment, debt.balance + interest);
+          debt.balance = debt.balance + interest - payment;
+        }
+      });
+    }
+    
+    // Calculate with extra payment
+    while (remainingDebts.some(d => d.balance > 0)) {
+      month++;
+      if (month > 1200) break;
       
-      if (monthlyRate === 0) {
-        months = Math.ceil(debt.balance / monthlyPayment);
-      } else {
-        // Formula: n = log(P / (P - B*r)) / log(1 + r)
-        // where P = payment, B = balance, r = monthly rate
-        const numerator = Math.log(monthlyPayment / (monthlyPayment - debt.balance * monthlyRate));
-        const denominator = Math.log(1 + monthlyRate);
-        months = Math.ceil(numerator / denominator);
+      let extraAvailable = extra;
+      
+      // Apply minimum payments and accumulate interest
+      remainingDebts.forEach(debt => {
+        if (debt.balance > 0) {
+          const monthlyRate = debt.apr / 100 / 12;
+          const interest = debt.balance * monthlyRate;
+          totalInterestPaid += interest;
+          const payment = Math.min(debt.minimum_payment, debt.balance + interest);
+          debt.balance = debt.balance + interest - payment;
+        }
+      });
+      
+      // Apply extra payment to highest APR debt
+      for (let i = 0; i < remainingDebts.length && extraAvailable > 0; i++) {
+        if (remainingDebts[i].balance > 0) {
+          const payment = Math.min(extraAvailable, remainingDebts[i].balance);
+          remainingDebts[i].balance -= payment;
+          extraAvailable -= payment;
+        }
       }
-
-      totalMonths = Math.max(totalMonths, months);
-    });
-
-    setMonthsToPayOff(totalMonths);
+    }
+    
+    const interestSaved = totalInterestWithoutExtra - totalInterestPaid;
+    setInterestSaved(interestSaved);
+    
+    setMonthsToPayOff(month);
     
     const futureDate = new Date();
-    futureDate.setMonth(futureDate.getMonth() + totalMonths);
+    futureDate.setMonth(futureDate.getMonth() + month);
     setDebtFreeDate(futureDate);
   };
 
@@ -164,13 +194,18 @@ export const ImprovedDebtForecast = ({ totalDebts, language }: DebtForecastProps
                       ({monthsToPayOff} {t('monthsInTotal')})
                     </p>
                   </div>
-                  <div className="pt-2 border-t border-border">
+                  <div className="pt-2 border-t border-border space-y-1">
                     <p className="text-sm text-muted-foreground">
                       {t('totalDebts')}: <span className="font-semibold text-foreground">{formatCurrency(totalDebts)}</span>
                     </p>
                     <p className="text-sm text-muted-foreground">
                       {t('extraMonthlyPayment')}: <span className="font-semibold text-foreground">{formatCurrency(parseFloat(extraPayment) || 0)}</span>
                     </p>
+                    {parseFloat(extraPayment) > 0 && interestSaved > 0 && (
+                      <p className="text-sm text-success font-semibold">
+                        {language === 'en' ? 'Interest Saved' : 'Interés Ahorrado'}: {formatCurrency(interestSaved)}
+                      </p>
+                    )}
                   </div>
                 </div>
               </div>
