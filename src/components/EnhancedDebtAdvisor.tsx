@@ -201,6 +201,12 @@ export const EnhancedDebtAdvisor = ({ debts, extraPayment, language }: EnhancedD
           ? `Apply £${extraAmount.toFixed(2)} extra to ${topDebt.name} (current APR: ${effectiveAPR}%) to save on interest.`
           : `Aplica £${extraAmount.toFixed(2)} extra a ${topDebt.name} (APR actual: ${effectiveAPR}%) para ahorrar en intereses.`
       );
+    } else {
+      recommendations.push(
+        language === 'en'
+          ? 'Consider adding extra monthly payments to accelerate debt payoff and save on interest.'
+          : 'Considera agregar pagos mensuales extra para acelerar el pago de deudas y ahorrar en intereses.'
+      );
     }
 
     if (sortedDebts.length > 1) {
@@ -325,7 +331,7 @@ export const EnhancedDebtAdvisor = ({ debts, extraPayment, language }: EnhancedD
           </div>
           <div className="space-y-2">
             <Label htmlFor="extra-amount">
-              {language === 'en' ? 'Extra Monthly Payment' : 'Pago Mensual Extra'}
+              {language === 'en' ? 'Extra Monthly Payment (Optional)' : 'Pago Mensual Extra (Opcional)'}
             </Label>
             <Input
               id="extra-amount"
@@ -335,12 +341,19 @@ export const EnhancedDebtAdvisor = ({ debts, extraPayment, language }: EnhancedD
               onChange={(e) => setCustomExtraPayment(e.target.value)}
               onBlur={(e) => {
                 const value = parseFloat(e.target.value);
-                if (!isNaN(value)) {
+                if (!isNaN(value) && value > 0) {
                   setCustomExtraPayment(value.toFixed(2));
+                } else {
+                  setCustomExtraPayment("0");
                 }
               }}
               placeholder="0.00"
             />
+            <p className="text-xs text-muted-foreground">
+              {language === 'en' 
+                ? 'Leave at 0 to see projection with minimum payments only' 
+                : 'Dejar en 0 para ver proyección solo con pagos mínimos'}
+            </p>
           </div>
         </div>
 
@@ -360,9 +373,13 @@ export const EnhancedDebtAdvisor = ({ debts, extraPayment, language }: EnhancedD
                   })}
                 </p>
                 <p className="text-sm text-muted-foreground">
-                  {language === 'en' 
-                    ? 'Combining all debts with current payment strategy' 
-                    : 'Combinando todas las deudas con la estrategia de pago actual'}
+                  {parseFloat(customExtraPayment) > 0
+                    ? (language === 'en' 
+                      ? `With £${parseFloat(customExtraPayment).toFixed(2)} extra monthly payment using ${payoffMethod} strategy` 
+                      : `Con £${parseFloat(customExtraPayment).toFixed(2)} de pago extra mensual usando estrategia ${payoffMethod}`)
+                    : (language === 'en' 
+                      ? 'Using minimum payments only' 
+                      : 'Usando solo pagos mínimos')}
                 </p>
               </div>
             </div>
