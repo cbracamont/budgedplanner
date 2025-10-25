@@ -38,13 +38,14 @@ serve(async (req) => {
     }
 
     // Fetch user's financial data
-    const [incomeData, debtsData, fixedExpensesData, variableExpensesData, savingsData, savingsGoalsData] = await Promise.all([
+    const [incomeData, debtsData, fixedExpensesData, variableExpensesData, savingsData, savingsGoalsData, debtPaymentsData] = await Promise.all([
       supabase.from('income_sources').select('*').eq('user_id', user.id),
       supabase.from('debts').select('*').eq('user_id', user.id),
       supabase.from('fixed_expenses').select('*').eq('user_id', user.id),
       supabase.from('variable_expenses').select('*').eq('user_id', user.id),
       supabase.from('savings').select('*').eq('user_id', user.id).maybeSingle(),
       supabase.from('savings_goals').select('*').eq('user_id', user.id),
+      supabase.from('debt_payments').select('*, debts(name, bank)').eq('user_id', user.id).order('payment_date', { ascending: false }),
     ]);
 
     // Calculate totals
@@ -92,6 +93,9 @@ ${fixedExpensesData.data?.map(e => `- ${e.name}: £${Number(e.amount).toFixed(2)
 
 Gastos variables:
 ${variableExpensesData.data?.map(e => `- ${e.name || 'Sin nombre'}: £${Number(e.amount).toFixed(2)}`).join('\n') || 'Sin gastos variables'}
+
+Historial de pagos de deudas (últimos registros):
+${debtPaymentsData.data?.slice(0, 20).map(p => `- ${p.debts?.name || 'Deuda'}: £${Number(p.amount).toFixed(2)} pagado el ${new Date(p.payment_date).toLocaleDateString('es-ES')}${p.notes ? ` (Nota: ${p.notes})` : ''}`).join('\n') || 'Sin historial de pagos'}
     `;
 
     const systemPrompt = `Eres Budget Buddy, un asistente financiero amigable especializado en finanzas personales del Reino Unido. Tu objetivo es ayudar al usuario a:
