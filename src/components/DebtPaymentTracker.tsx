@@ -154,15 +154,25 @@ export const DebtPaymentTracker = ({ language }: DebtPaymentTrackerProps) => {
                     step="0.01"
                     placeholder="0.00"
                     value={amount}
+                    max={selectedDebtId ? debts.find(d => d.id === selectedDebtId)?.balance : undefined}
                     onChange={(e) => setAmount(e.target.value)}
                     onBlur={(e) => {
                       const value = parseFloat(e.target.value);
-                      if (!isNaN(value)) {
+                      const selectedDebt = debts.find(d => d.id === selectedDebtId);
+                      if (!isNaN(value) && selectedDebt) {
+                        const maxAmount = Math.min(value, Number(selectedDebt.balance));
+                        setAmount(maxAmount.toFixed(2));
+                      } else if (!isNaN(value)) {
                         setAmount(value.toFixed(2));
                       }
                     }}
                     required
                   />
+                  {selectedDebtId && (
+                    <p className="text-xs text-muted-foreground">
+                      {language === "en" ? "Max:" : "Máx:"} {formatCurrency(debts.find(d => d.id === selectedDebtId)?.balance || 0)}
+                    </p>
+                  )}
                 </div>
 
                 <div className="space-y-2">
@@ -315,15 +325,25 @@ export const DebtPaymentTracker = ({ language }: DebtPaymentTrackerProps) => {
                   step="0.01"
                   placeholder="0.00"
                   value={amount}
+                  max={editingPayment ? debts.find(d => d.id === editingPayment.debt_id)?.balance : undefined}
                   onChange={(e) => setAmount(e.target.value)}
                   onBlur={(e) => {
                     const value = parseFloat(e.target.value);
-                    if (!isNaN(value)) {
+                    const editDebt = editingPayment ? debts.find(d => d.id === editingPayment.debt_id) : null;
+                    if (!isNaN(value) && editDebt) {
+                      const maxAmount = Math.min(value, Number(editDebt.balance));
+                      setAmount(maxAmount.toFixed(2));
+                    } else if (!isNaN(value)) {
                       setAmount(value.toFixed(2));
                     }
                   }}
                   required
                 />
+                {editingPayment && (
+                  <p className="text-xs text-muted-foreground">
+                    {language === "en" ? "Max:" : "Máx:"} {formatCurrency(debts.find(d => d.id === editingPayment.debt_id)?.balance || 0)}
+                  </p>
+                )}
               </div>
 
               <div className="space-y-2">
