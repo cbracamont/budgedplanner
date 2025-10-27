@@ -35,6 +35,9 @@ import { SavingsGoalsManager } from "@/components/SavingsGoalsManager";
 import { CategoryNameEditor } from "@/components/CategoryNameEditor";
 import { DisclaimerBanner } from "@/components/DisclaimerBanner";
 import { Footer } from "@/components/Footer";
+import { DebtRiskMonitor } from "@/components/DebtRiskMonitor";
+import { AchievementsBadges } from "@/components/AchievementsBadges";
+import { HouseholdManager } from "@/components/HouseholdManager";
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
@@ -375,6 +378,16 @@ const Index = ({ onWallpaperChange }: IndexProps = {}) => {
           </div>
 
           <TabsContent value="dashboard" className="space-y-6">
+            {/* Debt Risk Monitor */}
+            <DebtRiskMonitor
+              totalIncome={totalIncome}
+              totalDebts={totalDebts}
+              language={language}
+            />
+
+            {/* Achievements */}
+            <AchievementsBadges language={language} />
+
             {/* Daily Recommendation */}
             <DailyRecommendations
               language={language}
@@ -552,6 +565,7 @@ const Index = ({ onWallpaperChange }: IndexProps = {}) => {
           </TabsContent>
 
           <TabsContent value="settings" className="space-y-6">
+            <HouseholdManager language={language} />
             <div className="grid md:grid-cols-2 gap-6">
               <ChartSettings 
                 language={language}

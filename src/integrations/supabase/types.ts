@@ -14,6 +14,45 @@ export type Database = {
   }
   public: {
     Tables: {
+      achievements: {
+        Row: {
+          achievement_type: string
+          created_at: string
+          description: string
+          earned_at: string
+          icon: string
+          id: string
+          metadata: Json | null
+          profile_id: string | null
+          title: string
+          user_id: string
+        }
+        Insert: {
+          achievement_type: string
+          created_at?: string
+          description: string
+          earned_at?: string
+          icon: string
+          id?: string
+          metadata?: Json | null
+          profile_id?: string | null
+          title: string
+          user_id: string
+        }
+        Update: {
+          achievement_type?: string
+          created_at?: string
+          description?: string
+          earned_at?: string
+          icon?: string
+          id?: string
+          metadata?: Json | null
+          profile_id?: string | null
+          title?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       app_settings: {
         Row: {
           chart_type: string | null
@@ -177,6 +216,45 @@ export type Database = {
           },
         ]
       }
+      debt_risk_alerts: {
+        Row: {
+          acknowledged: boolean
+          acknowledged_at: string | null
+          alert_type: string
+          created_at: string
+          debt_to_income_ratio: number
+          id: string
+          message: string
+          profile_id: string | null
+          risk_level: string
+          user_id: string
+        }
+        Insert: {
+          acknowledged?: boolean
+          acknowledged_at?: string | null
+          alert_type: string
+          created_at?: string
+          debt_to_income_ratio: number
+          id?: string
+          message: string
+          profile_id?: string | null
+          risk_level: string
+          user_id: string
+        }
+        Update: {
+          acknowledged?: boolean
+          acknowledged_at?: string | null
+          alert_type?: string
+          created_at?: string
+          debt_to_income_ratio?: number
+          id?: string
+          message?: string
+          profile_id?: string | null
+          risk_level?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       debts: {
         Row: {
           apr: number
@@ -257,6 +335,7 @@ export type Database = {
       financial_profiles: {
         Row: {
           created_at: string
+          household_id: string | null
           id: string
           is_active: boolean
           name: string
@@ -266,6 +345,7 @@ export type Database = {
         }
         Insert: {
           created_at?: string
+          household_id?: string | null
           id?: string
           is_active?: boolean
           name: string
@@ -275,6 +355,7 @@ export type Database = {
         }
         Update: {
           created_at?: string
+          household_id?: string | null
           id?: string
           is_active?: boolean
           name?: string
@@ -333,6 +414,42 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      household_members: {
+        Row: {
+          created_at: string
+          display_name: string | null
+          household_id: string
+          id: string
+          invited_by: string | null
+          joined_at: string
+          role: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          display_name?: string | null
+          household_id: string
+          id?: string
+          invited_by?: string | null
+          joined_at?: string
+          role?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          display_name?: string | null
+          household_id?: string
+          id?: string
+          invited_by?: string | null
+          joined_at?: string
+          role?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       income_sources: {
         Row: {
