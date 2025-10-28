@@ -309,8 +309,9 @@ const Index = ({ onWallpaperChange }: IndexProps = {}) => {
 
         <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
           {/* Desktop Navigation */}
-          <TabsList className="hidden md:grid w-full grid-cols-4 lg:w-auto lg:inline-grid">
+          <TabsList className="hidden md:grid w-full grid-cols-5 lg:w-auto lg:inline-grid">
             <TabsTrigger value="dashboard">{t('dashboard')}</TabsTrigger>
+            <TabsTrigger value="achievements">{language === 'en' ? 'Achievements' : 'Logros'}</TabsTrigger>
             <TabsTrigger value="calendar">{t('calendar')}</TabsTrigger>
             <TabsTrigger value="advisor">{t('debtAdvisor')}</TabsTrigger>
             <TabsTrigger value="settings">{language === 'en' ? 'Settings' : 'Ajustes'}</TabsTrigger>
@@ -320,6 +321,7 @@ const Index = ({ onWallpaperChange }: IndexProps = {}) => {
           <div className="md:hidden flex items-center justify-between mb-4">
             <h2 className="text-xl font-bold text-foreground">
               {activeTab === 'dashboard' && t('dashboard')}
+              {activeTab === 'achievements' && (language === 'en' ? 'Achievements' : 'Logros')}
               {activeTab === 'calendar' && t('calendar')}
               {activeTab === 'advisor' && t('debtAdvisor')}
               {activeTab === 'settings' && (language === 'en' ? 'Settings' : 'Ajustes')}
@@ -341,6 +343,16 @@ const Index = ({ onWallpaperChange }: IndexProps = {}) => {
                     }}
                   >
                     {t('dashboard')}
+                  </Button>
+                  <Button
+                    variant={activeTab === 'achievements' ? 'default' : 'ghost'}
+                    className="justify-start"
+                    onClick={() => {
+                      setActiveTab('achievements');
+                      setMobileMenuOpen(false);
+                    }}
+                  >
+                    {language === 'en' ? 'Achievements' : 'Logros'}
                   </Button>
                   <Button
                     variant={activeTab === 'calendar' ? 'default' : 'ghost'}
@@ -384,9 +396,6 @@ const Index = ({ onWallpaperChange }: IndexProps = {}) => {
               totalDebts={totalDebts}
               language={language}
             />
-
-            {/* Achievements */}
-            <AchievementsBadges language={language} />
 
             {/* Daily Recommendation */}
             <DailyRecommendations
@@ -544,6 +553,10 @@ const Index = ({ onWallpaperChange }: IndexProps = {}) => {
                 </div>
               </div>
             </div>
+          </TabsContent>
+
+          <TabsContent value="achievements" className="space-y-6">
+            <AchievementsBadges language={language} />
           </TabsContent>
 
           <TabsContent value="calendar">
