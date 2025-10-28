@@ -65,6 +65,17 @@ export const useCreateHousehold = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("User not authenticated");
 
+      // Check if user is already in a household
+      const { data: existingMembership } = await supabase
+        .from("household_members")
+        .select("*")
+        .eq("user_id", user.id)
+        .maybeSingle();
+
+      if (existingMembership) {
+        throw new Error("Ya perteneces a un hogar. Debes salir primero antes de crear uno nuevo.");
+      }
+
       const householdId = crypto.randomUUID();
 
       const { data, error } = await supabase
@@ -86,8 +97,12 @@ export const useCreateHousehold = () => {
       queryClient.invalidateQueries({ queryKey: ["household-members"] });
       toast.success("Hogar creado exitosamente");
     },
-    onError: () => {
-      toast.error("Error al crear el hogar");
+    onError: (error: Error) => {
+      if (error.message.includes("Ya perteneces")) {
+        toast.error(error.message);
+      } else {
+        toast.error("Error al crear el hogar");
+      }
     },
   });
 };
@@ -99,6 +114,17 @@ export const useJoinHousehold = () => {
     mutationFn: async ({ householdId, displayName }: { householdId: string; displayName: string }) => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("User not authenticated");
+
+      // Check if user is already in a household
+      const { data: existingMembership } = await supabase
+        .from("household_members")
+        .select("*")
+        .eq("user_id", user.id)
+        .maybeSingle();
+
+      if (existingMembership) {
+        throw new Error("Ya perteneces a un hogar. Debes salir primero antes de unirte a otro.");
+      }
 
       const { data, error } = await supabase
         .from("household_members")
@@ -119,8 +145,12 @@ export const useJoinHousehold = () => {
       queryClient.invalidateQueries({ queryKey: ["household-members"] });
       toast.success("Te has unido al hogar exitosamente");
     },
-    onError: () => {
-      toast.error("Error al unirse al hogar");
+    onError: (error: Error) => {
+      if (error.message.includes("Ya perteneces")) {
+        toast.error(error.message);
+      } else {
+        toast.error("Error al unirse al hogar");
+      }
     },
   });
 };
