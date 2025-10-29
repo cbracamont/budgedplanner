@@ -86,6 +86,7 @@ export const useCreateHousehold = () => {
           user_id: user.id,
           role: "owner",
           display_name: displayName,
+          status: "approved",
         }])
         .select()
         .single();
