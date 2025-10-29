@@ -4,8 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Badge } from "@/components/ui/badge";
-import { Users, UserPlus, LogOut, Copy, Check, UserCheck, UserX } from "lucide-react";
-import { useMyHousehold, useHouseholdMembers, useCreateHousehold, useJoinHousehold, useLeaveHousehold, useApproveMember, useRejectMember } from "@/hooks/useHousehold";
+import { Users, UserPlus, LogOut, Copy, Check } from "lucide-react";
+import { useMyHousehold, useHouseholdMembers, useCreateHousehold, useJoinHousehold, useLeaveHousehold } from "@/hooks/useHousehold";
 import { Language, getTranslation } from "@/lib/i18n";
 import { toast } from "sonner";
 
@@ -24,12 +24,6 @@ export const HouseholdManager = ({ language }: HouseholdManagerProps) => {
   const createHousehold = useCreateHousehold();
   const joinHousehold = useJoinHousehold();
   const leaveHousehold = useLeaveHousehold();
-  const approveMember = useApproveMember();
-  const rejectMember = useRejectMember();
-
-  const isOwner = myHousehold?.role === 'owner';
-  const approvedMembers = members.filter(m => m.status === 'approved');
-  const pendingMembers = members.filter(m => m.status === 'pending');
 
   const handleCreate = async () => {
     if (!displayName.trim()) {
@@ -101,57 +95,15 @@ export const HouseholdManager = ({ language }: HouseholdManagerProps) => {
             </p>
           </div>
 
-          {/* Pending Requests (Only visible to owner) */}
-          {isOwner && pendingMembers.length > 0 && (
-            <div>
-              <Label className="mb-2 block">
-                {language === "es" ? "Solicitudes Pendientes" : "Pending Requests"}
-              </Label>
-              <div className="space-y-2">
-                {pendingMembers.map((member) => (
-                  <div key={member.id} className="flex items-center justify-between p-3 rounded-lg border border-warning bg-warning/5">
-                    <div className="flex-1">
-                      <p className="font-medium">{member.display_name || (language === "es" ? "Sin nombre" : "No name")}</p>
-                      <Badge variant="outline" className="mt-1">
-                        {language === "es" ? "Pendiente" : "Pending"}
-                      </Badge>
-                    </div>
-                    <div className="flex gap-2">
-                      <Button
-                        size="sm"
-                        variant="outline"
-                        onClick={() => approveMember.mutate(member.id)}
-                        disabled={approveMember.isPending}
-                      >
-                        <UserCheck className="h-4 w-4 mr-1" />
-                        {language === "es" ? "Aprobar" : "Approve"}
-                      </Button>
-                      <Button
-                        size="sm"
-                        variant="destructive"
-                        onClick={() => rejectMember.mutate(member.id)}
-                        disabled={rejectMember.isPending}
-                      >
-                        <UserX className="h-4 w-4 mr-1" />
-                        {language === "es" ? "Rechazar" : "Reject"}
-                      </Button>
-                    </div>
-                  </div>
-                ))}
-              </div>
-            </div>
-          )}
-
-          {/* Approved Members */}
           <div>
             <Label className="mb-2 block">
-              {language === "es" ? "Miembros del Hogar" : "Household Members"} ({approvedMembers.length})
+              {language === "es" ? "Miembros del Hogar" : "Household Members"}
             </Label>
             <div className="space-y-2">
-              {approvedMembers.map((member) => (
+              {members.map((member) => (
                 <div key={member.id} className="flex items-center justify-between p-3 rounded-lg border">
                   <div>
-                    <p className="font-medium">{member.display_name || (language === "es" ? "Sin nombre" : "No name")}</p>
+                    <p className="font-medium">{member.display_name || language === "es" ? "Sin nombre" : "No name"}</p>
                     <p className="text-xs text-muted-foreground">
                       {member.role === "owner" 
                         ? (language === "es" ? "Propietario" : "Owner")
@@ -165,17 +117,6 @@ export const HouseholdManager = ({ language }: HouseholdManagerProps) => {
               ))}
             </div>
           </div>
-
-          {/* Pending status message for the user */}
-          {myHousehold.status === 'pending' && (
-            <div className="p-3 rounded-lg border border-warning bg-warning/5">
-              <p className="text-sm text-center">
-                {language === "es" 
-                  ? "Tu solicitud de unión está pendiente de aprobación del propietario." 
-                  : "Your join request is pending approval from the household owner."}
-              </p>
-            </div>
-          )}
 
           <Button
             variant="destructive"

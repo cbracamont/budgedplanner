@@ -12,7 +12,6 @@ export interface HouseholdMember {
   joined_at: string;
   created_at: string;
   updated_at: string;
-  status: 'pending' | 'approved' | 'rejected';
 }
 
 export const useHouseholdMembers = (householdId?: string) => {
@@ -86,7 +85,6 @@ export const useCreateHousehold = () => {
           user_id: user.id,
           role: "owner",
           display_name: displayName,
-          status: "approved",
         }])
         .select()
         .single();
@@ -135,7 +133,6 @@ export const useJoinHousehold = () => {
           user_id: user.id,
           role: "member",
           display_name: displayName,
-          status: "pending",
         }])
         .select()
         .single();
@@ -146,7 +143,7 @@ export const useJoinHousehold = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["my-household"] });
       queryClient.invalidateQueries({ queryKey: ["household-members"] });
-      toast.success("Solicitud de unión enviada. Esperando aprobación del propietario.");
+      toast.success("Te has unido al hogar exitosamente");
     },
     onError: (error: Error) => {
       if (error.message.includes("Ya perteneces")) {
@@ -177,50 +174,6 @@ export const useLeaveHousehold = () => {
     },
     onError: () => {
       toast.error("Error al salir del hogar");
-    },
-  });
-};
-
-export const useApproveMember = () => {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async (membershipId: string) => {
-      const { error } = await supabase
-        .from("household_members")
-        .update({ status: "approved" })
-        .eq("id", membershipId);
-
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["household-members"] });
-      toast.success("Miembro aprobado exitosamente");
-    },
-    onError: () => {
-      toast.error("Error al aprobar miembro");
-    },
-  });
-};
-
-export const useRejectMember = () => {
-  const queryClient = useQueryClient();
-
-  return useMutation({
-    mutationFn: async (membershipId: string) => {
-      const { error } = await supabase
-        .from("household_members")
-        .delete()
-        .eq("id", membershipId);
-
-      if (error) throw error;
-    },
-    onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ["household-members"] });
-      toast.success("Solicitud rechazada");
-    },
-    onError: () => {
-      toast.error("Error al rechazar solicitud");
     },
   });
 };

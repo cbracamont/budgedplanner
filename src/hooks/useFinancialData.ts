@@ -7,23 +7,9 @@ export const useIncomeSources = () => {
   return useQuery({
     queryKey: ['income_sources'],
     queryFn: async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return [];
-
-      // Get active profile
-      const { data: activeProfile } = await supabase
-        .from('financial_profiles')
-        .select('id')
-        .eq('user_id', user.id)
-        .eq('is_active', true)
-        .maybeSingle();
-
-      if (!activeProfile) return [];
-
       const { data, error } = await supabase
         .from('income_sources')
         .select('*')
-        .eq('profile_id', activeProfile.id)
         .order('created_at', { ascending: true });
       
       if (error) throw error;
@@ -40,20 +26,9 @@ export const useAddIncome = () => {
     mutationFn: async (income: { name: string; amount: number; payment_day: number }) => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('No user');
-
-      // Get active profile
-      const { data: activeProfile } = await supabase
-        .from('financial_profiles')
-        .select('id')
-        .eq('user_id', user.id)
-        .eq('is_active', true)
-        .maybeSingle();
-
-      if (!activeProfile) throw new Error('No active profile');
       
       const { error } = await supabase.from('income_sources').insert({
         user_id: user.id,
-        profile_id: activeProfile.id,
         ...income
       });
       
@@ -116,23 +91,9 @@ export const useDebts = () => {
   return useQuery({
     queryKey: ['debts'],
     queryFn: async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return [];
-
-      // Get active profile
-      const { data: activeProfile } = await supabase
-        .from('financial_profiles')
-        .select('id')
-        .eq('user_id', user.id)
-        .eq('is_active', true)
-        .maybeSingle();
-
-      if (!activeProfile) return [];
-
       const { data, error } = await supabase
         .from('debts')
         .select('*')
-        .eq('profile_id', activeProfile.id)
         .order('created_at', { ascending: true });
       
       if (error) throw error;
@@ -149,20 +110,9 @@ export const useAddDebt = () => {
     mutationFn: async (debt: any) => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('No user');
-
-      // Get active profile
-      const { data: activeProfile } = await supabase
-        .from('financial_profiles')
-        .select('id')
-        .eq('user_id', user.id)
-        .eq('is_active', true)
-        .maybeSingle();
-
-      if (!activeProfile) throw new Error('No active profile');
       
       const { error } = await supabase.from('debts').insert({
         user_id: user.id,
-        profile_id: activeProfile.id,
         ...debt
       });
       
@@ -225,23 +175,9 @@ export const useFixedExpenses = () => {
   return useQuery({
     queryKey: ['fixed_expenses'],
     queryFn: async () => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) return [];
-
-      // Get active profile
-      const { data: activeProfile } = await supabase
-        .from('financial_profiles')
-        .select('id')
-        .eq('user_id', user.id)
-        .eq('is_active', true)
-        .maybeSingle();
-
-      if (!activeProfile) return [];
-
       const { data, error } = await supabase
         .from('fixed_expenses')
         .select('*')
-        .eq('profile_id', activeProfile.id)
         .order('created_at', { ascending: true });
       
       if (error) throw error;
@@ -258,20 +194,9 @@ export const useAddFixedExpense = () => {
     mutationFn: async (expense: any) => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('No user');
-
-      // Get active profile
-      const { data: activeProfile } = await supabase
-        .from('financial_profiles')
-        .select('id')
-        .eq('user_id', user.id)
-        .eq('is_active', true)
-        .maybeSingle();
-
-      if (!activeProfile) throw new Error('No active profile');
       
       const { error } = await supabase.from('fixed_expenses').insert({
         user_id: user.id,
-        profile_id: activeProfile.id,
         ...expense
       });
       
@@ -336,21 +261,11 @@ export const useVariableExpenses = () => {
     queryFn: async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return [];
-
-      // Get active profile
-      const { data: activeProfile } = await supabase
-        .from('financial_profiles')
-        .select('id')
-        .eq('user_id', user.id)
-        .eq('is_active', true)
-        .maybeSingle();
-
-      if (!activeProfile) return [];
       
       const { data, error } = await supabase
         .from('variable_expenses')
         .select('*')
-        .eq('profile_id', activeProfile.id);
+        .eq('user_id', user.id);
       
       if (error) throw error;
       return data || [];
@@ -366,20 +281,9 @@ export const useAddVariableExpense = () => {
     mutationFn: async (expense: { name: string; amount: number }) => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('No user');
-
-      // Get active profile
-      const { data: activeProfile } = await supabase
-        .from('financial_profiles')
-        .select('id')
-        .eq('user_id', user.id)
-        .eq('is_active', true)
-        .maybeSingle();
-
-      if (!activeProfile) throw new Error('No active profile');
       
       const { error } = await supabase.from('variable_expenses').insert({
         user_id: user.id,
-        profile_id: activeProfile.id,
         ...expense
       });
       
@@ -444,21 +348,11 @@ export const useSavingsGoals = () => {
     queryFn: async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return [];
-
-      // Get active profile
-      const { data: activeProfile } = await supabase
-        .from('financial_profiles')
-        .select('id')
-        .eq('user_id', user.id)
-        .eq('is_active', true)
-        .maybeSingle();
-
-      if (!activeProfile) return [];
       
       const { data, error } = await supabase
         .from('savings_goals')
         .select('*')
-        .eq('profile_id', activeProfile.id)
+        .eq('user_id', user.id)
         .order('created_at', { ascending: false });
       
       if (error) throw error;
@@ -475,20 +369,9 @@ export const useAddSavingsGoal = () => {
     mutationFn: async (goal: any) => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('No user');
-
-      // Get active profile
-      const { data: activeProfile } = await supabase
-        .from('financial_profiles')
-        .select('id')
-        .eq('user_id', user.id)
-        .eq('is_active', true)
-        .maybeSingle();
-
-      if (!activeProfile) throw new Error('No active profile');
       
       const { error } = await supabase.from('savings_goals').insert({
         user_id: user.id,
-        profile_id: activeProfile.id,
         ...goal
       });
       
@@ -553,21 +436,11 @@ export const useSavings = () => {
     queryFn: async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return null;
-
-      // Get active profile
-      const { data: activeProfile } = await supabase
-        .from('financial_profiles')
-        .select('id')
-        .eq('user_id', user.id)
-        .eq('is_active', true)
-        .maybeSingle();
-
-      if (!activeProfile) return null;
       
       const { data, error } = await supabase
         .from('savings')
         .select('*')
-        .eq('profile_id', activeProfile.id)
+        .eq('user_id', user.id)
         .maybeSingle();
       
       if (error) throw error;
@@ -584,21 +457,11 @@ export const useUpdateSavings = () => {
     mutationFn: async (updates: any) => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('No user');
-
-      // Get active profile
-      const { data: activeProfile } = await supabase
-        .from('financial_profiles')
-        .select('id')
-        .eq('user_id', user.id)
-        .eq('is_active', true)
-        .maybeSingle();
-
-      if (!activeProfile) throw new Error('No active profile');
       
       const { data: existing } = await supabase
         .from('savings')
         .select('id')
-        .eq('profile_id', activeProfile.id)
+        .eq('user_id', user.id)
         .maybeSingle();
       
       if (existing) {
@@ -610,7 +473,7 @@ export const useUpdateSavings = () => {
       } else {
         const { error } = await supabase
           .from('savings')
-          .insert({ user_id: user.id, profile_id: activeProfile.id, ...updates });
+          .insert({ user_id: user.id, ...updates });
         if (error) throw error;
       }
     },

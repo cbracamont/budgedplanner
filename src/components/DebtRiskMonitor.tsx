@@ -54,7 +54,7 @@ export const DebtRiskMonitor = ({ totalIncome, totalDebts, language }: DebtRiskM
             profile_id: null,
           });
 
-          // También crear notificación y enviar email
+          // También crear notificación
           const { data: { user } } = await supabase.auth.getUser();
           if (user) {
             await supabase.from("notifications").insert([{
@@ -64,22 +64,6 @@ export const DebtRiskMonitor = ({ totalIncome, totalDebts, language }: DebtRiskM
               type: "debt_alert",
               is_read: false,
             }]);
-
-            // Enviar email de notificación
-            if (user.email) {
-              try {
-                await supabase.functions.invoke('send-notification-email', {
-                  body: {
-                    email: user.email,
-                    title: language === "es" ? "⚠️ Alerta de Sobreendeudamiento" : "⚠️ Over-Indebtedness Alert",
-                    message,
-                    type: "alert",
-                  }
-                });
-              } catch (error) {
-                console.error("Error sending notification email:", error);
-              }
-            }
           }
         }
       }
