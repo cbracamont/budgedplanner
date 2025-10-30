@@ -158,12 +158,12 @@ export const useSetActiveProfile = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["financial-profiles"] });
       queryClient.invalidateQueries({ queryKey: ["active-profile"] });
-      queryClient.invalidateQueries({ queryKey: ["income-sources"] });
+      queryClient.invalidateQueries({ queryKey: ["income_sources"] });
       queryClient.invalidateQueries({ queryKey: ["debts"] });
-      queryClient.invalidateQueries({ queryKey: ["fixed-expenses"] });
-      queryClient.invalidateQueries({ queryKey: ["variable-expenses"] });
+      queryClient.invalidateQueries({ queryKey: ["fixed_expenses"] });
+      queryClient.invalidateQueries({ queryKey: ["variable_expenses"] });
       queryClient.invalidateQueries({ queryKey: ["savings"] });
-      queryClient.invalidateQueries({ queryKey: ["savings-goals"] });
+      queryClient.invalidateQueries({ queryKey: ["savings_goals"] });
       toast.success("Perfil activo cambiado");
     },
     onError: (error) => {
