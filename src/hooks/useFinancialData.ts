@@ -15,7 +15,7 @@ export const useIncomeSources = () => {
       const { data, error } = await supabase
         .from('income_sources')
         .select('*')
-        .eq('profile_id', activeProfile.id)
+        .or(`profile_id.eq.${activeProfile.id},profile_id.is.null`)
         .order('created_at', { ascending: true });
       
       if (error) throw error;
@@ -108,7 +108,7 @@ export const useDebts = () => {
       const { data, error } = await supabase
         .from('debts')
         .select('*')
-        .eq('profile_id', activeProfile.id)
+        .or(`profile_id.eq.${activeProfile.id},profile_id.is.null`)
         .order('created_at', { ascending: true });
       
       if (error) throw error;
@@ -201,7 +201,7 @@ export const useFixedExpenses = () => {
       const { data, error } = await supabase
         .from('fixed_expenses')
         .select('*')
-        .eq('profile_id', activeProfile.id)
+        .or(`profile_id.eq.${activeProfile.id},profile_id.is.null`)
         .order('created_at', { ascending: true });
       
       if (error) throw error;
@@ -294,7 +294,7 @@ export const useVariableExpenses = () => {
       const { data, error } = await supabase
         .from('variable_expenses')
         .select('*')
-        .eq('profile_id', activeProfile.id);
+        .or(`profile_id.eq.${activeProfile.id},profile_id.is.null`);
       
       if (error) throw error;
       return data || [];
@@ -386,7 +386,7 @@ export const useSavingsGoals = () => {
       const { data, error } = await supabase
         .from('savings_goals')
         .select('*')
-        .eq('profile_id', activeProfile.id)
+        .or(`profile_id.eq.${activeProfile.id},profile_id.is.null`)
         .order('created_at', { ascending: false });
       
       if (error) throw error;
@@ -479,7 +479,7 @@ export const useSavings = () => {
       const { data, error } = await supabase
         .from('savings')
         .select('*')
-        .eq('profile_id', activeProfile.id)
+        .or(`profile_id.eq.${activeProfile.id},profile_id.is.null`)
         .maybeSingle();
       
       if (error) throw error;
