@@ -196,15 +196,17 @@ const Index = () => {
 
   return (
     <>
-      <style jsx>{`
-        @media print {
-          .no-print { display: none !important; }
-          body { background: white !important; }
-          .print-header { font-size: 28px; font-weight: bold; text-align: center; margin: 20px 0; }
-          .print-section { margin: 30px 0; page-break-inside: avoid; }
-          .print-card { border: 1px solid #ddd; padding: 16px; border-radius: 12px; margin: 12px 0; }
-        }
-      `}</style>
+<style>
+  {`
+    @media print {
+      .no-print { display: none !important; }
+      body { background: white !important; }
+      .print-header { font-size: 28px; font-weight: bold; text-align: center; margin: 20px 0; }
+      .print-section { margin: 30px 0; page-break-inside: avoid; }
+      .print-card { border: 1px solid #ddd; padding: 16px; border-radius: 12px; margin: 12px 0; }
+    }
+  `}
+</style>
 
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800">
         <div className="max-w-7xl mx-auto p-6 space-y-8">
