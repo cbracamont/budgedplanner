@@ -47,4 +47,91 @@ const Index = () => {
 
   const dataLoading = incomeLoading || debtsLoading || fixedLoading || variableLoading || goalsLoading || savingsLoading || profileLoading;
 
-  // === CÁLCULOS
+  // === CÁLCULOS ===
+  const totalIncome = useMemo(() => incomeData.reduce((sum, s) => sum + s.amount, 0), [incomeData]);
+  const totalDebts = useMemo(() => debtData.reduce((sum, d) => sum + d.minimum_payment, 0), [debtData]);
+  
+  const totalFixedExpenses = useMemo(() => {
+    const currentMonth = new Date().getMonth() + 1;
+    return fixedExpensesData.reduce((sum, exp) => {
+      if (exp.frequency_type === 'annual' && exp.payment_month === currentMonth) {
+        return sum + exp.amount;
+      }
+      return sum + exp.amount;
+    }, 0);
+  }, [fixedExpensesData]);
+
+  const totalVariableExpenses = useMemo(() => variableExpensesData.reduce((sum, exp) => sum + exp.amount, 0), [variableExpensesData]);
+  const totalActiveSavingsGoals = useMemo(() => savingsGoalsData.filter(g => g.is_active).reduce((sum, g) => sum + (g.monthly_contribution || 0), 0), [savingsGoalsData]);
+  const monthlyEmergencyContribution = savings?.monthly_emergency_contribution || 0;
+  const emergencyFund = savings?.emergency_fund || 0;
+  const totalSavingsContributions = totalActiveSavingsGoals + monthlyEmergencyContribution + (savings?.monthly_goal || 0);
+  const emergencyFundTarget = (totalFixedExpenses + totalVariableExpenses) * 4;
+  const availableForDebt = totalIncome - totalDebts - totalFixedExpenses - totalVariableExpenses - totalSavingsContributions;
+
+  // === FORMAT ===
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat(language === 'es' ? 'es-MX' : 'en-US', {
+      style: 'currency',
+      currency: 'USD',
+      minimumFractionDigits: 0,
+    }).format(amount);
+  };
+
+  // === AUTH ===
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null);
+      setAuthLoading(false);
+    });
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+      setAuthLoading(false);
+    });
+    return () => subscription.unsubscribe();
+  }, []);
+
+  // === IMPRIMIR ===
+  const printReport = () => window.print();
+
+  // === RENDER ===
+  if (authLoading || dataLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center p-8">
+        <Skeleton className="h-12 w-12 rounded-full" />
+      </div>
+    );
+  }
+
+  if (!user) return <Auth />;
+
+  return (
+    <>
+      {/* ESTILOS DE IMPRESIÓN */}
+      <style>
+        {`
+          @media print {
+            .no-print { display: none !important; }
+            body { background: white; padding: 20px; }
+            .print-title { font-size: 24px; font-weight: bold; text-align: center; margin-bottom: 20px; }
+            .print-section { margin: 20px 0; }
+            .print-row { display: flex; justify-content: space-between; margin: 6px 0; }
+            .print-label { font-weight: bold; }
+          }
+        `}
+      </style>
+
+      <div className="min-h-screen bg-background py-8 px-4">
+        <div className="max-w-7xl mx-auto">
+
+          {/* CABECERA */}
+          <div className="no-print text-center mb-8">
+            <div className="flex justify-center items-center gap-3 mb-4 flex-wrap">
+              <div className="p-3 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-xl">
+                <Calculator className="h-8 w-8 text-white" />
+              </div>
+              <LanguageToggle language={language} onLanguageChange={() => {}} />
+              <ProfileSelector language={language} />
+              <Button variant="outline" size="sm" onClick={() => supabase.auth.signOut()}>
+                <LogOut className="mr-2 h-4 w-4" />
+                {language
