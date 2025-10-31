@@ -2,24 +2,8 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
-import { format, addMonths, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay } from "date-fns";
-import {
-  TrendingUp,
-  AlertCircle,
-  Download,
-  LogOut,
-  Bot,
-  X,
-  Calendar,
-  DollarSign,
-  Zap,
-  Send,
-  Edit2,
-  Trash2,
-  Plus,
-  PiggyBank,
-  Home,
-} from "lucide-react";
+import { format, addMonths, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay } from "date-fns";
+import { TrendingUp, Download, LogOut, Calendar, DollarSign, PiggyBank, Home, Edit2, Trash2, Plus } from "lucide-react";
 import {
   useIncomeSources,
   useDebts,
@@ -38,10 +22,8 @@ import { LanguageToggle } from "@/components/LanguageToggle";
 import { ProfileSelector } from "@/components/ProfileSelector";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
 import { useTheme } from "@/hooks/useTheme";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -56,7 +38,6 @@ type Event = {
   recurring?: boolean;
 };
 
-// === INGRESOS VARIABLES ===
 const useVariableIncome = () => {
   const [data, setData] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
@@ -93,7 +74,6 @@ const Index = () => {
   const [language, setLanguage] = useState<Language>("en");
   const [user, setUser] = useState<any>(null);
   const [authLoading, setAuthLoading] = useState(true);
-  const [showAI, setShowAI] = useState(false);
 
   const { data: profiles = [] } = useFinancialProfiles();
   const activeProfile = profiles.find((p) => p.is_active) || { name: "Family" };
@@ -128,10 +108,9 @@ const Index = () => {
     const savingsTotal =
       (savings?.emergency_fund || 0) + savingsGoalsData.reduce((s, g) => s + (g.current_amount || 0), 0);
 
-    // Simular deuda
     let remaining = debtData.reduce((s, d) => s + d.balance, 0);
     let months = 0;
-    const extra = Math.max(0, cashFlow * 0.3); // 30% del sobrante a deuda
+    const extra = Math.max(0, cashFlow * 0.3);
     const monthlyPay = totalDebtPayment + extra;
     while (remaining > 0 && months < 120) {
       const interest = debtData.reduce((s, d) => s + d.balance * (d.apr / 100 / 12), 0);
@@ -170,7 +149,64 @@ const Index = () => {
     );
   if (!user) return <Auth />;
 
-  // === GRÁFICA DE GASTOS ===
+  // === CALENDARIO ===
+  const currentMonth = new Date();
+  const monthStart = startOfMonth(currentMonth);
+  const monthEnd = endOfMonth(currentMonth);
+  const monthDays = eachDayOfInterval({ start: monthStart, end: monthEnd });
+  const firstDayOfWeek = monthStart.getDay();
+  const blankDays = Array(firstDayOfWeek).fill(null);
+
+  const calendarEvents = useMemo(() => {
+    const events: Event[] = [];
+
+    // Ingresos
+    incomeData.forEach((inc) => {
+      events.push({
+        id: `inc-${inc.id}`,
+        date: format(new Date(new Date().getFullYear(), new Date().getMonth(), 1), "yyyy-MM-dd"),
+        type: "income",
+        name: inc.name,
+        amount: inc.amount,
+        recurring: true,
+      });
+    });
+
+    // Gastos fijos
+    fixedExpensesData.forEach((exp) => {
+      const day = exp.payment_day || 1;
+      const date = new Date(new Date().getFullYear(), new Date().getMonth(), day);
+      if (date >= monthStart && date <= monthEnd) {
+        events.push({
+          id: `fix-${exp.id}`,
+          date: format(date, "yyyy-MM-dd"),
+          type: "fixed",
+          name: exp.name,
+          amount: exp.amount,
+          recurring: true,
+        });
+      }
+    });
+
+    // Deudas
+    debtData.forEach((debt) => {
+      events.push({
+        id: `debt-${debt.id}`,
+        date: format(new Date(new Date().getFullYear(), new Date().getMonth(), 15), "yyyy-MM-dd"),
+        type: "debt",
+        name: `${debt.name} (min)`,
+        amount: debt.minimum_payment,
+        recurring: true,
+      });
+    });
+
+    return events;
+  }, [incomeData, fixedExpensesData, debtData, monthStart, monthEnd]);
+
+  const getEventsForDay = (date: Date) => {
+    return calendarEvents.filter((e) => isSameDay(new Date(e.date), date));
+  };
+
   const pieData = [
     { name: "Fixed", value: totalFixed, color: "#3b82f6" },
     { name: "Variable", value: totalVariable, color: "#10b981" },
@@ -204,31 +240,27 @@ const Index = () => {
             </div>
           </div>
 
-          {/* RESUMEN FINANCIERO */}
+          {/* RESUMEN */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <Card className="border-green-200 dark:border-green-900">
+            <Card className="border-green-200">
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm font-medium text-green-600">Total Income</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="text-3xl font-bold text-green-600">{formatCurrency(totalIncome)}</div>
-                <p className="text-xs text-muted-foreground">Monthly</p>
               </CardContent>
             </Card>
 
-            <Card className="border-red-200 dark:border-red-900">
+            <Card className="border-red-200">
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm font-medium text-red-600">Total Expenses</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="text-3xl font-bold text-red-600">{formatCurrency(totalExpenses)}</div>
-                <p className="text-xs text-muted-foreground">Fixed + Variable + Debt</p>
               </CardContent>
             </Card>
 
-            <Card
-              className={`${cashFlow >= 0 ? "border-emerald-200 dark:border-emerald-900" : "border-orange-200 dark:border-orange-900"}`}
-            >
+            <Card className={`${cashFlow >= 0 ? "border-emerald-200" : "border-orange-200"}`}>
               <CardHeader className="pb-2">
                 <CardTitle className={`text-sm font-medium ${cashFlow >= 0 ? "text-emerald-600" : "text-orange-600"}`}>
                   Cash Flow
@@ -238,11 +270,10 @@ const Index = () => {
                 <div className={`text-3xl font-bold ${cashFlow >= 0 ? "text-emerald-600" : "text-orange-600"}`}>
                   {formatCurrency(cashFlow)}
                 </div>
-                <p className="text-xs text-muted-foreground">Income - Expenses</p>
               </CardContent>
             </Card>
 
-            <Card className="border-purple-200 dark:border-purple-900">
+            <Card className="border-purple-200">
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm font-medium text-purple-600 flex items-center gap-1">
                   <PiggyBank className="h-4 w-4" /> Total Savings
@@ -250,41 +281,40 @@ const Index = () => {
               </CardHeader>
               <CardContent>
                 <div className="text-3xl font-bold text-purple-600">{formatCurrency(savingsTotal)}</div>
-                <p className="text-xs text-muted-foreground">Emergency + Goals</p>
               </CardContent>
             </Card>
           </div>
 
-          {/* DEBT FREE DATE */}
+          {/* DEBT FREE */}
           {debtData.length > 0 && (
-            <Card className="border-2 border-orange-200 dark:border-orange-900">
+            <Card className="border-2 border-orange-200">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-orange-600">
                   <TrendingUp className="h-6 w-6" />
                   Debt Free Date
                 </CardTitle>
               </CardHeader>
-              <CardContent className="space-y-3">
+              <CardContent>
                 <div className="text-center">
                   <p className="text-4xl font-bold">{format(debtFreeDate, "d MMM yyyy")}</p>
-                  <p className="text-lg text-muted-foreground">{monthsToDebtFree} months away</p>
+                  <p className="text-lg text-muted-foreground">{monthsToDebtFree} months</p>
                 </div>
                 <Progress
                   value={
                     (1 - debtData.reduce((s, d) => s + d.balance, 0) / debtData.reduce((s, d) => s + d.balance, 0)) *
                     100
                   }
-                  className="h-4"
+                  className="h-4 mt-3"
                 />
               </CardContent>
             </Card>
           )}
 
-          {/* GASTOS MENSUALES (PASTEL) */}
+          {/* GASTOS PASTEL */}
           {pieData.length > 0 && (
             <Card>
               <CardHeader>
-                <CardTitle>Monthly Expense Breakdown</CardTitle>
+                <CardTitle>Expense Breakdown</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="relative w-64 h-64 mx-auto">
@@ -334,7 +364,7 @@ const Index = () => {
             <CardHeader>
               <CardTitle className="flex items-center gap-2">
                 <Calendar className="h-5 w-5" />
-                {format(new Date(), "MMMM yyyy")}
+                {format(currentMonth, "MMMM yyyy")}
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -346,24 +376,31 @@ const Index = () => {
                 ))}
               </div>
               <div className="grid grid-cols-7 gap-1 mt-2">
-                {Array(35)
-                  .fill(null)
-                  .map((_, i) => {
-                    const day = new Date();
-                    day.setDate(day.getDate() - day.getDay() + i);
-                    const isCurrentMonth = day.getMonth() === new Date().getMonth();
-                    if (!isCurrentMonth) return <div key={i} className="h-16 border rounded" />;
-                    return (
-                      <div
-                        key={i}
-                        className={`h-16 border rounded p-1 text-xs cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 transition ${isSameDay(day, new Date()) ? "bg-blue-50 dark:bg-blue-900" : ""}`}
-                      >
-                        <div className="font-medium">{format(day, "d")}</div>
-                        <div className="text-[10px] text-green-600">£{totalIncome / 30}</div>
-                        <div className="text-[10px] text-red-600">-£{totalExpenses / 30}</div>
-                      </div>
-                    );
-                  })}
+                {blankDays.map((_, i) => (
+                  <div key={`blank-${i}`} className="h-16 border rounded" />
+                ))}
+                {monthDays.map((day) => {
+                  const dayEvents = getEventsForDay(day);
+                  return (
+                    <div
+                      key={day.toISOString()}
+                      className={`h-16 border rounded p-1 text-xs cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 transition ${isSameDay(day, new Date()) ? "bg-blue-50 dark:bg-blue-900" : ""}`}
+                    >
+                      <div className="font-medium">{format(day, "d")}</div>
+                      {dayEvents.slice(0, 2).map((e, i) => (
+                        <div
+                          key={i}
+                          className={`text-[9px] truncate ${e.type === "income" ? "text-green-600" : e.type === "debt" ? "text-red-600" : "text-blue-600"}`}
+                        >
+                          {e.name}
+                        </div>
+                      ))}
+                      {dayEvents.length > 2 && (
+                        <div className="text-[9px] text-muted-foreground">+{dayEvents.length - 2}</div>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             </CardContent>
           </Card>
@@ -380,16 +417,13 @@ const Index = () => {
             <TabsContent value="overview">
               <Card>
                 <CardHeader>
-                  <CardTitle>Family Budget Health</CardTitle>
+                  <CardTitle>Family Budget</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="text-6xl font-bold text-center text-blue-600">
-                    {cashFlow > 0 ? "Great" : "Review"}
+                    {cashFlow > 0 ? "Healthy" : "Review"}
                   </div>
                   <Progress value={cashFlow > 0 ? 80 : 40} className="mt-4" />
-                  <p className="text-center mt-2 text-sm text-muted-foreground">
-                    {cashFlow > 0 ? `You're saving £${cashFlow} monthly` : `You're overspending by £${-cashFlow}`}
-                  </p>
                 </CardContent>
               </Card>
             </TabsContent>
@@ -415,16 +449,30 @@ const Index = () => {
               </Card>
             </TabsContent>
 
-            {/* Expenses, Debts... */}
+            <TabsContent value="expenses">
+              <Tabs defaultValue="fixed" className="mt-6">
+                <TabsList>
+                  <TabsTrigger value="fixed">Fixed</TabsTrigger>
+                  <TabsTrigger value="variable">Variable</TabsTrigger>
+                </TabsList>
+                <TabsContent value="fixed">
+                  <FixedExpensesManager language={language} />
+                </TabsContent>
+                <TabsContent value="variable">
+                  <VariableExpensesManager language={language} />
+                </TabsContent>
+              </Tabs>
+            </TabsContent>
+
+            <TabsContent value="debts">
+              <DebtsManager language={language} />
+            </TabsContent>
           </Tabs>
 
           {/* DISCLAIMER */}
           <footer className="no-print py-8 text-center text-xs text-muted-foreground border-t mt-12">
             <p className="font-semibold mb-2">Legal Disclaimer (UK)</p>
-            <p>
-              This app is for educational purposes only. It is not financial advice. For personalized advice, consult an
-              FCA-regulated adviser.
-            </p>
+            <p>This app is for educational use. Not financial advice. Consult an FCA adviser.</p>
             <p className="mt-2">© 2025 Family Budget Planner UK</p>
           </footer>
         </div>
