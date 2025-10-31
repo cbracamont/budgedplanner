@@ -115,7 +115,13 @@ const Index = () => {
   const [showEventDialog, setShowEventDialog] = useState(false);
   const [editingEvent, setEditingEvent] = useState<Event | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
-  const [newEvent, setNewEvent] = useState({ name: "", amount: 0, type: "income" as const });
+
+  // CORREGIDO: type permite todos los valores
+  const [newEvent, setNewEvent] = useState<{
+    name: string;
+    amount: number;
+    type: "income" | "debt" | "fixed" | "variable";
+  }>({ name: "", amount: 0, type: "income" });
 
   const { data: profiles = [] } = useFinancialProfiles();
   const activeProfile = profiles.find((p) => p.is_active) || { name: "Family" };
@@ -585,7 +591,11 @@ const Index = () => {
                               variant="ghost"
                               onClick={() => {
                                 setEditingEvent(e);
-                                setNewEvent({ name: e.name, amount: e.amount, type: e.type });
+                                setNewEvent({
+                                  name: e.name,
+                                  amount: e.amount,
+                                  type: e.type,
+                                });
                                 setShowEventDialog(true);
                               }}
                             >
@@ -667,7 +677,7 @@ const Index = () => {
             </AlertDialogContent>
           </AlertDialog>
 
-          {/* TABS CON VARIABLE INCOME COMO SUBCATEGORÍA */}
+          {/* TABS CON VARIABLE INCOME */}
           <Tabs defaultValue="overview" className="no-print">
             <TabsList className="grid w-full grid-cols-4 mb-6">
               <TabsTrigger value="overview">Overview</TabsTrigger>
@@ -690,7 +700,6 @@ const Index = () => {
               </Card>
             </TabsContent>
 
-            {/* === INCOME CON VARIABLE INCOME === */}
             <TabsContent value="income">
               <Tabs defaultValue="fixed" className="mt-6">
                 <TabsList>
@@ -749,7 +758,6 @@ const Index = () => {
               </Tabs>
             </TabsContent>
 
-            {/* === EXPENSES === */}
             <TabsContent value="expenses">
               <Tabs defaultValue="fixed" className="mt-6">
                 <TabsList>
@@ -781,5 +789,5 @@ const Index = () => {
   );
 };
 
-// EXPORT DEFAULT CORRECTO
+// EXPORT CORRECTO
 export default Index;
