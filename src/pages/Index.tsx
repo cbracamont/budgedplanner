@@ -10,7 +10,242 @@ import {
   Bot,
   Calendar,
   DollarSign,
-  PiggyBank,
+  PiggyBank,"use client";
+
+import React, { useState, useEffect, useMemo } from "react";
+import {
+  Card, CardContent, CardHeader, CardTitle, CardFooter
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { AlertCircle } from "lucide-react";
+import { useTheme } from "@/hooks/useTheme";
+
+// 💰 Tipos de datos
+type Transaction = {
+  id: string;
+  name: string;
+  amount: number;
+  type: "income" | "expense";
+  date: string;
+  category?: string;
+};
+
+type Reminder = {
+  id: string;
+  name: string;
+  amount: number;
+  date: string;
+  type: "income" | "expense";
+};
+
+// 🎨 Componente principal
+export default function Index() {
+  useTheme();
+
+  // Datos principales
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [newTransaction, setNewTransaction] = useState<Partial<Transaction>>({});
+  const [error, setError] = useState("");
+  const [aiResponse, setAiResponse] = useState("");
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiInput, setAiInput] = useState("");
+
+  // Recordatorios
+  const [reminders, setReminders] = useState<Reminder[]>([]);
+
+  // Cargar desde localStorage
+  useEffect(() => {
+    const stored = localStorage.getItem("transactions");
+    if (stored) setTransactions(JSON.parse(stored));
+  }, []);
+
+  // Guardar en localStorage
+  useEffect(() => {
+    localStorage.setItem("transactions", JSON.stringify(transactions));
+  }, [transactions]);
+
+  // Generar recordatorios locales (notificaciones)
+  useEffect(() => {
+    if (Notification.permission === "default") Notification.requestPermission();
+  }, []);
+
+  useEffect(() => {
+    const today = new Date();
+
+    transactions.forEach((t) => {
+      const date = new Date(t.date);
+      const diffDays = Math.ceil(
+        (date.getTime() - today.getTime()) / (1000 * 60 * 60 * 24)
+      );
+
+      // Notificar 1 día antes
+      if (diffDays === 1 && Notification.permission === "granted") {
+        new Notification(`📅 Recordatorio: ${t.name}`, {
+          body: `Mañana tienes un ${t.type === "income" ? "ingreso" : "pago"} de £${t.amount}`,
+          icon: "/icons/calendar.png",
+        });
+      }
+    });
+  }, [transactions]);
+
+  // Cálculos
+  const totalIncome = useMemo(
+    () => transactions.filter(t => t.type === "income").reduce((sum, t) => sum + t.amount, 0),
+    [transactions]
+  );
+
+  const totalExpenses = useMemo(
+    () => transactions.filter(t => t.type === "expense").reduce((sum, t) => sum + t.amount, 0),
+    [transactions]
+  );
+
+  const cashFlow = totalIncome - totalExpenses;
+
+  // Agregar transacción
+  const addTransaction = () => {
+    setError("");
+
+    if (!newTransaction.name || !newTransaction.amount || !newTransaction.type || !newTransaction.date) {
+      setError("Please fill out all fields");
+      return;
+    }
+
+    const t: Transaction = {
+      id: crypto.randomUUID(),
+      name: newTransaction.name,
+      amount: Number(newTransaction.amount),
+      type: newTransaction.type as "income" | "expense",
+      date: newTransaction.date,
+      category: newTransaction.category || "General",
+    };
+
+    setTransactions([...transactions, t]);
+    setNewTransaction({});
+  };
+
+  // Eliminar
+  const deleteTransaction = (id: string) => {
+    setTransactions(transactions.filter(t => t.id !== id));
+  };
+
+  // IA simulada (mock)
+  const sendToAI = async () => {
+    if (!aiInput.trim()) return;
+    setAiLoading(true);
+    setAiResponse("");
+
+    // Simula una respuesta con un pequeño retraso
+    await new Promise(res => setTimeout(res, 800));
+
+    const message = `
+      💬 Análisis de tu consulta:
+      • Ingresos totales: £${totalIncome}
+      • Gastos totales: £${totalExpenses}
+      • Flujo de caja: £${cashFlow}
+
+      👉 Recomendación: ${cashFlow > 0
+        ? "Vas por buen camino, podrías destinar parte del sobrante a ahorro o pago de deudas."
+        : "Tus gastos superan tus ingresos. Considerá reducir gastos variables o revisar tus deudas más grandes."
+      }
+    `;
+
+    setAiResponse(message);
+    setAiLoading(false);
+  };
+
+  return (
+    <div className="min-h-screen flex flex-col items-center justify-start bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-slate-900 dark:to-slate-800 p-4 space-y-6">
+      {/* HEADER */}
+      <h1 className="text-3xl font-bold text-center mt-6">💸 Family Budget Planner</h1>
+
+      {/* NUEVA TRANSACCIÓN */}
+      <Card className="w-full max-w-lg shadow-lg">
+        <CardHeader>
+          <CardTitle>Add Transaction</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <Input placeholder="Name" value={newTransaction.name || ""} onChange={e => setNewTransaction({ ...newTransaction, name: e.target.value })} />
+          <Input type="number" placeholder="Amount (£)" value={newTransaction.amount || ""} onChange={e => setNewTransaction({ ...newTransaction, amount: e.target.valueAsNumber })} />
+          <Input type="date" value={newTransaction.date || ""} onChange={e => setNewTransaction({ ...newTransaction, date: e.target.value })} />
+          <select className="w-full p-2 border rounded-md" value={newTransaction.type || ""} onChange={e => setNewTransaction({ ...newTransaction, type: e.target.value as "income" | "expense" })}>
+            <option value="">Select type</option>
+            <option value="income">Income</option>
+            <option value="expense">Expense</option>
+          </select>
+          {error && (
+            <Alert variant="destructive">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
+          )}
+        </CardContent>
+        <CardFooter>
+          <Button className="w-full" onClick={addTransaction}>Add</Button>
+        </CardFooter>
+      </Card>
+
+      {/* RESUMEN */}
+      <Card className="w-full max-w-lg text-center">
+        <CardHeader>
+          <CardTitle>Resumen Financiero</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p>Ingresos: <strong className="text-green-600">£{totalIncome}</strong></p>
+          <p>Gastos: <strong className="text-red-600">£{totalExpenses}</strong></p>
+          <p>Flujo de Caja: <strong className={cashFlow >= 0 ? "text-green-700" : "text-red-700"}>£{cashFlow}</strong></p>
+        </CardContent>
+      </Card>
+
+      {/* LISTA DE TRANSACCIONES */}
+      <Card className="w-full max-w-lg">
+        <CardHeader>
+          <CardTitle>Transactions</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-2">
+          {transactions.length === 0 && <p className="text-sm text-muted-foreground">No transactions yet</p>}
+          {transactions.map(t => (
+            <div key={t.id} className="flex justify-between items-center border-b py-1">
+              <div>
+                <p className="font-medium">{t.name}</p>
+                <p className="text-xs text-muted-foreground">{t.date}</p>
+              </div>
+              <div className="flex items-center space-x-2">
+                <span className={t.type === "income" ? "text-green-600" : "text-red-600"}>£{t.amount}</span>
+                <Button variant="ghost" size="sm" onClick={() => deleteTransaction(t.id)}>🗑️</Button>
+              </div>
+            </div>
+          ))}
+        </CardContent>
+      </Card>
+
+      {/* IA SIMULADA */}
+      <Card className="w-full max-w-lg">
+        <CardHeader>
+          <CardTitle>AI Financial Assistant 🤖</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <Input
+            placeholder="Ask something about your finances..."
+            value={aiInput}
+            onChange={(e) => setAiInput(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && sendToAI()}
+          />
+          <Button className="w-full" onClick={sendToAI} disabled={aiLoading}>
+            {aiLoading ? "Thinking..." : "Ask AI"}
+          </Button>
+          {aiResponse && (
+            <div className="p-3 bg-muted rounded-md whitespace-pre-wrap text-sm text-left">
+              {aiResponse}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
   Home,
   Edit2,
   Trash2,
