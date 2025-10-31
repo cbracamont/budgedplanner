@@ -3,12 +3,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { supabase } from "@/integrations/supabase/client";
-import { useToast } from "@/hooks/use-toast";
-import { useQueryClient } from "@tanstack/react-query";
 import { TrendingUp, Plus, Trash2, Pencil } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { getTranslation, Language } from "@/lib/i18n";
+import { useIncomeSources, useAddIncome, useUpdateIncome, useDeleteIncome } from "@/hooks/useFinancialData";
 
 interface IncomeSource {
   id: string;
@@ -24,91 +22,47 @@ interface IncomeManagerProps {
 
 export const IncomeManager = ({ language, onIncomeChange }: IncomeManagerProps) => {
   const t = (key: string) => getTranslation(language, key);
-  const { toast } = useToast();
-  const queryClient = useQueryClient();
-  const [incomeSources, setIncomeSources] = useState<IncomeSource[]>([]);
+  const { data: incomeSources = [] } = useIncomeSources();
+  const addIncomeMutation = useAddIncome();
+  const updateIncomeMutation = useUpdateIncome();
+  const deleteIncomeMutation = useDeleteIncome();
+  
   const [newIncome, setNewIncome] = useState({ name: "", amount: "", payment_day: "1" });
   const [editingIncome, setEditingIncome] = useState<IncomeSource | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
-
-  useEffect(() => {
-    loadIncomeSources();
-  }, []);
 
   useEffect(() => {
     const total = incomeSources.reduce((sum, source) => sum + source.amount, 0);
     onIncomeChange?.(total);
   }, [incomeSources, onIncomeChange]);
 
-  const loadIncomeSources = async () => {
-    const { data, error } = await supabase
-      .from("income_sources")
-      .select("*")
-      .order("created_at", { ascending: true });
-
-    if (error) {
-      toast({ title: "Error", description: error.message, variant: "destructive" });
-    } else {
-      setIncomeSources(data || []);
-    }
-  };
-
   const addIncomeSource = async (e: React.FormEvent) => {
     e.preventDefault();
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
-
-    const { error } = await supabase.from("income_sources").insert({
-      user_id: user.id,
+    await addIncomeMutation.mutateAsync({
       name: newIncome.name,
       amount: parseFloat(newIncome.amount),
       payment_day: parseInt(newIncome.payment_day),
     });
-
-    if (error) {
-      toast({ title: "Error", description: error.message, variant: "destructive" });
-    } else {
-      setNewIncome({ name: "", amount: "", payment_day: "1" });
-      loadIncomeSources();
-      queryClient.invalidateQueries({ queryKey: ["income_sources"] });
-      toast({ title: "Success", description: "Income source added" });
-    }
+    setNewIncome({ name: "", amount: "", payment_day: "1" });
   };
 
   const deleteIncomeSource = async (id: string) => {
-    const { error } = await supabase.from("income_sources").delete().eq("id", id);
-
-    if (error) {
-      toast({ title: "Error", description: error.message, variant: "destructive" });
-    } else {
-      loadIncomeSources();
-      queryClient.invalidateQueries({ queryKey: ["income_sources"] });
-      toast({ title: "Success", description: "Income source deleted" });
-    }
+    await deleteIncomeMutation.mutateAsync(id);
   };
 
   const updateIncomeSource = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingIncome) return;
 
-    const { error } = await supabase
-      .from("income_sources")
-      .update({
-        name: editingIncome.name,
-        amount: editingIncome.amount,
-        payment_day: editingIncome.payment_day,
-      })
-      .eq("id", editingIncome.id);
-
-    if (error) {
-      toast({ title: "Error", description: error.message, variant: "destructive" });
-    } else {
-      setIsEditDialogOpen(false);
-      setEditingIncome(null);
-      loadIncomeSources();
-      queryClient.invalidateQueries({ queryKey: ["income_sources"] });
-      toast({ title: "Success", description: "Income source updated" });
-    }
+    await updateIncomeMutation.mutateAsync({
+      id: editingIncome.id,
+      name: editingIncome.name,
+      amount: editingIncome.amount,
+      payment_day: editingIncome.payment_day,
+    });
+    
+    setIsEditDialogOpen(false);
+    setEditingIncome(null);
   };
 
   return (
