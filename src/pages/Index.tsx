@@ -7,6 +7,7 @@ import {
   TrendingUp,
   Download,
   LogOut,
+  Bot,
   Calendar,
   DollarSign,
   PiggyBank,
@@ -16,6 +17,8 @@ import {
   Plus,
   ChevronLeft,
   ChevronRight,
+  Send,
+  X,
 } from "lucide-react";
 import {
   useIncomeSources,
@@ -53,6 +56,7 @@ import {
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
 
 type Language = "en" | "es";
 type Event = {
@@ -100,6 +104,11 @@ const Index = () => {
   const [language, setLanguage] = useState<Language>("en");
   const [user, setUser] = useState<any>(null);
   const [authLoading, setAuthLoading] = useState(true);
+  const [showAI, setShowAI] = useState(false);
+  const [aiInput, setAiInput] = useState("");
+  const [aiResponse, setAiResponse] = useState("");
+  const [aiLoading, setAiLoading] = useState(false);
+
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [events, setEvents] = useState<Event[]>([]);
@@ -119,7 +128,7 @@ const Index = () => {
   const { data: savings } = useSavings();
   const { data: variableIncome = [], addIncome, deleteIncome } = useVariableIncome();
 
-  // === TODOS LOS CÁLCULOS + pieData AQUÍ ===
+  // === TODOS LOS CÁLCULOS + pieData ===
   const {
     totalIncome,
     totalFixed,
@@ -284,6 +293,51 @@ const Index = () => {
     setDeleteId(null);
   };
 
+  // === AI ASISTENTE ===
+  const sendToAI = async () => {
+    if (!aiInput.trim()) return;
+    setAiLoading(true);
+    setAiResponse("");
+
+    const prompt = `
+You are a UK family budget advisor. Be helpful, clear, and practical.
+
+User's budget:
+- Monthly Income: ${formatCurrency(totalIncome)}
+- Fixed Expenses: ${formatCurrency(totalFixed)}
+- Variable Expenses: ${formatCurrency(totalVariable)}
+- Debt Payments: ${formatCurrency(totalDebtPayment)}
+- Cash Flow: ${formatCurrency(cashFlow)}
+- Total Savings: ${formatCurrency(savingsTotal)}
+- Debt Free in: ${monthsToDebtFree} months
+
+User asks: "${aiInput}"
+
+Answer in 3 short paragraphs max. Use GBP (£). Suggest actions if needed.
+    `;
+
+    try {
+      const res = await fetch("https://api.x.ai/v1/chat/completions", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${process.env.NEXT_PUBLIC_XAI_API_KEY}`,
+        },
+        body: JSON.stringify({
+          model: "grok-beta",
+          messages: [{ role: "user", content: prompt }],
+          temperature: 0.7,
+        }),
+      });
+      const data = await res.json();
+      setAiResponse(data.choices[0].message.content);
+    } catch (err) {
+      setAiResponse("Sorry, I couldn't connect. Try again later.");
+    } finally {
+      setAiLoading(false);
+    }
+  };
+
   return (
     <>
       <style>{`@media print { .no-print { display: none !important; } }`}</style>
@@ -304,6 +358,9 @@ const Index = () => {
               <ProfileSelector language={language} />
               <Button variant="outline" size="icon" onClick={() => window.print()}>
                 <Download className="h-4 w-4" />
+              </Button>
+              <Button variant="outline" size="icon" onClick={() => setShowAI(true)}>
+                <Bot className="h-4 w-4" />
               </Button>
               <Button variant="outline" size="icon" onClick={() => supabase.auth.signOut()}>
                 <LogOut className="h-4 w-4" />
@@ -484,6 +541,42 @@ const Index = () => {
             </CardContent>
           </Card>
 
+          {/* AI MODAL */}
+          <AlertDialog open={showAI} onOpenChange={setShowAI}>
+            <AlertDialogContent className="max-w-2xl">
+              <AlertDialogHeader>
+                <AlertDialogTitle className="flex items-center gap-2">
+                  <Bot className="h-5 w-5" /> Budget Assistant
+                </AlertDialogTitle>
+              </AlertDialogHeader>
+              <div className="space-y-4">
+                <Textarea
+                  placeholder="Ask anything: 'How can I save £200/month?' or 'Should I pay off debt first?'"
+                  value={aiInput}
+                  onChange={(e) => setAiInput(e.target.value)}
+                  className="min-h-24"
+                />
+                <Button onClick={sendToAI} disabled={aiLoading} className="w-full">
+                  {aiLoading ? (
+                    "Thinking..."
+                  ) : (
+                    <>
+                      <Send className="h-4 w-4 mr-2" /> Send
+                    </>
+                  )}
+                </Button>
+                {aiResponse && (
+                  <Card>
+                    <CardContent className="pt-4 whitespace-pre-wrap text-sm">{aiResponse}</CardContent>
+                  </Card>
+                )}
+              </div>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Close</AlertDialogCancel>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+
           {/* DETALLE DEL DÍA */}
           {selectedDate && (
             <AlertDialog open={!!selectedDate} onOpenChange={() => setSelectedDate(null)}>
@@ -542,11 +635,7 @@ const Index = () => {
               <div className="space-y-4">
                 <div>
                   <Label>Name</Label>
-                  <Input
-                    value={newEvent.name}
-                    onChange={(e) => setNewEvent({ ...newEvent, name: e.target.value })}
-                    placeholder="e.g. Salary"
-                  />
+                  <Input value={newEvent.name} onChange={(e) => setNewEvent({ ...newEvent, name: e.target.value })} />
                 </div>
                 <div>
                   <Label>Amount</Label>
