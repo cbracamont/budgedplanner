@@ -97,12 +97,21 @@ const Index = () => {
     const savingsRate = totalIncome > 0 ? (totalGoalContributions / totalIncome) * 100 : 0;
     const debtToIncome = totalIncome > 0 ? (totalMinimumPayments / totalIncome) * 100 : 0;
 
+    // CORREGIDO: forecast sin referencia circular
     const forecast = Array.from({ length: 12 }, (_, i) => {
       const month = addMonths(new Date(), i);
       const projectedIncome = netIncome * (1 + 0.02 * i);
       const projectedExpenses = totalExpenses * (1 + 0.01 * i);
       const projectedSavings = projectedIncome - projectedExpenses;
-      const cumulative = i === 0 ? savings?.emergency_fund || 0 : forecast[i - 1].cumulative + projectedSavings;
+
+      let cumulative = savings?.emergency_fund || 0;
+      for (let j = 0; j < i; j++) {
+        const prevIncome = netIncome * (1 + 0.02 * j);
+        const prevExpenses = totalExpenses * (1 + 0.01 * j);
+        cumulative += prevIncome - prevExpenses;
+      }
+      cumulative += projectedSavings;
+
       return { month, income: projectedIncome, expenses: projectedExpenses, savings: projectedSavings, cumulative };
     });
 
