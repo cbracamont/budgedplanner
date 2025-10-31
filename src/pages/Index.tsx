@@ -44,51 +44,29 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 type Language = "en" | "es";
 
-// HOOK DENTRO DEL MISMO ARCHIVO (NO necesitas crear nada)
+// INGRESOS VARIABLES EN LOCALSTORAGE (SIN SUPABASE)
 const useVariableIncome = () => {
   const [data, setData] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
-    const fetch = async () => {
-      const { data: session } = await supabase.auth.getSession();
-      if (!session.session?.user) {
-        setLoading(false);
-        return;
-      }
-
-      const oneMonthAgo = new Date();
-      oneMonthAgo.setMonth(oneMonthAgo.getMonth() - 1);
-
-      const { data } = await supabase
-        .from("variable_income")
-        .select("*")
-        .eq("user_id", session.session.user.id)
-        .gte("date", oneMonthAgo.toISOString())
-        .order("date", { ascending: false });
-
-      setData(data || []);
-      setLoading(false);
-    };
-    fetch();
+    const saved = localStorage.getItem("variable_income");
+    if (saved) {
+      setData(JSON.parse(saved));
+    }
+    setLoading(false);
   }, []);
 
-  const addIncome = async (amount: number, description: string) => {
-    const { data: session } = await supabase.auth.getSession();
-    if (!session.session?.user) return;
-
-    const { data } = await supabase
-      .from("variable_income")
-      .insert({
-        user_id: session.session.user.id,
-        amount,
-        description: description || "Ingreso variable",
-        date: new Date().toISOString(),
-      })
-      .select()
-      .single();
-
-    if (data) setData((prev) => [data, ...prev]);
+  const addIncome = (amount: number, description: string) => {
+    const newEntry = {
+      id: Date.now().toString(),
+      amount,
+      description: description || "Ingreso variable",
+      date: new Date().toISOString(),
+    };
+    const updated = [newEntry, ...data];
+    setData(updated);
+    localStorage.setItem("variable_income", JSON.stringify(updated));
   };
 
   return { data, loading, addIncome };
@@ -112,7 +90,7 @@ const Index = () => {
   const { data: variableExpensesData = [], isLoading: variableLoading } = useVariableExpenses();
   const { data: savingsGoalsData = [], isLoading: goalsLoading } = useSavingsGoals();
   const { data: savings, isLoading: savingsLoading } = useSavings();
-  const { data: variableIncome = [], isLoading: varIncLoading, addIncome } = useVariableIncome();
+  const { data: variableIncome = [], addIncome } = useVariableIncome();
 
   const dataLoading =
     incomeLoading ||
@@ -121,8 +99,7 @@ const Index = () => {
     variableLoading ||
     goalsLoading ||
     savingsLoading ||
-    profileLoading ||
-    varIncLoading;
+    profileLoading;
 
   // === CÁLCULOS FINANCIEROS ===
   const calculations = useMemo(() => {
@@ -151,7 +128,6 @@ const Index = () => {
     const savingsRate = totalIncome > 0 ? (totalGoalContributions / totalIncome) * 100 : 0;
     const debtToIncome = totalIncome > 0 ? (totalMinimumPayments / totalIncome) * 100 : 0;
 
-    // === FORECAST ===
     const forecast = Array.from({ length: 12 }, (_, i) => {
       const month = addMonths(new Date(), i);
       const projectedIncome = netIncome * (1 + 0.02 * i);
@@ -192,11 +168,7 @@ const Index = () => {
   const debtStrategy = useMemo(() => {
     if (debtData.length === 0) return { method: "none", payments: [], totalMonths: 0, comparison: {} };
 
-    const debts = debtData.map((d) => ({
-      ...d,
-      remaining: d.balance,
-    }));
-
+    const debts = debtData.map((d) => ({ ...d, remaining: d.balance }));
     const extraMonthly = 200;
 
     const simulate = (debts: typeof debts, strategy: "avalanche" | "snowball" | "hybrid") => {
@@ -229,19 +201,10 @@ const Index = () => {
           const newRemaining = d.remaining + interest - payment;
           totalPaid += payment;
 
-          return {
-            ...d,
-            payment,
-            remaining: newRemaining > 0 ? newRemaining : 0,
-          };
+          return { ...d, payment, remaining: newRemaining > 0 ? newRemaining : 0 };
         });
 
-        payments.push({
-          month,
-          totalPaid,
-          debts: currentMonth.map((d) => ({ name: d.name, payment: d.payment, remaining: d.remaining })),
-        });
-
+        payments.push({ month, totalPaid, debts: currentMonth.map((d) => ({ name: d.name, payment: d.payment })) });
         remaining = currentMonth.filter((d) => d.remaining > 0);
         month++;
       }
