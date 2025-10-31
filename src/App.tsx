@@ -1,67 +1,32 @@
+// src/App.tsx
+"use client";
+
 import { useState, useEffect } from "react";
-import { Toaster } from "@/components/ui/toaster";
-import { Toaster as Sonner } from "@/components/ui/sonner";
-import { TooltipProvider } from "@/components/ui/tooltip";
+import { ThemeProvider } from "next-themes";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
-import { BrowserRouter, Routes, Route } from "react-router-dom";
-import { supabase } from "@/integrations/supabase/client";
+import { ReactQueryDevtools } from "@tanstack/react-query-devtools";
+import { Toaster } from "@/components/ui/sonner";
 import Index from "./pages/Index";
-import NotFound from "./pages/NotFound";
+import { supabase } from "@/integrations/supabase/client";
 
 const queryClient = new QueryClient();
 
-const App = () => {
-  const [wallpaperUrl, setWallpaperUrl] = useState<string | null>(null);
+export default function App() {
+  const [mounted, setMounted] = useState(false);
 
   useEffect(() => {
-    loadWallpaper();
+    setMounted(true);
   }, []);
 
-  const loadWallpaper = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
-
-    const { data } = await supabase
-      .from('app_settings')
-      .select('wallpaper_url')
-      .eq('user_id', user.id)
-      .maybeSingle();
-
-    if (data?.wallpaper_url) {
-      setWallpaperUrl(data.wallpaper_url);
-    } else {
-      setWallpaperUrl(null);
-    }
-  };
-
-  const handleWallpaperChange = (url: string | null) => {
-    setWallpaperUrl(url);
-  };
+  if (!mounted) return null;
 
   return (
     <QueryClientProvider client={queryClient}>
-      <TooltipProvider>
-        <div
-          className="min-h-screen"
-          style={wallpaperUrl ? {
-            backgroundImage: `url(${wallpaperUrl})`,
-            backgroundSize: 'cover',
-            backgroundPosition: 'center',
-            backgroundAttachment: 'fixed'
-          } : {}}
-        >
-          <Toaster />
-          <Sonner />
-          <BrowserRouter>
-            <Routes>
-              <Route path="/" element={<Index onWallpaperChange={handleWallpaperChange} />} />
-              <Route path="*" element={<NotFound />} />
-            </Routes>
-          </BrowserRouter>
-        </div>
-      </TooltipProvider>
+      <ThemeProvider attribute="class" defaultTheme="system" enableSystem>
+        <Index />
+        <Toaster />
+        <ReactQueryDevtools initialIsOpen={false} />
+      </ThemeProvider>
     </QueryClientProvider>
   );
-};
-
-export default App;
+}
