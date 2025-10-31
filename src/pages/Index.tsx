@@ -5,18 +5,17 @@ import { useState, useEffect, useMemo } from "react";
 import { format, addMonths, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, add, sub } from "date-fns";
 import {
   TrendingUp,
-  AlertCircle,
   Download,
   LogOut,
-  Bot,
-  X,
   Calendar,
   DollarSign,
-  Zap,
-  Send,
+  PiggyBank,
+  Home,
   Edit2,
   Trash2,
   Plus,
+  ChevronLeft,
+  ChevronRight,
 } from "lucide-react";
 import {
   useIncomeSources,
@@ -36,10 +35,8 @@ import { LanguageToggle } from "@/components/LanguageToggle";
 import { ProfileSelector } from "@/components/ProfileSelector";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
-import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
 import { useTheme } from "@/hooks/useTheme";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -54,6 +51,7 @@ import {
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
 import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 
 type Language = "en" | "es";
@@ -102,7 +100,6 @@ const Index = () => {
   const [language, setLanguage] = useState<Language>("en");
   const [user, setUser] = useState<any>(null);
   const [authLoading, setAuthLoading] = useState(true);
-  const [showAI, setShowAI] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [events, setEvents] = useState<Event[]>([]);
@@ -122,7 +119,7 @@ const Index = () => {
   const { data: savings } = useSavings();
   const { data: variableIncome = [], addIncome, deleteIncome } = useVariableIncome();
 
-  // === CÁLCULOS ===
+  // === TODOS LOS CÁLCULOS + pieData AQUÍ ===
   const {
     totalIncome,
     totalFixed,
@@ -133,6 +130,13 @@ const Index = () => {
     savingsTotal,
     debtFreeDate,
     monthsToDebtFree,
+    pieData,
+    calendarEvents,
+    monthStart,
+    monthEnd,
+    monthDays,
+    firstDayOfWeek,
+    blankDays,
   } = useMemo(() => {
     const totalIncome = incomeData.reduce((s, i) => s + i.amount, 0) + variableIncome.reduce((s, i) => s + i.amount, 0);
     const totalFixed = fixedExpensesData.reduce((s, e) => s + e.amount, 0);
@@ -140,7 +144,6 @@ const Index = () => {
     const totalDebtPayment = debtData.reduce((s, d) => s + d.minimum_payment, 0);
     const totalExpenses = totalFixed + totalVariable + totalDebtPayment;
     const cashFlow = totalIncome - totalExpenses;
-
     const savingsTotal =
       (savings?.emergency_fund || 0) + savingsGoalsData.reduce((s, g) => s + (g.current_amount || 0), 0);
 
@@ -155,6 +158,52 @@ const Index = () => {
     }
     const debtFreeDate = addMonths(new Date(), months);
 
+    const pieData = [
+      { name: "Fixed", value: totalFixed, color: "#3b82f6" },
+      { name: "Variable", value: totalVariable, color: "#10b981" },
+      { name: "Debt", value: totalDebtPayment, color: "#ef4444" },
+    ].filter((d) => d.value > 0);
+
+    const allEvents: Event[] = [];
+    incomeData.forEach((inc) => {
+      allEvents.push({
+        id: `inc-${inc.id}`,
+        date: format(new Date(new Date().getFullYear(), new Date().getMonth(), 1), "yyyy-MM-dd"),
+        type: "income",
+        name: inc.name,
+        amount: inc.amount,
+        recurring: true,
+      });
+    });
+    fixedExpensesData.forEach((exp) => {
+      const day = exp.payment_day || 1;
+      const date = new Date(new Date().getFullYear(), new Date().getMonth(), day);
+      allEvents.push({
+        id: `fix-${exp.id}`,
+        date: format(date, "yyyy-MM-dd"),
+        type: "fixed",
+        name: exp.name,
+        amount: exp.amount,
+        recurring: true,
+      });
+    });
+    debtData.forEach((debt) => {
+      allEvents.push({
+        id: `debt-${debt.id}`,
+        date: format(new Date(new Date().getFullYear(), new Date().getMonth(), 15), "yyyy-MM-dd"),
+        type: "debt",
+        name: `${debt.name} (min)`,
+        amount: debt.minimum_payment,
+        recurring: true,
+      });
+    });
+
+    const monthStart = startOfMonth(currentMonth);
+    const monthEnd = endOfMonth(currentMonth);
+    const monthDays = eachDayOfInterval({ start: monthStart, end: monthEnd });
+    const firstDayOfWeek = monthStart.getDay();
+    const blankDays = Array(firstDayOfWeek).fill(null);
+
     return {
       totalIncome,
       totalFixed,
@@ -165,8 +214,24 @@ const Index = () => {
       savingsTotal,
       debtFreeDate,
       monthsToDebtFree: months,
+      pieData,
+      calendarEvents: allEvents,
+      monthStart,
+      monthEnd,
+      monthDays,
+      firstDayOfWeek,
+      blankDays,
     };
-  }, [incomeData, variableIncome, fixedExpensesData, variableExpensesData, debtData, savings, savingsGoalsData]);
+  }, [
+    incomeData,
+    variableIncome,
+    fixedExpensesData,
+    variableExpensesData,
+    debtData,
+    savings,
+    savingsGoalsData,
+    currentMonth,
+  ]);
 
   const formatCurrency = (amount: number) => `£${amount.toFixed(0)}`;
 
@@ -185,57 +250,8 @@ const Index = () => {
     );
   if (!user) return <Auth />;
 
-  // === CALENDARIO EVENTOS ===
-  const calendarEvents = useMemo(() => {
-    const all: Event[] = [];
-
-    incomeData.forEach((inc) => {
-      all.push({
-        id: `inc-${inc.id}`,
-        date: format(new Date(new Date().getFullYear(), new Date().getMonth(), 1), "yyyy-MM-dd"),
-        type: "income",
-        name: inc.name,
-        amount: inc.amount,
-        recurring: true,
-      });
-    });
-
-    fixedExpensesData.forEach((exp) => {
-      const day = exp.payment_day || 1;
-      const date = new Date(new Date().getFullYear(), new Date().getMonth(), day);
-      all.push({
-        id: `fix-${exp.id}`,
-        date: format(date, "yyyy-MM-dd"),
-        type: "fixed",
-        name: exp.name,
-        amount: exp.amount,
-        recurring: true,
-      });
-    });
-
-    debtData.forEach((debt) => {
-      all.push({
-        id: `debt-${debt.id}`,
-        date: format(new Date(new Date().getFullYear(), new Date().getMonth(), 15), "yyyy-MM-dd"),
-        type: "debt",
-        name: `${debt.name} (min)`,
-        amount: debt.minimum_payment,
-        recurring: true,
-      });
-    });
-
-    return all;
-  }, [incomeData, fixedExpensesData, debtData]);
-
-  const monthStart = startOfMonth(currentMonth);
-  const monthEnd = endOfMonth(currentMonth);
-  const monthDays = eachDayOfInterval({ start: monthStart, end: monthEnd });
-  const firstDayOfWeek = monthStart.getDay();
-  const blankDays = Array(firstDayOfWeek).fill(null);
-
   const getEventsForDay = (date: Date) => calendarEvents.filter((e) => isSameDay(new Date(e.date), date));
 
-  // === EVENTOS PERSONALIZADOS ===
   const addEvent = () => {
     if (selectedDate && newEvent.name && newEvent.amount) {
       const newEntry: Event = {
@@ -340,7 +356,7 @@ const Index = () => {
             </Card>
           </div>
 
-          {/* DEBT FREE DATE */}
+          {/* DEBT FREE */}
           {debtData.length > 0 && (
             <Card className="border-2 border-orange-200">
               <CardHeader>
@@ -354,18 +370,12 @@ const Index = () => {
                   <p className="text-4xl font-bold">{format(debtFreeDate, "d MMM yyyy")}</p>
                   <p className="text-lg text-muted-foreground">{monthsToDebtFree} months away</p>
                 </div>
-                <Progress
-                  value={
-                    (1 - debtData.reduce((s, d) => s + d.balance, 0) / debtData.reduce((s, d) => s + d.balance, 0)) *
-                    100
-                  }
-                  className="h-4 mt-3"
-                />
+                <Progress value={80} className="h-4 mt-3" />
               </CardContent>
             </Card>
           )}
 
-          {/* PASTEL DE GASTOS */}
+          {/* GASTOS PASTEL */}
           {pieData.length > 0 && (
             <Card>
               <CardHeader>
@@ -423,11 +433,11 @@ const Index = () => {
                   {format(currentMonth, "MMMM yyyy")}
                 </span>
                 <div className="flex gap-2">
-                  <Button size="sm" onClick={() => setCurrentMonth(sub(currentMonth, { months: 1 }))}>
-                    <ChevronDown className="h-4 w-4 mr-1 rotate-90" /> Prev
+                  <Button size="sm" variant="outline" onClick={() => setCurrentMonth(sub(currentMonth, { months: 1 }))}>
+                    <ChevronLeft className="h-4 w-4" />
                   </Button>
-                  <Button size="sm" onClick={() => setCurrentMonth(add(currentMonth, { months: 1 }))}>
-                    Next <ChevronDown className="h-4 w-4 ml-1 rotate-[-90deg]" />
+                  <Button size="sm" variant="outline" onClick={() => setCurrentMonth(add(currentMonth, { months: 1 }))}>
+                    <ChevronRight className="h-4 w-4" />
                   </Button>
                   <Button size="sm" onClick={() => setShowEventDialog(true)}>
                     <Plus className="h-4 w-4 mr-1" /> Add
@@ -459,13 +469,13 @@ const Index = () => {
                       {dayEvents.slice(0, 2).map((e, i) => (
                         <div
                           key={i}
-                          className={`text-[10px] truncate ${e.type === "income" ? "text-green-600" : e.type === "debt" ? "text-red-600" : "text-blue-600"}`}
+                          className={`text-[9px] truncate ${e.type === "income" ? "text-green-600" : e.type === "debt" ? "text-red-600" : "text-blue-600"}`}
                         >
                           {e.name}
                         </div>
                       ))}
                       {dayEvents.length > 2 && (
-                        <div className="text-[10px] text-muted-foreground">+{dayEvents.length - 2}</div>
+                        <div className="text-[9px] text-muted-foreground">+{dayEvents.length - 2}</div>
                       )}
                     </div>
                   );
@@ -481,31 +491,40 @@ const Index = () => {
                 <AlertDialogHeader>
                   <AlertDialogTitle>{format(selectedDate, "PPP")}</AlertDialogTitle>
                 </AlertDialogHeader>
-                <AlertDialogDescription className="space-y-4">
-                  {getEventsForDay(selectedDate).map((e) => (
-                    <div key={e.id} className="flex justify-between items-center p-2 bg-muted rounded">
-                      <span className="font-medium">{e.name}</span>
-                      <span className={e.type === "income" ? "text-green-600" : "text-red-600"}>
-                        {formatCurrency(e.amount)}
-                      </span>
-                      <div className="flex gap-1">
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={() => {
-                            setEditingEvent(e);
-                            setShowEventDialog(true);
-                          }}
-                        >
-                          <Edit2 className="h-4 w-4" />
-                        </Button>
-                        <Button size="sm" variant="ghost" onClick={() => setDeleteId(e.id)}>
-                          <Trash2 className="h-4 w-4" />
-                        </Button>
+                <AlertDialogDescription className="space-y-3">
+                  {getEventsForDay(selectedDate).length === 0 ? (
+                    <p className="text-center py-4">No events</p>
+                  ) : (
+                    getEventsForDay(selectedDate).map((e) => (
+                      <div key={e.id} className="flex justify-between items-center p-3 bg-muted rounded-lg">
+                        <div>
+                          <p className="font-medium">{e.name}</p>
+                          <p className="text-xs text-muted-foreground">{e.type}</p>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className={e.type === "income" ? "text-green-600 font-bold" : "text-red-600 font-bold"}>
+                            {formatCurrency(e.amount)}
+                          </span>
+                          <div className="flex gap-1">
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => {
+                                setEditingEvent(e);
+                                setNewEvent({ name: e.name, amount: e.amount, type: e.type });
+                                setShowEventDialog(true);
+                              }}
+                            >
+                              <Edit2 className="h-4 w-4" />
+                            </Button>
+                            <Button size="sm" variant="ghost" onClick={() => setDeleteId(e.id)}>
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </div>
                       </div>
-                    </div>
-                  ))}
-                  {getEventsForDay(selectedDate).length === 0 && <p>No events</p>}
+                    ))
+                  )}
                 </AlertDialogDescription>
                 <AlertDialogFooter>
                   <AlertDialogCancel>Close</AlertDialogCancel>
@@ -514,23 +533,27 @@ const Index = () => {
             </AlertDialog>
           )}
 
-          {/* DIALOGO AGREGAR/EDITAR EVENTO */}
+          {/* AGREGAR/EDITAR EVENTO */}
           <AlertDialog open={showEventDialog} onOpenChange={setShowEventDialog}>
             <AlertDialogContent>
               <AlertDialogHeader>
                 <AlertDialogTitle>{editingEvent ? "Edit Event" : "Add Event"}</AlertDialogTitle>
               </AlertDialogHeader>
-              <AlertDialogDescription className="space-y-4">
+              <div className="space-y-4">
                 <div>
                   <Label>Name</Label>
-                  <Input value={newEvent.name} onChange={(e) => setNewEvent({ ...newEvent, name: e.target.value })} />
+                  <Input
+                    value={newEvent.name}
+                    onChange={(e) => setNewEvent({ ...newEvent, name: e.target.value })}
+                    placeholder="e.g. Salary"
+                  />
                 </div>
                 <div>
                   <Label>Amount</Label>
                   <Input
                     type="number"
-                    value={newEvent.amount}
-                    onChange={(e) => setNewEvent({ ...newEvent, amount: parseFloat(e.target.value) })}
+                    value={newEvent.amount || ""}
+                    onChange={(e) => setNewEvent({ ...newEvent, amount: parseFloat(e.target.value) || 0 })}
                   />
                 </div>
                 <div>
@@ -540,7 +563,7 @@ const Index = () => {
                     onValueChange={(v: Event["type"]) => setNewEvent({ ...newEvent, type: v })}
                   >
                     <SelectTrigger>
-                      <SelectValue placeholder="Select type" />
+                      <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
                       <SelectItem value="income">Income</SelectItem>
@@ -550,7 +573,7 @@ const Index = () => {
                     </SelectContent>
                   </Select>
                 </div>
-              </AlertDialogDescription>
+              </div>
               <AlertDialogFooter>
                 <AlertDialogCancel>Cancel</AlertDialogCancel>
                 <AlertDialogAction onClick={editingEvent ? updateEvent : addEvent}>
@@ -560,23 +583,16 @@ const Index = () => {
             </AlertDialogContent>
           </AlertDialog>
 
-          {/* CONFIRM DELETE */}
+          {/* CONFIRMAR ELIMINAR */}
           <AlertDialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>
             <AlertDialogContent>
               <AlertDialogHeader>
-                <AlertDialogTitle>Confirm Delete</AlertDialogTitle>
-                <AlertDialogDescription>Are you sure? This cannot be undone.</AlertDialogDescription>
+                <AlertDialogTitle>Delete Event?</AlertDialogTitle>
+                <AlertDialogDescription>This cannot be undone.</AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
                 <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction
-                  onClick={() => {
-                    if (deleteId) deleteEvent(deleteId);
-                    setDeleteId(null);
-                  }}
-                >
-                  Delete
-                </AlertDialogAction>
+                <AlertDialogAction onClick={() => deleteEvent(deleteId!)}>Delete</AlertDialogAction>
               </AlertDialogFooter>
             </AlertDialogContent>
           </AlertDialog>
@@ -593,14 +609,13 @@ const Index = () => {
             <TabsContent value="overview">
               <Card>
                 <CardHeader>
-                  <CardTitle>Family Budget Health</CardTitle>
+                  <CardTitle>Family Budget</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-6xl font-bold text-center text-blue-600">{cashFlow > 0 ? "Good" : "Review"}</div>
+                  <div className="text-6xl font-bold text-center text-blue-600">
+                    {cashFlow > 0 ? "Healthy" : "Review"}
+                  </div>
                   <Progress value={cashFlow > 0 ? 80 : 40} className="mt-4" />
-                  <p className="text-center mt-2 text-sm text-muted-foreground">
-                    {cashFlow > 0 ? `Surplus of £${cashFlow}` : `Deficit of £${-cashFlow}`}
-                  </p>
                 </CardContent>
               </Card>
             </TabsContent>
@@ -627,14 +642,30 @@ const Index = () => {
             </TabsContent>
 
             <TabsContent value="expenses">
-              <FixedExpensesManager language={language} />
-              <VariableExpensesManager language={language} />
+              <Tabs defaultValue="fixed" className="mt-6">
+                <TabsList>
+                  <TabsTrigger value="fixed">Fixed</TabsTrigger>
+                  <TabsTrigger value="variable">Variable</TabsTrigger>
+                </TabsList>
+                <TabsContent value="fixed">
+                  <FixedExpensesManager language={language} />
+                </TabsContent>
+                <TabsContent value="variable">
+                  <VariableExpensesManager language={language} />
+                </TabsContent>
+              </Tabs>
             </TabsContent>
 
             <TabsContent value="debts">
               <DebtsManager language={language} />
             </TabsContent>
           </Tabs>
+
+          <footer className="no-print py-8 text-center text-xs text-muted-foreground border-t mt-12">
+            <p className="font-semibold mb-2">Legal Disclaimer (UK)</p>
+            <p>This app is for educational use only. Not financial advice. Consult an FCA adviser.</p>
+            <p className="mt-2">© 2025 Family Budget Planner UK</p>
+          </footer>
         </div>
       </div>
     </>
