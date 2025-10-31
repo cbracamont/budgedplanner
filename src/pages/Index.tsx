@@ -1,16 +1,10 @@
 // src/pages/Index.tsx
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
-import { format, addMonths, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, add, sub } from "date-fns";
+import React, { useState, useEffect, useMemo } from "react";
 import {
-  TrendingUp,
-  Download,
-  LogOut,
-  Bot,
-  Calendar,
-  DollarSign,
-  PiggyBank,"use client";
+  Card, CardContent, CardHeader, CardTitle, CardFooter
+} from "@/components/ui/card";
 
 import React, { useState, useEffect, useMemo } from "react";
 import {
