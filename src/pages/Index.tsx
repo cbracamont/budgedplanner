@@ -10,7 +10,7 @@ import {
   useFixedExpenses,
   useVariableExpenses,
   useSavingsGoals,
-  useSavings
+  useSavings,
 } from "@/hooks/useFinancialData";
 import { useFinancialProfiles } from "@/hooks/useFinancialProfiles";
 import { Auth } from "@/components/Auth";
@@ -29,15 +29,15 @@ import { Skeleton } from "@/components/ui/skeleton";
 
 const Index = () => {
   useTheme();
-  const [language] = useState<'en' | 'es'>('en');
+  const [language] = useState<"en" | "es">("en");
   const [user, setUser] = useState<any>(null);
   const [authLoading, setAuthLoading] = useState(true);
 
   // === PERFIL ACTIVO ===
   const { data: profiles = [], isLoading: profileLoading } = useFinancialProfiles();
-  const activeProfile = profiles.find(p => p.is_active);
+  const activeProfile = profiles.find((p) => p.is_active);
 
-  // === DATOS (filtrados por profile_id en hooks) ===
+  // === DATOS ===
   const { data: incomeData = [], isLoading: incomeLoading } = useIncomeSources();
   const { data: debtData = [], isLoading: debtsLoading } = useDebts();
   const { data: fixedExpensesData = [], isLoading: fixedLoading } = useFixedExpenses();
@@ -45,35 +45,50 @@ const Index = () => {
   const { data: savingsGoalsData = [], isLoading: goalsLoading } = useSavingsGoals();
   const { data: savings, isLoading: savingsLoading } = useSavings();
 
-  const dataLoading = incomeLoading || debtsLoading || fixedLoading || variableLoading || goalsLoading || savingsLoading || profileLoading;
+  const dataLoading =
+    incomeLoading ||
+    debtsLoading ||
+    fixedLoading ||
+    variableLoading ||
+    goalsLoading ||
+    savingsLoading ||
+    profileLoading;
 
   // === CÁLCULOS ===
   const totalIncome = useMemo(() => incomeData.reduce((sum, s) => sum + s.amount, 0), [incomeData]);
   const totalDebts = useMemo(() => debtData.reduce((sum, d) => sum + d.minimum_payment, 0), [debtData]);
-  
+
   const totalFixedExpenses = useMemo(() => {
     const currentMonth = new Date().getMonth() + 1;
     return fixedExpensesData.reduce((sum, exp) => {
-      if (exp.frequency_type === 'annual' && exp.payment_month === currentMonth) {
+      if (exp.frequency_type === "annual" && exp.payment_month === currentMonth) {
         return sum + exp.amount;
       }
       return sum + exp.amount;
     }, 0);
   }, [fixedExpensesData]);
 
-  const totalVariableExpenses = useMemo(() => variableExpensesData.reduce((sum, exp) => sum + exp.amount, 0), [variableExpensesData]);
-  const totalActiveSavingsGoals = useMemo(() => savingsGoalsData.filter(g => g.is_active).reduce((sum, g) => sum + (g.monthly_contribution || 0), 0), [savingsGoalsData]);
+  const totalVariableExpenses = useMemo(
+    () => variableExpensesData.reduce((sum, exp) => sum + exp.amount, 0),
+    [variableExpensesData],
+  );
+  const totalActiveSavingsGoals = useMemo(
+    () => savingsGoalsData.filter((g) => g.is_active).reduce((sum, g) => sum + (g.monthly_contribution || 0), 0),
+    [savingsGoalsData],
+  );
   const monthlyEmergencyContribution = savings?.monthly_emergency_contribution || 0;
   const emergencyFund = savings?.emergency_fund || 0;
-  const totalSavingsContributions = totalActiveSavingsGoals + monthlyEmergencyContribution + (savings?.monthly_goal || 0);
+  const totalSavingsContributions =
+    totalActiveSavingsGoals + monthlyEmergencyContribution + (savings?.monthly_goal || 0);
   const emergencyFundTarget = (totalFixedExpenses + totalVariableExpenses) * 4;
-  const availableForDebt = totalIncome - totalDebts - totalFixedExpenses - totalVariableExpenses - totalSavingsContributions;
+  const availableForDebt =
+    totalIncome - totalDebts - totalFixedExpenses - totalVariableExpenses - totalSavingsContributions;
 
   // === FORMAT ===
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat(language === 'es' ? 'es-MX' : 'en-US', {
-      style: 'currency',
-      currency: 'USD',
+    return new Intl.NumberFormat(language === "es" ? "es-MX" : "en-US", {
+      style: "currency",
+      currency: "USD",
       minimumFractionDigits: 0,
     }).format(amount);
   };
@@ -84,7 +99,9 @@ const Index = () => {
       setUser(session?.user ?? null);
       setAuthLoading(false);
     });
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null);
       setAuthLoading(false);
     });
@@ -123,7 +140,6 @@ const Index = () => {
 
       <div className="min-h-screen bg-background py-8 px-4">
         <div className="max-w-7xl mx-auto">
-
           {/* CABECERA */}
           <div className="no-print text-center mb-8">
             <div className="flex justify-center items-center gap-3 mb-4 flex-wrap">
@@ -134,4 +150,121 @@ const Index = () => {
               <ProfileSelector language={language} />
               <Button variant="outline" size="sm" onClick={() => supabase.auth.signOut()}>
                 <LogOut className="mr-2 h-4 w-4" />
-                {language
+                {language === "es" ? "Salir" : "Sign Out"}
+              </Button>
+            </div>
+            <h1 className="text-4xl font-bold">
+              {activeProfile?.type === "family" ? "Family Budget" : "Personal Budget"}
+            </h1>
+          </div>
+
+          {/* BOTÓN IMPRIMIR */}
+          <div className="flex justify-end mb-6 no-print">
+            <Button onClick={printReport} size="sm">
+              <Printer className="mr-2 h-4 w-4" />
+              {language === "es" ? "Imprimir" : "Print"}
+            </Button>
+          </div>
+
+          {/* REPORTE IMPRIMIBLE */}
+          <div className="print-title">
+            {activeProfile?.type === "family" ? "Family" : "Personal"} Report - {new Date().toLocaleDateString()}
+          </div>
+
+          <div className="print-section">
+            <h2 className="text-lg font-bold mb-3">Summary</h2>
+            <div className="print-row">
+              <span className="print-label">Income:</span>
+              <span>{formatCurrency(totalIncome)}</span>
+            </div>
+            <div className="print-row">
+              <span className="print-label">Debts:</span>
+              <span>{formatCurrency(totalDebts)}</span>
+            </div>
+            <div className="print-row">
+              <span className="print-label">Fixed:</span>
+              <span>{formatCurrency(totalFixedExpenses)}</span>
+            </div>
+            <div className="print-row">
+              <span className="print-label">Variable:</span>
+              <span>{formatCurrency(totalVariableExpenses)}</span>
+            </div>
+            <div className="print-row">
+              <span className="print-label">Available:</span>
+              <span>{formatCurrency(availableForDebt)}</span>
+            </div>
+            <div className="print-row">
+              <span className="print-label">Emergency Fund:</span>
+              <span>
+                {formatCurrency(emergencyFund)} / {formatCurrency(emergencyFundTarget)}
+              </span>
+            </div>
+          </div>
+
+          <EnhancedFinancialCharts
+            totalIncome={totalIncome}
+            totalDebts={totalDebts}
+            totalFixedExpenses={totalFixedExpenses}
+            totalVariableExpenses={totalVariableExpenses}
+            totalSavingsAccumulated={emergencyFund}
+            language={language}
+            chartType="bar"
+          />
+
+          {/* DASHBOARD */}
+          <div className="no-print space-y-6">
+            <Tabs defaultValue="summary">
+              <TabsList className="grid w-full grid-cols-3">
+                <TabsTrigger value="summary">Summary</TabsTrigger>
+                <TabsTrigger value="income">Income</TabsTrigger>
+                <TabsTrigger value="debts">Debts</TabsTrigger>
+              </TabsList>
+
+              <TabsContent value="summary">
+                <BudgetSummary
+                  totalIncome={totalIncome}
+                  totalDebts={totalDebts}
+                  totalFixedExpenses={totalFixedExpenses}
+                  totalVariableExpenses={totalVariableExpenses}
+                  totalSavingsGoals={totalActiveSavingsGoals}
+                  monthlyEmergencyContribution={monthlyEmergencyContribution}
+                  language={language}
+                />
+              </TabsContent>
+
+              <TabsContent value="income">
+                <Collapsible defaultOpen>
+                  <CollapsibleTrigger className="w-full p-4 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-xl mb-4">
+                    <h2 className="text-xl font-bold flex items-center gap-2">
+                      <TrendingUp className="h-5 w-5" />
+                      Income
+                    </h2>
+                  </CollapsibleTrigger>
+                  <CollapsibleContent>
+                    <IncomeManager language={language} />
+                  </CollapsibleContent>
+                </Collapsible>
+              </TabsContent>
+
+              <TabsContent value="debts">
+                <Collapsible defaultOpen>
+                  <CollapsibleTrigger className="w-full p-4 bg-gradient-to-r from-red-500 to-pink-600 text-white rounded-xl mb-4">
+                    <h2 className="text-xl font-bold flex items-center gap-2">
+                      <TrendingUp className="h-5 w-5" />
+                      Debts
+                    </h2>
+                  </CollapsibleTrigger>
+                  <CollapsibleContent>
+                    <DebtsManager language={language} />
+                  </CollapsibleContent>
+                </Collapsible>
+              </TabsContent>
+            </Tabs>
+          </div>
+        </div>
+      </div>
+    </>
+  );
+};
+
+export default Index;
