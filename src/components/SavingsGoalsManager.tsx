@@ -7,9 +7,8 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { Target, Plus, Trash2, Pencil, Calendar, TrendingUp, CheckCircle2 } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Language } from "@/lib/i18n";
-import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { useQueryClient } from "@tanstack/react-query";
+import { useSavingsGoals, useAddSavingsGoal, useUpdateSavingsGoal, useDeleteSavingsGoal } from "@/hooks/useFinancialData";
 
 interface SavingsGoal {
   id: string;
@@ -31,9 +30,11 @@ interface SavingsGoalsManagerProps {
 
 export const SavingsGoalsManager = ({ language, availableForSavings, availableBudget, onBudgetAllocation }: SavingsGoalsManagerProps) => {
   const { toast } = useToast();
-  const [goals, setGoals] = useState<SavingsGoal[]>([]);
+  const { data: goals = [] } = useSavingsGoals();
+  const addGoalMutation = useAddSavingsGoal();
+  const updateGoalMutation = useUpdateSavingsGoal();
+  const deleteGoalMutation = useDeleteSavingsGoal();
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
-  const queryClient = useQueryClient();
   const [editingGoal, setEditingGoal] = useState<SavingsGoal | null>(null);
   
   const [formData, setFormData] = useState({
@@ -43,24 +44,6 @@ export const SavingsGoalsManager = ({ language, availableForSavings, availableBu
     target_date: ""
   });
 
-  useEffect(() => {
-    loadGoals();
-  }, []);
-
-  const loadGoals = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
-
-    const { data, error } = await supabase
-      .from('savings_goals')
-      .select('*')
-      .eq('user_id', user.id)
-      .order('created_at', { ascending: false });
-
-    if (!error && data) {
-      setGoals(data);
-    }
-  };
 
   const resetForm = () => {
     setFormData({
@@ -73,9 +56,6 @@ export const SavingsGoalsManager = ({ language, availableForSavings, availableBu
   };
 
   const handleSaveGoal = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
-
     const goalData = {
       goal_name: formData.goal_name,
       target_amount: parseFloat(formData.target_amount) || 0,
@@ -84,48 +64,27 @@ export const SavingsGoalsManager = ({ language, availableForSavings, availableBu
     };
 
     if (editingGoal) {
-      const { error } = await supabase
-        .from('savings_goals')
-        .update(goalData)
-        .eq('id', editingGoal.id);
-
-      if (error) {
-        toast({ title: "Error", description: "Failed to update goal", variant: "destructive" });
-        return;
-      }
-      toast({ title: "Success", description: "Goal updated successfully" });
+      updateGoalMutation.mutate({
+        id: editingGoal.id,
+        ...goalData
+      }, {
+        onSuccess: () => {
+          resetForm();
+          setIsAddDialogOpen(false);
+        }
+      });
     } else {
-      const { error } = await supabase
-        .from('savings_goals')
-        .insert({ ...goalData, user_id: user.id });
-
-      if (error) {
-        toast({ title: "Error", description: "Failed to create goal", variant: "destructive" });
-        return;
-      }
-      toast({ title: "Success", description: "Goal created successfully" });
+      addGoalMutation.mutate(goalData, {
+        onSuccess: () => {
+          resetForm();
+          setIsAddDialogOpen(false);
+        }
+      });
     }
-
-    resetForm();
-    setIsAddDialogOpen(false);
-    loadGoals();
-    queryClient.invalidateQueries({ queryKey: ["savings_goals"] });
   };
 
   const handleDeleteGoal = async (id: string) => {
-    const { error } = await supabase
-      .from('savings_goals')
-      .delete()
-      .eq('id', id);
-
-    if (error) {
-      toast({ title: "Error", description: "Failed to delete goal", variant: "destructive" });
-      return;
-    }
-
-  toast({ title: "Success", description: "Goal deleted successfully" });
-  loadGoals();
-  queryClient.invalidateQueries({ queryKey: ["savings_goals"] });
+    deleteGoalMutation.mutate(id);
   };
 
   const handleEditGoal = (goal: SavingsGoal) => {
@@ -155,37 +114,26 @@ export const SavingsGoalsManager = ({ language, availableForSavings, availableBu
   };
 
   const activateGoalContribution = async (goalId: string, monthlyAmount: number) => {
-    const { error } = await supabase
-      .from('savings_goals')
-      .update({ 
-        monthly_contribution: monthlyAmount,
-        is_active: true 
-      })
-      .eq('id', goalId);
-
-    if (error) {
-      toast({
-        title: "Error",
-        description: "Failed to activate contribution",
-        variant: "destructive",
-      });
-      return;
-    }
-
-    toast({
-      title: language === 'en' ? "Success" : "Éxito",
-      description: language === 'en' 
-        ? `Monthly contribution of £${monthlyAmount.toFixed(2)} activated` 
-        : `Aporte mensual de £${monthlyAmount.toFixed(2)} activado`,
+    updateGoalMutation.mutate({
+      id: goalId,
+      monthly_contribution: monthlyAmount,
+      is_active: true
+    }, {
+      onSuccess: () => {
+        toast({
+          title: language === 'en' ? "Success" : "Éxito",
+          description: language === 'en' 
+            ? `Monthly contribution of £${monthlyAmount.toFixed(2)} activated` 
+            : `Aporte mensual de £${monthlyAmount.toFixed(2)} activado`,
+        });
+        
+        if (onBudgetAllocation) {
+          const totalAllocated = goals.reduce((sum, g) => 
+            sum + (g.monthly_contribution || 0), monthlyAmount);
+          onBudgetAllocation(totalAllocated);
+        }
+      }
     });
-  
-    loadGoals();
-    queryClient.invalidateQueries({ queryKey: ["savings_goals"] });
-    if (onBudgetAllocation) {
-      const totalAllocated = goals.reduce((sum, g) => 
-        sum + (g.monthly_contribution || 0), monthlyAmount);
-      onBudgetAllocation(totalAllocated);
-    }
   };
 
   return (

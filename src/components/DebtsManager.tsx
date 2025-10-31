@@ -4,12 +4,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { CreditCard, Plus, Trash2, Pencil } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { getTranslation, Language, ukBanks } from "@/lib/i18n";
-import { useQueryClient } from "@tanstack/react-query";
+import { useDebts, useAddDebt, useUpdateDebt, useDeleteDebt } from "@/hooks/useFinancialData";
 
 interface Debt {
   id: string;
@@ -38,8 +37,10 @@ interface DebtsManagerProps {
 export const DebtsManager = ({ language, onDebtsChange }: DebtsManagerProps) => {
   const t = (key: string) => getTranslation(language, key);
   const { toast } = useToast();
-  const [debts, setDebts] = useState<Debt[]>([]);
-  const queryClient = useQueryClient();
+  const { data: debts = [] } = useDebts();
+  const addDebtMutation = useAddDebt();
+  const updateDebtMutation = useUpdateDebt();
+  const deleteDebtMutation = useDeleteDebt();
   const [newDebt, setNewDebt] = useState({
     name: "",
     bank: "",
@@ -63,34 +64,14 @@ export const DebtsManager = ({ language, onDebtsChange }: DebtsManagerProps) => 
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
 
   useEffect(() => {
-    loadDebts();
-  }, []);
-
-  useEffect(() => {
     const total = debts.reduce((sum, debt) => sum + debt.minimum_payment, 0);
     onDebtsChange?.(total);
   }, [debts, onDebtsChange]);
 
-  const loadDebts = async () => {
-    const { data, error } = await supabase
-      .from("debts")
-      .select("*")
-      .order("created_at", { ascending: true });
-
-    if (error) {
-      toast({ title: "Error", description: error.message, variant: "destructive" });
-    } else {
-      setDebts(data || []);
-    }
-  };
-
   const addDebt = async (e: React.FormEvent) => {
     e.preventDefault();
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
 
     const debtData: any = {
-      user_id: user.id,
       name: newDebt.name,
       bank: newDebt.bank || null,
       balance: parseFloat(parseFloat(newDebt.balance).toFixed(2)),
@@ -119,62 +100,42 @@ export const DebtsManager = ({ language, onDebtsChange }: DebtsManagerProps) => 
       debtData.apr = parseFloat(parseFloat(newDebt.apr).toFixed(2));
     }
 
-    const { error } = await supabase.from("debts").insert(debtData);
-
-    if (error) {
-      toast({ title: "Error", description: error.message, variant: "destructive" });
-    } else {
-      setNewDebt({ 
-        name: "", bank: "", balance: "", apr: "", minimum_payment: "", payment_day: "1",
-        is_installment: false, total_amount: "", number_of_installments: "", 
-        installment_amount: "", start_date: "", end_date: "",
-        promotional_apr: "", promotional_apr_end_date: "", regular_apr: ""
-      });
-      setIsInstallment(false);
-      setHasPromotionalAPR(false);
-      loadDebts();
-      queryClient.invalidateQueries({ queryKey: ["debts"] });
-      toast({ title: "Success", description: "Debt added" });
-    }
+    addDebtMutation.mutate(debtData, {
+      onSuccess: () => {
+        setNewDebt({ 
+          name: "", bank: "", balance: "", apr: "", minimum_payment: "", payment_day: "1",
+          is_installment: false, total_amount: "", number_of_installments: "", 
+          installment_amount: "", start_date: "", end_date: "",
+          promotional_apr: "", promotional_apr_end_date: "", regular_apr: ""
+        });
+        setIsInstallment(false);
+        setHasPromotionalAPR(false);
+      }
+    });
   };
 
   const deleteDebt = async (id: string) => {
-    const { error } = await supabase.from("debts").delete().eq("id", id);
-
-    if (error) {
-      toast({ title: "Error", description: error.message, variant: "destructive" });
-    } else {
-      loadDebts();
-      queryClient.invalidateQueries({ queryKey: ["debts"] });
-      toast({ title: "Success", description: "Debt deleted" });
-    }
+    deleteDebtMutation.mutate(id);
   };
 
   const updateDebt = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingDebt) return;
 
-    const { error } = await supabase
-      .from("debts")
-      .update({
-        name: editingDebt.name,
-        bank: editingDebt.bank,
-        balance: editingDebt.balance,
-        apr: editingDebt.apr,
-        minimum_payment: editingDebt.minimum_payment,
-        payment_day: editingDebt.payment_day,
-      })
-      .eq("id", editingDebt.id);
-
-    if (error) {
-      toast({ title: "Error", description: error.message, variant: "destructive" });
-    } else {
-      setIsEditDialogOpen(false);
-      setEditingDebt(null);
-      loadDebts();
-      queryClient.invalidateQueries({ queryKey: ["debts"] });
-      toast({ title: "Success", description: "Debt updated" });
-    }
+    updateDebtMutation.mutate({
+      id: editingDebt.id,
+      name: editingDebt.name,
+      bank: editingDebt.bank,
+      balance: editingDebt.balance,
+      apr: editingDebt.apr,
+      minimum_payment: editingDebt.minimum_payment,
+      payment_day: editingDebt.payment_day,
+    }, {
+      onSuccess: () => {
+        setIsEditDialogOpen(false);
+        setEditingDebt(null);
+      }
+    });
   };
 
   return (

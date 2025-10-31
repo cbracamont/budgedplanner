@@ -4,12 +4,11 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
 import { Home, Plus, Trash2, Pencil } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { getTranslation, Language } from "@/lib/i18n";
-import { useQueryClient } from "@tanstack/react-query";
+import { useFixedExpenses, useAddFixedExpense, useUpdateFixedExpense, useDeleteFixedExpense } from "@/hooks/useFinancialData";
 
 interface FixedExpense {
   id: string;
@@ -34,8 +33,10 @@ const monthNames = {
 export const FixedExpensesManager = ({ language, onExpensesChange }: FixedExpensesManagerProps) => {
   const t = (key: string) => getTranslation(language, key);
   const { toast } = useToast();
-  const queryClient = useQueryClient();
-  const [expenses, setExpenses] = useState<FixedExpense[]>([]);
+  const { data: expenses = [] } = useFixedExpenses();
+  const addExpenseMutation = useAddFixedExpense();
+  const updateExpenseMutation = useUpdateFixedExpense();
+  const deleteExpenseMutation = useDeleteFixedExpense();
   const [newExpense, setNewExpense] = useState({
     name: "",
     amount: "",
@@ -54,10 +55,6 @@ export const FixedExpensesManager = ({ language, onExpensesChange }: FixedExpens
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
 
   useEffect(() => {
-    loadExpenses();
-  }, []);
-
-  useEffect(() => {
     const currentMonth = new Date().getMonth() + 1;
     const total = expenses.reduce((sum, expense) => {
       // Only include annual expenses if the current month matches their payment month
@@ -69,82 +66,45 @@ export const FixedExpensesManager = ({ language, onExpensesChange }: FixedExpens
     onExpensesChange?.(total);
   }, [expenses, onExpensesChange]);
 
-  const loadExpenses = async () => {
-    const { data, error } = await supabase
-      .from("fixed_expenses")
-      .select("*")
-      .order("created_at", { ascending: true });
-
-    if (error) {
-      toast({ title: "Error", description: "Failed to load expenses", variant: "destructive" });
-    } else {
-      setExpenses((data || []) as FixedExpense[]);
-    }
-  };
-
   const addExpense = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!newExpense.name || !newExpense.amount) return;
 
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
-
-    const { error } = await supabase.from("fixed_expenses").insert({
-      user_id: user.id,
+    addExpenseMutation.mutate({
       name: newExpense.name,
       amount: parseFloat(newExpense.amount),
       payment_day: parseInt(newExpense.payment_day),
       frequency: "monthly",
       frequency_type: newExpense.frequency_type,
       payment_month: newExpense.frequency_type === 'annual' ? newExpense.payment_month : null
+    }, {
+      onSuccess: () => {
+        setNewExpense({ name: "", amount: "", payment_day: "1", frequency_type: "monthly", payment_month: null });
+      }
     });
-
-    if (error) {
-      toast({ title: "Error", description: "Failed to add expense", variant: "destructive" });
-    } else {
-      setNewExpense({ name: "", amount: "", payment_day: "1", frequency_type: "monthly", payment_month: null });
-      loadExpenses();
-      queryClient.invalidateQueries({ queryKey: ["fixed_expenses"] });
-      toast({ title: "Success", description: "Expense added" });
-    }
   };
 
   const deleteExpense = async (id: string) => {
-    const { error } = await supabase.from("fixed_expenses").delete().eq("id", id);
-
-    if (error) {
-      toast({ title: "Error", description: "Failed to delete expense", variant: "destructive" });
-    } else {
-      loadExpenses();
-      queryClient.invalidateQueries({ queryKey: ["fixed_expenses"] });
-      toast({ title: "Success", description: "Expense deleted" });
-    }
+    deleteExpenseMutation.mutate(id);
   };
 
   const updateExpense = async (e: React.FormEvent) => {
     e.preventDefault();
     if (!editingExpense) return;
 
-    const { error } = await supabase
-      .from("fixed_expenses")
-      .update({
-        name: editingExpense.name,
-        amount: editingExpense.amount,
-        payment_day: editingExpense.payment_day,
-        frequency_type: editingExpense.frequency_type,
-        payment_month: editingExpense.frequency_type === 'annual' ? editingExpense.payment_month : null
-      })
-      .eq("id", editingExpense.id);
-
-    if (error) {
-      toast({ title: "Error", description: "Failed to update expense", variant: "destructive" });
-    } else {
-      setIsEditDialogOpen(false);
-      setEditingExpense(null);
-      loadExpenses();
-      queryClient.invalidateQueries({ queryKey: ["fixed_expenses"] });
-      toast({ title: "Success", description: "Expense updated" });
-    }
+    updateExpenseMutation.mutate({
+      id: editingExpense.id,
+      name: editingExpense.name,
+      amount: editingExpense.amount,
+      payment_day: editingExpense.payment_day,
+      frequency_type: editingExpense.frequency_type,
+      payment_month: editingExpense.frequency_type === 'annual' ? editingExpense.payment_month : null
+    }, {
+      onSuccess: () => {
+        setIsEditDialogOpen(false);
+        setEditingExpense(null);
+      }
+    });
   };
 
   return (
@@ -276,7 +236,7 @@ export const FixedExpensesManager = ({ language, onExpensesChange }: FixedExpens
                           name: expense.name,
                           amount: expense.amount,
                           payment_day: expense.payment_day,
-                          frequency_type: expense.frequency_type,
+                          frequency_type: expense.frequency_type as 'monthly' | 'annual',
                           payment_month: expense.payment_month
                         });
                         setIsEditDialogOpen(true);

@@ -6,9 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { ShoppingCart, Trash2, Plus, Pencil } from "lucide-react";
 import { getTranslation, Language } from "@/lib/i18n";
-import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
-import { useQueryClient } from "@tanstack/react-query";
+import { useVariableExpenses, useAddVariableExpense, useUpdateVariableExpense, useDeleteVariableExpense } from "@/hooks/useFinancialData";
 
 interface VariableExpense {
   id: string;
@@ -24,107 +23,51 @@ interface VariableExpensesManagerProps {
 export const VariableExpensesManager = ({ onExpensesChange, language }: VariableExpensesManagerProps) => {
   const t = (key: string) => getTranslation(language, key);
   const { toast } = useToast();
-  const queryClient = useQueryClient();
-  
-  const [expenses, setExpenses] = useState<VariableExpense[]>([]);
+  const { data: expenses = [] } = useVariableExpenses();
+  const addExpenseMutation = useAddVariableExpense();
+  const updateExpenseMutation = useUpdateVariableExpense();
+  const deleteExpenseMutation = useDeleteVariableExpense();
   const [name, setName] = useState("");
   const [amount, setAmount] = useState("");
   const [editingExpense, setEditingExpense] = useState<VariableExpense | null>(null);
   const [isEditExpenseDialogOpen, setIsEditExpenseDialogOpen] = useState(false);
 
   useEffect(() => {
-    loadExpenses();
-  }, []);
-
-  useEffect(() => {
     const total = expenses.reduce((sum, exp) => sum + exp.amount, 0);
     onExpensesChange?.(total);
   }, [expenses, onExpensesChange]);
 
-  const loadExpenses = async () => {
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
-
-    const { data, error } = await supabase
-      .from('variable_expenses')
-      .select('*')
-      .eq('user_id', user.id);
-
-    if (!error && data) {
-      // Map to ensure name exists with fallback
-      setExpenses(data.map(exp => ({
-        id: exp.id,
-        name: exp.name || 'Unnamed Expense',
-        amount: exp.amount
-      })));
-    }
-  };
-
   const addExpense = async () => {
     if (!name.trim() || !amount) return;
 
-    const { data: { user } } = await supabase.auth.getUser();
-    if (!user) return;
-
-    const { data, error } = await supabase
-      .from('variable_expenses')
-      .insert({
-        name: name.trim(),
-        amount: parseFloat(parseFloat(amount).toFixed(2)),
-        user_id: user.id
-      })
-      .select()
-      .single();
-
-    if (error) {
-      toast({ title: "Error", description: "Failed to add expense", variant: "destructive" });
-      return;
-    }
-
-  setExpenses([...expenses, data]);
-  setName("");
-  setAmount("");
-  queryClient.invalidateQueries({ queryKey: ["variable_expenses"] });
-  toast({ title: "Success", description: "Expense added successfully" });
+    addExpenseMutation.mutate({
+      name: name.trim(),
+      amount: parseFloat(parseFloat(amount).toFixed(2))
+    }, {
+      onSuccess: () => {
+        setName("");
+        setAmount("");
+      }
+    });
   };
 
   const deleteExpense = async (expenseId: string) => {
-    const { error } = await supabase
-      .from('variable_expenses')
-      .delete()
-      .eq('id', expenseId);
-
-    if (error) {
-      toast({ title: "Error", description: "Failed to delete expense", variant: "destructive" });
-      return;
-    }
-
-  setExpenses(expenses.filter(e => e.id !== expenseId));
-  queryClient.invalidateQueries({ queryKey: ["variable_expenses"] });
-  toast({ title: "Success", description: "Expense deleted successfully" });
+    deleteExpenseMutation.mutate(expenseId);
   };
 
   const updateExpense = async () => {
     if (!editingExpense) return;
 
-    const { error } = await supabase
-      .from('variable_expenses')
-      .update({ 
-        name: editingExpense.name,
-        amount: parseFloat(parseFloat(editingExpense.amount.toString()).toFixed(2))
-      })
-      .eq('id', editingExpense.id);
-
-    if (error) {
-      toast({ title: "Error", description: "Failed to update expense", variant: "destructive" });
-      return;
-    }
-
-  setExpenses(expenses.map(e => e.id === editingExpense.id ? editingExpense : e));
-  setIsEditExpenseDialogOpen(false);
-  setEditingExpense(null);
-  queryClient.invalidateQueries({ queryKey: ["variable_expenses"] });
-  toast({ title: "Success", description: "Expense updated successfully" });
+    updateExpenseMutation.mutate({
+      id: editingExpense.id,
+      name: editingExpense.name,
+      amount: parseFloat(parseFloat(editingExpense.amount.toString()).toFixed(2))
+    }, {
+      onSuccess: () => {
+        setIsEditExpenseDialogOpen(false);
+        setEditingExpense(null);
+      }
+    });
   };
 
   return (
