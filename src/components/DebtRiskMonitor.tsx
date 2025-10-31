@@ -1,4 +1,4 @@
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { Button } from "@/components/ui/button";
 import { AlertTriangle, TrendingDown, CheckCircle2 } from "lucide-react";
@@ -17,10 +17,11 @@ export const DebtRiskMonitor = ({ totalIncome, totalDebts, language }: DebtRiskM
   const { data: alerts } = useUnacknowledgedAlerts();
   const acknowledgeAlert = useAcknowledgeAlert();
   const createAlert = useCreateDebtRiskAlert();
+  const isCreatingAlert = useRef(false);
 
   useEffect(() => {
     const checkDebtRatio = async () => {
-      if (totalIncome <= 0) return;
+      if (totalIncome <= 0 || isCreatingAlert.current) return;
 
       const debtToIncomeRatio = (totalDebts / totalIncome) * 100;
 
@@ -32,6 +33,8 @@ export const DebtRiskMonitor = ({ totalIncome, totalDebts, language }: DebtRiskM
         );
 
         if (!recentAlerts || recentAlerts.length === 0) {
+          isCreatingAlert.current = true;
+          
           let riskLevel = "medium";
           let message = "";
 
@@ -46,24 +49,31 @@ export const DebtRiskMonitor = ({ totalIncome, totalDebts, language }: DebtRiskM
               : `⚠️ Warning: Your debt-to-income ratio is ${debtToIncomeRatio.toFixed(1)}%. It's approaching the recommended limit of 35%. Consider reducing expenses or increasing debt payments.`;
           }
 
-          await createAlert.mutateAsync({
-            alert_type: "high_debt_ratio",
-            risk_level: riskLevel,
-            debt_to_income_ratio: debtToIncomeRatio,
-            message,
-            profile_id: null,
-          });
-
-          // También crear notificación
-          const { data: { user } } = await supabase.auth.getUser();
-          if (user) {
-            await supabase.from("notifications").insert([{
-              user_id: user.id,
-              title: language === "es" ? "⚠️ Alerta de Sobreendeudamiento" : "⚠️ Over-Indebtedness Alert",
+          try {
+            await createAlert.mutateAsync({
+              alert_type: "high_debt_ratio",
+              risk_level: riskLevel,
+              debt_to_income_ratio: debtToIncomeRatio,
               message,
-              type: "debt_alert",
-              is_read: false,
-            }]);
+              profile_id: null,
+            });
+
+            // También crear notificación
+            const { data: { user } } = await supabase.auth.getUser();
+            if (user) {
+              await supabase.from("notifications").insert([{
+                user_id: user.id,
+                title: language === "es" ? "⚠️ Alerta de Sobreendeudamiento" : "⚠️ Over-Indebtedness Alert",
+                message,
+                type: "debt_alert",
+                is_read: false,
+              }]);
+            }
+          } finally {
+            // Reset después de 5 segundos para permitir nuevas alertas si cambian significativamente los valores
+            setTimeout(() => {
+              isCreatingAlert.current = false;
+            }, 5000);
           }
         }
       }
