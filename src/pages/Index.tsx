@@ -3,7 +3,7 @@
 
 import { useState, useEffect, useMemo } from "react";
 import { format, addMonths, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay } from "date-fns";
-import { TrendingUp, Download, LogOut, Calendar, DollarSign, PiggyBank, Home, Edit2, Trash2, Plus } from "lucide-react";
+import { TrendingUp, Download, LogOut, Calendar, DollarSign, PiggyBank, Home } from "lucide-react";
 import {
   useIncomeSources,
   useDebts,
@@ -70,6 +70,7 @@ const useVariableIncome = () => {
 };
 
 const Index = () => {
+  // === TODOS LOS HOOKS AL PRINCIPIO ===
   useTheme();
   const [language, setLanguage] = useState<Language>("en");
   const [user, setUser] = useState<any>(null);
@@ -86,7 +87,15 @@ const Index = () => {
   const { data: savings } = useSavings();
   const { data: variableIncome = [], addIncome, deleteIncome } = useVariableIncome();
 
-  // === CÁLCULOS FINANCIEROS ===
+  // === AUTENTICACIÓN (hook) ===
+  useEffect(() => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
+      setUser(session?.user ?? null);
+      setAuthLoading(false);
+    });
+  }, []);
+
+  // === CÁLCULOS (useMemo) ===
   const {
     totalIncome,
     totalFixed,
@@ -132,23 +141,6 @@ const Index = () => {
     };
   }, [incomeData, variableIncome, fixedExpensesData, variableExpensesData, debtData, savings, savingsGoalsData]);
 
-  const formatCurrency = (amount: number) => `£${amount.toFixed(0)}`;
-
-  useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
-      setUser(session?.user ?? null);
-      setAuthLoading(false);
-    });
-  }, []);
-
-  if (authLoading)
-    return (
-      <div className="p-8">
-        <Skeleton className="h-64 w-full" />
-      </div>
-    );
-  if (!user) return <Auth />;
-
   // === CALENDARIO ===
   const currentMonth = new Date();
   const monthStart = startOfMonth(currentMonth);
@@ -160,7 +152,6 @@ const Index = () => {
   const calendarEvents = useMemo(() => {
     const events: Event[] = [];
 
-    // Ingresos
     incomeData.forEach((inc) => {
       events.push({
         id: `inc-${inc.id}`,
@@ -172,7 +163,6 @@ const Index = () => {
       });
     });
 
-    // Gastos fijos
     fixedExpensesData.forEach((exp) => {
       const day = exp.payment_day || 1;
       const date = new Date(new Date().getFullYear(), new Date().getMonth(), day);
@@ -188,16 +178,18 @@ const Index = () => {
       }
     });
 
-    // Deudas
     debtData.forEach((debt) => {
-      events.push({
-        id: `debt-${debt.id}`,
-        date: format(new Date(new Date().getFullYear(), new Date().getMonth(), 15), "yyyy-MM-dd"),
-        type: "debt",
-        name: `${debt.name} (min)`,
-        amount: debt.minimum_payment,
-        recurring: true,
-      });
+      const date = new Date(new Date().getFullYear(), new Date().getMonth(), 15);
+      if (date >= monthStart && date <= monthEnd) {
+        events.push({
+          id: `debt-${debt.id}`,
+          date: format(date, "yyyy-MM-dd"),
+          type: "debt",
+          name: `${debt.name} (min)`,
+          amount: debt.minimum_payment,
+          recurring: true,
+        });
+      }
     });
 
     return events;
@@ -207,6 +199,26 @@ const Index = () => {
     return calendarEvents.filter((e) => isSameDay(new Date(e.date), date));
   };
 
+  const formatCurrency = (amount: number) => `£${amount.toFixed(0)}`;
+
+  // === RENDER CONDICIONAL (SIN HOOKS) ===
+  if (authLoading) {
+    return (
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-slate-900 dark:to-slate-800 p-8">
+        <div className="max-w-7xl mx-auto space-y-6">
+          {[...Array(6)].map((_, i) => (
+            <Skeleton key={i} className="h-32 w-full rounded-2xl" />
+          ))}
+        </div>
+      </div>
+    );
+  }
+
+  if (!user) {
+    return <Auth />;
+  }
+
+  // === RESTO DEL UI ===
   const pieData = [
     { name: "Fixed", value: totalFixed, color: "#3b82f6" },
     { name: "Variable", value: totalVariable, color: "#10b981" },
@@ -301,7 +313,8 @@ const Index = () => {
                 </div>
                 <Progress
                   value={
-                    (1 - debtData.reduce((s, d) => s + d.balance, 0) / debtData.reduce((s, d) => s + d.balance, 0)) *
+                    ((totalDebtPayment + Math.max(0, cashFlow * 0.3)) /
+                      (debtData.reduce((s, d) => s + d.balance, 0) / 12)) *
                     100
                   }
                   className="h-4 mt-3"
