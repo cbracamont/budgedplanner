@@ -73,33 +73,86 @@ const useVariableIncome = () => {
   return { data, loading, addIncome };
 };
 
-// === AI ASSISTANT ===
-const useAIFinancialAssistant = (calculations: any, debtStrategy: any) => {
+// === AI PERSONALIZADO CON TUS DATOS ===
+const useAIFinancialAssistant = (
+  calculations: any,
+  debtStrategy: any,
+  debtData: any[],
+  activeProfile: any,
+  incomeData: any[],
+  variableExpensesData: any[],
+) => {
   const [messages, setMessages] = useState<any[]>([
-    { role: "assistant", content: "Hello! I'm your UK Financial Coach. Ask me anything!" },
+    {
+      role: "assistant",
+      content: `Hello ${activeProfile.name || "there"}! I'm your UK Financial Coach. Ask me about spending, debt, or savings.`,
+    },
   ]);
   const [input, setInput] = useState("");
 
-  const getAdvice = (q: string) => {
-    const net = calculations.netCashFlow;
-    const savingsRate = calculations.savingsRate;
-    const debtMonths = debtStrategy.totalMonths;
+  const formatCurrency = (amount: number) => `£${amount.toFixed(0)}`;
 
-    if (q.includes("debt")) return `Pay off in **${debtMonths} months** using **${debtStrategy.method}**.`;
-    if (q.includes("emergency")) return `Emergency fund: **${calculations.emergencyProgress.toFixed(0)}%** of target.`;
-    if (q.includes("save")) return `Savings rate: **${savingsRate.toFixed(0)}%**. Aim for 20%.`;
-    if (q.includes("cash"))
-      return net >= 0 ? `Positive cash flow: **£${net.toFixed(0)}**` : `Cut £${Math.abs(net).toFixed(0)} in expenses.`;
-    return "Ask about debt, savings, or cash flow!";
+  const getAdvice = (question: string) => {
+    const q = question.toLowerCase().trim();
+    const netCashFlow = calculations.netCashFlow;
+    const savingsRate = calculations.savingsRate;
+    const emergencyProgress = calculations.emergencyProgress;
+    const totalDebt = calculations.totalDebtBalance;
+    const totalIncome = calculations.netIncome;
+    const totalFixed = calculations.totalFixed;
+    const totalVariable = calculations.totalVariable;
+
+    // === 1. GASTOS IMPULSIVOS ===
+    const amountMatch = q.match(/£?(\d+(?:\.\d+)?)/);
+    const amount = amountMatch ? parseFloat(amountMatch[1]) : null;
+
+    if (amount && (q.includes("spend") || q.includes("buy") || q.includes("gastar") || q.includes("puedo"))) {
+      if (netCashFlow >= amount) {
+        return `Yes, you can afford **£${amount}**. You have **${formatCurrency(netCashFlow)}** positive cash flow.`;
+      } else {
+        const deficit = amount - netCashFlow;
+        return `No, **don't spend £${amount}**. You'd go **£${deficit.toFixed(0)} into debt**. Cut variable expenses by £${(deficit * 0.7).toFixed(0)} instead.`;
+      }
+    }
+
+    // === 2. RECOMENDACIÓN DE PAGO ===
+    if (q.includes("pay") || q.includes("pago") || q.includes("deuda") || q.includes("debt")) {
+      const highInterest = [...debtData].sort((a, b) => b.apr - a.apr)[0];
+      const extra = Math.min(200, netCashFlow * 0.3);
+      if (highInterest && extra > 0) {
+        return `Pay **${formatCurrency(extra)}** to **${highInterest.name}** (${highInterest.apr}% APR). This saves you **£${((extra * highInterest.apr) / 100 / 12).toFixed(0)}** in interest this month.`;
+      }
+      return `Focus on minimum payments. You have **${formatCurrency(netCashFlow)}** left after essentials.`;
+    }
+
+    // === 3. AHORRO POSIBLE ===
+    if (q.includes("save") || q.includes("ahorrar") || q.includes("savings")) {
+      const possible = netCashFlow - totalVariable * 0.2;
+      if (possible > 0) {
+        return `You can save **${formatCurrency(possible)}** this month. Add to your emergency fund (currently **${emergencyProgress.toFixed(0)}%** of target).`;
+      }
+      return `You're in deficit. Reduce variable expenses by **£${(totalVariable * 0.1).toFixed(0)}** to save.`;
+    }
+
+    // === 4. SALUD FINANCIERA ===
+    if (q.includes("health") || q.includes("score") || q.includes("salud")) {
+      const score = (85 - calculations.debtToIncome + savingsRate).toFixed(0);
+      return `Your Financial Health Score: **${score}/100**. ${score > 80 ? "Excellent!" : score > 60 ? "Good, keep going." : "Needs improvement. Focus on debt."}`;
+    }
+
+    // === 5. CONSEJO GENERAL ===
+    if (netCashFlow < 0) {
+      return `Warning: You're spending **£${Math.abs(netCashFlow).toFixed(0)}** more than you earn. Cut **£${(totalVariable * 0.15).toFixed(0)}** from dining out or subscriptions.`;
+    }
+
+    return "Ask me: 'Can I spend £300?', 'What should I pay?', 'How much can I save?', or 'What's my score?'";
   };
 
   const sendMessage = () => {
     if (!input.trim()) return;
-    setMessages((prev) => [
-      ...prev,
-      { role: "user", content: input },
-      { role: "assistant", content: getAdvice(input) },
-    ]);
+    const userMsg = { role: "user", content: input };
+    const aiMsg = { role: "assistant", content: getAdvice(input) };
+    setMessages((prev) => [...prev, userMsg, aiMsg]);
     setInput("");
   };
 
@@ -116,19 +169,19 @@ const CSSBarChart = ({ data, title }: { data: any[]; title: string }) => {
       </CardHeader>
       <CardContent>
         <div className="space-y-4">
-          {data.map((d, i) => (
+          {data.slice(0, 6).map((d, i) => (
             <div key={i} className="flex items-center gap-4">
               <span className="w-12 text-sm">{d.month}</span>
               <div className="flex-1 flex gap-1 h-8">
                 <div
                   className="bg-blue-500 rounded-l"
                   style={{ width: `${(d.income / max) * 100}%` }}
-                  title={`Income: £${d.income.toFixed(0)}`}
+                  title={`Income: ${formatCurrency(d.income)}`}
                 />
                 <div
                   className="bg-red-500 rounded-r"
                   style={{ width: `${(d.expenses / max) * 100}%` }}
-                  title={`Expenses: £${d.expenses.toFixed(0)}`}
+                  title={`Expenses: ${formatCurrency(d.expenses)}`}
                 />
               </div>
             </div>
@@ -167,7 +220,7 @@ const CSSPieChart = ({ data }: { data: { name: string; value: number; color: str
             })}
           </svg>
           <div className="absolute inset-0 flex items-center justify-center text-2xl font-bold">
-            £{total.toFixed(0)}
+            {formatCurrency(total)}
           </div>
         </div>
         <div className="mt-4 space-y-2">
@@ -177,7 +230,7 @@ const CSSPieChart = ({ data }: { data: { name: string; value: number; color: str
                 <div className="w-3 h-3 rounded" style={{ backgroundColor: d.color }} />
                 {d.name}
               </span>
-              <span>£{d.value.toFixed(0)}</span>
+              <span>{formatCurrency(d.value)}</span>
             </div>
           ))}
         </div>
@@ -194,7 +247,7 @@ const Index = () => {
   const [showAI, setShowAI] = useState(false);
 
   const { data: profiles = [], isLoading: profileLoading } = useFinancialProfiles();
-  const activeProfile = profiles.find((p) => p.is_active) || { type: "personal", name: "Personal" };
+  const activeProfile = profiles.find((p) => p.is_active) || { type: "personal", name: "User" };
 
   const { data: incomeData = [], isLoading: incomeLoading } = useIncomeSources();
   const { data: debtData = [], isLoading: debtsLoading } = useDebts();
@@ -310,7 +363,14 @@ const Index = () => {
     return list;
   }, [calculations]);
 
-  const { messages, input, setInput, sendMessage } = useAIFinancialAssistant(calculations, debtStrategy);
+  const { messages, input, setInput, sendMessage } = useAIFinancialAssistant(
+    calculations,
+    debtStrategy,
+    debtData,
+    activeProfile,
+    incomeData,
+    variableExpensesData,
+  );
 
   const formatCurrency = (amount: number) => `£${amount.toFixed(0)}`;
 
@@ -363,7 +423,7 @@ const Index = () => {
               <h1 className="text-5xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
                 UK Personal Finance
               </h1>
-              <p className="text-muted-foreground">Your Financial Coach</p>
+              <p className="text-muted-foreground">Hello, {activeProfile.name || "User"}!</p>
             </div>
             <div className="flex items-center gap-3">
               <LanguageToggle language={language} onLanguageChange={setLanguage} />
@@ -576,7 +636,7 @@ const Index = () => {
               </div>
               <div className="p-4 border-t flex gap-2">
                 <Input
-                  placeholder="Ask about debt, savings..."
+                  placeholder="Can I spend £300? What should I pay?"
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
                   onKeyPress={(e) => e.key === "Enter" && sendMessage()}
