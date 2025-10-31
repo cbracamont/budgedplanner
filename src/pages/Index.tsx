@@ -71,14 +71,13 @@ const Index = () => {
     savingsLoading ||
     profileLoading;
 
-  // === CÁLCULOS FINANCIEROS (SIN CAMPOS INEXISTENTES) ===
+  // === CÁLCULOS FINANCIEROS ===
   const calculations = useMemo(() => {
     const totalIncome = incomeData.reduce((sum, s) => sum + s.amount, 0);
-    const netIncome = totalIncome; // tax_rate no existe → usamos total
+    const netIncome = totalIncome;
 
     const totalDebtBalance = debtData.reduce((sum, d) => sum + d.balance, 0);
     const totalMinimumPayments = debtData.reduce((sum, d) => sum + d.minimum_payment, 0);
-    const totalInterest = 0; // interest_rate no existe → ignoramos
 
     const currentMonth = new Date().getMonth() + 1;
     const totalFixed = fixedExpensesData.reduce((sum, exp) => {
@@ -112,7 +111,6 @@ const Index = () => {
       netIncome,
       totalDebtBalance,
       totalMinimumPayments,
-      totalInterest,
       totalFixed,
       totalVariable,
       totalExpenses,
@@ -135,11 +133,6 @@ const Index = () => {
     if (calculations.netCashFlow < 0) list.push({ type: "error", message: "Negative cash flow" });
     return list;
   }, [calculations]);
-
-  // === CALENDARIO (SIN due_date) ===
-  const calendarEvents = useMemo(() => {
-    return []; // due_date no existe → eventos vacíos
-  }, []);
 
   const formatCurrency = (amount: number) => {
     return new Intl.NumberFormat(language === "es" ? "es-ES" : "en-GB", {
@@ -204,7 +197,7 @@ const Index = () => {
                 <p className="text-muted-foreground mt-2">Financial Dashboard</p>
               </div>
               <div className="flex items-center gap-3">
-                <LanguageToggle language={language} onLanguageChange={setLanguage} />
+                <LanguageToggle language={language} onLanguageChange={(lang: Language) => setLanguage(lang)} />
                 <ProfileSelector language={language} />
                 <Button variant="outline" size="icon" onClick={exportPDF}>
                   <Download className="h-4 w-4" />
