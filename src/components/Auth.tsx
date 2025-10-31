@@ -88,7 +88,7 @@ const useVariableIncome = () => {
 
   const deleteIncome = useCallback((id: string) => {
     setData((prev) => {
-      const updated = prev.filter((i) => i.id !== id);
+      const updated = prev.filter((i) => (i) => i.id !== id);
       localStorage.setItem("variable_income", JSON.stringify(updated));
       return updated;
     });
@@ -220,7 +220,7 @@ const Index = () => {
           });
         });
 
-        // === EVENTOS MANUALES MENSUALES ===
+        // EVENTOS MANUALES MENSUALES
         recurringManualEvents.forEach((event) => {
           const [_, __, dayStr] = event.date.split("-");
           const day = parseInt(dayStr);
@@ -238,7 +238,7 @@ const Index = () => {
           }
         });
 
-        // === EVENTOS ANUALES ===
+        // EVENTOS ANUALES
         annualEvents.forEach((event) => {
           const [eventYear, eventMonth, eventDay] = event.date.split("-").map(Number);
           if (eventYear === year && eventMonth - 1 === month) {
@@ -602,7 +602,7 @@ const Index = () => {
                       {dayEvents.slice(0, 2).map((e, i) => (
                         <div
                           key={i}
-                          className={`text-[9px] truncate ${e.type === "income" ? "text-green-600" : e.type === "debt" ? "text-red-600" : "text-blue-600"}`}
+                          className={`text-[9px] truncate ${e.type === "income" ? "text-green-600" : e.type === "debt" ? "text-red-600" : e.type === "fixed" ? "text-blue-600" : e.type === "variable" ? "text-purple-600" : e.type === "annual" ? "text-yellow-600 font-bold" : "text-gray-600"}`}
                         >
                           {e.name}
                         </div>
@@ -668,7 +668,9 @@ const Index = () => {
                       <div key={e.id} className="flex justify-between items-center p-3 bg-muted rounded-lg">
                         <div>
                           <p className="font-medium">{e.name}</p>
-                          <p className="text-xs text-muted-foreground">{e.type}</p>
+                          <p className="text-xs text-muted-foreground">
+                            {e.type} {e.recurring === "annually" ? "(annual)" : "(monthly)"}
+                          </p>
                         </div>
                         <div className="flex items-center gap-2">
                           <span className={e.type === "income" ? "text-green-600 font-bold" : "text-red-600 font-bold"}>
@@ -764,7 +766,7 @@ const Index = () => {
           </AlertDialog>
 
           {/* TABS */}
-          <Tabs value="overview" className="no-print">
+          <Tabs defaultValue="overview" className="no-print">
             <TabsList className="grid w-full grid-cols-4 mb-6">
               <TabsTrigger value="overview">Overview</TabsTrigger>
               <TabsTrigger value="income">Income</TabsTrigger>
