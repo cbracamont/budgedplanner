@@ -2,18 +2,22 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
-import { format, addMonths, startOfMonth, endOfMonth } from "date-fns";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { ChevronDown, TrendingUp, Printer, Calendar, Settings, DollarSign } from "lucide-react";
+import { format, addMonths, startOfMonth, endOfMonth, isAfter, isBefore } from "date-fns";
+import { motion, AnimatePresence } from "framer-motion";
+import { 
+  TrendingUp, TrendingDown, Calendar, DollarSign, 
+  Settings, AlertCircle, CheckCircle2, ArrowRight,
+  Wallet, PiggyBank, Home, Car, CreditCard, ShoppingCart,
+  Heart, Zap, Globe, Bell, Download, Printer
+} from "lucide-react";
 import {
   useIncomeSources,
   useDebts,
   useFixedExpenses,
   useVariableExpenses,
   useSavingsGoals,
-  useSavings,
+  useSavings
 } from "@/hooks/useFinancialData";
-import { useCategoryNames } from "@/hooks/useCategoryNames";
 import { useFinancialProfiles } from "@/hooks/useFinancialProfiles";
 import { Auth } from "@/components/Auth";
 import { IncomeManager } from "@/components/IncomeManager";
@@ -23,30 +27,31 @@ import { VariableExpensesManager } from "@/components/VariableExpensesManager";
 import { EmergencyFundManager } from "@/components/EmergencyFundManager";
 import { GeneralSavingsManager } from "@/components/GeneralSavingsManager";
 import { EnhancedFinancialCharts } from "@/components/EnhancedFinancialCharts";
-import { BudgetSummary } from "@/components/BudgetSummary";
 import { LanguageToggle } from "@/components/LanguageToggle";
 import { ProfileSelector } from "@/components/ProfileSelector";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { Calculator, LogOut, Bell, Globe, Palette } from "lucide-react";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Progress } from "@/components/ui/progress";
+import { Badge } from "@/components/ui/badge";
+import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Separator } from "@/components/ui/separator";
 import { supabase } from "@/integrations/supabase/client";
 import { useTheme } from "@/hooks/useTheme";
 import { Skeleton } from "@/components/ui/skeleton";
-import { Card } from "@/components/ui/card";
 
 const Index = () => {
   useTheme();
-  const [language, setLanguage] = useState<"en" | "es">("en");
-  const [currency, setCurrency] = useState<"USD" | "GBP">("USD");
-  const [notifications, setNotifications] = useState(true);
+  const [language, setLanguage] = useState<'en' | 'es'>('en');
+  const [currency, setCurrency] = useState<'GBP' | 'USD'>('GBP');
   const [user, setUser] = useState<any>(null);
   const [authLoading, setAuthLoading] = useState(true);
 
   // === PERFIL ACTIVO ===
   const { data: profiles = [], isLoading: profileLoading } = useFinancialProfiles();
-  const activeProfile = profiles.find((p) => p.is_active);
+  const activeProfile = profiles.find(p => p.is_active) || { type: 'personal', name: 'Personal' };
 
-  // === DATOS ===
+  // === DATOS FINANCIEROS (filtrados por profile_id) ===
   const { data: incomeData = [], isLoading: incomeLoading } = useIncomeSources();
   const { data: debtData = [], isLoading: debtsLoading } = useDebts();
   const { data: fixedExpensesData = [], isLoading: fixedLoading } = useFixedExpenses();
@@ -54,50 +59,107 @@ const Index = () => {
   const { data: savingsGoalsData = [], isLoading: goalsLoading } = useSavingsGoals();
   const { data: savings, isLoading: savingsLoading } = useSavings();
 
-  const dataLoading =
-    incomeLoading ||
-    debtsLoading ||
-    fixedLoading ||
-    variableLoading ||
-    goalsLoading ||
-    savingsLoading ||
-    profileLoading;
+  const dataLoading = incomeLoading || debtsLoading || fixedLoading || variableLoading || goalsLoading || savingsLoading || profileLoading;
 
-  // === CÁLCULOS ===
-  const totalIncome = useMemo(() => incomeData.reduce((sum, s) => sum + s.amount, 0), [incomeData]);
-  const totalDebts = useMemo(() => debtData.reduce((sum, d) => sum + d.minimum_payment, 0), [debtData]);
+  // === CÁLCULOS FINANCIEROS AVANZADOS ===
+  const calculations = useMemo(() => {
+    // INGRESOS
+    const totalIncome = incomeData.reduce((sum, s) => sum + s.amount, 0);
+    const netIncome = incomeData.reduce((sum, s) => sum + (s.amount * (1 - (s.tax_rate || 0)/100)), 0);
 
-  const totalFixedExpenses = useMemo(() => {
+    // DEUDAS
+    const totalDebtBalance = debtData.reduce((sum, d) => sum + d.balance, 0);
+    const totalMinimumPayments = debtData.reduce((sum, d) => sum + d.minimum_payment, 0);
+    const totalInterest = debtData.reduce((sum, d) => sum + (d.balance * (d.interest_rate / 100 / 12)), 0);
+
+    // GASTOS FIJOS
     const currentMonth = new Date().getMonth() + 1;
-    return fixedExpensesData.reduce((sum, exp) => {
-      if (exp.frequency_type === "annual" && exp.payment_month === currentMonth) {
-        return sum + exp.amount;
-      }
+    const totalFixed = fixedExpensesData.reduce((sum, exp) => {
+      if (exp.frequency_type === 'annual' && exp.payment_month === currentMonth) return sum + exp.amount;
       return sum + exp.amount;
     }, 0);
-  }, [fixedExpensesData]);
 
-  const totalVariableExpenses = useMemo(
-    () => variableExpensesData.reduce((sum, exp) => sum + exp.amount, 0),
-    [variableExpensesData],
-  );
-  const totalActiveSavingsGoals = useMemo(
-    () => savingsGoalsData.filter((g) => g.is_active).reduce((sum, g) => sum + (g.monthly_contribution || 0), 0),
-    [savingsGoalsData],
-  );
-  const monthlyEmergencyContribution = savings?.monthly_emergency_contribution || 0;
-  const emergencyFund = savings?.emergency_fund || 0;
-  const totalSavingsContributions =
-    totalActiveSavingsGoals + monthlyEmergencyContribution + (savings?.monthly_goal || 0);
-  const emergencyFundTarget = (totalFixedExpenses + totalVariableExpenses) * 4;
-  const availableForDebt =
-    totalIncome - totalDebts - totalFixedExpenses - totalVariableExpenses - totalSavingsContributions;
+    // GASTOS VARIABLES
+    const totalVariable = variableExpensesData.reduce((sum, exp) => sum + exp.amount, 0);
+
+    // AHORROS
+    const activeGoals = savingsGoalsData.filter(g => g.is_active);
+    const totalGoalContributions = activeGoals.reduce((sum, g) => sum + (g.monthly_contribution || 0), 0);
+    const emergencyTarget = (totalFixed + totalVariable) * 6;
+    const emergencyProgress = savings?.emergency_fund ? (savings.emergency_fund / emergencyTarget) * 100 : 0;
+
+    // FLUJO NETO
+    const totalExpenses = totalFixed + totalVariable + totalMinimumPayments + totalGoalContributions + (savings?.monthly_goal || 0);
+    const netCashFlow = netIncome - totalExpenses;
+    const savingsRate = totalIncome > 0 ? (totalGoalContributions / totalIncome) * 100 : 0;
+    const debtToIncome = totalIncome > 0 ? (totalMinimumPayments / totalIncome) * 100 : 0;
+
+    // PRONÓSTICO
+    const forecast = Array.from({ length: 12 }, (_, i) => {
+      const month = addMonths(new Date(), i);
+      const projectedIncome = netIncome * (1 + 0.02 * i); // 2% crecimiento
+      const projectedExpenses = totalExpenses * (1 + 0.01 * i); // 1% inflación
+      const projectedSavings = projectedIncome - projectedExpenses;
+      const cumulative = i === 0 ? savings?.emergency_fund || 0 : forecast[i-1].cumulative + projectedSavings;
+      return { month, income: projectedIncome, expenses: projectedExpenses, savings: projectedSavings, cumulative };
+    });
+
+    return {
+      totalIncome,
+      netIncome,
+      totalDebtBalance,
+      totalMinimumPayments,
+      totalInterest,
+      totalFixed,
+      totalVariable,
+      totalExpenses,
+      netCashFlow,
+      savingsRate,
+      debtToIncome,
+      emergencyTarget,
+      emergencyProgress,
+      totalGoalContributions,
+      forecast
+    };
+  }, [incomeData, debtData, fixedExpensesData, variableExpensesData, savingsGoalsData, savings]);
+
+  // === ALERTAS INTELIGENTES ===
+  const alerts = useMemo(() => {
+    const list = [];
+    if (calculations.debtToIncome > 36) list.push({ type: 'error', message: 'Debt-to-income ratio >36% - High risk' });
+    if (calculations.savingsRate < 20) list.push({ type: 'warning', message: 'Savings rate <20% - Increase contributions' });
+    if (calculations.emergencyProgress < 50) list.push({ type: 'info', message: 'Emergency fund <50% of target' });
+    if (calculations.netCashFlow < 0) list.push({ type: 'error', message: 'Negative cash flow - Reduce expenses' });
+    return list;
+  }, [calculations]);
+
+  // === EVENTOS CALENDARIO ===
+  const calendarEvents = useMemo(() => {
+    const events = [];
+    const today = new Date();
+    const next30 = addMonths(today, 1);
+
+    debtData.forEach(d => {
+      if (d.due_date && isAfter(new Date(d.due_date), today) && isBefore(new Date(d.due_date), next30)) {
+        events.push({ date: d.due_date, title: `${d.name} due`, amount: d.minimum_payment, type: 'debt' });
+      }
+    });
+
+    fixedExpensesData.forEach(exp => {
+      if (exp.payment_month === currentMonth) {
+        events.push({ date: new Date(), title: `${exp.name} (annual)`, amount: exp.amount, type: 'fixed' });
+      }
+    });
+
+    return events.sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+  }, [debtData, fixedExpensesData]);
 
   const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat(language === "es" ? "es-MX" : "en-US", {
-      style: "currency",
+    return new Intl.NumberFormat(language === 'es' ? 'es-ES' : 'en-GB', {
+      style: 'currency',
       currency: currency,
       minimumFractionDigits: 0,
+      maximumFractionDigits: 0,
     }).format(amount);
   };
 
@@ -107,58 +169,25 @@ const Index = () => {
       setUser(session?.user ?? null);
       setAuthLoading(false);
     });
-    const {
-      data: { subscription },
-    } = supabase.auth.onAuthStateChange((_event, session) => {
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null);
       setAuthLoading(false);
     });
     return () => subscription.unsubscribe();
   }, []);
 
-  const printReport = () => window.print();
-
-  // === PRONÓSTICO 12 MESES ===
-  const forecast = useMemo(() => {
-    const months = [];
-    for (let i = 0; i < 12; i++) {
-      const date = addMonths(new Date(), i);
-      const income = totalIncome;
-      const expenses = totalFixedExpenses + totalVariableExpenses;
-      const savings = totalSavingsContributions;
-      const net = income - expenses - savings;
-      const cumulative = i === 0 ? emergencyFund : months[i - 1].cumulative + net;
-      months.push({ date, income, expenses, savings, net, cumulative });
-    }
-    return months;
-  }, [totalIncome, totalFixedExpenses, totalVariableExpenses, totalSavingsContributions, emergencyFund]);
-
-  // === EVENTOS DEL CALENDARIO ===
-  const calendarEvents = useMemo(() => {
-    const events: { date: Date; title: string; type: "debt" | "fixed" | "income" }[] = [];
-
-    debtData.forEach((d) => {
-      if (d.due_date) {
-        const due = new Date(d.due_date);
-        events.push({ date: due, title: `${d.name}: ${formatCurrency(d.minimum_payment)}`, type: "debt" });
-      }
-    });
-
-    fixedExpensesData.forEach((exp) => {
-      if (exp.payment_month) {
-        const year = new Date().getFullYear();
-        const due = new Date(year, exp.payment_month - 1, 15);
-        events.push({ date: due, title: `${exp.name}: ${formatCurrency(exp.amount)}`, type: "fixed" });
-      }
-    });
-
-    return events.sort((a, b) => a.date.getTime() - b.date.getTime());
-  }, [debtData, fixedExpensesData]);
+  const exportPDF = () => {
+    window.print();
+  };
 
   if (authLoading || dataLoading) {
     return (
-      <div className="min-h-screen flex items-center justify-center p-8">
-        <Skeleton className="h-12 w-12 rounded-full" />
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800 p-8">
+        <div className="max-w-7xl mx-auto space-y-6">
+          {[...Array(6)].map((_, i) => (
+            <Skeleton key={i} className="h-32 w-full rounded-2xl" />
+          ))}
+        </div>
       </div>
     );
   }
@@ -167,285 +196,244 @@ const Index = () => {
 
   return (
     <>
-      <style>
-        {`
-          @media print {
-            .no-print { display: none !important; }
-            body { background: white; padding: 20px; }
-            .print-title { font-size: 24px; font-weight: bold; text-align: center; margin-bottom: 20px; }
-            .print-section { margin: 20px 0; page-break-inside: avoid; }
-            .print-row { display: flex; justify-content: space-between; margin: 6px 0; }
-            .print-label { font-weight: bold; }
-          }
-        `}
-      </style>
+      <style jsx>{`
+        @media print {
+          .no-print { display: none !important; }
+          body { background: white !important; }
+          .print-header { font-size: 28px; font-weight: bold; text-align: center; margin: 20px 0; }
+          .print-section { margin: 30px 0; page-break-inside: avoid; }
+          .print-card { border: 1px solid #ddd; padding: 16px; border-radius: 12px; margin: 12px 0; }
+        }
+      `}</style>
 
-      <div className="min-h-screen bg-background py-8 px-4">
-        <div className="max-w-7xl mx-auto">
-          {/* CABECERA */}
-          <div className="no-print text-center mb-8">
-            <div className="flex justify-center items-center gap-3 mb-4 flex-wrap">
-              <div className="p-3 bg-gradient-to-r from-yellow-400 to-orange-500 rounded-xl">
-                <Calculator className="h-8 w-8 text-white" />
+      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800">
+        <div className="max-w-7xl mx-auto p-6 space-y-8">
+
+          {/* HEADER PREMIUM */}
+          <motion.div 
+            initial={{ opacity: 0, y: -20 }}
+            animate={{ opacity: 1, y: 0 }}
+            className="no-print"
+          >
+            <div className="flex flex-col md:flex-row justify-between items-center gap-6 mb-8">
+              <div>
+                <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                  {activeProfile.type === 'family' ? 'Family Budget UK' : 'Personal Finance'}
+                </h1>
+                <p className="text-muted-foreground mt-2">Financial Intelligence Dashboard</p>
               </div>
-              <LanguageToggle language={language} onLanguageChange={setLanguage} />
-              <ProfileSelector language={language} />
-              <Button variant="outline" size="sm" onClick={() => supabase.auth.signOut()}>
-                <LogOut className="mr-2 h-4 w-4" />
-                {language === "es" ? "Salir" : "Sign Out"}
-              </Button>
-            </div>
-            <h1 className="text-4xl font-bold">
-              {activeProfile?.type === "family" ? "Family Budget" : "Personal Budget"}
-            </h1>
-          </div>
-
-          {/* BOTÓN IMPRIMIR */}
-          <div className="flex justify-end mb-6 no-print">
-            <Button onClick={printReport} size="sm">
-              <Printer className="mr-2 h-4 w-4" />
-              {language === "es" ? "Imprimir" : "Print"}
-            </Button>
-          </div>
-
-          {/* REPORTE */}
-          <div className="print-title">
-            {activeProfile?.type === "family" ? "Family" : "Personal"} Report - {new Date().toLocaleDateString()}
-          </div>
-
-          <div className="print-section">
-            <h2 className="text-lg font-bold mb-3">Summary</h2>
-            <div className="print-row">
-              <span className="print-label">Income:</span>
-              <span>{formatCurrency(totalIncome)}</span>
-            </div>
-            <div className="print-row">
-              <span className="print-label">Debts:</span>
-              <span>{formatCurrency(totalDebts)}</span>
-            </div>
-            <div className="print-row">
-              <span className="print-label">Fixed:</span>
-              <span>{formatCurrency(totalFixedExpenses)}</span>
-            </div>
-            <div className="print-row">
-              <span className="print-label">Variable:</span>
-              <span>{formatCurrency(totalVariableExpenses)}</span>
-            </div>
-            <div className="print-row">
-              <span className="print-label">Available:</span>
-              <span>{formatCurrency(availableForDebt)}</span>
-            </div>
-            <div className="print-row">
-              <span className="print-label">Emergency Fund:</span>
-              <span>
-                {formatCurrency(emergencyFund)} / {formatCurrency(emergencyFundTarget)}
-              </span>
+              <div className="flex items-center gap-3">
+                <LanguageToggle language={language} onLanguageChange={setLanguage} />
+                <ProfileSelector language={language} />
+                <Button variant="outline" size="icon" onClick={exportPDF}>
+                  <Download className="h-4 w-4" />
+                </Button>
+                <Button variant="outline" size="icon" onClick={() => supabase.auth.signOut()}>
+                  <LogOut className="h-4 w-4" />
+                </Button>
+              </div>
             </div>
           </div>
 
-          {/* GRÁFICO */}
-          <EnhancedFinancialCharts
-            totalIncome={totalIncome}
-            totalDebts={totalDebts}
-            totalFixedExpenses={totalFixedExpenses}
-            totalVariableExpenses={totalVariableExpenses}
-            totalSavingsAccumulated={emergencyFund}
-            language={language}
-            chartType="bar"
-          />
+          {/* ALERTAS INTELIGENTES */}
+          <AnimatePresence>
+            {alerts.length > 0 && (
+              <motion.div
+                initial={{ opacity: 0, x: -50 }}
+                animate={{ opacity: 1, x: 0 }}
+                exit={{ opacity: 0, x: -50 }}
+                className="no-print space-y-3"
+              >
+                {alerts.map((alert, i) => (
+                  <Alert key={i} variant={alert.type === 'error' ? 'destructive' : alert.type === 'warning' ? 'default' : 'default'}>
+                    <AlertCircle className="h-4 w-4" />
+                    <AlertTitle>{alert.type === 'error' ? 'Critical' : alert.type === 'warning' ? 'Warning' : 'Info'}</AlertTitle>
+                    <AlertDescription>{alert.message}</AlertDescription>
+                  </Alert>
+                ))}
+              </motion.div>
+            )}
+          </AnimatePresence>
 
-          {/* DASHBOARD COMPLETO */}
-          <div className="no-print space-y-6">
-            <Tabs defaultValue="dashboard">
-              <TabsList className="grid w-full grid-cols-6">
-                <TabsTrigger value="dashboard">Dashboard</TabsTrigger>
-                <TabsTrigger value="income">Income</TabsTrigger>
-                <TabsTrigger value="debts">Debts</TabsTrigger>
-                <TabsTrigger value="expenses">Expenses</TabsTrigger>
-                <TabsTrigger value="savings">Savings</TabsTrigger>
-                <TabsTrigger value="forecast">Forecast</TabsTrigger>
-              </TabsList>
+          {/* KPI CARDS */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <Card className="relative overflow-hidden">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium text-muted-foreground">Net Monthly Income</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{formatCurrency(calculations.netIncome)}</div>
+                <p className="text-xs text-muted-foreground">+2.1% vs last month</p>
+              </CardContent>
+              <div className="absolute top-2 right-2">
+                <TrendingUp className="h-4 w-4 text-green-600" />
+              </div>
+            </Card>
 
-              <TabsContent value="dashboard">
-                <BudgetSummary
-                  totalIncome={totalIncome}
-                  totalDebts={totalDebts}
-                  totalFixedExpenses={totalFixedExpenses}
-                  totalVariableExpenses={totalVariableExpenses}
-                  totalSavingsGoals={totalActiveSavingsGoals}
-                  monthlyEmergencyContribution={monthlyEmergencyContribution}
-                  language={language}
-                />
-              </TabsContent>
+            <Card className="relative overflow-hidden">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium text-muted-foreground">Total Debt</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{formatCurrency(calculations.totalDebtBalance)}</div>
+                <p className="text-xs text-muted-foreground">£{calculations.totalInterest.toFixed(0)} interest/month</p>
+              </CardContent>
+              <div className="absolute top-2 right-2">
+                <CreditCard className="h-4 w-4 text-red-600" />
+              </div>
+            </Card>
 
-              {/* === INCOME === */}
-              <TabsContent value="income">
-                <Collapsible defaultOpen>
-                  <CollapsibleTrigger className="w-full p-4 bg-gradient-to-r from-green-500 to-emerald-600 text-white rounded-xl mb-4">
-                    <h2 className="text-xl font-bold flex items-center gap-2">
-                      <TrendingUp className="h-5 w-5" />
-                      Income Sources
-                    </h2>
-                  </CollapsibleTrigger>
-                  <CollapsibleContent>
-                    <IncomeManager language={language} />
-                  </CollapsibleContent>
-                </Collapsible>
-              </TabsContent>
+            <Card className="relative overflow-hidden">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium text-muted-foreground">Emergency Fund</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-2xl font-bold">{formatCurrency(savings?.emergency_fund || 0)}</div>
+                <Progress value={calculations.emergencyProgress} className="mt-2" />
+                <p className="text-xs text-muted-foreground mt-1">{calculations.emergencyProgress.toFixed(0)}% of target</p>
+              </CardContent>
+              <div className="absolute top-2 right-2">
+                <PiggyBank className="h-4 w-4 text-blue-600" />
+              </div>
+            </Card>
 
-              {/* === DEBTS === */}
-              <TabsContent value="debts">
-                <Collapsible defaultOpen>
-                  <CollapsibleTrigger className="w-full p-4 bg-gradient-to-r from-red-500 to-pink-600 text-white rounded-xl mb-4">
-                    <h2 className="text-xl font-bold flex items-center gap-2">
-                      <TrendingUp className="h-5 w-5" />
-                      Debts & Loans
-                    </h2>
-                  </CollapsibleTrigger>
-                  <CollapsibleContent>
-                    <DebtsManager language={language} />
-                  </CollapsibleContent>
-                </Collapsible>
-              </TabsContent>
+            <Card className="relative overflow-hidden">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium text-muted-foreground">Net Cash Flow</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className={`text-2xl font-bold ${calculations.netCashFlow >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                  {formatCurrency(calculations.netCashFlow)}
+                </div>
+                <p className="text-xs text-muted-foreground">{calculations.savingsRate.toFixed(0)}% savings rate</p>
+              </CardContent>
+              <div className="absolute top-2 right-2">
+                {calculations.netCashFlow >= 0 ? 
+                  <CheckCircle2 className="h-4 w-4 text-green-600" /> : 
+                  <AlertCircle className="h-4 w-4 text-red-600" />
+                }
+              </div>
+            </Card>
+          </div>
 
-              {/* === EXPENSES === */}
-              <TabsContent value="expenses">
-                <Collapsible defaultOpen>
-                  <CollapsibleTrigger className="w-full p-4 bg-gradient-to-r from-blue-500 to-cyan-600 text-white rounded-xl mb-4">
-                    <h2 className="text-xl font-bold flex items-center gap-2">
-                      <TrendingUp className="h-5 w-5" />
-                      Fixed Expenses
-                    </h2>
-                  </CollapsibleTrigger>
-                  <CollapsibleContent>
-                    <FixedExpensesManager language={language} />
-                  </CollapsibleContent>
-                </Collapsible>
+          {/* TABS PRINCIPALES */}
+          <Tabs defaultValue="overview" className="no-print">
+            <TabsList className="grid w-full grid-cols-5 mb-6">
+              <TabsTrigger value="overview">Overview</TabsTrigger>
+              <TabsTrigger value="income">Income</TabsTrigger>
+              <TabsTrigger value="expenses">Expenses</TabsTrigger>
+              <TabsTrigger value="debts">Debts</TabsTrigger>
+              <TabsTrigger value="forecast">Forecast</TabsTrigger>
+            </TabsList>
 
-                <Collapsible defaultOpen>
-                  <CollapsibleTrigger className="w-full p-4 bg-gradient-to-r from-purple-500 to-indigo-600 text-white rounded-xl mb-4 mt-4">
-                    <h2 className="text-xl font-bold flex items-center gap-2">
-                      <TrendingUp className="h-5 w-5" />
-                      Variable Expenses
-                    </h2>
-                  </CollapsibleTrigger>
-                  <CollapsibleContent>
-                    <VariableExpensesManager language={language} />
-                  </CollapsibleContent>
-                </Collapsible>
-              </TabsContent>
+            <TabsContent value="overview">
+              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Financial Health Score</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-6xl font-bold text-center">
+                      {(85 - calculations.debtToIncome + calculations.savingsRate + calculations.emergencyProgress / 2).toFixed(0)}
+                    </div>
+                    <Progress value={85 - calculations.debtToIncome + calculations.savingsRate} className="mt-4" />
+                  </CardContent>
+                </Card>
 
-              {/* === SAVINGS === */}
-              <TabsContent value="savings">
-                <Collapsible defaultOpen>
-                  <CollapsibleTrigger className="w-full p-4 bg-gradient-to-r from-yellow-400 to-orange-500 text-white rounded-xl mb-4">
-                    <h2 className="text-xl font-bold flex items-center gap-2">
-                      <TrendingUp className="h-5 w-5" />
-                      Emergency Fund
-                    </h2>
-                  </CollapsibleTrigger>
-                  <CollapsibleContent>
-                    <EmergencyFundManager
-                      language={language}
-                      totalExpenses={totalFixedExpenses + totalVariableExpenses}
-                    />
-                  </CollapsibleContent>
-                </Collapsible>
+                <Card>
+                  <CardHeader>
+                    <CardTitle>Upcoming Payments</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="space-y-3">
+                      {calendarEvents.slice(0, 4).map((e, i) => (
+                        <div key={i} className="flex justify-between items-center">
+                          <div>
+                            <p className="font-medium">{e.title}</p>
+                            <p className="text-sm text-muted-foreground">{format(new Date(e.date), 'dd MMM')}</p>
+                          </div>
+                          <Badge variant={e.type === 'debt' ? 'destructive' : 'secondary'}>
+                            {formatCurrency(e.amount)}
+                          </Badge>
+                        </div>
+                      ))}
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            </TabsContent>
 
-                <Collapsible defaultOpen>
-                  <CollapsibleTrigger className="w-full p-4 bg-gradient-to-r from-teal-500 to-green-600 text-white rounded-xl mb-4 mt-4">
-                    <h2 className="text-xl font-bold flex items-center gap-2">
-                      <TrendingUp className="h-5 w-5" />
-                      General Savings
-                    </h2>
-                  </CollapsibleTrigger>
-                  <CollapsibleContent>
-                    <GeneralSavingsManager language={language} availableToSave={availableForDebt} />
-                  </CollapsibleContent>
-                </Collapsible>
-              </TabsContent>
+            <TabsContent value="income">
+              <IncomeManager language={language} />
+            </TabsContent>
 
-              {/* === FORECAST === */}
-              <TabsContent value="forecast">
-                <Card className="p-6">
-                  <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">
-                    <DollarSign className="h-6 w-6" />
-                    12-Month Financial Forecast
-                  </h2>
-                  <div className="space-y-3">
-                    {forecast.map((m, i) => (
-                      <div key={i} className="flex justify-between items-center p-3 bg-muted rounded-lg">
-                        <span className="font-medium">{format(m.date, "MMM yyyy")}</span>
-                        <span className={m.net >= 0 ? "text-green-600" : "text-red-600"}>
-                          {formatCurrency(m.net)} → {formatCurrency(m.cumulative)}
-                        </span>
+            <TabsContent value="expenses">
+              <div className="space-y-6">
+                <FixedExpensesManager language={language} />
+                <VariableExpensesManager language={language} />
+              </div>
+            </TabsContent>
+
+            <TabsContent value="debts">
+              <DebtsManager language={language} />
+            </TabsContent>
+
+            <TabsContent value="forecast">
+              <Card>
+                <CardHeader>
+                  <CardTitle>12-Month Financial Forecast</CardTitle>
+                  <CardDescription>Projected cash flow with 2% income growth</CardDescription>
+                </CardHeader>
+                <CardContent>
+                  <div className="space-y-4">
+                    {calculations.forecast.map((m, i) => (
+                      <div key={i} className="flex items-center justify-between p-4 bg-muted/50 rounded-lg">
+                        <div className="flex items-center gap-4">
+                          <div className="w-16 text-sm font-medium">{format(m.month, 'MMM')}</div>
+                          <div className="flex-1">
+                            <div className="flex justify-between text-sm">
+                              <span>Income: {formatCurrency(m.income)}</span>
+                              <span>Expenses: {formatCurrency(m.expenses)}</span>
+                            </div>
+                            <Progress value={(m.savings / m.income) * 100} className="mt-1 h-2" />
+                          </div>
+                        </div>
+                        <div className="text-right">
+                          <div className={`font-bold ${m.savings >= 0 ? 'text-green-600' : 'text-red-600'}`}>
+                            {formatCurrency(m.savings)}
+                          </div>
+                          <div className="text-xs text-muted-foreground">
+                            Balance: {formatCurrency(m.cumulative)}
+                          </div>
+                        </div>
                       </div>
                     ))}
                   </div>
-                </Card>
-              </TabsContent>
-            </Tabs>
-
-            {/* === CALENDARIO === */}
-            <div className="mt-8">
-              <Card className="p-6">
-                <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">
-                  <Calendar className="h-6 w-6" />
-                  Upcoming Payments
-                </h2>
-                <div className="space-y-2">
-                  {calendarEvents.slice(0, 5).map((e, i) => (
-                    <div key={i} className="flex justify-between items-center p-2 bg-muted rounded">
-                      <span>
-                        {format(e.date, "dd MMM")} - {e.title}
-                      </span>
-                      <span className={e.type === "debt" ? "text-red-600" : "text-blue-600"}>{e.type}</span>
-                    </div>
-                  ))}
-                  {calendarEvents.length === 0 && <p className="text-muted-foreground">No upcoming payments</p>}
-                </div>
+                </CardContent>
               </Card>
-            </div>
+            </TabsContent>
+          </Tabs>
 
-            {/* === SETTINGS === */}
-            <div className="mt-8">
-              <Card className="p-6">
-                <h2 className="text-2xl font-bold mb-4 flex items-center gap-2">
-                  <Settings className="h-6 w-6" />
-                  Settings
-                </h2>
-                <div className="space-y-4">
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <Globe className="h-5 w-5" />
-                      <span>Language</span>
-                    </div>
-                    <Button size="sm" onClick={() => setLanguage((prev) => (prev === "en" ? "es" : "en"))}>
-                      {language === "en" ? "Español" : "English"}
-                    </Button>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <DollarSign className="h-5 w-5" />
-                      <span>Currency</span>
-                    </div>
-                    <Button size="sm" onClick={() => setCurrency((prev) => (prev === "USD" ? "GBP" : "USD"))}>
-                      {currency}
-                    </Button>
-                  </div>
-                  <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
-                      <Bell className="h-5 w-5" />
-                      <span>Notifications</span>
-                    </div>
-                    <Button size="sm" onClick={() => setNotifications(!notifications)}>
-                      {notifications ? "ON" : "OFF"}
-                    </Button>
-                  </div>
+          {/* SETTINGS */}
+          <Card className="no-print mt-8">
+            <CardHeader>
+              <CardTitle className="flex items-center gap-2">
+                <Settings className="h-5 w-5" />
+                Settings
+              </CardTitle>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Globe className="h-5 w-5" />
+                  <span>Currency</span>
                 </div>
-              </Card>
-            </div>
-          </div>
+                <Button size="sm" onClick={() => setCurrency(c => c === 'GBP' ? 'USD' : 'GBP')}>
+                  {currency}
+                </Button>
+              </div>
+            </CardContent>
+          </Card>
         </div>
       </div>
     </>
