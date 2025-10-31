@@ -17,6 +17,8 @@ import {
   Edit2,
   Trash2,
   Plus,
+  PiggyBank,
+  Home,
 } from "lucide-react";
 import {
   useIncomeSources,
@@ -43,16 +45,6 @@ import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
 import { useTheme } from "@/hooks/useTheme";
 import { Skeleton } from "@/components/ui/skeleton";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
 
 type Language = "en" | "es";
 type Event = {
@@ -64,7 +56,7 @@ type Event = {
   recurring?: boolean;
 };
 
-// === INGRESOS VARIABLES EN LOCALSTORAGE ===
+// === INGRESOS VARIABLES ===
 const useVariableIncome = () => {
   const [data, setData] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
@@ -102,14 +94,9 @@ const Index = () => {
   const [user, setUser] = useState<any>(null);
   const [authLoading, setAuthLoading] = useState(true);
   const [showAI, setShowAI] = useState(false);
-  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
-  const [events, setEvents] = useState<Event[]>([]);
-  const [showEventDialog, setShowEventDialog] = useState(false);
-  const [editingEvent, setEditingEvent] = useState<Event | null>(null);
-  const [deleteId, setDeleteId] = useState<string | null>(null);
 
   const { data: profiles = [] } = useFinancialProfiles();
-  const activeProfile = profiles.find((p) => p.is_active) || { name: "User" };
+  const activeProfile = profiles.find((p) => p.is_active) || { name: "Family" };
 
   const { data: incomeData = [] } = useIncomeSources();
   const { data: debtData = [] } = useDebts();
@@ -117,84 +104,54 @@ const Index = () => {
   const { data: variableExpensesData = [] } = useVariableExpenses();
   const { data: savingsGoalsData = [] } = useSavingsGoals();
   const { data: savings } = useSavings();
-
-  // === AHORA FUNCIONA ===
   const { data: variableIncome = [], addIncome, deleteIncome } = useVariableIncome();
 
-  const dataLoading = false;
+  // === CÁLCULOS FINANCIEROS ===
+  const {
+    totalIncome,
+    totalFixed,
+    totalVariable,
+    totalDebtPayment,
+    totalExpenses,
+    cashFlow,
+    savingsTotal,
+    debtFreeDate,
+    monthsToDebtFree,
+  } = useMemo(() => {
+    const totalIncome = incomeData.reduce((s, i) => s + i.amount, 0) + variableIncome.reduce((s, i) => s + i.amount, 0);
+    const totalFixed = fixedExpensesData.reduce((s, e) => s + e.amount, 0);
+    const totalVariable = variableExpensesData.reduce((s, e) => s + e.amount, 0);
+    const totalDebtPayment = debtData.reduce((s, d) => s + d.minimum_payment, 0);
+    const totalExpenses = totalFixed + totalVariable + totalDebtPayment;
+    const cashFlow = totalIncome - totalExpenses;
 
-  // === DEUDA: FECHA LIBRE ===
-  const { debtFreeDate, monthsLeft, totalDebt, monthlyPayment } = useMemo(() => {
-    const total = debtData.reduce((s, d) => s + d.balance, 0);
-    const minPay = debtData.reduce((s, d) => s + d.minimum_payment, 0);
-    const extra = 200;
-    const monthly = minPay + extra;
+    const savingsTotal =
+      (savings?.emergency_fund || 0) + savingsGoalsData.reduce((s, g) => s + (g.current_amount || 0), 0);
 
-    let remaining = total;
+    // Simular deuda
+    let remaining = debtData.reduce((s, d) => s + d.balance, 0);
     let months = 0;
+    const extra = Math.max(0, cashFlow * 0.3); // 30% del sobrante a deuda
+    const monthlyPay = totalDebtPayment + extra;
     while (remaining > 0 && months < 120) {
       const interest = debtData.reduce((s, d) => s + d.balance * (d.apr / 100 / 12), 0);
-      remaining = Math.max(0, remaining + interest - monthly);
+      remaining = Math.max(0, remaining + interest - monthlyPay);
       months++;
     }
+    const debtFreeDate = addMonths(new Date(), months);
+
     return {
-      debtFreeDate: addMonths(new Date(), months),
-      monthsLeft: months,
-      totalDebt: total,
-      monthlyPayment: monthly,
+      totalIncome,
+      totalFixed,
+      totalVariable,
+      totalDebtPayment,
+      totalExpenses,
+      cashFlow,
+      savingsTotal,
+      debtFreeDate,
+      monthsToDebtFree: months,
     };
-  }, [debtData]);
-
-  // === CALENDARIO EVENTOS ===
-  const calendarEvents = useMemo(() => {
-    const all: Event[] = [];
-
-    incomeData.forEach((inc) => {
-      all.push({
-        id: `inc-${inc.id}`,
-        date: format(new Date(), "yyyy-MM-01"),
-        type: "income",
-        name: inc.name,
-        amount: inc.amount,
-        recurring: true,
-      });
-    });
-
-    fixedExpensesData.forEach((exp) => {
-      const day = exp.payment_day || 1;
-      all.push({
-        id: `fix-${exp.id}`,
-        date: format(new Date(new Date().getFullYear(), new Date().getMonth(), day), "yyyy-MM-dd"),
-        type: "fixed",
-        name: exp.name,
-        amount: exp.amount,
-        recurring: true,
-      });
-    });
-
-    debtData.forEach((debt) => {
-      all.push({
-        id: `debt-${debt.id}`,
-        date: format(new Date(), "yyyy-MM-15"),
-        type: "debt",
-        name: `${debt.name} (min)`,
-        amount: debt.minimum_payment,
-        recurring: true,
-      });
-    });
-
-    all.push(...events);
-    return all;
-  }, [incomeData, fixedExpensesData, debtData, events]);
-
-  const currentMonth = new Date();
-  const monthStart = startOfMonth(currentMonth);
-  const monthEnd = endOfMonth(currentMonth);
-  const monthDays = eachDayOfInterval({ start: monthStart, end: monthEnd });
-  const firstDay = monthStart.getDay();
-  const blankDays = Array(firstDay).fill(null);
-
-  const getEventsForDay = (date: Date) => calendarEvents.filter((e) => isSameDay(new Date(e.date), date));
+  }, [incomeData, variableIncome, fixedExpensesData, variableExpensesData, debtData, savings, savingsGoalsData]);
 
   const formatCurrency = (amount: number) => `£${amount.toFixed(0)}`;
 
@@ -213,23 +170,25 @@ const Index = () => {
     );
   if (!user) return <Auth />;
 
+  // === GRÁFICA DE GASTOS ===
   const pieData = [
-    { name: "Fixed", value: fixedExpensesData.reduce((s, e) => s + e.amount, 0), color: "#3b82f6" },
-    { name: "Variable", value: variableExpensesData.reduce((s, e) => s + e.amount, 0), color: "#10b981" },
-    { name: "Debt", value: debtData.reduce((s, d) => s + d.minimum_payment, 0), color: "#ef4444" },
+    { name: "Fixed", value: totalFixed, color: "#3b82f6" },
+    { name: "Variable", value: totalVariable, color: "#10b981" },
+    { name: "Debt", value: totalDebtPayment, color: "#ef4444" },
   ].filter((d) => d.value > 0);
 
   return (
     <>
       <style>{`@media print { .no-print { display: none !important; } }`}</style>
 
-      <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800">
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-slate-900 dark:to-slate-800">
         <div className="max-w-7xl mx-auto p-6 space-y-8">
           {/* HEADER */}
           <div className="no-print flex justify-between items-center mb-8">
             <div>
-              <h1 className="text-5xl font-bold bg-gradient-to-r from-red-600 to-orange-600 bg-clip-text text-transparent">
-                Debt Free UK
+              <h1 className="text-5xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent flex items-center gap-3">
+                <Home className="h-12 w-12" />
+                Family Budget Planner UK
               </h1>
               <p className="text-muted-foreground">Hi, {activeProfile.name}!</p>
             </div>
@@ -239,47 +198,93 @@ const Index = () => {
               <Button variant="outline" size="icon" onClick={() => window.print()}>
                 <Download className="h-4 w-4" />
               </Button>
-              <Button variant="outline" size="icon" onClick={() => setShowAI(true)}>
-                <Bot className="h-4 w-4" />
-              </Button>
               <Button variant="outline" size="icon" onClick={() => supabase.auth.signOut()}>
                 <LogOut className="h-4 w-4" />
               </Button>
             </div>
           </div>
 
-          {/* DEBT FREE COUNTDOWN */}
-          <Card className="border-2 border-red-200 dark:border-red-900">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2 text-red-600">
-                <TrendingUp className="h-6 w-6" />
-                Debt Free Countdown
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="text-center">
-                <p className="text-4xl font-bold">{format(debtFreeDate, "d MMM yyyy")}</p>
-                <p className="text-lg text-muted-foreground">{monthsLeft} months left</p>
-              </div>
-              <Progress value={(1 - debtData.reduce((s, d) => s + d.balance, 0) / totalDebt) * 100} className="h-4" />
-              <div className="grid grid-cols-2 gap-4">
-                <div>
-                  <p className="font-medium">Total Debt</p>
-                  <p className="text-2xl">{formatCurrency(totalDebt)}</p>
-                </div>
-                <div>
-                  <p className="font-medium">Monthly Payment</p>
-                  <p className="text-2xl text-green-600">{formatCurrency(monthlyPayment)}</p>
-                </div>
-              </div>
-            </CardContent>
-          </Card>
+          {/* RESUMEN FINANCIERO */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <Card className="border-green-200 dark:border-green-900">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium text-green-600">Total Income</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-3xl font-bold text-green-600">{formatCurrency(totalIncome)}</div>
+                <p className="text-xs text-muted-foreground">Monthly</p>
+              </CardContent>
+            </Card>
 
-          {/* GRÁFICA PASTEL */}
+            <Card className="border-red-200 dark:border-red-900">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium text-red-600">Total Expenses</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-3xl font-bold text-red-600">{formatCurrency(totalExpenses)}</div>
+                <p className="text-xs text-muted-foreground">Fixed + Variable + Debt</p>
+              </CardContent>
+            </Card>
+
+            <Card
+              className={`${cashFlow >= 0 ? "border-emerald-200 dark:border-emerald-900" : "border-orange-200 dark:border-orange-900"}`}
+            >
+              <CardHeader className="pb-2">
+                <CardTitle className={`text-sm font-medium ${cashFlow >= 0 ? "text-emerald-600" : "text-orange-600"}`}>
+                  Cash Flow
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className={`text-3xl font-bold ${cashFlow >= 0 ? "text-emerald-600" : "text-orange-600"}`}>
+                  {formatCurrency(cashFlow)}
+                </div>
+                <p className="text-xs text-muted-foreground">Income - Expenses</p>
+              </CardContent>
+            </Card>
+
+            <Card className="border-purple-200 dark:border-purple-900">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium text-purple-600 flex items-center gap-1">
+                  <PiggyBank className="h-4 w-4" /> Total Savings
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-3xl font-bold text-purple-600">{formatCurrency(savingsTotal)}</div>
+                <p className="text-xs text-muted-foreground">Emergency + Goals</p>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* DEBT FREE DATE */}
+          {debtData.length > 0 && (
+            <Card className="border-2 border-orange-200 dark:border-orange-900">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-orange-600">
+                  <TrendingUp className="h-6 w-6" />
+                  Debt Free Date
+                </CardTitle>
+              </CardHeader>
+              <CardContent className="space-y-3">
+                <div className="text-center">
+                  <p className="text-4xl font-bold">{format(debtFreeDate, "d MMM yyyy")}</p>
+                  <p className="text-lg text-muted-foreground">{monthsToDebtFree} months away</p>
+                </div>
+                <Progress
+                  value={
+                    (1 - debtData.reduce((s, d) => s + d.balance, 0) / debtData.reduce((s, d) => s + d.balance, 0)) *
+                    100
+                  }
+                  className="h-4"
+                />
+              </CardContent>
+            </Card>
+          )}
+
+          {/* GASTOS MENSUALES (PASTEL) */}
           {pieData.length > 0 && (
             <Card>
               <CardHeader>
-                <CardTitle>Monthly Expenses</CardTitle>
+                <CardTitle>Monthly Expense Breakdown</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="relative w-64 h-64 mx-auto">
@@ -306,7 +311,7 @@ const Index = () => {
                     })()}
                   </svg>
                   <div className="absolute inset-0 flex items-center justify-center text-2xl font-bold">
-                    {formatCurrency(pieData.reduce((s, d) => s + d.value, 0))}
+                    {formatCurrency(totalExpenses)}
                   </div>
                 </div>
                 <div className="mt-4 space-y-2">
@@ -327,14 +332,9 @@ const Index = () => {
           {/* CALENDARIO */}
           <Card>
             <CardHeader>
-              <CardTitle className="flex items-center justify-between">
-                <span className="flex items-center gap-2">
-                  <Calendar className="h-5 w-5" />
-                  {format(currentMonth, "MMMM yyyy")}
-                </span>
-                <Button size="sm" onClick={() => setShowEventDialog(true)}>
-                  <Plus className="h-4 w-4 mr-1" /> Add
-                </Button>
+              <CardTitle className="flex items-center gap-2">
+                <Calendar className="h-5 w-5" />
+                {format(new Date(), "MMMM yyyy")}
               </CardTitle>
             </CardHeader>
             <CardContent>
@@ -346,32 +346,24 @@ const Index = () => {
                 ))}
               </div>
               <div className="grid grid-cols-7 gap-1 mt-2">
-                {blankDays.map((_, i) => (
-                  <div key={`blank-${i}`} className="h-20 border rounded" />
-                ))}
-                {monthDays.map((day) => {
-                  const dayEvents = getEventsForDay(day);
-                  return (
-                    <div
-                      key={day.toISOString()}
-                      className={`h-20 border rounded p-1 text-xs cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 transition ${isSameDay(day, new Date()) ? "bg-blue-50 dark:bg-blue-900" : ""}`}
-                      onClick={() => setSelectedDate(day)}
-                    >
-                      <div className="font-medium">{format(day, "d")}</div>
-                      {dayEvents.slice(0, 2).map((e, i) => (
-                        <div
-                          key={i}
-                          className={`text-[10px] truncate ${e.type === "income" ? "text-green-600" : e.type === "debt" ? "text-red-600" : "text-blue-600"}`}
-                        >
-                          {e.name}
-                        </div>
-                      ))}
-                      {dayEvents.length > 2 && (
-                        <div className="text-[10px] text-muted-foreground">+{dayEvents.length - 2}</div>
-                      )}
-                    </div>
-                  );
-                })}
+                {Array(35)
+                  .fill(null)
+                  .map((_, i) => {
+                    const day = new Date();
+                    day.setDate(day.getDate() - day.getDay() + i);
+                    const isCurrentMonth = day.getMonth() === new Date().getMonth();
+                    if (!isCurrentMonth) return <div key={i} className="h-16 border rounded" />;
+                    return (
+                      <div
+                        key={i}
+                        className={`h-16 border rounded p-1 text-xs cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 transition ${isSameDay(day, new Date()) ? "bg-blue-50 dark:bg-blue-900" : ""}`}
+                      >
+                        <div className="font-medium">{format(day, "d")}</div>
+                        <div className="text-[10px] text-green-600">£{totalIncome / 30}</div>
+                        <div className="text-[10px] text-red-600">-£{totalExpenses / 30}</div>
+                      </div>
+                    );
+                  })}
               </div>
             </CardContent>
           </Card>
@@ -388,11 +380,16 @@ const Index = () => {
             <TabsContent value="overview">
               <Card>
                 <CardHeader>
-                  <CardTitle>Financial Health</CardTitle>
+                  <CardTitle>Family Budget Health</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-6xl font-bold text-center text-green-600">85</div>
-                  <Progress value={85} className="mt-4" />
+                  <div className="text-6xl font-bold text-center text-blue-600">
+                    {cashFlow > 0 ? "Great" : "Review"}
+                  </div>
+                  <Progress value={cashFlow > 0 ? 80 : 40} className="mt-4" />
+                  <p className="text-center mt-2 text-sm text-muted-foreground">
+                    {cashFlow > 0 ? `You're saving £${cashFlow} monthly` : `You're overspending by £${-cashFlow}`}
+                  </p>
                 </CardContent>
               </Card>
             </TabsContent>
@@ -420,6 +417,16 @@ const Index = () => {
 
             {/* Expenses, Debts... */}
           </Tabs>
+
+          {/* DISCLAIMER */}
+          <footer className="no-print py-8 text-center text-xs text-muted-foreground border-t mt-12">
+            <p className="font-semibold mb-2">Legal Disclaimer (UK)</p>
+            <p>
+              This app is for educational purposes only. It is not financial advice. For personalized advice, consult an
+              FCA-regulated adviser.
+            </p>
+            <p className="mt-2">© 2025 Family Budget Planner UK</p>
+          </footer>
         </div>
       </div>
     </>
