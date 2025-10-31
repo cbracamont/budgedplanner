@@ -7,7 +7,6 @@ import {
   TrendingUp,
   Settings,
   AlertCircle,
-  CheckCircle2,
   Download,
   LogOut,
   Wallet,
@@ -16,6 +15,9 @@ import {
   Globe,
   Zap,
   DollarSign,
+  MessageCircle,
+  Send,
+  Bot,
 } from "lucide-react";
 import {
   useIncomeSources,
@@ -38,22 +40,21 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
+import { Input } from "@/components/ui/input";
 import { supabase } from "@/integrations/supabase/client";
 import { useTheme } from "@/hooks/useTheme";
 import { Skeleton } from "@/components/ui/skeleton";
 
 type Language = "en" | "es";
 
-// INGRESOS VARIABLES EN LOCALSTORAGE (SIN SUPABASE)
+// === INGRESOS VARIABLES EN LOCALSTORAGE ===
 const useVariableIncome = () => {
   const [data, setData] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     const saved = localStorage.getItem("variable_income");
-    if (saved) {
-      setData(JSON.parse(saved));
-    }
+    if (saved) setData(JSON.parse(saved));
     setLoading(false);
   }, []);
 
@@ -61,7 +62,7 @@ const useVariableIncome = () => {
     const newEntry = {
       id: Date.now().toString(),
       amount,
-      description: description || "Ingreso variable",
+      description: description || "Extra income",
       date: new Date().toISOString(),
     };
     const updated = [newEntry, ...data];
@@ -72,18 +73,129 @@ const useVariableIncome = () => {
   return { data, loading, addIncome };
 };
 
+// === AI ASSISTANT ===
+const useAIFinancialAssistant = (calculations: any, debtStrategy: any) => {
+  const [messages, setMessages] = useState<any[]>([
+    { role: "assistant", content: "Hello! I'm your UK Financial Coach. Ask me anything!" },
+  ]);
+  const [input, setInput] = useState("");
+
+  const getAdvice = (q: string) => {
+    const net = calculations.netCashFlow;
+    const savingsRate = calculations.savingsRate;
+    const debtMonths = debtStrategy.totalMonths;
+
+    if (q.includes("debt")) return `Pay off in **${debtMonths} months** using **${debtStrategy.method}**.`;
+    if (q.includes("emergency")) return `Emergency fund: **${calculations.emergencyProgress.toFixed(0)}%** of target.`;
+    if (q.includes("save")) return `Savings rate: **${savingsRate.toFixed(0)}%**. Aim for 20%.`;
+    if (q.includes("cash"))
+      return net >= 0 ? `Positive cash flow: **£${net.toFixed(0)}**` : `Cut £${Math.abs(net).toFixed(0)} in expenses.`;
+    return "Ask about debt, savings, or cash flow!";
+  };
+
+  const sendMessage = () => {
+    if (!input.trim()) return;
+    setMessages((prev) => [
+      ...prev,
+      { role: "user", content: input },
+      { role: "assistant", content: getAdvice(input) },
+    ]);
+    setInput("");
+  };
+
+  return { messages, input, setInput, sendMessage };
+};
+
+// === GRÁFICA CSS: BARRAS ===
+const CSSBarChart = ({ data, title }: { data: any[]; title: string }) => {
+  const max = Math.max(...data.map((d) => Math.max(d.income, d.expenses)));
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>{title}</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="space-y-4">
+          {data.map((d, i) => (
+            <div key={i} className="flex items-center gap-4">
+              <span className="w-12 text-sm">{d.month}</span>
+              <div className="flex-1 flex gap-1 h-8">
+                <div
+                  className="bg-blue-500 rounded-l"
+                  style={{ width: `${(d.income / max) * 100}%` }}
+                  title={`Income: £${d.income.toFixed(0)}`}
+                />
+                <div
+                  className="bg-red-500 rounded-r"
+                  style={{ width: `${(d.expenses / max) * 100}%` }}
+                  title={`Expenses: £${d.expenses.toFixed(0)}`}
+                />
+              </div>
+            </div>
+          ))}
+        </div>
+      </CardContent>
+    </Card>
+  );
+};
+
+// === GRÁFICA CSS: PASTEL ===
+const CSSPieChart = ({ data }: { data: { name: string; value: number; color: string }[] }) => {
+  const total = data.reduce((sum, d) => sum + d.value, 0);
+  let cumulative = 0;
+  return (
+    <Card>
+      <CardHeader>
+        <CardTitle>Expense Breakdown</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <div className="relative w-64 h-64 mx-auto">
+          <svg viewBox="0 0 32 32" className="w-full h-full">
+            {data.map((d, i) => {
+              const percent = (d.value / total) * 100;
+              const start = (cumulative / total) * 360;
+              cumulative += d.value;
+              const end = (cumulative / total) * 360;
+              const largeArc = percent > 50 ? 1 : 0;
+              const startRad = (start * Math.PI) / 180;
+              const endRad = (end * Math.PI) / 180;
+              const x1 = 16 + 16 * Math.cos(startRad);
+              const y1 = 16 + 16 * Math.sin(startRad);
+              const x2 = 16 + 16 * Math.cos(endRad);
+              const y2 = 16 + 16 * Math.sin(endRad);
+              return <path key={i} d={`M16,16 L${x1},${y1} A16,16 0 ${largeArc},1 ${x2},${y2} Z`} fill={d.color} />;
+            })}
+          </svg>
+          <div className="absolute inset-0 flex items-center justify-center text-2xl font-bold">
+            £{total.toFixed(0)}
+          </div>
+        </div>
+        <div className="mt-4 space-y-2">
+          {data.map((d, i) => (
+            <div key={i} className="flex justify-between text-sm">
+              <span className="flex items-center gap-2">
+                <div className="w-3 h-3 rounded" style={{ backgroundColor: d.color }} />
+                {d.name}
+              </span>
+              <span>£{d.value.toFixed(0)}</span>
+            </div>
+          ))}
+        </div>
+      </CardContent>
+    </Card>
+  );
+};
+
 const Index = () => {
   useTheme();
   const [language, setLanguage] = useState<Language>("en");
-  const [currency, setCurrency] = useState<"GBP" | "USD">("GBP");
   const [user, setUser] = useState<any>(null);
   const [authLoading, setAuthLoading] = useState(true);
+  const [showAI, setShowAI] = useState(false);
 
-  // === PERFIL ACTIVO ===
   const { data: profiles = [], isLoading: profileLoading } = useFinancialProfiles();
   const activeProfile = profiles.find((p) => p.is_active) || { type: "personal", name: "Personal" };
 
-  // === DATOS FINANCIEROS ===
   const { data: incomeData = [], isLoading: incomeLoading } = useIncomeSources();
   const { data: debtData = [], isLoading: debtsLoading } = useDebts();
   const { data: fixedExpensesData = [], isLoading: fixedLoading } = useFixedExpenses();
@@ -101,7 +213,6 @@ const Index = () => {
     savingsLoading ||
     profileLoading;
 
-  // === CÁLCULOS FINANCIEROS ===
   const calculations = useMemo(() => {
     const totalIncome = incomeData.reduce((sum, s) => sum + s.amount, 0);
     const totalVariableIncome = variableIncome.reduce((sum, i) => sum + i.amount, 0);
@@ -128,21 +239,11 @@ const Index = () => {
     const savingsRate = totalIncome > 0 ? (totalGoalContributions / totalIncome) * 100 : 0;
     const debtToIncome = totalIncome > 0 ? (totalMinimumPayments / totalIncome) * 100 : 0;
 
-    const forecast = Array.from({ length: 12 }, (_, i) => {
+    const forecast = Array.from({ length: 6 }, (_, i) => {
       const month = addMonths(new Date(), i);
       const projectedIncome = netIncome * (1 + 0.02 * i);
       const projectedExpenses = totalExpenses * (1 + 0.01 * i);
-      const projectedSavings = projectedIncome - projectedExpenses;
-
-      let cumulative = savings?.emergency_fund || 0;
-      for (let j = 0; j < i; j++) {
-        const prevIncome = netIncome * (1 + 0.02 * j);
-        const prevExpenses = totalExpenses * (1 + 0.01 * j);
-        cumulative += prevIncome - prevExpenses;
-      }
-      cumulative += projectedSavings;
-
-      return { month, income: projectedIncome, expenses: projectedExpenses, savings: projectedSavings, cumulative };
+      return { month: format(month, "MMM"), income: projectedIncome, expenses: projectedExpenses };
     });
 
     return {
@@ -164,89 +265,55 @@ const Index = () => {
     };
   }, [incomeData, variableIncome, debtData, fixedExpensesData, variableExpensesData, savingsGoalsData, savings]);
 
-  // === ESTRATEGIA DE PAGO ===
   const debtStrategy = useMemo(() => {
-    if (debtData.length === 0) return { method: "none", payments: [], totalMonths: 0, comparison: {} };
-
+    if (debtData.length === 0) return { method: "none", totalMonths: 0, comparison: {} };
     const debts = debtData.map((d) => ({ ...d, remaining: d.balance }));
     const extraMonthly = 200;
 
-    const simulate = (debts: typeof debts, strategy: "avalanche" | "snowball" | "hybrid") => {
+    const simulate = (debts: any[], strategy: string) => {
       let remaining = [...debts];
-      const payments: any[] = [];
       let month = 1;
-
       while (remaining.some((d) => d.remaining > 0)) {
-        let totalPaid = 0;
-        let currentMonth = remaining.map((d) => {
-          if (d.remaining <= 0) return { ...d, payment: 0 };
-
+        remaining = remaining.map((d) => {
+          if (d.remaining <= 0) return d;
           const interest = d.remaining * (d.apr / 100 / 12);
-          const minPayment = Math.max(d.minimum_payment, interest);
-          let payment = minPayment;
-
-          const isTarget =
-            strategy === "avalanche"
-              ? remaining[0].apr === d.apr
-              : strategy === "snowball"
-                ? remaining[0].balance === d.balance
-                : strategy === "hybrid"
-                  ? remaining.length > 2
-                    ? remaining[0].balance === d.balance
-                    : remaining[0].apr === d.apr
-                  : false;
-
-          if (isTarget) payment += extraMonthly;
-
+          let payment = Math.max(d.minimum_payment, interest);
+          if (
+            (strategy === "avalanche" && remaining[0].apr === d.apr) ||
+            (strategy === "snowball" && remaining[0].balance === d.balance)
+          ) {
+            payment += extraMonthly;
+          }
           const newRemaining = d.remaining + interest - payment;
-          totalPaid += payment;
-
-          return { ...d, payment, remaining: newRemaining > 0 ? newRemaining : 0 };
+          return { ...d, remaining: newRemaining > 0 ? newRemaining : 0 };
         });
-
-        payments.push({ month, totalPaid, debts: currentMonth.map((d) => ({ name: d.name, payment: d.payment })) });
-        remaining = currentMonth.filter((d) => d.remaining > 0);
+        remaining = remaining.filter((d) => d.remaining > 0);
         month++;
       }
-
-      return { payments, totalMonths: month - 1 };
+      return { totalMonths: month - 1 };
     };
 
     const avalanche = simulate(debts, "avalanche");
     const snowball = simulate(debts, "snowball");
-    const hybrid = simulate(debts, "hybrid");
+    const best = avalanche.totalMonths < snowball.totalMonths ? avalanche : snowball;
+    const method = best === avalanche ? "avalanche" : "snowball";
 
-    const best = [avalanche, snowball, hybrid].sort((a, b) => a.totalMonths - b.totalMonths)[0];
-    const method = best === avalanche ? "avalanche" : best === snowball ? "snowball" : "hybrid";
-
-    return {
-      method,
-      payments: best.payments,
-      totalMonths: best.totalMonths,
-      comparison: { avalanche, snowball, hybrid },
-    };
+    return { method, totalMonths: best.totalMonths, comparison: { avalanche, snowball } };
   }, [debtData]);
 
-  // === ALERTAS ===
   const alerts = useMemo(() => {
     const list = [];
-    if (calculations.debtToIncome > 36) list.push({ type: "error", message: "Debt-to-income >36%" });
-    if (calculations.savingsRate < 20) list.push({ type: "warning", message: "Savings rate <20%" });
-    if (calculations.emergencyProgress < 50) list.push({ type: "info", message: "Emergency fund <50%" });
+    if (calculations.debtToIncome > 36) list.push({ type: "error", message: "Debt-to-income over 36%" });
+    if (calculations.savingsRate < 20) list.push({ type: "warning", message: "Savings below 20%" });
+    if (calculations.emergencyProgress < 50) list.push({ type: "info", message: "Emergency fund under 50%" });
     if (calculations.netCashFlow < 0) list.push({ type: "error", message: "Negative cash flow" });
     return list;
   }, [calculations]);
 
-  const formatCurrency = (amount: number) => {
-    return new Intl.NumberFormat(language === "es" ? "es-ES" : "en-GB", {
-      style: "currency",
-      currency: currency,
-      minimumFractionDigits: 0,
-      maximumFractionDigits: 0,
-    }).format(amount);
-  };
+  const { messages, input, setInput, sendMessage } = useAIFinancialAssistant(calculations, debtStrategy);
 
-  // === AUTH ===
+  const formatCurrency = (amount: number) => `£${amount.toFixed(0)}`;
+
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null);
@@ -277,48 +344,49 @@ const Index = () => {
 
   if (!user) return <Auth />;
 
+  const pieData = [
+    { name: "Fixed", value: calculations.totalFixed, color: "#3b82f6" },
+    { name: "Variable", value: calculations.totalVariable, color: "#10b981" },
+    { name: "Debt", value: calculations.totalMinimumPayments, color: "#ef4444" },
+    { name: "Savings", value: calculations.totalGoalContributions, color: "#8b5cf6" },
+  ].filter((d) => d.value > 0);
+
   return (
     <>
-      <style>
-        {`
-          @media print {
-            .no-print { display: none !important; }
-            body { background: white !important; }
-          }
-        `}
-      </style>
+      <style>{`@media print { .no-print { display: none !important; } }`}</style>
 
       <div className="min-h-screen bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-900 dark:to-slate-800">
         <div className="max-w-7xl mx-auto p-6 space-y-8">
           {/* HEADER */}
-          <div className="no-print">
-            <div className="flex flex-col md:flex-row justify-between items-center gap-6 mb-8">
-              <div>
-                <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
-                  {activeProfile.type === "family" ? "Family Budget UK" : "Personal Finance"}
-                </h1>
-                <p className="text-muted-foreground mt-2">Financial Intelligence Dashboard</p>
-              </div>
-              <div className="flex items-center gap-3">
-                <LanguageToggle language={language} onLanguageChange={(lang: Language) => setLanguage(lang)} />
-                <ProfileSelector language={language} />
-                <Button variant="outline" size="icon" onClick={exportPDF}>
-                  <Download className="h-4 w-4" />
-                </Button>
-                <Button variant="outline" size="icon" onClick={() => supabase.auth.signOut()}>
-                  <LogOut className="h-4 w-4" />
-                </Button>
-              </div>
+          <div className="no-print flex justify-between items-center mb-8">
+            <div>
+              <h1 className="text-5xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
+                UK Personal Finance
+              </h1>
+              <p className="text-muted-foreground">Your Financial Coach</p>
+            </div>
+            <div className="flex items-center gap-3">
+              <LanguageToggle language={language} onLanguageChange={setLanguage} />
+              <ProfileSelector language={language} />
+              <Button variant="outline" size="icon" onClick={exportPDF}>
+                <Download className="h-4 w-4" />
+              </Button>
+              <Button variant="outline" size="icon" onClick={() => setShowAI(true)}>
+                <Bot className="h-4 w-4" />
+              </Button>
+              <Button variant="outline" size="icon" onClick={() => supabase.auth.signOut()}>
+                <LogOut className="h-4 w-4" />
+              </Button>
             </div>
           </div>
 
-          {/* ALERTAS */}
+          {/* ALERTS */}
           {alerts.length > 0 && (
             <div className="no-print space-y-3">
               {alerts.map((alert, i) => (
                 <Alert key={i} variant={alert.type === "error" ? "destructive" : "default"}>
                   <AlertCircle className="h-4 w-4" />
-                  <AlertTitle>{alert.type === "error" ? "Critical" : "Warning"}</AlertTitle>
+                  <AlertTitle>{alert.type === "error" ? "Urgent" : "Advice"}</AlertTitle>
                   <AlertDescription>{alert.message}</AlertDescription>
                 </Alert>
               ))}
@@ -334,11 +402,10 @@ const Index = () => {
               <CardContent>
                 <div className="text-2xl font-bold">{formatCurrency(calculations.netIncome)}</div>
                 <p className="text-xs text-muted-foreground">
-                  +{formatCurrency(calculations.totalVariableIncome)} variable
+                  +{formatCurrency(calculations.totalVariableIncome)} extra
                 </p>
               </CardContent>
             </Card>
-
             <Card>
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm font-medium text-muted-foreground">Total Debt</CardTitle>
@@ -347,7 +414,6 @@ const Index = () => {
                 <div className="text-2xl font-bold">{formatCurrency(calculations.totalDebtBalance)}</div>
               </CardContent>
             </Card>
-
             <Card>
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm font-medium text-muted-foreground">Emergency Fund</CardTitle>
@@ -357,7 +423,6 @@ const Index = () => {
                 <Progress value={calculations.emergencyProgress} className="mt-2" />
               </CardContent>
             </Card>
-
             <Card>
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm font-medium text-muted-foreground">Cash Flow</CardTitle>
@@ -372,6 +437,12 @@ const Index = () => {
             </Card>
           </div>
 
+          {/* GRÁFICAS CSS */}
+          <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 no-print">
+            <CSSBarChart data={calculations.forecast} title="6-Month Forecast" />
+            {pieData.length > 0 && <CSSPieChart data={pieData} />}
+          </div>
+
           {/* TABS */}
           <Tabs defaultValue="overview" className="no-print">
             <TabsList className="grid w-full grid-cols-5 mb-6">
@@ -383,30 +454,27 @@ const Index = () => {
             </TabsList>
 
             <TabsContent value="overview">
-              <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-                <Card>
-                  <CardHeader>
-                    <CardTitle>Financial Health</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-6xl font-bold text-center">
-                      {(85 - calculations.debtToIncome + calculations.savingsRate).toFixed(0)}
-                    </div>
-                    <Progress value={85 - calculations.debtToIncome + calculations.savingsRate} className="mt-4" />
-                  </CardContent>
-                </Card>
-              </div>
+              <Card>
+                <CardHeader>
+                  <CardTitle>Financial Health Score</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-6xl font-bold text-center text-blue-600">
+                    {(85 - calculations.debtToIncome + calculations.savingsRate).toFixed(0)}
+                  </div>
+                  <Progress value={85 - calculations.debtToIncome + calculations.savingsRate} className="mt-4" />
+                </CardContent>
+              </Card>
             </TabsContent>
 
             <TabsContent value="income">
               <div className="space-y-6">
                 <IncomeManager language={language} />
-
                 <Card>
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2">
                       <DollarSign className="h-5 w-5" />
-                      Ingresos Variables (Este mes)
+                      Extra Income
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
@@ -422,12 +490,12 @@ const Index = () => {
                           const input = document.getElementById("variable-income-input") as HTMLInputElement;
                           const val = parseFloat(input.value);
                           if (val > 0) {
-                            addIncome(val, "Freelance / Bonus");
+                            addIncome(val, "Freelance");
                             input.value = "";
                           }
                         }}
                       >
-                        Agregar
+                        Add
                       </Button>
                     </div>
                     <p className="text-sm text-muted-foreground">
@@ -448,47 +516,27 @@ const Index = () => {
             <TabsContent value="debts">
               <div className="space-y-6">
                 <DebtsManager language={language} />
-
                 {debtData.length > 0 && (
                   <Card>
                     <CardHeader>
                       <CardTitle className="flex items-center gap-2">
                         <Zap className="h-5 w-5 text-yellow-500" />
-                        Estrategia Óptima:{" "}
-                        {debtStrategy.method === "avalanche"
-                          ? "Avalanche"
-                          : debtStrategy.method === "snowball"
-                            ? "Snowball"
-                            : "Hybrid"}
+                        Best Strategy: {debtStrategy.method.toUpperCase()}
                       </CardTitle>
                       <CardDescription>
-                        Pagas en <strong>{debtStrategy.totalMonths} meses</strong>
+                        Pay off in <strong>{debtStrategy.totalMonths} months</strong>
                       </CardDescription>
                     </CardHeader>
                     <CardContent>
-                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
-                        <div className="p-3 bg-red-50 dark:bg-red-900/20 rounded-lg">
-                          <p className="font-medium text-red-700 dark:text-red-400">Avalanche</p>
-                          <p className="text-sm">{debtStrategy.comparison.avalanche.totalMonths} meses</p>
+                      <div className="grid grid-cols-2 gap-4 text-center">
+                        <div className="p-3 bg-red-50 rounded">
+                          <p className="font-bold">Avalanche</p>
+                          <p>{debtStrategy.comparison.avalanche.totalMonths} mo</p>
                         </div>
-                        <div className="p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
-                          <p className="font-medium text-green-700 dark:text-green-400">Snowball</p>
-                          <p className="text-sm">{debtStrategy.comparison.snowball.totalMonths} meses</p>
+                        <div className="p-3 bg-green-50 rounded">
+                          <p className="font-bold">Snowball</p>
+                          <p>{debtStrategy.comparison.snowball.totalMonths} mo</p>
                         </div>
-                        <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
-                          <p className="font-medium text-blue-700 dark:text-blue-400">Hybrid</p>
-                          <p className="text-sm">{debtStrategy.comparison.hybrid.totalMonths} meses</p>
-                        </div>
-                      </div>
-
-                      <div className="space-y-2 text-sm">
-                        <p className="font-medium">Próximos 3 meses:</p>
-                        {debtStrategy.payments.slice(0, 3).map((p, i) => (
-                          <div key={i} className="flex justify-between p-2 bg-muted/50 rounded">
-                            <span>Mes {p.month}</span>
-                            <span className="font-medium">{formatCurrency(p.totalPaid)}</span>
-                          </div>
-                        ))}
                       </div>
                     </CardContent>
                   </Card>
@@ -497,46 +545,48 @@ const Index = () => {
             </TabsContent>
 
             <TabsContent value="forecast">
-              <Card>
-                <CardHeader>
-                  <CardTitle>12-Month Forecast</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="space-y-4">
-                    {calculations.forecast.map((m, i) => (
-                      <div key={i} className="flex justify-between p-3 bg-muted/50 rounded">
-                        <span>{format(m.month, "MMM yyyy")}</span>
-                        <span className={m.savings >= 0 ? "text-green-600" : "text-red-600"}>
-                          {formatCurrency(m.savings)}
-                        </span>
-                      </div>
-                    ))}
-                  </div>
-                </CardContent>
-              </Card>
+              <CSSBarChart data={calculations.forecast} title="6-Month Cash Flow" />
             </TabsContent>
           </Tabs>
 
-          {/* SETTINGS */}
-          <Card className="no-print mt-8">
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Settings className="h-5 w-5" />
-                Settings
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="flex items-center justify-between">
-                <div className="flex items-center gap-2">
-                  <Globe className="h-5 w-5" />
-                  <span>Currency</span>
-                </div>
-                <Button size="sm" onClick={() => setCurrency((c) => (c === "GBP" ? "USD" : "GBP"))}>
-                  {currency}
+          {/* AI ASSISTANT */}
+          {showAI && (
+            <div
+              className="no-print fixed bottom-4 right-4 w-96 bg-white dark:bg-slate-800 rounded-2xl shadow-2xl flex flex-col"
+              style={{ height: "500px" }}
+            >
+              <div className="p-4 border-b flex justify-between items-center">
+                <h3 className="font-bold flex items-center gap-2">
+                  <Bot className="h-5 w-5" /> UK Coach
+                </h3>
+                <Button size="sm" variant="ghost" onClick={() => setShowAI(false)}>
+                  ×
                 </Button>
               </div>
-            </CardContent>
-          </Card>
+              <div className="flex-1 overflow-y-auto p-4 space-y-3">
+                {messages.map((m, i) => (
+                  <div key={i} className={`flex ${m.role === "user" ? "justify-end" : "justify-start"}`}>
+                    <div
+                      className={`max-w-xs px-4 py-2 rounded-2xl ${m.role === "user" ? "bg-blue-600 text-white" : "bg-slate-200 dark:bg-slate-700"}`}
+                    >
+                      {m.content}
+                    </div>
+                  </div>
+                ))}
+              </div>
+              <div className="p-4 border-t flex gap-2">
+                <Input
+                  placeholder="Ask about debt, savings..."
+                  value={input}
+                  onChange={(e) => setInput(e.target.value)}
+                  onKeyPress={(e) => e.key === "Enter" && sendMessage()}
+                />
+                <Button size="icon" onClick={sendMessage}>
+                  <Send className="h-4 w-4" />
+                </Button>
+              </div>
+            </div>
+          )}
         </div>
       </div>
     </>
