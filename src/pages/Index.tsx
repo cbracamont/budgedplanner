@@ -14,6 +14,8 @@ import {
   PiggyBank,
   CreditCard,
   Globe,
+  Zap,
+  DollarSign,
 } from "lucide-react";
 import {
   useIncomeSources,
@@ -23,6 +25,7 @@ import {
   useSavingsGoals,
   useSavings,
 } from "@/hooks/useFinancialData";
+import { useVariableIncome } from "@/hooks/useVariableIncome";
 import { useFinancialProfiles } from "@/hooks/useFinancialProfiles";
 import { Auth } from "@/components/Auth";
 import { IncomeManager } from "@/components/IncomeManager";
@@ -33,9 +36,8 @@ import { LanguageToggle } from "@/components/LanguageToggle";
 import { ProfileSelector } from "@/components/ProfileSelector";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
-import { Badge } from "@/components/ui/badge";
 import { Alert, AlertDescription, AlertTitle } from "@/components/ui/alert";
 import { supabase } from "@/integrations/supabase/client";
 import { useTheme } from "@/hooks/useTheme";
@@ -61,6 +63,7 @@ const Index = () => {
   const { data: variableExpensesData = [], isLoading: variableLoading } = useVariableExpenses();
   const { data: savingsGoalsData = [], isLoading: goalsLoading } = useSavingsGoals();
   const { data: savings, isLoading: savingsLoading } = useSavings();
+  const { data: variableIncome = [], isLoading: varIncLoading, addIncome } = useVariableIncome();
 
   const dataLoading =
     incomeLoading ||
@@ -69,12 +72,14 @@ const Index = () => {
     variableLoading ||
     goalsLoading ||
     savingsLoading ||
-    profileLoading;
+    profileLoading ||
+    varIncLoading;
 
   // === CÁLCULOS FINANCIEROS ===
   const calculations = useMemo(() => {
     const totalIncome = incomeData.reduce((sum, s) => sum + s.amount, 0);
-    const netIncome = totalIncome;
+    const totalVariableIncome = variableIncome.reduce((sum, i) => sum + i.amount, 0);
+    const netIncome = totalIncome + totalVariableIncome;
 
     const totalDebtBalance = debtData.reduce((sum, d) => sum + d.balance, 0);
     const totalMinimumPayments = debtData.reduce((sum, d) => sum + d.minimum_payment, 0);
@@ -97,7 +102,7 @@ const Index = () => {
     const savingsRate = totalIncome > 0 ? (totalGoalContributions / totalIncome) * 100 : 0;
     const debtToIncome = totalIncome > 0 ? (totalMinimumPayments / totalIncome) * 100 : 0;
 
-    // CORREGIDO: forecast sin referencia circular
+    // === FORECAST SIN ERROR ===
     const forecast = Array.from({ length: 12 }, (_, i) => {
       const month = addMonths(new Date(), i);
       const projectedIncome = netIncome * (1 + 0.02 * i);
@@ -117,6 +122,7 @@ const Index = () => {
 
     return {
       totalIncome,
+      totalVariableIncome,
       netIncome,
       totalDebtBalance,
       totalMinimumPayments,
@@ -131,7 +137,90 @@ const Index = () => {
       totalGoalContributions,
       forecast,
     };
-  }, [incomeData, debtData, fixedExpensesData, variableExpensesData, savingsGoalsData, savings]);
+  }, [incomeData, variableIncome, debtData, fixedExpensesData, variableExpensesData, savingsGoalsData, savings]);
+
+  // === ESTRATEGIA DE PAGO: AVALANCHE + SNOWBALL + HYBRID ===
+  const debtStrategy = useMemo(() => {
+    if (debtData.length === 0) return { method: "none", payments: [], totalMonths: 0, comparison: {} };
+
+    const debts = debtData.map((d) => ({
+      ...d,
+      remaining: d.balance,
+      totalPaid: 0,
+    }));
+
+    const extraMonthly = 200; // £200 extra al mes
+
+    const simulate = (debts: typeof debts, strategy: "avalanche" | "snowball" | "hybrid") => {
+      let remaining = [...debts];
+      const payments: any[] = [];
+      let month = 1;
+
+      while (remaining.some((d) => d.remaining > 0)) {
+        let totalPaid = 0;
+        let currentMonth = remaining.map((d) => {
+          if (d.remaining <= 0) return { ...d, payment: 0 };
+
+          const interest = d.remaining * (d.apr / 100 / 12);
+          const minPayment = Math.max(d.minimum_payment, interest);
+          let payment = minPayment;
+
+          const isTarget =
+            strategy === "avalanche"
+              ? remaining[0].apr === d.apr
+              : strategy === "snowball"
+                ? remaining[0].balance === d.balance
+                : strategy === "hybrid"
+                  ? remaining.length > 2
+                    ? remaining[0].balance === d.balance
+                    : remaining[0].apr === d.apr
+                  : false;
+
+          if (isTarget) payment += extraMonthly;
+
+          const newRemaining = d.remaining + interest - payment;
+          totalPaid += payment;
+
+          return {
+            ...d,
+            payment,
+            remaining: newRemaining > 0 ? newRemaining : 0,
+          };
+        });
+
+        payments.push({
+          month,
+          totalPaid,
+          debts: currentMonth.map((d) => ({ name: d.name, payment: d.payment, remaining: d.remaining })),
+        });
+
+        remaining = currentMonth.filter((d) => d.remaining > 0);
+        month++;
+      }
+
+      const totalInterest = payments.reduce(
+        (sum, p) => sum + p.debts.reduce((acc: number, d: any) => acc + d.remaining * (d.apr / 100 / 12), 0),
+        0,
+      );
+
+      return { payments, totalMonths: month - 1, totalInterest };
+    };
+
+    const avalanche = simulate(debts, "avalanche");
+    const snowball = simulate(debts, "snowball");
+    const hybrid = simulate(debts, "hybrid");
+
+    const best = [avalanche, snowball, hybrid].sort((a, b) => a.totalMonths - b.totalMonths)[0];
+    const method = best === avalanche ? "avalanche" : best === snowball ? "snowball" : "hybrid";
+
+    return {
+      method,
+      payments: best.payments,
+      totalMonths: best.totalMonths,
+      totalInterest: best.totalInterest,
+      comparison: { avalanche, snowball, hybrid },
+    };
+  }, [debtData]);
 
   // === ALERTAS ===
   const alerts = useMemo(() => {
@@ -203,7 +292,7 @@ const Index = () => {
                 <h1 className="text-4xl md:text-5xl font-bold bg-gradient-to-r from-blue-600 to-purple-600 bg-clip-text text-transparent">
                   {activeProfile.type === "family" ? "Family Budget UK" : "Personal Finance"}
                 </h1>
-                <p className="text-muted-foreground mt-2">Financial Dashboard</p>
+                <p className="text-muted-foreground mt-2">Financial Intelligence Dashboard</p>
               </div>
               <div className="flex items-center gap-3">
                 <LanguageToggle language={language} onLanguageChange={(lang: Language) => setLanguage(lang)} />
@@ -239,6 +328,9 @@ const Index = () => {
               </CardHeader>
               <CardContent>
                 <div className="text-2xl font-bold">{formatCurrency(calculations.netIncome)}</div>
+                <p className="text-xs text-muted-foreground">
+                  +{formatCurrency(calculations.totalVariableIncome)} variable
+                </p>
               </CardContent>
             </Card>
 
@@ -302,16 +394,105 @@ const Index = () => {
             </TabsContent>
 
             <TabsContent value="income">
-              <IncomeManager language={language} />
+              <div className="space-y-6">
+                <IncomeManager language={language} />
+
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <DollarSign className="h-5 w-5" />
+                      Ingresos Variables (Este mes)
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="flex gap-2 mb-3">
+                      <input
+                        type="number"
+                        placeholder="£500"
+                        className="flex-1 px-3 py-2 border rounded-lg"
+                        id="variable-income-input"
+                      />
+                      <Button
+                        onClick={() => {
+                          const input = document.getElementById("variable-income-input") as HTMLInputElement;
+                          const val = parseFloat(input.value);
+                          if (val > 0) {
+                            addIncome(val, "Freelance / Bonus");
+                            input.value = "";
+                          }
+                        }}
+                      >
+                        Agregar
+                      </Button>
+                    </div>
+                    <p className="text-sm text-muted-foreground">
+                      Total: {formatCurrency(calculations.totalVariableIncome)}
+                    </p>
+                  </CardContent>
+                </Card>
+              </div>
             </TabsContent>
+
             <TabsContent value="expenses">
               <div className="space-y-6">
                 <FixedExpensesManager language={language} />
                 <VariableExpensesManager language={language} />
               </div>
             </TabsContent>
+
             <TabsContent value="debts">
-              <DebtsManager language={language} />
+              <div className="space-y-6">
+                <DebtsManager language={language} />
+
+                {debtData.length > 0 && (
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <Zap className="h-5 w-5 text-yellow-500" />
+                        Estrategia Óptima:{" "}
+                        {debtStrategy.method === "avalanche"
+                          ? "Avalanche"
+                          : debtStrategy.method === "snowball"
+                            ? "Snowball"
+                            : "Hybrid"}
+                      </CardTitle>
+                      <CardDescription>
+                        Pagas en <strong>{debtStrategy.totalMonths} meses</strong> • Ahorras{" "}
+                        <strong>
+                          £{Math.round(debtStrategy.comparison.avalanche.totalInterest - debtStrategy.totalInterest)}
+                        </strong>{" "}
+                        vs Avalanche
+                      </CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-4">
+                        <div className="p-3 bg-red-50 dark:bg-red-900/20 rounded-lg">
+                          <p className="font-medium text-red-700 dark:text-red-400">Avalanche</p>
+                          <p className="text-sm">{debtStrategy.comparison.avalanche.totalMonths} meses</p>
+                        </div>
+                        <div className="p-3 bg-green-50 dark:bg-green-900/20 rounded-lg">
+                          <p className="font-medium text-green-700 dark:text-green-400">Snowball</p>
+                          <p className="text-sm">{debtStrategy.comparison.snowball.totalMonths} meses</p>
+                        </div>
+                        <div className="p-3 bg-blue-50 dark:bg-blue-900/20 rounded-lg">
+                          <p className="font-medium text-blue-700 dark:text-blue-400">Hybrid</p>
+                          <p className="text-sm">{debtStrategy.comparison.hybrid.totalMonths} meses</p>
+                        </div>
+                      </div>
+
+                      <div className="space-y-2 text-sm">
+                        <p className="font-medium">Próximos 3 meses:</p>
+                        {debtStrategy.payments.slice(0, 3).map((p, i) => (
+                          <div key={i} className="flex justify-between p-2 bg-muted/50 rounded">
+                            <span>Mes {p.month}</span>
+                            <span className="font-medium">{formatCurrency(p.totalPaid)}</span>
+                          </div>
+                        ))}
+                      </div>
+                    </CardContent>
+                  </Card>
+                )}
+              </div>
             </TabsContent>
 
             <TabsContent value="forecast">
