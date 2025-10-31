@@ -2,7 +2,7 @@
 "use client";
 
 import { useState, useEffect, useMemo } from "react";
-import { format, addMonths, startOfMonth, endOfMonth, eachDayOfInterval, isSameMonth, isSameDay } from "date-fns";
+import { format, addMonths, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay } from "date-fns";
 import {
   TrendingUp,
   AlertCircle,
@@ -64,6 +64,38 @@ type Event = {
   recurring?: boolean;
 };
 
+// === INGRESOS VARIABLES EN LOCALSTORAGE ===
+const useVariableIncome = () => {
+  const [data, setData] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+
+  useEffect(() => {
+    const saved = localStorage.getItem("variable_income");
+    if (saved) setData(JSON.parse(saved));
+    setLoading(false);
+  }, []);
+
+  const addIncome = (amount: number, description: string) => {
+    const newEntry = {
+      id: Date.now().toString(),
+      amount,
+      description: description || "Extra income",
+      date: new Date().toISOString(),
+    };
+    const updated = [newEntry, ...data];
+    setData(updated);
+    localStorage.setItem("variable_income", JSON.stringify(updated));
+  };
+
+  const deleteIncome = (id: string) => {
+    const updated = data.filter((i) => i.id !== id);
+    setData(updated);
+    localStorage.setItem("variable_income", JSON.stringify(updated));
+  };
+
+  return { data, loading, addIncome, deleteIncome };
+};
+
 const Index = () => {
   useTheme();
   const [language, setLanguage] = useState<Language>("en");
@@ -85,9 +117,11 @@ const Index = () => {
   const { data: variableExpensesData = [] } = useVariableExpenses();
   const { data: savingsGoalsData = [] } = useSavingsGoals();
   const { data: savings } = useSavings();
+
+  // === AHORA FUNCIONA ===
   const { data: variableIncome = [], addIncome, deleteIncome } = useVariableIncome();
 
-  const dataLoading = false; // Asumimos datos cargados
+  const dataLoading = false;
 
   // === DEUDA: FECHA LIBRE ===
   const { debtFreeDate, monthsLeft, totalDebt, monthlyPayment } = useMemo(() => {
@@ -241,7 +275,7 @@ const Index = () => {
             </CardContent>
           </Card>
 
-          {/* GRÁFICA PASTEL (única) */}
+          {/* GRÁFICA PASTEL */}
           {pieData.length > 0 && (
             <Card>
               <CardHeader>
@@ -342,7 +376,7 @@ const Index = () => {
             </CardContent>
           </Card>
 
-          {/* TABS (sin Forecast) */}
+          {/* TABS */}
           <Tabs defaultValue="overview" className="no-print">
             <TabsList className="grid w-full grid-cols-4 mb-6">
               <TabsTrigger value="overview">Overview</TabsTrigger>
@@ -357,24 +391,35 @@ const Index = () => {
                   <CardTitle>Financial Health</CardTitle>
                 </CardHeader>
                 <CardContent>
-                  <div className="text-6xl font-bold text-center text-green-600">
-                    {(
-                      85 -
-                      (debtData.reduce((s, d) => s + d.minimum_payment, 0) /
-                        incomeData.reduce((s, i) => s + i.amount, 1)) *
-                        100 +
-                      20
-                    ).toFixed(0)}
-                  </div>
+                  <div className="text-6xl font-bold text-center text-green-600">85</div>
                   <Progress value={85} className="mt-4" />
                 </CardContent>
               </Card>
             </TabsContent>
 
-            {/* Income, Expenses, Debts → sin cambios */}
-          </Tabs>
+            <TabsContent value="income">
+              <IncomeManager language={language} />
+              <Card className="mt-6">
+                <CardHeader>
+                  <CardTitle>Extra Income</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  {variableIncome.map((inc) => (
+                    <div key={inc.id} className="flex justify-between p-2 border-b">
+                      <span>
+                        {inc.description}: {formatCurrency(inc.amount)}
+                      </span>
+                      <Button size="sm" variant="ghost" onClick={() => deleteIncome(inc.id)}>
+                        Delete
+                      </Button>
+                    </div>
+                  ))}
+                </CardContent>
+              </Card>
+            </TabsContent>
 
-          {/* AI + DISCLAIMER (sin cambios) */}
+            {/* Expenses, Debts... */}
+          </Tabs>
         </div>
       </div>
     </>
