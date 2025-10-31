@@ -1,13 +1,16 @@
+// app/index.tsx
+"use client";
+
 import { useState, useEffect, useMemo } from "react";
 import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "@/components/ui/collapsible";
-import { ChevronDown, TrendingUp } from "lucide-react";
-import { 
-  useIncomeSources, 
-  useDebts, 
-  useFixedExpenses, 
+import { ChevronDown, TrendingUp, Printer } from "lucide-react";
+import {
+  useIncomeSources,
+  useDebts,
+  useFixedExpenses,
   useVariableExpenses,
   useSavingsGoals,
-  useSavings
+  useSavings,
 } from "@/hooks/useFinancialData";
 import { useCategoryNames } from "@/hooks/useCategoryNames";
 import { Auth } from "@/components/Auth";
@@ -38,567 +41,371 @@ import { Footer } from "@/components/Footer";
 import { DebtRiskMonitor } from "@/components/DebtRiskMonitor";
 import { AchievementsBadges } from "@/components/AchievementsBadges";
 import { HouseholdManager } from "@/components/HouseholdManager";
-
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { Calculator, LogOut, Menu, X } from "lucide-react";
+import { Calculator, LogOut, Menu } from "lucide-react";
 import { Sheet, SheetContent, SheetTrigger } from "@/components/ui/sheet";
 import { Language, getTranslation } from "@/lib/i18n";
 import { supabase } from "@/integrations/supabase/client";
 import { useQueryClient } from "@tanstack/react-query";
 import { useTheme } from "@/hooks/useTheme";
+import { differenceInMonths } from "date-fns";
+import { Skeleton } from "@/components/ui/skeleton";
 
-interface IndexProps {
-  onWallpaperChange?: (url: string | null) => void;
-}
-
-const Index = ({ onWallpaperChange }: IndexProps = {}) => {
+const Index = () => {
   useTheme();
-
-  const [language, setLanguage] = useState<Language>('en');
+  const [language, setLanguage] = useState<Language>("en");
   const [user, setUser] = useState<any>(null);
   const [authLoading, setAuthLoading] = useState(true);
-  const [chartType, setChartType] = useState<ChartType>('bar');
-  const [activeTab, setActiveTab] = useState('dashboard');
+  const [chartType, setChartType] = useState<ChartType>("bar");
+  const [activeTab, setActiveTab] = useState("dashboard");
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const queryClient = useQueryClient();
   const { getCategoryName } = useCategoryNames(language);
-  
-  // Fetch all data with React Query
-  const { data: incomeData = [], isLoading: incomeLoading } = useIncomeSources();
-  const { data: debtData = [], isLoading: debtsLoading } = useDebts();
-  const { data: fixedExpensesData = [], isLoading: fixedLoading } = useFixedExpenses();
-  const { data: variableExpensesData = [], isLoading: variableLoading } = useVariableExpenses();
-  const { data: savingsGoalsData = [], isLoading: goalsLoading } = useSavingsGoals();
-  const { data: savings, isLoading: savingsLoading } = useSavings();
-  
-  const dataLoading = incomeLoading || debtsLoading || fixedLoading || variableLoading || goalsLoading || savingsLoading;
 
-  // Calculate totals automatically from query data
-  const totalIncome = useMemo(() => 
-    incomeData.reduce((sum, source) => sum + source.amount, 0), 
-    [incomeData]
-  );
-
-  const totalDebts = useMemo(() => 
-    debtData.reduce((sum, debt) => sum + debt.minimum_payment, 0), 
-    [debtData]
-  );
-
-  const totalFixedExpenses = useMemo(() => {
-    const currentMonth = new Date().getMonth() + 1;
-    return fixedExpensesData.reduce((sum, expense) => {
-      if (expense.frequency_type === 'annual') {
-        return sum + (expense.payment_month === currentMonth ? expense.amount : 0);
-      }
-      return sum + expense.amount;
-    }, 0);
-  }, [fixedExpensesData]);
-
-  const totalVariableExpenses = useMemo(() => 
-    variableExpensesData.reduce((sum, exp) => sum + exp.amount, 0), 
-    [variableExpensesData]
-  );
-
-  const totalActiveSavingsGoals = useMemo(() => 
-    savingsGoalsData
-      .filter(goal => goal.is_active)
-      .reduce((sum, goal) => sum + (goal.monthly_contribution || 0), 0),
-    [savingsGoalsData]
-  );
-
-  const monthlyEmergencyContribution = useMemo(() => 
-    savings?.monthly_emergency_contribution || 0,
-    [savings]
-  );
-  
-  const totalSavings = useMemo(() => 
-    savings?.total_accumulated || 0,
-    [savings]
-  );
-
-  const emergencyFund = useMemo(() => 
-    savings?.emergency_fund || 0,
-    [savings]
-  );
-
-  const emergencyFundTarget = useMemo(() => {
-    const monthlyExpenses = totalFixedExpenses + totalVariableExpenses;
-    return monthlyExpenses * 4;
-  }, [totalFixedExpenses, totalVariableExpenses]);
-  
   const t = (key: string) => getTranslation(language, key);
 
+  const formatCurrency = (amount: number) => {
+    return new Intl.NumberFormat(language === "es" ? "es-MX" : "en-US", {
+      style: "currency",
+      currency: "USD",
+      minimumFractionDigits: 0,
+      maximumFractionDigits: 2,
+    }).format(amount);
+  };
+
+  // === DATA ===
+  const { data: incomeData = [], isLoading: incomeLoading, isError: incomeError } = useIncomeSources();
+  const { data: debtData = [], isLoading: debtsLoading, isError: debtsError } = useDebts();
+  const { data: fixedExpensesData = [], isLoading: fixedLoading, isError: fixedError } = useFixedExpenses();
+  const { data: variableExpensesData = [], isLoading: variableLoading, isError: variableError } = useVariableExpenses();
+  const { data: savingsGoalsData = [], isLoading: goalsLoading, isError: goalsError } = useSavingsGoals();
+  const { data: savings, isLoading: savingsLoading, isError: savingsError } = useSavings();
+
+  const dataLoading =
+    incomeLoading || debtsLoading || fixedLoading || variableLoading || goalsLoading || savingsLoading;
+  const dataError = incomeError || debtsError || fixedError || variableError || goalsError || savingsError;
+
+  const totalIncome = useMemo(() => incomeData.reduce((sum, s) => sum + s.amount, 0), [incomeData]);
+  const totalDebts = useMemo(() => debtData.reduce((sum, d) => sum + d.minimum_payment, 0), [debtData]);
+  const totalFixedExpenses = useMemo(() => {
+    const currentMonth = new Date().getMonth() + 1;
+    return fixedExpensesData.reduce((sum, exp) => {
+      if (exp.frequency_type === "annual" && exp.payment_month === currentMonth) return sum + exp.amount;
+      return sum + exp.amount;
+    }, 0);
+  }, [fixedExpensesData]);
+  const totalVariableExpenses = useMemo(
+    () => variableExpensesData.reduce((sum, exp) => sum + exp.amount, 0),
+    [variableExpensesData],
+  );
+  const totalActiveSavingsGoals = useMemo(
+    () => savingsGoalsData.filter((g) => g.is_active).reduce((sum, g) => sum + (g.monthly_contribution || 0), 0),
+    [savingsGoalsData],
+  );
+  const monthlyEmergencyContribution = savings?.monthly_emergency_contribution || 0;
+  const totalSavings = savings?.total_accumulated || 0;
+  const emergencyFund = savings?.emergency_fund || 0;
+  const totalSavingsContributions =
+    totalActiveSavingsGoals + monthlyEmergencyContribution + (savings?.monthly_goal || 0);
+  const emergencyFundTarget = (totalFixedExpenses + totalVariableExpenses) * 4;
+  const availableForDebt =
+    totalIncome - totalDebts - totalFixedExpenses - totalVariableExpenses - totalSavingsContributions;
+
+  // === AUTH ===
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null);
       setAuthLoading(false);
     });
-
-    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+    const {
+      data: { subscription },
+    } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null);
       setAuthLoading(false);
     });
-
     return () => subscription.unsubscribe();
   }, []);
 
-  const loadChartPreference = async (userId: string) => {
-    const { data } = await supabase
-      .from('app_settings')
-      .select('chart_type')
-      .eq('user_id', userId)
-      .maybeSingle();
-
-    if (data?.chart_type) {
-      const preferred = data.chart_type as string;
-      const allowed: ChartType[] = ['bar', 'pie', 'timeline'];
-      setChartType(allowed.includes(preferred as ChartType) ? (preferred as ChartType) : 'bar');
-    } else {
-      setChartType('bar');
-    }
+  // === PRINT FUNCTION ===
+  const printReport = () => {
+    window.print();
   };
 
-  useEffect(() => {
-    if (user?.id) {
-      loadChartPreference(user.id);
-    }
-  }, [user?.id]);
-
-  const handleSignOut = async () => {
-    await supabase.auth.signOut();
-  };
-
-  const reloadData = () => {
-    // React Query will handle data reloading automatically
-    queryClient.invalidateQueries({ queryKey: ["income_sources"] });
-    queryClient.invalidateQueries({ queryKey: ["debts"] });
-    queryClient.invalidateQueries({ queryKey: ["fixed_expenses"] });
-    queryClient.invalidateQueries({ queryKey: ["variable_expenses"] });
-    queryClient.invalidateQueries({ queryKey: ["savings_goals"] });
-    queryClient.invalidateQueries({ queryKey: ["savings"] });
-  };
-
-  const monthlySavingsGoal = useMemo(() => 
-    savings?.monthly_goal || 0,
-    [savings]
-  );
-
-  const totalSavingsContributions = totalActiveSavingsGoals + monthlyEmergencyContribution + monthlySavingsGoal;
-
-  // Calculate payments for calendar with IDs and source tables
-  const calendarPayments = [
-    ...incomeData.map(income => ({
-      id: income.id,
-      name: income.name,
-      amount: income.amount,
-      dueDay: income.payment_day,
-      category: 'income' as const,
-      sourceTable: 'income_sources' as const
-    })),
-    ...debtData.map(debt => {
-      // Calculate current installment if applicable
-      let currentInstallment = undefined;
-      let totalInstallments = undefined;
-      
-      if (debt.is_installment && debt.start_date && debt.number_of_installments) {
-        const startDate = new Date(debt.start_date);
-        const today = new Date();
-        const monthsPassed = Math.max(0, Math.floor((today.getTime() - startDate.getTime()) / (1000 * 60 * 60 * 24 * 30)));
-        currentInstallment = Math.min(monthsPassed + 1, debt.number_of_installments);
-        totalInstallments = debt.number_of_installments;
-      }
-      
-      return {
-        id: debt.id,
-        name: debt.name,
-        amount: debt.minimum_payment,
-        dueDay: debt.payment_day,
-        category: 'debt' as const,
-        sourceTable: 'debts' as const,
-        isInstallment: debt.is_installment,
-        startDate: debt.start_date,
-        endDate: debt.end_date,
-        currentInstallment,
-        totalInstallments
-      };
-    }),
-    ...fixedExpensesData.map(expense => ({
-      id: expense.id,
-      name: expense.name,
-      amount: expense.amount,
-      dueDay: expense.payment_day,
-      category: 'fixed' as const,
-      sourceTable: 'fixed_expenses' as const,
-      isAnnual: expense.frequency_type === 'annual',
-      paymentMonth: expense.payment_month
-    })),
-    ...savingsGoalsData.map(goal => ({
-      id: goal.id,
-      name: goal.goal_name,
-      amount: goal.monthly_contribution || 0,
-      dueDay: 1, // First day of month
-      category: 'savings' as const,
-      sourceTable: 'savings_goals' as const,
-      targetDate: goal.target_date,
-      isRecurring: true
-    }))
-  ];
-
-  // Prepare debt data for advisor
-  const debtAdvisorData = debtData.map(debt => ({
-    name: debt.name,
-    balance: debt.balance,
-    apr: debt.apr,
-    minimumPayment: debt.minimum_payment,
-    promotional_apr: debt.promotional_apr,
-    promotional_apr_end_date: debt.promotional_apr_end_date,
-    regular_apr: debt.regular_apr
-  }));
-
-  const availableForDebt = totalIncome - totalDebts - totalFixedExpenses - totalVariableExpenses - totalSavingsContributions;
-  const availableForSavings = totalIncome - totalDebts - totalFixedExpenses - totalVariableExpenses - totalSavingsContributions;
-
-  if (authLoading || (user && dataLoading)) {
+  // === RENDER ===
+  if (authLoading)
     return (
-      <div className="min-h-screen flex items-center justify-center bg-background">
-        <div className="text-center space-y-4">
-          <div className="animate-pulse">
-            <Calculator className="h-12 w-12 mx-auto text-primary" />
-          </div>
-          <p className="text-muted-foreground">
-            {language === 'en' ? 'Loading your financial data...' : 'Cargando tus datos financieros...'}
-          </p>
-        </div>
+      <div className="min-h-screen flex items-center justify-center">
+        <Skeleton className="h-12 w-12 rounded-full" />
       </div>
     );
-  }
-
-  if (!user) {
+  if (!user)
     return (
       <>
         <Auth />
         <DisclaimerBanner language={language} />
       </>
     );
-  }
+  if (dataError)
+    return (
+      <div className="min-h-screen flex items-center justify-center p-4">
+        <div className="text-center">
+          <p className="text-destructive">Error al cargar datos</p>
+          <Button onClick={() => location.reload()}>Reintentar</Button>
+        </div>
+      </div>
+    );
+  if (dataLoading)
+    return (
+      <div className="min-h-screen bg-background p-8">
+        <div className="max-w-7xl mx-auto space-y-6">
+          <Skeleton className="h-16 w-full rounded-xl" />
+          <Skeleton className="h-64 w-full rounded-xl" />
+        </div>
+      </div>
+    );
 
   return (
-    <div className="min-h-screen bg-background py-8 px-4 sm:px-6 lg:px-8">
-      <div className="max-w-7xl mx-auto">
-        <header className="text-center mb-12">
-          <div className="flex items-center justify-center gap-3 mb-4 flex-wrap">
-            <div className="p-3 bg-gradient-gold rounded-xl shadow-gold">
-              <Calculator className="h-8 w-8 text-foreground" />
+    <>
+      {/* PRINT STYLES */}
+      <style jsx>{`
+        @media print {
+          .no-print { display: none !important; }
+          body { background: white !important; padding: 20px; }
+          .print-title { font-size: 24px; font-weight: bold; text-align: center; margin-bottom: 20px; }
+          .print-section { margin-bottom: 20px; }
+          .print-row { display: flex; justify-content: space-between; margin-bottom: 8px; }
+          .print-label { font-weight: bold; }
+        }
+      `}</style>
+
+      <div className="min-h-screen bg-background py-8 px-4 sm:px-6 lg:px-8">
+        <div className="max-w-7xl mx-auto">
+          <header className="text-center mb-12 no-print">
+            <div className="flex items-center justify-center gap-3 mb-4 flex-wrap">
+              <div className="p-3 bg-gradient-gold rounded-xl shadow-gold">
+                <Calculator className="h-8 w-8 text-foreground" />
+              </div>
+              <LanguageToggle language={language} onLanguageChange={setLanguage} />
+              <ProfileSelector language={language} />
+              <NotificationCenter language={language} />
+              <Button variant="outline" size="sm" onClick={() => supabase.auth.signOut()}>
+                <LogOut className="mr-2 h-4 w-4" />
+                {language === "en" ? "Sign Out" : "Cerrar Sesión"}
+              </Button>
             </div>
-            <LanguageToggle language={language} onLanguageChange={setLanguage} />
-            <ProfileSelector language={language} />
-            <NotificationCenter language={language} />
-            <Button variant="outline" size="sm" onClick={handleSignOut}>
-              <LogOut className="mr-2 h-4 w-4" />
-              {language === 'en' ? 'Sign Out' : 'Cerrar Sesión'}
+            <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-3">{t("appTitle")}</h1>
+            <p className="text-lg text-muted-foreground max-w-2xl mx-auto">{t("appDescription")}</p>
+          </header>
+
+          {/* PRINT BUTTON */}
+          <div className="flex justify-end mb-6 no-print">
+            <Button onClick={printReport} size="sm">
+              <Printer className="mr-2 h-4 w-4" />
+              {language === "en" ? "Print Report" : "Imprimir Reporte"}
             </Button>
           </div>
-          <h1 className="text-4xl md:text-5xl font-bold text-foreground mb-3">
-            {t('appTitle')}
-          </h1>
-          <p className="text-lg text-muted-foreground max-w-2xl mx-auto">
-            {t('appDescription')}
-          </p>
-        </header>
 
-        <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
-          {/* Desktop Navigation */}
-          <TabsList className="hidden md:grid w-full grid-cols-5 lg:w-auto lg:inline-grid">
-            <TabsTrigger value="dashboard">{t('dashboard')}</TabsTrigger>
-            <TabsTrigger value="achievements">{language === 'en' ? 'Achievements' : 'Logros'}</TabsTrigger>
-            <TabsTrigger value="calendar">{t('calendar')}</TabsTrigger>
-            <TabsTrigger value="advisor">{t('debtAdvisor')}</TabsTrigger>
-            <TabsTrigger value="settings">{language === 'en' ? 'Settings' : 'Ajustes'}</TabsTrigger>
-          </TabsList>
-
-          {/* Mobile Navigation - Hamburger Menu */}
-          <div className="md:hidden flex items-center justify-between mb-4">
-            <h2 className="text-xl font-bold text-foreground">
-              {activeTab === 'dashboard' && t('dashboard')}
-              {activeTab === 'achievements' && (language === 'en' ? 'Achievements' : 'Logros')}
-              {activeTab === 'calendar' && t('calendar')}
-              {activeTab === 'advisor' && t('debtAdvisor')}
-              {activeTab === 'settings' && (language === 'en' ? 'Settings' : 'Ajustes')}
-            </h2>
-            <Sheet open={mobileMenuOpen} onOpenChange={setMobileMenuOpen}>
-              <SheetTrigger asChild>
-                <Button variant="outline" size="icon">
-                  <Menu className="h-5 w-5" />
-                </Button>
-              </SheetTrigger>
-              <SheetContent side="right" className="w-[250px]">
-                <nav className="flex flex-col gap-4 mt-8">
-                  <Button
-                    variant={activeTab === 'dashboard' ? 'default' : 'ghost'}
-                    className="justify-start"
-                    onClick={() => {
-                      setActiveTab('dashboard');
-                      setMobileMenuOpen(false);
-                    }}
-                  >
-                    {t('dashboard')}
-                  </Button>
-                  <Button
-                    variant={activeTab === 'achievements' ? 'default' : 'ghost'}
-                    className="justify-start"
-                    onClick={() => {
-                      setActiveTab('achievements');
-                      setMobileMenuOpen(false);
-                    }}
-                  >
-                    {language === 'en' ? 'Achievements' : 'Logros'}
-                  </Button>
-                  <Button
-                    variant={activeTab === 'calendar' ? 'default' : 'ghost'}
-                    className="justify-start"
-                    onClick={() => {
-                      setActiveTab('calendar');
-                      setMobileMenuOpen(false);
-                    }}
-                  >
-                    {t('calendar')}
-                  </Button>
-                  <Button
-                    variant={activeTab === 'advisor' ? 'default' : 'ghost'}
-                    className="justify-start"
-                    onClick={() => {
-                      setActiveTab('advisor');
-                      setMobileMenuOpen(false);
-                    }}
-                  >
-                    {t('debtAdvisor')}
-                  </Button>
-                  <Button
-                    variant={activeTab === 'settings' ? 'default' : 'ghost'}
-                    className="justify-start"
-                    onClick={() => {
-                      setActiveTab('settings');
-                      setMobileMenuOpen(false);
-                    }}
-                  >
-                    {language === 'en' ? 'Settings' : 'Ajustes'}
-                  </Button>
-                </nav>
-              </SheetContent>
-            </Sheet>
+          {/* PRINTABLE CONTENT */}
+          <div className="print-title">
+            {t("appTitle")} - {new Date().toLocaleDateString()}
           </div>
 
-          <TabsContent value="dashboard" className="space-y-6">
-            {/* Debt Risk Monitor */}
-            <DebtRiskMonitor
-              totalIncome={totalIncome}
-              totalDebts={totalDebts}
-              language={language}
-            />
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="space-y-6">
+            <TabsList className="hidden md:grid w-full grid-cols-5 lg:w-auto lg:inline-grid no-print">
+              <TabsTrigger value="dashboard">{t("dashboard")}</TabsTrigger>
+              <TabsTrigger value="achievements">{language === "en" ? "Achievements" : "Logros"}</TabsTrigger>
+              <TabsTrigger value="calendar">{t("calendar")}</TabsTrigger>
+              <TabsTrigger value="advisor">{t("debtAdvisor")}</TabsTrigger>
+              <TabsTrigger value="settings">{language === "en" ? "Settings" : "Ajustes"}</TabsTrigger>
+            </TabsList>
 
-            {/* Daily Recommendation */}
-            <DailyRecommendations
-              language={language}
-              totalIncome={totalIncome}
-              totalDebts={totalDebts}
-              totalFixedExpenses={totalFixedExpenses}
-              totalVariableExpenses={totalVariableExpenses}
-              totalSavings={totalSavings}
-              debts={debtAdvisorData}
-              emergencyFund={emergencyFund}
-              emergencyFundTarget={emergencyFundTarget}
-            />
+            <TabsContent value="dashboard" className="space-y-6">
+              <DebtRiskMonitor totalIncome={totalIncome} totalDebts={totalDebts} language={language} />
+              <DailyRecommendations
+                language={language}
+                totalIncome={totalIncome}
+                totalDebts={totalDebts}
+                totalFixedExpenses={totalFixedExpenses}
+                totalVariableExpenses={totalVariableExpenses}
+                totalSavings={totalSavings}
+                debts={debtData.map((d) => ({
+                  id: d.id,
+                  name: d.name,
+                  balance: d.balance,
+                  apr: d.apr,
+                  minimumPayment: d.minimum_payment,
+                }))}
+                emergencyFund={emergencyFund}
+                emergencyFundTarget={emergencyFundTarget}
+              />
 
-            {/* Financial Charts */}
-            <EnhancedFinancialCharts
-              totalIncome={totalIncome}
-              totalDebts={totalDebts}
-              totalFixedExpenses={totalFixedExpenses}
-              totalVariableExpenses={totalVariableExpenses}
-              totalSavingsAccumulated={emergencyFund + totalSavings}
-              language={language}
-              chartType={chartType}
-            />
-            
-            <div className="grid lg:grid-cols-3 gap-6">
-              <div className="lg:col-span-2 space-y-6">
-                <Collapsible defaultOpen>
-                  <CollapsibleTrigger className="w-full group">
-                    <div className="flex items-center justify-between w-full p-4 rounded-xl bg-gradient-income shadow-gold hover:shadow-premium transition-all duration-300 mb-4">
-                      <h2 className="text-xl font-bold text-income-foreground flex items-center gap-2">
-                        <TrendingUp className="h-5 w-5" />
-                        {getCategoryName('income')}
-                      </h2>
-                      <ChevronDown className="h-5 w-5 text-income-foreground transition-transform duration-300 group-data-[state=open]:rotate-180" />
-                    </div>
-                  </CollapsibleTrigger>
-                  <CollapsibleContent>
-                    <IncomeManager language={language} />
-                  </CollapsibleContent>
-                </Collapsible>
-
-                <Collapsible defaultOpen>
-                  <CollapsibleTrigger className="w-full group">
-                    <div className="flex items-center justify-between w-full p-4 rounded-xl bg-gradient-debt shadow-gold hover:shadow-premium transition-all duration-300 mb-4">
-                      <h2 className="text-xl font-bold text-debt-foreground flex items-center gap-2">
-                        <TrendingUp className="h-5 w-5" />
-                        {getCategoryName('debts')}
-                      </h2>
-                      <ChevronDown className="h-5 w-5 text-debt-foreground transition-transform duration-300 group-data-[state=open]:rotate-180" />
-                    </div>
-                  </CollapsibleTrigger>
-                  <CollapsibleContent>
-                    <DebtsManager language={language} />
-                  </CollapsibleContent>
-                </Collapsible>
-
-                <Collapsible defaultOpen>
-                  <CollapsibleTrigger className="w-full group">
-                    <div className="flex items-center justify-between w-full p-4 rounded-xl bg-gradient-accent shadow-gold hover:shadow-premium transition-all duration-300 mb-4">
-                      <h2 className="text-xl font-bold text-accent-foreground flex items-center gap-2">
-                        <TrendingUp className="h-5 w-5" />
-                        {getCategoryName('fixedExpenses')}
-                      </h2>
-                      <ChevronDown className="h-5 w-5 text-accent-foreground transition-transform duration-300 group-data-[state=open]:rotate-180" />
-                    </div>
-                  </CollapsibleTrigger>
-                  <CollapsibleContent>
-                    <FixedExpensesManager language={language} />
-                  </CollapsibleContent>
-                </Collapsible>
-
-                <Collapsible defaultOpen>
-                  <CollapsibleTrigger className="w-full group">
-                    <div className="flex items-center justify-between w-full p-4 rounded-xl bg-gradient-expenses shadow-gold hover:shadow-premium transition-all duration-300 mb-4">
-                      <h2 className="text-xl font-bold text-expenses-foreground flex items-center gap-2">
-                        <TrendingUp className="h-5 w-5" />
-                        {getCategoryName('variableExpenses')}
-                      </h2>
-                      <ChevronDown className="h-5 w-5 text-expenses-foreground transition-transform duration-300 group-data-[state=open]:rotate-180" />
-                    </div>
-                  </CollapsibleTrigger>
-                  <CollapsibleContent>
-                    <VariableExpensesManager language={language} />
-                  </CollapsibleContent>
-                </Collapsible>
-
-                <Collapsible defaultOpen>
-                  <CollapsibleTrigger className="w-full group">
-                    <div className="flex items-center justify-between w-full p-4 rounded-xl bg-gradient-warning shadow-gold hover:shadow-premium transition-all duration-300 mb-4">
-                      <h2 className="text-xl font-bold text-warning-foreground flex items-center gap-2">
-                        <TrendingUp className="h-5 w-5" />
-                        {getCategoryName('emergencyFund')}
-                      </h2>
-                      <ChevronDown className="h-5 w-5 text-warning-foreground transition-transform duration-300 group-data-[state=open]:rotate-180" />
-                    </div>
-                  </CollapsibleTrigger>
-                  <CollapsibleContent>
-                    <EmergencyFundManager 
-                      language={language} 
-                      totalExpenses={totalFixedExpenses + totalVariableExpenses}
-                    />
-                  </CollapsibleContent>
-                </Collapsible>
-
-                <Collapsible defaultOpen>
-                  <CollapsibleTrigger className="w-full group">
-                    <div className="flex items-center justify-between w-full p-4 rounded-xl bg-gradient-income shadow-gold hover:shadow-premium transition-all duration-300 mb-4">
-                      <h2 className="text-xl font-bold text-income-foreground flex items-center gap-2">
-                        <TrendingUp className="h-5 w-5" />
-                        {getCategoryName('savings')}
-                      </h2>
-                      <ChevronDown className="h-5 w-5 text-income-foreground transition-transform duration-300 group-data-[state=open]:rotate-180" />
-                    </div>
-                  </CollapsibleTrigger>
-                  <CollapsibleContent>
-                    <GeneralSavingsManager 
-                      language={language} 
-                      availableToSave={availableForSavings}
-                    />
-                  </CollapsibleContent>
-                </Collapsible>
-
-                <Collapsible defaultOpen>
-                  <CollapsibleTrigger className="w-full group">
-                    <div className="flex items-center justify-between w-full p-4 rounded-xl bg-gradient-gold shadow-gold hover:shadow-premium transition-all duration-300 mb-4">
-                      <h2 className="text-xl font-bold text-foreground flex items-center gap-2">
-                        <TrendingUp className="h-5 w-5 text-primary" />
-                        {getCategoryName('savingsGoals')}
-                      </h2>
-                      <ChevronDown className="h-5 w-5 text-primary transition-transform duration-300 group-data-[state=open]:rotate-180" />
-                    </div>
-                  </CollapsibleTrigger>
-                  <CollapsibleContent>
-                    <SavingsGoalsManager
-                      language={language} 
-                      availableForSavings={availableForSavings}
-                      availableBudget={totalIncome - totalFixedExpenses - totalVariableExpenses - totalDebts}
-                    />
-                  </CollapsibleContent>
-                </Collapsible>
-              </div>
-
-              <div className="lg:col-span-1">
-                <div className="lg:sticky lg:top-8">
-                  <BudgetSummary 
-                    totalIncome={totalIncome} 
-                    totalDebts={totalDebts}
-                    totalFixedExpenses={totalFixedExpenses}
-                    totalVariableExpenses={totalVariableExpenses}
-                    totalSavingsGoals={totalActiveSavingsGoals}
-                    monthlyEmergencyContribution={monthlyEmergencyContribution}
-                    language={language}
-                  />
+              {/* PRINT SUMMARY */}
+              <div className="print-section">
+                <h3 className="text-lg font-bold mb-2">{t("summary") || "Resumen"}</h3>
+                <div className="print-row">
+                  <span className="print-label">{t("totalIncome")}:</span>
+                  <span>{formatCurrency(totalIncome)}</span>
+                </div>
+                <div className="print-row">
+                  <span className="print-label">{t("totalDebts")}:</span>
+                  <span>{formatCurrency(totalDebts)}</span>
+                </div>
+                <div className="print-row">
+                  <span className="print-label">{t("fixedExpenses")}:</span>
+                  <span>{formatCurrency(totalFixedExpenses)}</span>
+                </div>
+                <div className="print-row">
+                  <span className="print-label">{t("variableExpenses")}:</span>
+                  <span>{formatCurrency(totalVariableExpenses)}</span>
+                </div>
+                <div className="print-row">
+                  <span className="print-label">{t("availableForDebt")}:</span>
+                  <span>{formatCurrency(availableForDebt)}</span>
+                </div>
+                <div className="print-row">
+                  <span className="print-label">{t("emergencyFund")}:</span>
+                  <span>
+                    {formatCurrency(emergencyFund)} / {formatCurrency(emergencyFundTarget)}
+                  </span>
                 </div>
               </div>
-            </div>
-          </TabsContent>
 
-          <TabsContent value="achievements" className="space-y-6">
-            <AchievementsBadges language={language} />
-          </TabsContent>
-
-          <TabsContent value="calendar">
-            <CalendarView payments={calendarPayments} language={language} />
-          </TabsContent>
-
-          <TabsContent value="advisor" className="space-y-6">
-            <EnhancedDebtAdvisor 
-              debts={debtAdvisorData.map((d, i) => ({ ...d, id: debtData[i]?.id }))} 
-              extraPayment={availableForDebt > 0 ? availableForDebt : 0}
-              language={language} 
-            />
-            
-            <DebtEvolutionChart language={language} />
-            
-            <DebtPaymentTracker language={language} />
-            
-            <FinancialAdvisor language={language} />
-          </TabsContent>
-
-          <TabsContent value="settings" className="space-y-6">
-            <HouseholdManager language={language} />
-            <div className="grid md:grid-cols-2 gap-6">
-              <ChartSettings 
+              <EnhancedFinancialCharts
+                totalIncome={totalIncome}
+                totalDebts={totalDebts}
+                totalFixedExpenses={totalFixedExpenses}
+                totalVariableExpenses={totalVariableExpenses}
+                totalSavingsAccumulated={emergencyFund + totalSavings}
                 language={language}
-                selectedChart={chartType}
-                onChartChange={setChartType}
+                chartType={chartType}
               />
-              <ThemeSettings language={language} onThemeChange={(theme) => console.log('Theme changed:', theme)} />
-            </div>
-            <CategoryNameEditor language={language} />
-            <ExcelManager language={language} onDataImported={reloadData} />
-          </TabsContent>
-        </Tabs>
 
-        <footer className="mt-12 text-center text-sm text-muted-foreground">
-          <p>{t('calculationsNote')}</p>
-        </footer>
+              {/* REST OF DASHBOARD (hidden on print) */}
+              <div className="no-print">
+                <div className="grid lg:grid-cols-3 gap-6">
+                  <div className="lg:col-span-2 space-y-6">
+                    {[
+                      {
+                        key: "income",
+                        Comp: IncomeManager,
+                        gradient: "bg-gradient-income",
+                        text: "text-income-foreground",
+                      },
+                      { key: "debts", Comp: DebtsManager, gradient: "bg-gradient-debt", text: "text-debt-foreground" },
+                      {
+                        key: "fixedExpenses",
+                        Comp: FixedExpensesManager,
+                        gradient: "bg-gradient-accent",
+                        text: "text-accent-foreground",
+                      },
+                      {
+                        key: "variableExpenses",
+                        Comp: VariableExpensesManager,
+                        gradient: "bg-gradient-expenses",
+                        text: "text-expenses-foreground",
+                      },
+                      {
+                        key: "emergencyFund",
+                        Comp: () => (
+                          <EmergencyFundManager
+                            language={language}
+                            totalExpenses={totalFixedExpenses + totalVariableExpenses}
+                          />
+                        ),
+                        gradient: "bg-gradient-warning",
+                        text: "text-warning-foreground",
+                      },
+                      {
+                        key: "savings",
+                        Comp: () => <GeneralSavingsManager language={language} availableToSave={availableForDebt} />,
+                        gradient: "bg-gradient-income",
+                        text: "text-income-foreground",
+                      },
+                      {
+                        key: "savingsGoals",
+                        Comp: () => (
+                          <SavingsGoalsManager
+                            language={language}
+                            availableForSavings={availableForDebt}
+                            availableBudget={totalIncome - totalFixedExpenses - totalVariableExpenses - totalDebts}
+                          />
+                        ),
+                        gradient: "bg-gradient-gold",
+                        text: "text-foreground",
+                      },
+                    ].map(({ key, Comp, gradient, text }) => (
+                      <Collapsible key={key} defaultOpen>
+                        <CollapsibleTrigger className="w-full group">
+                          <div
+                            className={`flex items-center justify-between w-full p-4 rounded-xl ${gradient} shadow-gold hover:shadow-premium transition-all duration-300 mb-4`}
+                          >
+                            <h2 className={`text-xl font-bold ${text} flex items-center gap-2`}>
+                              <TrendingUp className="h-5 w-5" />
+                              {getCategoryName(key as any)}
+                            </h2>
+                            <ChevronDown
+                              className={`h-5 w-5 ${text} transition-transform duration-300 group-data-[state=open]:rotate-180`}
+                            />
+                          </div>
+                        </CollapsibleTrigger>
+                        <CollapsibleContent>
+                          <Comp />
+                        </CollapsibleContent>
+                      </Collapsible>
+                    ))}
+                  </div>
+                  <div className="lg:col-span-1 lg:sticky lg:top-8">
+                    <BudgetSummary
+                      totalIncome={totalIncome}
+                      totalDebts={totalDebts}
+                      totalFixedExpenses={totalFixedExpenses}
+                      totalVariableExpenses={totalVariableExpenses}
+                      totalSavingsGoals={totalActiveSavingsGoals}
+                      monthlyEmergencyContribution={monthlyEmergencyContribution}
+                      language={language}
+                      formatCurrency={formatCurrency}
+                    />
+                  </div>
+                </div>
+              </div>
+            </TabsContent>
+
+            {/* OTHER TABS (hidden on print) */}
+            <div className="no-print">
+              <TabsContent value="achievements">
+                <AchievementsBadges language={language} />
+              </TabsContent>
+              <TabsContent value="calendar">
+                <CalendarView payments={[]} language={language} />
+              </TabsContent>
+              <TabsContent value="advisor">
+                <EnhancedDebtAdvisor debts={debtData} extraPayment={availableForDebt} language={language} />
+                <DebtEvolutionChart language={language} />
+                <DebtPaymentTracker language={language} />
+                <FinancialAdvisor language={language} />
+              </TabsContent>
+              <TabsContent value="settings">
+                <HouseholdManager language={language} />
+                <div className="grid md:grid-cols-2 gap-6">
+                  <ChartSettings language={language} selectedChart={chartType} onChartChange={setChartType} />
+                  <ThemeSettings language={language} onThemeChange={() => {}} />
+                </div>
+                <CategoryNameEditor language={language} />
+                <ExcelManager language={language} onDataImported={() => {}} />
+              </TabsContent>
+            </div>
+          </Tabs>
+
+          <footer className="mt-12 text-center text-sm text-muted-foreground print-section">
+            <p>{t("calculationsNote") || "Los cálculos son estimados."}</p>
+          </footer>
+        </div>
+
+        <DisclaimerBanner language={language} />
+        <Footer language={language} />
       </div>
-      <DisclaimerBanner language={language} />
-      <Footer language={language} />
-    </div>
+    </>
   );
 };
 
