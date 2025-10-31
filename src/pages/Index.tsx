@@ -73,20 +73,10 @@ const useVariableIncome = () => {
   return { data, loading, addIncome };
 };
 
-// === AI PERSONALIZADO CON TUS DATOS ===
-const useAIFinancialAssistant = (
-  calculations: any,
-  debtStrategy: any,
-  debtData: any[],
-  activeProfile: any,
-  incomeData: any[],
-  variableExpensesData: any[],
-) => {
+// === AI PERSONALIZADO ===
+const useAIFinancialAssistant = (calculations: any, debtStrategy: any, debtData: any[], activeProfile: any) => {
   const [messages, setMessages] = useState<any[]>([
-    {
-      role: "assistant",
-      content: `Hello ${activeProfile.name || "there"}! I'm your UK Financial Coach. Ask me about spending, debt, or savings.`,
-    },
+    { role: "assistant", content: `Hello ${activeProfile.name || "there"}! I'm your UK Financial Coach.` },
   ]);
   const [input, setInput] = useState("");
 
@@ -97,69 +87,49 @@ const useAIFinancialAssistant = (
     const netCashFlow = calculations.netCashFlow;
     const savingsRate = calculations.savingsRate;
     const emergencyProgress = calculations.emergencyProgress;
-    const totalDebt = calculations.totalDebtBalance;
-    const totalIncome = calculations.netIncome;
-    const totalFixed = calculations.totalFixed;
-    const totalVariable = calculations.totalVariable;
 
-    // === 1. GASTOS IMPULSIVOS ===
     const amountMatch = q.match(/£?(\d+(?:\.\d+)?)/);
     const amount = amountMatch ? parseFloat(amountMatch[1]) : null;
 
-    if (amount && (q.includes("spend") || q.includes("buy") || q.includes("gastar") || q.includes("puedo"))) {
-      if (netCashFlow >= amount) {
-        return `Yes, you can afford **£${amount}**. You have **${formatCurrency(netCashFlow)}** positive cash flow.`;
-      } else {
-        const deficit = amount - netCashFlow;
-        return `No, **don't spend £${amount}**. You'd go **£${deficit.toFixed(0)} into debt**. Cut variable expenses by £${(deficit * 0.7).toFixed(0)} instead.`;
-      }
+    if (amount && (q.includes("spend") || q.includes("buy") || q.includes("gastar"))) {
+      return netCashFlow >= amount
+        ? `Yes, you can afford **£${amount}**. Cash flow: **${formatCurrency(netCashFlow)}**.`
+        : `No, don't spend £${amount}. You'd go **£${(amount - netCashFlow).toFixed(0)} into debt**.`;
     }
 
-    // === 2. RECOMENDACIÓN DE PAGO ===
-    if (q.includes("pay") || q.includes("pago") || q.includes("deuda") || q.includes("debt")) {
+    if (q.includes("pay") || q.includes("pago") || q.includes("debt")) {
       const highInterest = [...debtData].sort((a, b) => b.apr - a.apr)[0];
       const extra = Math.min(200, netCashFlow * 0.3);
       if (highInterest && extra > 0) {
-        return `Pay **${formatCurrency(extra)}** to **${highInterest.name}** (${highInterest.apr}% APR). This saves you **£${((extra * highInterest.apr) / 100 / 12).toFixed(0)}** in interest this month.`;
+        return `Pay **${formatCurrency(extra)}** to **${highInterest.name}** (${highInterest.apr}% APR).`;
       }
-      return `Focus on minimum payments. You have **${formatCurrency(netCashFlow)}** left after essentials.`;
+      return `Focus on minimum payments.`;
     }
 
-    // === 3. AHORRO POSIBLE ===
-    if (q.includes("save") || q.includes("ahorrar") || q.includes("savings")) {
-      const possible = netCashFlow - totalVariable * 0.2;
-      if (possible > 0) {
-        return `You can save **${formatCurrency(possible)}** this month. Add to your emergency fund (currently **${emergencyProgress.toFixed(0)}%** of target).`;
-      }
-      return `You're in deficit. Reduce variable expenses by **£${(totalVariable * 0.1).toFixed(0)}** to save.`;
+    if (q.includes("save") || q.includes("ahorrar")) {
+      const possible = netCashFlow - calculations.totalVariable * 0.2;
+      return possible > 0
+        ? `Save **${formatCurrency(possible)}** to emergency fund (${emergencyProgress.toFixed(0)}% complete).`
+        : `Reduce variable expenses to save.`;
     }
 
-    // === 4. SALUD FINANCIERA ===
-    if (q.includes("health") || q.includes("score") || q.includes("salud")) {
-      const score = (85 - calculations.debtToIncome + savingsRate).toFixed(0);
-      return `Your Financial Health Score: **${score}/100**. ${score > 80 ? "Excellent!" : score > 60 ? "Good, keep going." : "Needs improvement. Focus on debt."}`;
-    }
-
-    // === 5. CONSEJO GENERAL ===
-    if (netCashFlow < 0) {
-      return `Warning: You're spending **£${Math.abs(netCashFlow).toFixed(0)}** more than you earn. Cut **£${(totalVariable * 0.15).toFixed(0)}** from dining out or subscriptions.`;
-    }
-
-    return "Ask me: 'Can I spend £300?', 'What should I pay?', 'How much can I save?', or 'What's my score?'";
+    return "Ask: 'Can I spend £300?', 'What should I pay?', or 'How much can I save?'";
   };
 
   const sendMessage = () => {
     if (!input.trim()) return;
-    const userMsg = { role: "user", content: input };
-    const aiMsg = { role: "assistant", content: getAdvice(input) };
-    setMessages((prev) => [...prev, userMsg, aiMsg]);
+    setMessages((prev) => [
+      ...prev,
+      { role: "user", content: input },
+      { role: "assistant", content: getAdvice(input) },
+    ]);
     setInput("");
   };
 
   return { messages, input, setInput, sendMessage };
 };
 
-// === GRÁFICA CSS: BARRAS ===
+// === GRÁFICAS CSS ===
 const CSSBarChart = ({ data, title }: { data: any[]; title: string }) => {
   const max = Math.max(...data.map((d) => Math.max(d.income, d.expenses)));
   return (
@@ -176,12 +146,12 @@ const CSSBarChart = ({ data, title }: { data: any[]; title: string }) => {
                 <div
                   className="bg-blue-500 rounded-l"
                   style={{ width: `${(d.income / max) * 100}%` }}
-                  title={`Income: ${formatCurrency(d.income)}`}
+                  title={`Income: £${d.income.toFixed(0)}`}
                 />
                 <div
                   className="bg-red-500 rounded-r"
                   style={{ width: `${(d.expenses / max) * 100}%` }}
-                  title={`Expenses: ${formatCurrency(d.expenses)}`}
+                  title={`Expenses: £${d.expenses.toFixed(0)}`}
                 />
               </div>
             </div>
@@ -192,7 +162,6 @@ const CSSBarChart = ({ data, title }: { data: any[]; title: string }) => {
   );
 };
 
-// === GRÁFICA CSS: PASTEL ===
 const CSSPieChart = ({ data }: { data: { name: string; value: number; color: string }[] }) => {
   const total = data.reduce((sum, d) => sum + d.value, 0);
   let cumulative = 0;
@@ -220,7 +189,7 @@ const CSSPieChart = ({ data }: { data: { name: string; value: number; color: str
             })}
           </svg>
           <div className="absolute inset-0 flex items-center justify-center text-2xl font-bold">
-            {formatCurrency(total)}
+            £{total.toFixed(0)}
           </div>
         </div>
         <div className="mt-4 space-y-2">
@@ -230,7 +199,7 @@ const CSSPieChart = ({ data }: { data: { name: string; value: number; color: str
                 <div className="w-3 h-3 rounded" style={{ backgroundColor: d.color }} />
                 {d.name}
               </span>
-              <span>{formatCurrency(d.value)}</span>
+              <span>£{d.value.toFixed(0)}</span>
             </div>
           ))}
         </div>
@@ -368,10 +337,9 @@ const Index = () => {
     debtStrategy,
     debtData,
     activeProfile,
-    incomeData,
-    variableExpensesData,
   );
 
+  // === FORMAT CURRENCY DENTRO DEL COMPONENTE ===
   const formatCurrency = (amount: number) => `£${amount.toFixed(0)}`;
 
   useEffect(() => {
@@ -426,7 +394,7 @@ const Index = () => {
               <p className="text-muted-foreground">Hello, {activeProfile.name || "User"}!</p>
             </div>
             <div className="flex items-center gap-3">
-              <LanguageToggle language={language} onLanguageChange={setLanguage} />
+              <LanguageToggle language={language} onLanguageChange={(lang: Language) => setLanguage(lang)} />
               <ProfileSelector language={language} />
               <Button variant="outline" size="icon" onClick={exportPDF}>
                 <Download className="h-4 w-4" />
@@ -497,7 +465,7 @@ const Index = () => {
             </Card>
           </div>
 
-          {/* GRÁFICAS CSS */}
+          {/* GRÁFICAS */}
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6 no-print">
             <CSSBarChart data={calculations.forecast} title="6-Month Forecast" />
             {pieData.length > 0 && <CSSPieChart data={pieData} />}
@@ -636,7 +604,7 @@ const Index = () => {
               </div>
               <div className="p-4 border-t flex gap-2">
                 <Input
-                  placeholder="Can I spend £300? What should I pay?"
+                  placeholder="Can I spend £300?"
                   value={input}
                   onChange={(e) => setInput(e.target.value)}
                   onKeyPress={(e) => e.key === "Enter" && sendMessage()}
