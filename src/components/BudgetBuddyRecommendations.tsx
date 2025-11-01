@@ -1,10 +1,11 @@
 import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
-import { Check, X, Lightbulb, ArrowRight } from "lucide-react";
+import { Check, X, Lightbulb, ArrowRight, RefreshCw } from "lucide-react";
 import { Language } from "@/lib/i18n";
 import { useToast } from "@/hooks/use-toast";
-import { supabase } from "@/integrations/supabase/client";
+import { useBudgetRecommendations } from "@/hooks/useBudgetRecommendations";
+import { Skeleton } from "@/components/ui/skeleton";
 
 interface BudgetAllocation {
   category: string;
@@ -13,7 +14,7 @@ interface BudgetAllocation {
   target_type?: 'debt' | 'savings_goal' | 'emergency_fund';
 }
 
-interface Recommendation {
+export interface Recommendation {
   id: string;
   title: string;
   description: string;
@@ -23,24 +24,27 @@ interface Recommendation {
 
 interface BudgetBuddyRecommendationsProps {
   language: Language;
-  recommendations: Recommendation[];
+  profileId: string | undefined;
   onAccept: (recommendation: Recommendation) => Promise<void>;
-  onDismiss: (recommendationId: string) => void;
 }
 
 export const BudgetBuddyRecommendations = ({
   language,
-  recommendations,
+  profileId,
   onAccept,
-  onDismiss
 }: BudgetBuddyRecommendationsProps) => {
   const { toast } = useToast();
   const [processingId, setProcessingId] = useState<string | null>(null);
+  const [dismissedIds, setDismissedIds] = useState<Set<string>>(new Set());
+  const { recommendations, isLoading, error, refetch } = useBudgetRecommendations(profileId);
+
+  const visibleRecommendations = recommendations.filter(r => !dismissedIds.has(r.id));
 
   const handleAccept = async (recommendation: Recommendation) => {
     setProcessingId(recommendation.id);
     try {
       await onAccept(recommendation);
+      setDismissedIds(prev => new Set([...prev, recommendation.id]));
       toast({
         title: language === 'en' ? 'Recommendation Applied' : 'Recomendación Aplicada',
         description: language === 'en' 
@@ -61,16 +65,70 @@ export const BudgetBuddyRecommendations = ({
     }
   };
 
-  if (recommendations.length === 0) return null;
+  const handleDismiss = (id: string) => {
+    setDismissedIds(prev => new Set([...prev, id]));
+  };
+
+  const handleRefresh = () => {
+    setDismissedIds(new Set());
+    refetch();
+  };
+
+  if (isLoading) {
+    return (
+      <Card className="shadow-medium border-primary/20">
+        <CardHeader className="bg-gradient-primary text-primary-foreground">
+          <div className="flex items-center gap-2">
+            <Lightbulb className="h-5 w-5" />
+            <CardTitle className="text-lg">
+              {language === 'en' ? 'Smart Budget Recommendations' : 'Recomendaciones Inteligentes de Presupuesto'}
+            </CardTitle>
+          </div>
+        </CardHeader>
+        <CardContent className="pt-6 space-y-4">
+          <Skeleton className="h-32 w-full" />
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (error) {
+    return (
+      <Card className="shadow-medium border-primary/20">
+        <CardHeader className="bg-gradient-primary text-primary-foreground">
+          <div className="flex items-center gap-2">
+            <Lightbulb className="h-5 w-5" />
+            <CardTitle className="text-lg">
+              {language === 'en' ? 'Smart Budget Recommendations' : 'Recomendaciones Inteligentes de Presupuesto'}
+            </CardTitle>
+          </div>
+        </CardHeader>
+        <CardContent className="pt-6">
+          <p className="text-sm text-muted-foreground">{error}</p>
+          <Button onClick={handleRefresh} variant="outline" size="sm" className="mt-4">
+            <RefreshCw className="h-4 w-4 mr-2" />
+            {language === 'en' ? 'Try Again' : 'Intentar de nuevo'}
+          </Button>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (visibleRecommendations.length === 0) return null;
 
   return (
     <Card className="shadow-medium border-primary/20">
       <CardHeader className="bg-gradient-primary text-primary-foreground">
-        <div className="flex items-center gap-2">
-          <Lightbulb className="h-5 w-5" />
-          <CardTitle className="text-lg">
-            {language === 'en' ? 'Smart Budget Recommendations' : 'Recomendaciones Inteligentes de Presupuesto'}
-          </CardTitle>
+        <div className="flex items-center justify-between">
+          <div className="flex items-center gap-2">
+            <Lightbulb className="h-5 w-5" />
+            <CardTitle className="text-lg">
+              {language === 'en' ? 'Smart Budget Recommendations' : 'Recomendaciones Inteligentes de Presupuesto'}
+            </CardTitle>
+          </div>
+          <Button onClick={handleRefresh} variant="ghost" size="sm" className="text-primary-foreground hover:bg-primary-foreground/20">
+            <RefreshCw className="h-4 w-4" />
+          </Button>
         </div>
         <CardDescription className="text-primary-foreground/80 text-sm">
           {language === 'en' 
@@ -79,7 +137,7 @@ export const BudgetBuddyRecommendations = ({
         </CardDescription>
       </CardHeader>
       <CardContent className="pt-6 space-y-4">
-        {recommendations.map((recommendation) => (
+        {visibleRecommendations.map((recommendation) => (
           <div
             key={recommendation.id}
             className="border rounded-lg p-4 space-y-3 hover:bg-secondary/50 transition-colors"
@@ -121,7 +179,7 @@ export const BudgetBuddyRecommendations = ({
                   : (language === 'en' ? 'Accept & Apply' : 'Aceptar y Aplicar')}
               </Button>
               <Button
-                onClick={() => onDismiss(recommendation.id)}
+                onClick={() => handleDismiss(recommendation.id)}
                 disabled={processingId === recommendation.id}
                 variant="outline"
                 size="sm"
