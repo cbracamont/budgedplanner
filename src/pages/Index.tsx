@@ -1,3 +1,4 @@
+// src/pages/Index.tsx
 "use client";
 
 import { useState, useEffect, useMemo, useCallback } from "react";
@@ -292,8 +293,7 @@ const Index = () => {
     const totalDebtPayment = debtData.reduce((s, d) => s + d.minimum_payment, 0);
     const totalExpenses = totalFixed + totalVariable + totalDebtPayment;
     const cashFlow = totalIncome - totalExpenses;
-    const savingsTotal =
-      (savings?.emergency_fund || 0) + savingsGoalsData.reduce((s, g) => s + (g.current_amount || 0), 0);
+    const savingsTotal = (savings?.emergency_fund || 0) + savingsGoalsData.reduce((s, g) => s + (g.current_amount || 0), 0);
 
     let remaining = debtData.reduce((s, d) => s + d.balance, 0);
     let months = 0;
@@ -685,8 +685,8 @@ const Index = () => {
                             e.type === "income"
                               ? "text-green-600"
                               : e.type === "debt"
-                                ? "text-red-600"
-                                : "text-blue-600"
+                              ? "text-red-600"
+                              : "text-blue-600"
                           }`}
                         >
                           {e.name}
@@ -800,7 +800,10 @@ const Index = () => {
               <div className="space-y-4">
                 <div>
                   <Label>Name</Label>
-                  <Input value={newEvent.name} onChange={(e) => setNewEvent({ ...newEvent, name: e.target.value })} />
+                  <Input
+                    value={newEvent.name}
+                    onChange={(e) => setNewEvent({ ...newEvent, name: e.target.value })}
+                  />
                 </div>
                 <div>
                   <Label>Amount</Label>
@@ -879,333 +882,122 @@ const Index = () => {
               </div>
               <AlertDialogFooter>
                 <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction
-                  onClick={() => {
-                    if (newIncome.description && newIncome.amount > 0) {
-                      addIncome(newIncome.amount, newIncome.description);
-                      setNewIncome({ description: "", amount: 0 });
-                      setShowIncomeModal(false);
-                    }
-                  }}
-                >
+                <AlertDialogAction onClick={() => {
+                  if (newIncome.description && newIncome.amount > 0) {
+                    addIncome(newIncome.amount, newIncome.description);
+                    setNewIncome({ description: "", amount: 0 });
+                    setShowIncomeModal(false);
+                  }
+                }}>
                   Add Income
                 </AlertDialogAction>
               </AlertDialogFooter>
             </AlertDialogContent>
-          </AlertDialog>
+          </AlertDialog>;
 
-          {/* TABS */}
-          <Tabs defaultValue="overview" className="no-print">
-            <TabsList className="grid w-full grid-cols-4 mb-6">
-              <TabsTrigger value="overview">Overview</TabsTrigger>
-              <TabsTrigger value="income">Income</TabsTrigger>
-              <TabsTrigger value="expenses">Expenses</TabsTrigger>
-              <TabsTrigger value="debts">Debts</TabsTrigger>
-            </TabsList>
+  {/* TABS */}
+  <Tabs defaultValue="overview" className="no-print">
+    <TabsList className="grid w-full grid-cols-4 mb-6">
+      <TabsTrigger value="overview">Overview</TabsTrigger>
+      <TabsTrigger value="income">Income</TabsTrigger>
+      <TabsTrigger value="expenses">Expenses</TabsTrigger>
+      <TabsTrigger value="debts">Debts</TabsTrigger>
+    </TabsList>
 
-            <TabsContent value="overview">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Family Budget</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-6xl font-bold text-center text-blue-600">
-                    {cashFlow > 0 ? "Healthy" : "Review"}
-                  </div>
-                  <Progress value={cashFlow > 0 ? 80 : 40} className="mt-4" />
-                </CardContent>
-              </Card>
-            </TabsContent>
+    <TabsContent value="overview">
+      <Card>
+        <CardHeader>
+          <CardTitle>Family Budget</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="text-6xl font-bold text-center text-blue-600">
+            {cashFlow > 0 ? "Healthy" : "Review"}
+          </div>
+          <Progress value={cashFlow > 0 ? 80 : 40} className="mt-4" />
+        </CardContent>
+      </Card>
+    </TabsContent>
 
-            <TabsContent value="income">
-              <Tabs defaultValue="fixed" className="mt-6">
-                <TabsList>
-                  <TabsTrigger value="fixed">Fixed Income</TabsTrigger>
-                  <TabsTrigger value="variable">Variable Income</TabsTrigger>
-                </TabsList>
+    <TabsContent value="income">
+      <Tabs defaultValue="fixed" className="mt-6">
+        <TabsList>
+          <TabsTrigger value="fixed">Fixed Income</TabsTrigger>
+          <TabsTrigger value="variable">Variable Income</TabsTrigger>
+        </TabsList>
 
-                <TabsContent value="fixed">
-                  <IncomeManager language={language} />
-                </TabsContent>
+        <TabsContent value="fixed">
+          <IncomeManager language={language} />
+        </TabsContent>
 
-                <TabsContent value="variable">
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="text-lg font-semibold flex items-center justify-between">
-                        Variable Income
-                        <Button size="sm" onClick={() => setShowIncomeModal(true)}>
-                          <Plus className="h-4 w-4 mr-1" /> Add
+        <TabsContent value="variable">
+          <Card>
+            <CardHeader>
+              <CardTitle className="text-lg font-semibold flex items-center justify-between">
+                Variable Income
+                <Button size="sm" onClick={() => setShowIncomeModal(true)}>
+                  <Plus className="h-4 w-4 mr-1" /> Add
+                </Button>
+              </CardTitle>
+              <CardDescription>Extra income like bonuses, gifts, side hustles</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {variableIncome.length === 0 ? (
+                <p className="text-center text-muted-foreground py-6">No variable income yet</p>
+              ) : (
+                <div className="space-y-2">
+                  {variableIncome.map((inc) => (
+                    <div key={inc.id} className="flex justify-between items-center p-3 bg-muted rounded-lg">
+                      <div>
+                        <p className="font-medium">{inc.description}</p>
+                        <p className="text-xs text-muted-foreground">
+                          {format(new Date(inc.date), "d MMM yyyy")}
+                        </p>
+                      </div>
+                      <div className="flex items-center gap-2">
+                        <span className="font-bold text-green-600">{formatCurrency(inc.amount)}</span>
+                        <Button size="sm" variant="ghost" onClick={() => deleteIncome(inc.id)}>
+                          <Trash2 className="h-4 w-4" />
                         </Button>
-                      </CardTitle>
-                      <CardDescription>Extra income like bonuses, gifts, side hustles</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      {variableIncome.length === 0 ? (
-                        <p className="text-center text-muted-foreground py-6">No variable income yet</p>
-                      ) : (
-                        <div className="space-y-2">
-                          {variableIncome.map((inc) => (
-                            <div key={inc.id} className="flex justify-between items-center p-3 bg-muted rounded-lg">
-                              <div>
-                                <p className="font-medium">{inc.description}</p>
-                                <p className="text-xs text-muted-foreground">
-                                  {format(new Date(inc.date), "d MMM yyyy")}
-                                </p>
-                              </div>
-                              <div className="flex items-center gap-2">
-                                <span className="font-bold text-green-600">{formatCurrency(inc.amount)}</span>
-                                <Button size="sm" variant="ghost" onClick={() => deleteIncome(inc.id)}>
-                                  <Trash2 className="h-4 w-4" />
-                                </Button>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </CardContent>
-                  </Card>
-                </TabsContent>
-              </Tabs>
-            </TabsContent>
-
-            <TabsContent value="expenses">
-              <Tabs defaultValue="fixed" className="mt-6">
-                <TabsList>
-                  <TabsTrigger value="fixed">Fixed</TabsTrigger>
-                  <TabsTrigger value="variable">Variable</TabsTrigger>
-                </TabsList>
-                <TabsContent value="fixed">
-                  <FixedExpensesManager language={language} />
-                </TabsContent>
-                <TabsContent value="variable">
-                  <VariableExpensesManager language={language} />
-                </TabsContent>
-              </Tabs>
-            </TabsContent>
-
-            <TabsContent value="debts">
-              <DebtsManager language={language} />
-              <DebtPlanner language={language} />
-            </TabsContent>
-          </Tabs>
-
-          <footer className="no-print py-8 text-center text-xs text-muted-foreground border-t mt-12">
-            <p className="font-semibold mb-2">Legal Disclaimer (UK)</p>
-            <p>This app is for educational use only. Not financial advice. Consult an FCA adviser.</p>
-            <p className="mt-2">© 2025 Family Budget Planner UK</p>
-          </footer>
-        </div>
-      </div>
-    </>
-  );
-};
-
-// COMPONENTE DEBT PLANNER
-const DebtPlanner = ({ language }: { language: Language }) => {
-  const [monthlySavings, setMonthlySavings] = useState(0);
-  const [debtMethod, setDebtMethod] = useState<DebtMethod>("avalanche");
-
-  const { data: incomeData = [] } = useIncomeSources();
-  const { data: debtData = [] } = useDebts();
-  const { data: fixedExpensesData = [] } = useFixedExpenses();
-  const { data: variableExpensesData = [] } = useVariableExpenses();
-  const { data: savings } = useSavings();
-
-  const t = translations[language];
-
-  const { totalIncome, totalFixed, totalVariable, totalDebtPayment, totalExpenses, cashFlow, savingsTotal } =
-    useMemo(() => {
-      const totalIncome = incomeData.reduce((s, i) => s + i.amount, 0);
-      const totalFixed = fixedExpensesData.reduce((s, e) => s + e.amount, 0);
-      const totalVariable = variableExpensesData.reduce((s, e) => s + e.amount, 0);
-      const totalDebtPayment = debtData.reduce((s, d) => s + d.minimum_payment, 0);
-      const totalExpenses = totalFixed + totalVariable + totalDebtPayment;
-      const cashFlow = totalIncome - totalExpenses;
-      const savingsTotal = savings?.emergency_fund || 0;
-      return { totalIncome, totalFixed, totalVariable, totalDebtPayment, totalExpenses, cashFlow, savingsTotal };
-    }, [incomeData, debtData, fixedExpensesData, variableExpensesData, savings]);
-
-  // CALCULAR ESTRATEGIA DE DEUDA
-  const debtStrategy = useMemo(() => {
-    if (debtData.length === 0) return null;
-
-    const extraForDebt = Math.max(0, cashFlow - monthlySavings);
-
-    const sortFn =
-      debtMethod === "avalanche"
-        ? (a, b) => b.apr - a.apr
-        : debtMethod === "snowball"
-          ? (a, b) => a.balance - b.balance
-          : (a, b) => b.apr * 0.6 + (b.balance / 1000) * 0.4 - (a.apr * 0.6 + (a.balance / 1000) * 0.4);
-
-    const sortedDebts = [...debtData].sort(sortFn);
-
-    let remainingBalances = sortedDebts.map((d) => ({ ...d, balance: d.balance }));
-    let months = 0;
-    let totalInterest = 0;
-    let allocation = sortedDebts.map((d) => ({
-      name: d.name,
-      minPayment: d.minimum_payment,
-      extra: 0,
-      totalPayment: d.minimum_payment,
-    }));
-
-    while (remainingBalances.some((d) => d.balance > 0) && months < 120) {
-      let monthlyInterest = 0;
-      remainingBalances.forEach((debt, index) => {
-        if (debt.balance <= 0) return;
-        const interest = debt.balance * (debt.apr / 100 / 12);
-        monthlyInterest += interest;
-        debt.balance += interest;
-
-        const payment = debt.minimum_payment + (index === 0 ? extraForDebt : 0);
-        allocation[index].totalPayment += payment;
-        allocation[index].extra += index === 0 ? extraForDebt : 0;
-        debt.balance = Math.max(0, debt.balance - payment);
-      });
-      totalInterest += monthlyInterest;
-      months++;
-    }
-
-    const monthsToEmergency =
-      monthlySavings > 0 ? ((totalExpenses * 3 - savingsTotal) / monthlySavings).toFixed(1) : "N/A";
-
-    return {
-      sortedDebts,
-      allocation,
-      months,
-      totalInterest: Math.round(totalInterest),
-      monthsToEmergency,
-      extraForDebt,
-    };
-  }, [debtData, cashFlow, monthlySavings, debtMethod, totalExpenses, savingsTotal]);
-
-  if (!debtStrategy)
-    return (
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-sm">{t.debtPlanner}</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <p className="text-center text-muted-foreground py-6">No debts to plan</p>
-        </CardContent>
-      </Card>
-    );
-
-  return (
-    <div className="space-y-6">
-      {/* SLIDER AHORROS */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-sm">{t.monthlySavings}</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <Slider
-            value={[monthlySavings]}
-            onValueChange={(value) => setMonthlySavings(value[0])}
-            max={Math.max(cashFlow, 0)}
-            step={50}
-            className="w-full"
-          />
-          <div className="flex justify-between text-sm text-muted-foreground mt-2">
-            <span>£0</span>
-            <span className="font-medium">{formatCurrency(monthlySavings)}</span>
-            <span>{formatCurrency(Math.max(cashFlow, 0))}</span>
-          </div>
-          <p className="text-sm text-muted-foreground mt-1">
-            {t.cashFlowAfterSavings}: {formatCurrency(cashFlow - monthlySavings)}
-          </p>
-        </CardContent>
-      </Card>
-
-      {/* FONDO DE EMERGENCIA */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="text-sm">{t.emergencyFund}</CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            <div className="flex justify-between">
-              <span className="text-sm text-muted-foreground">Goal (3 months expenses):</span>
-              <span className="font-bold">{formatCurrency(totalExpenses * 3)}</span>
-            </div>
-            <div className="flex justify-between">
-              <span className="text-sm text-muted-foreground">Current:</span>
-              <span className="font-bold text-green-600">{formatCurrency(savingsTotal)}</span>
-            </div>
-            <Progress value={(savingsTotal / (totalExpenses * 3)) * 100} />
-            <p className="text-sm text-muted-foreground">
-              {t.monthsToEmergency}: {debtStrategy.monthsToEmergency}
-            </p>
-          </div>
-        </CardContent>
-      </Card>
-
-      {/* PRIORIDAD DE DEUDAS */}
-      <Card>
-        <CardHeader>
-          <CardTitle className="flex items-center justify-between">
-            <span>{t.priority}</span>
-            <Select value={debtMethod} onValueChange={(value) => setDebtMethod(value as DebtMethod)}>
-              <SelectTrigger className="w-[180px]">
-                <SelectValue />
-              </SelectTrigger>
-              <SelectContent>
-                <SelectItem value="avalanche">
-                  <Zap className="mr-2 h-4 w-4" />
-                  {t.avalanche}
-                </SelectItem>
-                <SelectItem value="snowball">
-                  <Snowflake className="mr-2 h-4 w-4" />
-                  {t.snowball}
-                </SelectItem>
-                <SelectItem value="hybrid">
-                  <Zap className="mr-2 h-4 w-4" />
-                  {t.hybrid}
-                </SelectItem>
-              </SelectContent>
-            </Select>
-          </CardTitle>
-        </CardHeader>
-        <CardContent>
-          <div className="space-y-4">
-            {debtStrategy.sortedDebts.map((debt, index) => (
-              <div key={debt.id} className="flex items-center justify-between p-3 bg-muted rounded-lg">
-                <div className="flex items-center gap-3">
-                  <Badge variant="secondary" className="w-8 h-8 flex items-center justify-center">
-                    {index + 1}
-                  </Badge>
-                  <div>
-                    <p className="font-medium">{debt.name}</p>
-                    <p className="text-sm text-muted-foreground">
-                      APR {debt.apr}% • Balance {formatCurrency(debt.balance)}
-                    </p>
-                  </div>
+                      </div>
+                    </div>
+                  ))}
                 </div>
-                <div className="text-right">
-                  <p className="font-bold text-red-600">{formatCurrency(debt.minimum_payment)}</p>
-                  <p className="text-xs text-muted-foreground">{t.minPayment}</p>
-                  <p className="text-xs font-medium text-emerald-600">
-                    Extra: {formatCurrency(debtStrategy.allocation[index].extra)}
-                  </p>
-                  <p className="text-xs font-medium text-indigo-600">
-                    Total: {formatCurrency(debtStrategy.allocation[index].totalPayment)}
-                  </p>
-                </div>
-              </div>
-            ))}
-          </div>
-          <div className="mt-4 p-3 bg-muted rounded-lg">
-            <p className="text-sm text-muted-foreground">
-              <strong>Total extra for debt:</strong> {formatCurrency(debtStrategy.extraForDebt)} |{" "}
-              <strong>Time to debt-free:</strong> {debtStrategy.months} {t.months} | <strong>{t.totalInterest}:</strong>{" "}
-              {formatCurrency(debtStrategy.totalInterest)}
-            </p>
-          </div>
-        </CardContent>
-      </Card>
-    </div>
-  );
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
+    </TabsContent>
+
+    <TabsContent value="expenses">
+      <Tabs defaultValue="fixed" className="mt-6">
+        <TabsList>
+          <TabsTrigger value="fixed">Fixed</TabsTrigger>
+          <TabsTrigger value="variable">Variable</TabsTrigger>
+        </TabsList>
+        <TabsContent value="fixed">
+          <FixedExpensesManager language={language} />
+        </TabsContent>
+        <TabsContent value="variable">
+          <VariableExpensesManager language={language} />
+        </TabsContent>
+      </Tabs>
+    </TabsContent>
+
+    <TabsContent value="debts">
+      <DebtsManager language={language} />
+      <DebtPlanner language={language} />
+    </TabsContent>
+  </Tabs>
+
+  <footer className="no-print py-8 text-center text-xs text-muted-foreground border-t mt-12">
+    <p className="font-semibold mb-2">Legal Disclaimer (UK)</p>
+    <p>This app is for educational use only. Not financial advice. Consult an FCA adviser.</p>
+    <p className="mt-2">© 2025 Family Budget Planner UK</p>
+  </footer>
+</div>
+</div>
+);
 };
 
 export default Index;
