@@ -188,17 +188,17 @@ const Index = () => {
       { name: "Debt", value: totalDebtPayment, color: "#ef4444" },
     ].filter((d) => d.value > 0);
 
-    // === EVENTOS RECURRENTES EN MÚLTIPLES MESES ===
+    // === CALENDARIO CON EVENTOS RECURRENTES EN TODOS LOS MESES ===
     const allEvents: Event[] = [];
-    const startYear = currentMonth.getFullYear() - 1; // -1 año
-    const endYear = currentMonth.getFullYear() + 1; // +1 año
+    const startYear = currentMonth.getFullYear() - 1;
+    const endYear = currentMonth.getFullYear() + 1;
 
     for (let year = startYear; year <= endYear; year++) {
       for (let month = 0; month < 12; month++) {
         const currentDate = new Date(year, month, 1);
         if (currentDate > new Date(endYear, 11, 31)) break;
 
-        // INGRESOS FIJOS - Día 1 de cada mes
+        // INGRESOS FIJOS - Día 1 de cada mes en todos los años
         incomeData.forEach((inc) => {
           const date = new Date(year, month, 1);
           allEvents.push({
@@ -211,7 +211,7 @@ const Index = () => {
           });
         });
 
-        // GASTOS FIJOS - Día de pago de cada mes
+        // GASTOS FIJOS - Día de pago en cada mes de todos los años
         fixedExpensesData.forEach((exp) => {
           const day = exp.payment_day || 1;
           const lastDayOfMonth = new Date(year, month + 1, 0).getDate();
@@ -226,7 +226,7 @@ const Index = () => {
           });
         });
 
-        // DEUDAS - Día 15 de cada mes
+        // DEUDAS - Día 15 de cada mes en todos los años
         debtData.forEach((debt) => {
           const date = new Date(year, month, 15);
           allEvents.push({
@@ -239,7 +239,7 @@ const Index = () => {
           });
         });
 
-        // GASTOS VARIABLES - Simulación recurrente (día 10 de cada mes)
+        // GASTOS VARIABLES - Simulación recurrente (día 10 de cada mes en todos los años)
         variableExpensesData.forEach((exp) => {
           const date = new Date(year, month, 10);
           allEvents.push({
@@ -326,298 +326,4 @@ const Index = () => {
   const updateEvent = () => {
     if (editingEvent && newEvent.name && newEvent.amount) {
       const updated = events.map((e) =>
-        e.id === editingEvent.id ? { ...e, name: newEvent.name, amount: newEvent.amount } : e,
-      );
-      setEvents(updated);
-      setEditingEvent(null);
-      setShowEventDialog(false);
-      setNewEvent({ name: "", amount: 0, type: "income" });
-    }
-  };
-
-  const deleteEvent = (id: string) => {
-    setEvents(events.filter((e) => e.id !== id));
-    setDeleteId(null);
-  };
-
-  // === AI LOCAL ===
-  const sendToAI = () => {
-    if (!aiInput.trim()) return;
-    setAiLoading(true);
-    setAiResponse("");
-
-    setTimeout(() => {
-      const lower = aiInput.toLowerCase();
-      let response = "";
-
-      if (lower.includes("save") || lower.includes("ahorrar") || lower.includes("cut")) {
-        response = `To save more:\n1. Review variable expenses (£${totalVariable}) — cut £50-100 on food/entertainment.\n2. Put 50% of any extra income into savings.\n3. Set a "no-spend" weekend each month.`;
-      } else if (lower.includes("debt") || lower.includes("deuda") || lower.includes("pay off")) {
-        response = `Debt strategy:\n• Pay minimums on all debts.\n• Use 30% of surplus (£${Math.round(cashFlow * 0.3)}) to attack highest APR first.\n• You'll be debt-free in ${monthsToDebtFree} months.`;
-      } else if (lower.includes("emergency") || lower.includes("fondo")) {
-        response = `Emergency fund goal: 3-6 months of expenses (£${totalExpenses * 3}-£${totalExpenses * 6}).\nYou have £${savingsTotal}. Keep building!`;
-      } else if (lower.includes("budget") || lower.includes("presupuesto")) {
-        response = `Your budget:\n• Income: ${formatCurrency(totalIncome)}\n• Expenses: ${formatCurrency(totalExpenses)}\n• Cash Flow: ${formatCurrency(cashFlow)}\n${cashFlow > 0 ? "You're saving!" : "Reduce spending by £" + -cashFlow}`;
-      } else {
-        response = `I see you're asking about "${aiInput}".\n\nQuick tip: Track every expense for 30 days. Most families find £100-200 in hidden waste.\nWant help with a specific category?`;
-      }
-
-      setAiResponse(response);
-      setAiLoading(false);
-    }, 800);
-  };
-
-  return (
-    <>
-      <style>{`@media print { .no-print { display: none !important; } }`}</style>
-
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-slate-900 dark:to-indigo-900">
-        <div className="max-w-7xl mx-auto p-6 space-y-8">
-          {/* HEADER */}
-          <div className="no-print flex justify-between items-center mb-8">
-            <div>
-              <h1 className="text-5xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent flex items-center gap-3">
-                <Home className="h-12 w-12" />
-                Family Budget Planner UK
-              </h1>
-              <p className="text-muted-foreground">Hi, {activeProfile.name}!</p>
-            </div>
-            <div className="flex items-center gap-3">
-              <LanguageToggle language={language} onLanguageChange={handleLanguageChange} />
-              <ProfileSelector language={language} />
-              <Button variant="outline" size="icon" onClick={() => window.print()}>
-                <Download className="h-4 w-4" />
-              </Button>
-              <Button variant="outline" size="icon" onClick={() => setShowAI(true)}>
-                <Bot className="h-4 w-4" />
-              </Button>
-              <Button variant="outline" size="icon" onClick={() => supabase.auth.signOut()}>
-                <LogOut className="h-4 w-4" />
-              </Button>
-            </div>
-          </div>
-
-          {/* RESUMEN */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <Card className="border-green-200">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-green-600">Total Income</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-3xl font-bold text-green-600">{formatCurrency(totalIncome)}</div>
-              </CardContent>
-            </Card>
-
-            <Card className="border-red-200">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-red-600">Total Expenses</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-3xl font-bold text-red-600">{formatCurrency(totalExpenses)}</div>
-              </CardContent>
-            </Card>
-
-            <Card className={`${cashFlow >= 0 ? "border-emerald-200" : "border-orange-200"}`}>
-              <CardHeader className="pb-2">
-                <CardTitle className={`text-sm font-medium ${cashFlow >= 0 ? "text-emerald-600" : "text-orange-600"}`}>
-                  Cash Flow
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className={`text-3xl font-bold ${cashFlow >= 0 ? "text-emerald-600" : "text-orange-600"}`}>
-                  {formatCurrency(cashFlow)}
-                </div>
-              </CardContent>
-            </Card>
-
-            <Card className="border-purple-200">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-purple-600 flex items-center gap-1">
-                  <PiggyBank className="h-4 w-4" /> Total Savings
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-3xl font-bold text-purple-600">{formatCurrency(savingsTotal)}</div>
-              </CardContent>
-            </Card>
-          </div>
-
-          {/* DEBT FREE */}
-          {debtData.length > 0 && (
-            <Card className="border-2 border-orange-200">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-orange-600">
-                  <TrendingUp className="h-6 w-6" />
-                  Debt Free Date
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-center">
-                  <p className="text-4xl font-bold">{format(debtFreeDate, "d MMM yyyy")}</p>
-                  <p className="text-lg text-muted-foreground">{monthsToDebtFree} months away</p>
-                </div>
-                <Progress value={80} className="h-4 mt-3" />
-              </CardContent>
-            </Card>
-          )}
-
-          {/* GASTOS PASTEL */}
-          {pieData.length > 0 && (
-            <Card>
-              <CardHeader>
-                <CardTitle>Expense Breakdown</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="relative w-64 h-64 mx-auto">
-                  <svg viewBox="0 0 32 32" className="w-full h-full">
-                    {(() => {
-                      const total = pieData.reduce((s, d) => s + d.value, 0);
-                      let cum = 0;
-                      return pieData.map((d, i) => {
-                        const percent = (d.value / total) * 100;
-                        const start = (cum / total) * 360;
-                        cum += d.value;
-                        const end = (cum / total) * 360;
-                        const large = percent > 50 ? 1 : 0;
-                        const sr = (start * Math.PI) / 180;
-                        const er = (end * Math.PI) / 180;
-                        const x1 = 16 + 16 * Math.cos(sr);
-                        const y1 = 16 + 16 * Math.sin(sr);
-                        const x2 = 16 + 16 * Math.cos(er);
-                        const y2 = 16 + 16 * Math.sin(er);
-                        return (
-                          <path
-                            key={i}
-                            d={`M16,16 L${x1},${y1} A16,16 0 ${large},1 ${x2},${y2} Z`}
-                            fill={d.color}
-                          />
-                        );
-                      });
-                    })()}
-                  </svg>
-                  <div className="absolute inset-0 flex items-center justify-center text-2xl font-bold">
-                    {formatCurrency(totalExpenses)}
-                  </div>
-                </div>
-                <div className="mt-4 space-y-2">
-                  {pieData.map((d, i) => (
-                    <div key={i} className="flex justify-between text-sm">
-                      <span className="flex items-center gap-2">
-                        <div className="w-3 h-3 rounded" style={{ backgroundColor: d.color }} />
-                        {d.name}
-                      </span>
-                      <span>{formatCurrency(d.value)}</span>
-                    </div>
-                  ))}
-                </div>
-              </CardContent>
-            </Card>
-          )}
-
-          {/* CALENDARIO */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center justify-between">
-                <span className="flex items-center gap-2">
-                  <Calendar className="h-5 w-5" />
-                  {format(currentMonth, "MMMM yyyy")}
-                </span>
-                <div className="flex gap-2">
-                  <Button size="sm" variant="outline" onClick={() => setCurrentMonth(sub(currentMonth, { months: 1 }))}>
-                    <ChevronLeft className="h-4 w-4" />
-                  </Button>
-                  <Button size="sm" variant="outline" onClick={() => setCurrentMonth(add(currentMonth, { months: 1 }))}>
-                    <ChevronRight className="h-4 w-4" />
-                  </Button>
-                  <Button size="sm" onClick={() => setShowEventDialog(true)}>
-                    <Plus className="h-4 w-4 mr-1" /> Add
-                  </Button>
-                </div>
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-7 gap-1 text-center text-sm font-medium">
-                {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((d) => (
-                  <div key={d} className="p-2">
-                    {d}
-                  </div>
-                ))}
-              </div>
-              <div className="grid grid-cols-7 gap-1 mt-2">
-                {blankDays.map((_, i) => (
-                  <div key={`blank-${i}`} className="h-16 border rounded" />
-                ))}
-                {monthDays.map((day) => {
-                  const dayEvents = getEventsForDay(day);
-                  return (
-                    <div
-                      key={day.toISOString()}
-                      className={`h-16 border rounded p-1 text-xs cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 transition ${
-                        isSameDay(day, new Date()) ? "bg-blue-50 dark:bg-blue-900" : ""
-                      }`}
-                      onClick={() => setSelectedDate(day)}
-                    >
-                      <div className="font-medium">{format(day, "d")}</div>
-                      {dayEvents.slice(0, 2).map((e, i) => (
-                        <div
-                          key={i}
-                          className={`text-[9px] truncate ${
-                            e.type === "income"
-                              ? "text-green-600"
-                              : e.type === "debt"
-                              ? "text-red-600"
-                              : "text-blue-600"
-                          }`}
-                        >
-                          {e.name}
-                        </div>
-                      ))}
-                      {dayEvents.length > 2 && (
-                        <div className="text-[9px] text-muted-foreground">+{dayEvents.length - 2}</div>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            </CardContent>
-          </Card>
-
-          {/* AI MODAL */}
-          <AlertDialog open={showAI} onOpenChange={setShowAI}>
-            <AlertDialogContent className="max-w-2xl">
-              <AlertDialogHeader>
-                <AlertDialogTitle className="flex items-center gap-2">
-                  <Bot className="h-5 w-5" /> Budget Assistant
-                </AlertDialogTitle>
-              </AlertDialogHeader>
-              <div className="space-y-4">
-                <Textarea
-                  placeholder="Ask anything: 'How can I save £200/month?' or 'Should I pay off debt first?'"
-                  value={aiInput}
-                  onChange={(e) => setAiInput(e.target.value)}
-                  className="min-h-24"
-                />
-                <Button onClick={sendToAI} disabled={aiLoading} className="w-full">
-                  {aiLoading ? (
-                    "Thinking..."
-                  ) : (
-                    <>
-                      <Send className="h-4 w-4 mr-2" /> Send
-                    </>
-                  )}
-                </Button>
-                {aiResponse && (
-                  <Card>
-                    <CardContent className="pt-4 whitespace-pre-wrap text-sm">{aiResponse}</CardContent>
-                  </Card>
-                )}
-              </div>
-              <AlertDialogFooter>
-                <AlertDialogCancel>Close</AlertDialogCancel>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
-
-          {/* DETALLE DEL DÍA */}
-          {selectedDate && (
-            <AlertDialog open={!!selectedDate}
+        e.id === editingEvent.id ? { ...e
