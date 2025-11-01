@@ -19,6 +19,7 @@ import {
   ChevronRight,
   Send,
   X,
+  Globe,
 } from "lucide-react";
 import {
   useIncomeSources,
@@ -30,29 +31,17 @@ import {
 } from "@/hooks/useFinancialData";
 import { useFinancialProfiles } from "@/hooks/useFinancialProfiles";
 import { Auth } from "@/components/Auth";
-import { LanguageToggle } from "@/components/LanguageToggle";
-import { ProfileSelector } from "@/components/ProfileSelector";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { supabase } from "@/integrations/supabase/client";
 import { useTheme } from "@/hooks/useTheme";
 import { Skeleton } from "@/components/ui/skeleton";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
-import { Label } from "@/components/ui/label";
-import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { Textarea } from "@/components/ui/textarea";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
 
 type Language = "en" | "es" | "pl" | "pt";
 
@@ -65,37 +54,166 @@ type Event = {
   recurring?: "monthly" | "annually";
 };
 
-// === STUB COMPONENTS ===
-const IncomeManager = ({ language }: { language: Language }) => (
-  <Card>
-    <CardContent>
-      <p className="text-center py-8 text-muted-foreground">Income management coming soon</p>
-    </CardContent>
-  </Card>
-);
-const FixedExpensesManager = ({ language }: { language: Language }) => (
-  <Card>
-    <CardContent>
-      <p className="text-center py-8 text-muted-foreground">Fixed expenses coming soon</p>
-    </CardContent>
-  </Card>
-);
-const VariableExpensesManager = ({ language }: { language: Language }) => (
-  <Card>
-    <CardContent>
-      <p className="text-center py-8 text-muted-foreground">Variable expenses coming soon</p>
-    </CardContent>
-  </Card>
-);
-const DebtsManager = ({ language }: { language: Language }) => (
-  <Card>
-    <CardContent>
-      <p className="text-center py-8 text-muted-foreground">Debt management coming soon</p>
-    </CardContent>
-  </Card>
-);
+const translations = {
+  en: {
+    title: "Family Budget Planner UK",
+    welcome: "Hi, {name}!",
+    totalIncome: "Total Income",
+    totalExpenses: "Total Expenses",
+    cashFlow: "Cash Flow",
+    totalSavings: "Total Savings",
+    addEvent: "Add Event",
+    editEvent: "Edit Event",
+    deleteEvent: "Delete Event?",
+    name: "Name",
+    amount: "Amount (£)",
+    type: "Type",
+    income: "Income",
+    debt: "Debt",
+    fixed: "Fixed",
+    variable: "Variable",
+    annual: "Annual",
+    save: "Save",
+    cancel: "Cancel",
+    delete: "Delete",
+    aiPlaceholder: "Ask AI about savings, debt, budget...",
+    send: "Send",
+    export: "Export Data",
+    print: "Print",
+    logout: "Logout",
+    overview: "Overview",
+    incomeTab: "Income",
+    expenses: "Expenses",
+    debts: "Debts",
+    variableIncome: "Variable Income",
+    add: "Add",
+    description: "Description",
+    noVariableIncome: "No variable income yet",
+    healthy: "Healthy",
+    review: "Review",
+    disclaimer: "This app is for educational use only. Not financial advice. Consult an FCA adviser.",
+    copyright: "© 2025 Family Budget Planner UK",
+  },
+  es: {
+    title: "Planificador de Presupuesto Familiar UK",
+    welcome: "¡Hola, {name}!",
+    totalIncome: "Ingresos Totales",
+    totalExpenses: "Gastos Totales",
+    cashFlow: "Flujo de Caja",
+    totalSavings: "Ahorros Totales",
+    addEvent: "Añadir Evento",
+    editEvent: "Editar Evento",
+    deleteEvent: "¿Borrar evento?",
+    name: "Nombre",
+    amount: "Cantidad (£)",
+    type: "Tipo",
+    income: "Ingreso",
+    debt: "Deuda",
+    fixed: "Fijo",
+    variable: "Variable",
+    annual: "Anual",
+    save: "Guardar",
+    cancel: "Cancelar",
+    delete: "Borrar",
+    aiPlaceholder: "Pregunta a la IA sobre ahorros, deudas, presupuesto...",
+    send: "Enviar",
+    export: "Exportar Datos",
+    print: "Imprimir",
+    logout: "Salir",
+    overview: "Resumen",
+    incomeTab: "Ingresos",
+    expenses: "Gastos",
+    debts: "Deudas",
+    variableIncome: "Ingresos Variables",
+    add: "Añadir",
+    description: "Descripción",
+    noVariableIncome: "Aún no hay ingresos variables",
+    healthy: "Saludable",
+    review: "Revisar",
+    disclaimer: "Esta app es solo educativa. No es asesoramiento financiero. Consulta a un asesor FCA.",
+    copyright: "© 2025 Planificador de Presupuesto Familiar UK",
+  },
+  pl: {
+    title: "Planer Budżetu Rodzinnego UK",
+    welcome: "Cześć, {name}!",
+    totalIncome: "Całkowity Dochód",
+    totalExpenses: "Całkowite Wydatki",
+    cashFlow: "Przepływ Gotówki",
+    totalSavings: "Całkowite Oszczędności",
+    addEvent: "Dodaj Wydarzenie",
+    editEvent: "Edytuj Wydarzenie",
+    deleteEvent: "Usunąć wydarzenie?",
+    name: "Nazwa",
+    amount: "Kwota (£)",
+    type: "Typ",
+    income: "Dochód",
+    debt: "Dług",
+    fixed: "Stały",
+    variable: "Zmienny",
+    annual: "Roczny",
+    save: "Zapisz",
+    cancel: "Anuluj",
+    delete: "Usuń",
+    aiPlaceholder: "Zapytaj AI o oszczędności, długi, budżet...",
+    send: "Wyślij",
+    export: "Eksportuj Dane",
+    print: "Drukuj",
+    logout: "Wyloguj",
+    overview: "Przegląd",
+    incomeTab: "Dochody",
+    expenses: "Wydatki",
+    debts: "Długi",
+    variableIncome: "Dochody Zmiennie",
+    add: "Dodaj",
+    description: "Opis",
+    noVariableIncome: "Brak dochodów zmiennych",
+    healthy: "Zdrowy",
+    review: "Przejrzyj",
+    disclaimer: "Ta aplikacja jest tylko edukacyjna. Nie jest poradą finansową. Skonsultuj się z doradcą FCA.",
+    copyright: "© 2025 Planer Budżetu Rodzinnego UK",
+  },
+  pt: {
+    title: "Planejador de Orçamento Familiar UK",
+    welcome: "Olá, {name}!",
+    totalIncome: "Rendimento Total",
+    totalExpenses: "Despesas Totais",
+    cashFlow: "Fluxo de Caixa",
+    totalSavings: "Poupanças Totais",
+    addEvent: "Adicionar Evento",
+    editEvent: "Editar Evento",
+    deleteEvent: "Apagar evento?",
+    name: "Nome",
+    amount: "Valor (£)",
+    type: "Tipo",
+    income: "Rendimento",
+    debt: "Dívida",
+    fixed: "Fixo",
+    variable: "Variável",
+    annual: "Anual",
+    save: "Guardar",
+    cancel: "Cancelar",
+    delete: "Apagar",
+    aiPlaceholder: "Pergunte à IA sobre poupanças, dívidas, orçamento...",
+    send: "Enviar",
+    export: "Exportar Dados",
+    print: "Imprimir",
+    logout: "Sair",
+    overview: "Visão Geral",
+    incomeTab: "Rendimentos",
+    expenses: "Despesas",
+    debts: "Dívidas",
+    variableIncome: "Rendimentos Variáveis",
+    add: "Adicionar",
+    description: "Descrição",
+    noVariableIncome: "Ainda não há rendimentos variáveis",
+    healthy: "Saudável",
+    review: "Rever",
+    disclaimer: "Esta app é apenas educativa. Não é aconselhamento financeiro. Consulte um consultor FCA.",
+    copyright: "© 2025 Planejador de Orçamento Familiar UK",
+  },
+};
 
-// === VARIABLE INCOME HOOK (localStorage) ===
+// === VARIABLE INCOME HOOK ===
 const useVariableIncome = () => {
   const [data, setData] = useState<any[]>([]);
 
@@ -132,7 +250,7 @@ const useVariableIncome = () => {
 const Index = () => {
   useTheme();
 
-  // === 1. TODOS LOS HOOKS (state + data + effects) ===
+  // === 1. TODOS LOS HOOKS ANTES DE RETURN ===
   const [language, setLanguage] = useState<Language>("en");
   const [user, setUser] = useState<any>(null);
   const [authLoading, setAuthLoading] = useState(true);
@@ -165,7 +283,7 @@ const Index = () => {
   const { data: savings } = useSavings();
   const { data: variableIncome = [], addIncome, deleteIncome } = useVariableIncome();
 
-  // === CARGAR EVENTOS RECURRENTES ===
+  // Cargar eventos
   useEffect(() => {
     const loadEvents = () => {
       const manual = localStorage.getItem("recurring_manual_events");
@@ -176,7 +294,7 @@ const Index = () => {
     loadEvents();
   }, []);
 
-  // === AUTENTICACIÓN ===
+  // Autenticación
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null);
@@ -184,7 +302,7 @@ const Index = () => {
     });
   }, []);
 
-  // === 2. CÁLCULOS PESADOS (useMemo) ANTES DE CUALQUIER RETURN ===
+  // === CÁLCULOS ===
   const {
     totalIncome,
     totalFixed,
@@ -230,9 +348,6 @@ const Index = () => {
 
     for (let year = startYear; year <= endYear; year++) {
       for (let month = 0; month < 12; month++) {
-        const currentDate = new Date(year, month, 1);
-        if (currentDate > new Date(endYear, 11, 31)) break;
-
         incomeData.forEach((inc) => {
           const date = new Date(year, month, 1);
           allEvents.push({
@@ -333,6 +448,8 @@ const Index = () => {
     annualEvents,
   ]);
 
+  const t = translations[language];
+
   const formatCurrency = useCallback((amount: number) => `£${amount.toFixed(0)}`, []);
 
   const getEventsForDay = useCallback(
@@ -340,12 +457,25 @@ const Index = () => {
     [calendarEvents],
   );
 
-  const addEvent = useCallback(() => {
-    if (!newEvent.name || !newEvent.amount) return;
-    const eventDate = selectedDate || new Date();
+  const handleAddEvent = useCallback(() => {
+    setEditingEvent(null);
+    setNewEvent({ name: "", amount: 0, type: "income" });
+    setSelectedDate(new Date());
+    setShowEventDialog(true);
+  }, []);
 
+  const handleEditEvent = useCallback((event: Event) => {
+    setEditingEvent(event);
+    setNewEvent({ name: event.name, amount: event.amount, type: event.type });
+    setShowEventDialog(true);
+  }, []);
+
+  const saveEvent = useCallback(() => {
+    if (!newEvent.name || !newEvent.amount) return;
+
+    const eventDate = selectedDate || new Date();
     const baseEvent: Event = {
-      id: Date.now().toString(),
+      id: editingEvent?.id || Date.now().toString(),
       date: format(eventDate, "yyyy-MM-dd"),
       type: newEvent.type,
       name: newEvent.name,
@@ -355,13 +485,17 @@ const Index = () => {
 
     if (newEvent.type === "annual") {
       setAnnualEvents((prev) => {
-        const updated = [...prev, baseEvent];
+        const updated = editingEvent
+          ? prev.map((e) => (e.id === editingEvent.id ? baseEvent : e))
+          : [...prev, baseEvent];
         localStorage.setItem("annual_events", JSON.stringify(updated));
         return updated;
       });
     } else {
       setRecurringManualEvents((prev) => {
-        const updated = [...prev, baseEvent];
+        const updated = editingEvent
+          ? prev.map((e) => (e.id === editingEvent.id ? baseEvent : e))
+          : [...prev, baseEvent];
         localStorage.setItem("recurring_manual_events", JSON.stringify(updated));
         return updated;
       });
@@ -369,41 +503,16 @@ const Index = () => {
 
     setShowEventDialog(false);
     setNewEvent({ name: "", amount: 0, type: "income" });
-  }, [selectedDate, newEvent]);
-
-  const updateEvent = useCallback(() => {
-    if (!editingEvent || !newEvent.name || !newEvent.amount) return;
-
-    const updatedEvent = {
-      ...editingEvent,
-      name: newEvent.name,
-      amount: newEvent.amount,
-      type: newEvent.type,
-    };
-
-    if (editingEvent.recurring === "annually") {
-      setAnnualEvents((prev) => {
-        const updated = prev.map((e) => (e.id === editingEvent.id ? updatedEvent : e));
-        localStorage.setItem("annual_events", JSON.stringify(updated));
-        return updated;
-      });
-    } else {
-      setRecurringManualEvents((prev) => {
-        const updated = prev.map((e) => (e.id === editingEvent.id ? updatedEvent : e));
-        localStorage.setItem("recurring_manual_events", JSON.stringify(updated));
-        return updated;
-      });
-    }
-
     setEditingEvent(null);
-    setShowEventDialog(false);
-    setNewEvent({ name: "", amount: 0, type: "income" });
-  }, [editingEvent, newEvent]);
+  }, [selectedDate, newEvent, editingEvent]);
 
-  const deleteEvent = useCallback((id: string) => {
-    const parts = id.split("-");
-    if (parts.length < 3) return;
+  const confirmDelete = useCallback((id: string) => {
+    setDeleteId(id);
+  }, []);
 
+  const executeDelete = useCallback(() => {
+    if (!deleteId) return;
+    const parts = deleteId.split("-");
     const prefix = parts[0];
     const baseId = parts.slice(1, parts.length - 2).join("-");
 
@@ -421,7 +530,7 @@ const Index = () => {
       });
     }
     setDeleteId(null);
-  }, []);
+  }, [deleteId]);
 
   const sendToAI = useCallback(() => {
     if (!aiInput.trim()) return;
@@ -436,18 +545,14 @@ const Index = () => {
         response = `To save more:\n1. Review variable expenses (£${totalVariable}) — cut £50-100 on food/entertainment.\n2. Put 50% of any extra income into savings.\n3. Set a "no-spend" weekend each month.`;
       } else if (lower.includes("debt") || lower.includes("deuda") || lower.includes("pay off")) {
         response = `Debt strategy:\n• Pay minimums on all debts.\n• Use 30% of surplus (£${Math.round(cashFlow * 0.3)}) to attack highest APR first.\n• You'll be debt-free in ${monthsToDebtFree} months.`;
-      } else if (lower.includes("emergency") || lower.includes("fondo")) {
-        response = `Emergency fund goal: 3-6 months of expenses (£${totalExpenses * 3}-£${totalExpenses * 6}).\nYou have £${savingsTotal}. Keep building!`;
-      } else if (lower.includes("budget") || lower.includes("presupuesto")) {
-        response = `Your budget:\n• Income: ${formatCurrency(totalIncome)}\n• Expenses: ${formatCurrency(totalExpenses)}\n• Cash Flow: ${formatCurrency(cashFlow)}\n${cashFlow > 0 ? "You're saving!" : "Reduce spending by £" + -cashFlow}`;
       } else {
-        response = `I see you're asking about "${aiInput}".\n\nQuick tip: Track every expense for 30 days. Most families find £100-200 in hidden waste.\nWant help with a specific category?`;
+        response = `I see you're asking about "${aiInput}".\n\nQuick tip: Track every expense for 30 days. Most families find £100-200 in hidden waste.`;
       }
 
       setAiResponse(response);
       setAiLoading(false);
     }, 800);
-  }, [aiInput, totalVariable, cashFlow, monthsToDebtFree, totalExpenses, savingsTotal, totalIncome, formatCurrency]);
+  }, [aiInput, totalVariable, cashFlow, monthsToDebtFree]);
 
   const exportData = useCallback(() => {
     const data = {
@@ -478,10 +583,6 @@ const Index = () => {
     annualEvents,
   ]);
 
-  const handleLanguageChange = useCallback((lang: Language) => {
-    setLanguage(lang);
-  }, []);
-
   const { monthDays, blankDays } = useMemo(() => {
     const monthStart = startOfMonth(currentMonth);
     const monthEnd = endOfMonth(currentMonth);
@@ -490,7 +591,7 @@ const Index = () => {
     return { monthDays, blankDays };
   }, [currentMonth]);
 
-  // === 3. EARLY RETURNS (AHORA SEGUROS) ===
+  // === EARLY RETURNS ===
   if (authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center p-8">
@@ -503,7 +604,7 @@ const Index = () => {
     return <Auth />;
   }
 
-  // === 4. RENDER PRINCIPAL ===
+  // === RENDER PRINCIPAL ===
   return (
     <>
       <style>{`@media print { .no-print { display: none !important; } }`}</style>
@@ -515,23 +616,46 @@ const Index = () => {
             <div>
               <h1 className="text-5xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent flex items-center gap-3">
                 <Home className="h-12 w-12" />
-                Family Budget Planner UK
+                {t.title}
               </h1>
-              <p className="text-muted-foreground">Hi, {activeProfile.name}!</p>
+              <p className="text-muted-foreground">{t.welcome.replace("{name}", activeProfile.name)}</p>
             </div>
             <div className="flex items-center gap-3">
-              <LanguageToggle language={language} onLanguageChange={handleLanguageChange} />
-              <ProfileSelector language={language} />
-              <Button variant="outline" size="icon" onClick={() => window.print()}>
+              {/* IDIOMA DESPLEGABLE */}
+              <Select value={language} onValueChange={(v) => setLanguage(v as Language)}>
+                <SelectTrigger className="w-32">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="en">
+                    <Globe className="inline h-4 w-4 mr-2" />
+                    English
+                  </SelectItem>
+                  <SelectItem value="es">
+                    <Globe className="inline h-4 w-4 mr-2" />
+                    Español
+                  </SelectItem>
+                  <SelectItem value="pl">
+                    <Globe className="inline h-4 w-4 mr-2" />
+                    Polski
+                  </SelectItem>
+                  <SelectItem value="pt">
+                    <Globe className="inline h-4 w-4 mr-2" />
+                    Português
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+
+              <Button variant="outline" size="icon" onClick={() => window.print()} title={t.print}>
                 <Download className="h-4 w-4" />
               </Button>
-              <Button variant="outline" size="icon" onClick={exportData}>
+              <Button variant="outline" size="icon" onClick={exportData} title={t.export}>
                 <Download className="h-4 w-4" />
               </Button>
-              <Button variant="outline" size="icon" onClick={() => setShowAI(true)}>
+              <Button variant="outline" size="icon" onClick={() => setShowAI(true)} title="AI">
                 <Bot className="h-4 w-4" />
               </Button>
-              <Button variant="outline" onClick={() => supabase.auth.signOut()}>
+              <Button variant="outline" onClick={() => supabase.auth.signOut()} title={t.logout}>
                 <LogOut className="h-4 w-4" />
               </Button>
             </div>
@@ -541,7 +665,7 @@ const Index = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             <Card className="border-green-200">
               <CardHeader className="pb-2">
-                <CardTitle className="text-sm text-green-600">Total Income</CardTitle>
+                <CardTitle className="text-sm text-green-600">{t.totalIncome}</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="text-3xl font-bold text-green-600">{formatCurrency(totalIncome)}</div>
@@ -549,7 +673,7 @@ const Index = () => {
             </Card>
             <Card className="border-red-200">
               <CardHeader className="pb-2">
-                <CardTitle className="text-sm text-red-600">Total Expenses</CardTitle>
+                <CardTitle className="text-sm text-red-600">{t.totalExpenses}</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="text-3xl font-bold text-red-600">{formatCurrency(totalExpenses)}</div>
@@ -558,7 +682,7 @@ const Index = () => {
             <Card className={`${cashFlow >= 0 ? "border-emerald-200" : "border-orange-200"}`}>
               <CardHeader className="pb-2">
                 <CardTitle className={`text-sm ${cashFlow >= 0 ? "text-emerald-600" : "text-orange-600"}`}>
-                  Cash Flow
+                  {t.cashFlow}
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -570,7 +694,7 @@ const Index = () => {
             <Card className="border-purple-200">
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm text-purple-600 flex items-center gap-1">
-                  <PiggyBank className="h-4 w-4" /> Total Savings
+                  <PiggyBank className="h-4 w-4" /> {t.totalSavings}
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -579,7 +703,7 @@ const Index = () => {
             </Card>
           </div>
 
-          {/* CALENDARIO */}
+          {/* CALENDARIO INTERACTIVO */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center justify-between">
@@ -593,14 +717,8 @@ const Index = () => {
                   <Button size="sm" variant="outline" onClick={() => setCurrentMonth(add(currentMonth, { months: 1 }))}>
                     <ChevronRight className="h-4 w-4" />
                   </Button>
-                  <Button
-                    size="sm"
-                    onClick={() => {
-                      setSelectedDate(new Date());
-                      setShowEventDialog(true);
-                    }}
-                  >
-                    <Plus className="h-4 w-4 mr-1" /> Add
+                  <Button size="sm" onClick={handleAddEvent}>
+                    <Plus className="h-4 w-4 mr-1" /> {t.add}
                   </Button>
                 </div>
               </CardTitle>
@@ -615,27 +733,43 @@ const Index = () => {
               </div>
               <div className="grid grid-cols-7 gap-1 mt-2">
                 {blankDays.map((_, i) => (
-                  <div key={`blank-${i}`} className="h-16 border rounded" />
+                  <div key={`blank-${i}`} className="h-20 border rounded" />
                 ))}
                 {monthDays.map((day) => {
                   const dayEvents = getEventsForDay(day);
                   return (
                     <div
                       key={day.toISOString()}
-                      className={`h-16 border rounded p-1 text-xs cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 transition ${isSameDay(day, new Date()) ? "bg-blue-50 dark:bg-blue-900" : ""}`}
-                      onClick={() => setSelectedDate(day)}
+                      className={`h-20 border rounded p-1 text-xs cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 transition ${isSameDay(day, new Date()) ? "bg-blue-50 dark:bg-blue-900" : ""}`}
+                      onClick={() => {
+                        setSelectedDate(day);
+                        setShowEventDialog(true);
+                        setEditingEvent(null);
+                        setNewEvent({ name: "", amount: 0, type: "income" });
+                      }}
                     >
                       <div className="font-medium">{format(day, "d")}</div>
-                      {dayEvents.slice(0, 2).map((e, i) => (
+                      {dayEvents.slice(0, 3).map((e, i) => (
                         <div
                           key={i}
-                          className={`text-[9px] truncate ${e.type === "income" ? "text-green-600" : e.type === "debt" ? "text-red-600" : "text-blue-600"}`}
+                          className={`text-[9px] truncate flex justify-between items-center ${e.type === "income" ? "text-green-600" : e.type === "debt" ? "text-red-600" : "text-blue-600"}`}
                         >
-                          {e.name}
+                          <span>{e.name}</span>
+                          <Button
+                            size="sm"
+                            variant="ghost"
+                            className="h-4 w-4 p-0"
+                            onClick={(ev) => {
+                              ev.stopPropagation();
+                              handleEditEvent(e);
+                            }}
+                          >
+                            <Edit2 className="h-3 w-3" />
+                          </Button>
                         </div>
                       ))}
-                      {dayEvents.length > 2 && (
-                        <div className="text-[9px] text-muted-foreground">+{dayEvents.length - 2}</div>
+                      {dayEvents.length > 3 && (
+                        <div className="text-[9px] text-muted-foreground">+{dayEvents.length - 3}</div>
                       )}
                     </div>
                   );
@@ -644,92 +778,93 @@ const Index = () => {
             </CardContent>
           </Card>
 
-          {/* TABS */}
-          <Tabs value="overview" className="no-print">
-            <TabsList className="grid w-full grid-cols-4 mb-6">
-              <TabsTrigger value="overview">Overview</TabsTrigger>
-              <TabsTrigger value="income">Income</TabsTrigger>
-              <TabsTrigger value="expenses">Expenses</TabsTrigger>
-              <TabsTrigger value="debts">Debts</TabsTrigger>
-            </TabsList>
+          {/* AI DIALOG */}
+          <Dialog open={showAI} onOpenChange={setShowAI}>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>AI Assistant</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4">
+                <Textarea
+                  placeholder={t.aiPlaceholder}
+                  value={aiInput}
+                  onChange={(e) => setAiInput(e.target.value)}
+                  className="min-h-24"
+                />
+                <Button onClick={sendToAI} disabled={aiLoading} className="w-full">
+                  <Send className="h-4 w-4 mr-2" /> {t.send}
+                </Button>
+                {aiLoading && <p className="text-center text-sm text-muted-foreground">Thinking...</p>}
+                {aiResponse && <div className="p-4 bg-muted rounded-lg whitespace-pre-wrap text-sm">{aiResponse}</div>}
+              </div>
+            </DialogContent>
+          </Dialog>
 
-            <TabsContent value="overview">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Family Budget</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-6xl font-bold text-center text-blue-600">
-                    {cashFlow > 0 ? "Healthy" : "Review"}
-                  </div>
-                  <Progress value={cashFlow > 0 ? 80 : 40} className="mt-4" />
-                </CardContent>
-              </Card>
-            </TabsContent>
+          {/* EVENT DIALOG */}
+          <Dialog open={showEventDialog} onOpenChange={setShowEventDialog}>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>{editingEvent ? t.editEvent : t.addEvent}</DialogTitle>
+              </DialogHeader>
+              <div className="space-y-4">
+                <div>
+                  <Label>{t.name}</Label>
+                  <Input value={newEvent.name} onChange={(e) => setNewEvent({ ...newEvent, name: e.target.value })} />
+                </div>
+                <div>
+                  <Label>{t.amount}</Label>
+                  <Input
+                    type="number"
+                    value={newEvent.amount}
+                    onChange={(e) => setNewEvent({ ...newEvent, amount: parseFloat(e.target.value) || 0 })}
+                  />
+                </div>
+                <div>
+                  <Label>{t.type}</Label>
+                  <Select value={newEvent.type} onValueChange={(v) => setNewEvent({ ...newEvent, type: v as any })}>
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="income">{t.income}</SelectItem>
+                      <SelectItem value="debt">{t.debt}</SelectItem>
+                      <SelectItem value="fixed">{t.fixed}</SelectItem>
+                      <SelectItem value="variable">{t.variable}</SelectItem>
+                      <SelectItem value="annual">{t.annual}</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setShowEventDialog(false)}>
+                  {t.cancel}
+                </Button>
+                <Button onClick={saveEvent}>{t.save}</Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
 
-            <TabsContent value="income">
-              <Tabs defaultValue="variable">
-                <TabsList>
-                  <TabsTrigger value="variable">Variable Income</TabsTrigger>
-                </TabsList>
-                <TabsContent value="variable">
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="text-lg font-semibold flex items-center justify-between">
-                        Variable Income
-                        <Button
-                          size="sm"
-                          onClick={() => {
-                            const desc = prompt("Description");
-                            const amount = parseFloat(prompt("Amount (£)") || "0");
-                            if (desc && amount > 0) addIncome(amount, desc);
-                          }}
-                        >
-                          <Plus className="h-4 w-4 mr-1" /> Add
-                        </Button>
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
-                      {variableIncome.length === 0 ? (
-                        <p className="text-center text-muted-foreground py-6">No variable income yet</p>
-                      ) : (
-                        <div className="space-y-2">
-                          {variableIncome.map((inc) => (
-                            <div key={inc.id} className="flex justify-between items-center p-3 bg-muted rounded-lg">
-                              <div>
-                                <p className="font-medium">{inc.description}</p>
-                                <p className="text-xs text-muted-foreground">
-                                  {format(new Date(inc.date), "d MMM yyyy")}
-                                </p>
-                              </div>
-                              <div className="flex items-center gap-2">
-                                <span className="font-bold text-green-600">{formatCurrency(inc.amount)}</span>
-                                <Button size="sm" variant="ghost" onClick={() => deleteIncome(inc.id)}>
-                                  <Trash2 className="h-4 w-4" />
-                                </Button>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </CardContent>
-                  </Card>
-                </TabsContent>
-              </Tabs>
-            </TabsContent>
-
-            <TabsContent value="expenses">
-              <VariableExpensesManager language={language} />
-            </TabsContent>
-            <TabsContent value="debts">
-              <DebtsManager language={language} />
-            </TabsContent>
-          </Tabs>
+          {/* DELETE CONFIRM */}
+          <Dialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>
+            <DialogContent>
+              <DialogHeader>
+                <DialogTitle>{t.deleteEvent}</DialogTitle>
+              </DialogHeader>
+              <DialogFooter>
+                <Button variant="outline" onClick={() => setDeleteId(null)}>
+                  {t.cancel}
+                </Button>
+                <Button variant="destructive" onClick={executeDelete}>
+                  {t.delete}
+                </Button>
+              </DialogFooter>
+            </DialogContent>
+          </Dialog>
 
           <footer className="no-print py-8 text-center text-xs text-muted-foreground border-t mt-12">
             <p className="font-semibold mb-2">Legal Disclaimer (UK)</p>
-            <p>This app is for educational use only. Not financial advice. Consult an FCA adviser.</p>
-            <p className="mt-2">© 2025 Family Budget Planner UK</p>
+            <p>{t.disclaimer}</p>
+            <p className="mt-2">{t.copyright}</p>
           </footer>
         </div>
       </div>
