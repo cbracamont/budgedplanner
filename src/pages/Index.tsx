@@ -1,4 +1,3 @@
-// src/pages/Income.tsx
 "use client";
 
 import { useState, useEffect, useMemo, useCallback } from "react";
@@ -30,7 +29,7 @@ import {
   useSavingsGoals,
   useSavings,
 } from "@/hooks/useFinancialData";
-import { useFinancialProfiles } from "@/hooks/useFinancialProfiles";
+import { useFinancialProfiles } from "@/hooks/useFinancialprofiles";
 import { Auth } from "@/components/Auth";
 import { IncomeManager } from "@/components/IncomeManager";
 import { DebtsManager } from "@/components/DebtsManager";
@@ -327,7 +326,7 @@ const Index = () => {
         incomeData.forEach((inc) => {
           const date = new Date(year, month, 1);
           allEvents.push({
-            id: `inc-${inc.id}-${year}-${month}`,
+            id: `income-${inc.id}-${year}-${month}`,
             date: format(date, "yyyy-MM-dd"),
             type: "income",
             name: inc.name,
@@ -342,7 +341,7 @@ const Index = () => {
           const lastDayOfMonth = new Date(year, month + 1, 0).getDate();
           const date = new Date(year, month, Math.min(day, lastDayOfMonth));
           allEvents.push({
-            id: `fix-${exp.id}-${year}-${month}`,
+            id: `fixed-${exp.id}-${year}-${month}`,
             date: format(date, "yyyy-MM-dd"),
             type: "fixed",
             name: exp.name,
@@ -368,7 +367,7 @@ const Index = () => {
         variableExpensesData.forEach((exp) => {
           const date = new Date(year, month, 10);
           allEvents.push({
-            id: `var-${exp.id}-${year}-${month}`,
+            id: `variable-${exp.id}-${year}-${month}`,
             date: format(date, "yyyy-MM-dd"),
             type: "variable",
             name: exp.name,
@@ -985,6 +984,7 @@ const Index = () => {
             </TabsContent>
 
             <TabsContent value="debts">
+              <DebtsManager language={language} />
               <DebtPlanner language={language} />
             </TabsContent>
           </Tabs>
