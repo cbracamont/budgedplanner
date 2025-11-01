@@ -21,6 +21,7 @@ import {
   Zap,
   Snowflake,
 } from "lucide-react";
+import { formatCurrency } from "@/lib/i18n";
 import {
   useIncomeSources,
   useDebts,
@@ -1100,7 +1101,7 @@ const DebtPlanner = ({ language }: { language: Language }) => {
       remainingBalances.forEach((debt, index) => {
         if (debt.balance <= 0) return;
         const interest = debt.balance * (debt.apr / 100 / 12);
-        monthly_interest += interest;
+        monthlyInterest += interest;
         debt.balance += interest;
 
         const payment = debt.minimum_payment + (index === 0 ? extraForDebt : 0);
@@ -1108,7 +1109,7 @@ const DebtPlanner = ({ language }: { language: Language }) => {
         allocation[index].extra += index === 0 ? extraForDebt : 0;
         debt.balance = Math.max(0, debt.balance - payment);
       });
-      totalInterest += monthly_interest;
+      totalInterest += monthlyInterest;
       months++;
     }
 
