@@ -78,19 +78,19 @@ const translations = {
   en: {
     overview: "Overview",
     income: "Income",
-    expenses: "Expenses",
+    expenses: "Expense",
     debts: "Debts",
     debtPlanner: "Debt Planner",
     totalIncome: "Total Income",
-    totalExpenses: "Total Expenses",
+    totalExpenses: "Total Expense",
     cashFlow: "Cash Flow",
     totalSavings: "Total Savings",
     healthy: "Healthy",
     review: "Review",
     fixedIncome: "Fixed Income",
     variableIncome: "Variable Income",
-    fixedExpenses: "Fixed Expenses",
-    variableExpenses: "Variable Expenses",
+    fixedExpenses: "Fixed Expense",
+    variableExpenses: "Variable Expense",
     noData: "No data yet",
     add: "Add",
     description: "Description",
@@ -109,7 +109,7 @@ const translations = {
     cashFlowAfterSavings: "Cash Flow After Savings",
     debtPayment: "Available for Debt Payment",
     monthsToEmergency: "Months to Emergency Fund Goal",
-    monthlyDebtAllocation: "Monthly Debt Allocation",
+    monthlyDebtAllocation: "Monthly Debt Allocation"
   },
   es: {
     overview: "Resumen",
@@ -145,7 +145,7 @@ const translations = {
     cashFlowAfterSavings: "Flujo de Caja Después de Ahorros",
     debtPayment: "Disponible para Pago de Deuda",
     monthsToEmergency: "Meses para Meta de Fondo de Emergencia",
-    monthlyDebtAllocation: "Asignación Mensual de Deuda",
+    monthlyDebtAllocation: "Asignación Mensual de Deuda"
   },
   pl: {
     overview: "Przegląd",
@@ -181,8 +181,8 @@ const translations = {
     cashFlowAfterSavings: "Przepływ Gotówki Po Oszczędnościach",
     debtPayment: "Dostępne na Płatność Długu",
     monthsToEmergency: "Miesiące do Celu Funduszu Awaryjnego",
-    monthlyDebtAllocation: "Miesięczna Alokacja Długu",
-  },
+    monthlyDebtAllocation: "Miesięczna Alokacja Długu"
+  }
 };
 
 const useVariableIncome = () => {
@@ -293,8 +293,7 @@ const Index = () => {
     const totalDebtPayment = debtData.reduce((s, d) => s + d.minimum_payment, 0);
     const totalExpenses = totalFixed + totalVariable + totalDebtPayment;
     const cashFlow = totalIncome - totalExpenses;
-    const savingsTotal =
-      (savings?.emergency_fund || 0) + savingsGoalsData.reduce((s, g) => s + (g.current_amount || 0), 0);
+    const savingsTotal = (savings?.emergency_fund || 0) + savingsGoalsData.reduce((s, g) => s + (g.current_amount || 0), 0);
 
     let remaining = debtData.reduce((s, d) => s + d.balance, 0);
     let months = 0;
@@ -477,7 +476,7 @@ const Index = () => {
 
       if (lower.includes("save") || lower.includes("ahorrar") || lower.includes("cut")) {
         response = `To save more:\n1. Review variable expenses (£${totalVariable}) — cut £50-100 on food/entertainment.\n2. Put 50% of any extra income into savings.\n3. Set a "no-spend" weekend each month.`;
-      } else if (lower.includes("debt") || lower.includes("deuda") || lower.includes("pay off")) {
+      } else else if (lower.includes("debt") || lower.includes("deuda") || lower.includes("pay off")) {
         response = `Debt strategy:\n• Pay minimums on all debts.\n• Use 30% of surplus (£${Math.round(cashFlow * 0.3)}) to attack highest APR first.\n• You'll be debt-free in ${monthsToDebtFree} months.`;
       } else if (lower.includes("emergency") || lower.includes("fondo")) {
         response = `Emergency fund goal: 3-6 months of expenses (£${totalExpenses * 3}-£${totalExpenses * 6}).\nYou have £${savingsTotal}. Keep building!`;
@@ -686,8 +685,8 @@ const Index = () => {
                             e.type === "income"
                               ? "text-green-600"
                               : e.type === "debt"
-                                ? "text-red-600"
-                                : "text-blue-600"
+                              ? "text-red-600"
+                              : "text-blue-600"
                           }`}
                         >
                           {e.name}
@@ -801,7 +800,10 @@ const Index = () => {
               <div className="space-y-4">
                 <div>
                   <Label>Name</Label>
-                  <Input value={newEvent.name} onChange={(e) => setNewEvent({ ...newEvent, name: e.target.value })} />
+                  <Input
+                    value={newEvent.name}
+                    onChange={(e) => setNewEvent({ ...newEvent, name: e.target.value })}
+                  />
                 </div>
                 <div>
                   <Label>Amount</Label>
@@ -880,15 +882,13 @@ const Index = () => {
               </div>
               <AlertDialogFooter>
                 <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction
-                  onClick={() => {
-                    if (newIncome.description && newIncome.amount > 0) {
-                      addIncome(newIncome.amount, newIncome.description);
-                      setNewIncome({ description: "", amount: 0 });
-                      setShowIncomeModal(false);
-                    }
-                  }}
-                >
+                <AlertDialogAction onClick={() => {
+                  if (newIncome.description && newIncome.amount > 0) {
+                    addIncome(newIncome.amount, newIncome.description);
+                    setNewIncome({ description: "", amount: 0 });
+                    setShowIncomeModal(false);
+                  }
+                }}>
                   Add Income
                 </AlertDialogAction>
               </AlertDialogFooter>
@@ -1000,6 +1000,7 @@ const Index = () => {
   );
 };
 
+// COMPONENTE DEBT PLANNER
 const DebtPlanner = ({ language }: { language: Language }) => {
   const [monthlySavings, setMonthlySavings] = useState(0);
   const [debtMethod, setDebtMethod] = useState<DebtMethod>("avalanche");
@@ -1012,17 +1013,24 @@ const DebtPlanner = ({ language }: { language: Language }) => {
 
   const t = translations[language];
 
-  const { totalIncome, totalFixed, totalVariable, totalDebtPayment, totalExpenses, cashFlow, savingsTotal } =
-    useMemo(() => {
-      const totalIncome = incomeData.reduce((s, i) => s + i.amount, 0);
-      const totalFixed = fixedExpensesData.reduce((s, e) => s + e.amount, 0);
-      const totalVariable = variableExpensesData.reduce((s, e) => s + e.amount, 0);
-      const totalDebtPayment = debtData.reduce((s, d) => s + d.minimum_payment, 0);
-      const totalExpenses = totalFixed + totalVariable + totalDebtPayment;
-      const cashFlow = totalIncome - totalExpenses;
-      const savingsTotal = savings?.emergency_fund || 0;
-      return { totalIncome, totalFixed, totalVariable, totalDebtPayment, totalExpenses, cashFlow, savingsTotal };
-    }, [incomeData, debtData, fixedExpensesData, variableExpensesData, savings]);
+  const {
+    totalIncome,
+    totalFixed,
+    totalVariable,
+    totalDebtPayment,
+    totalExpenses,
+    cashFlow,
+    savingsTotal,
+  } = useMemo(() => {
+    const totalIncome = incomeData.reduce((s, i) => s + i.amount, 0);
+    const totalFixed = fixedExpensesData.reduce((s, e) => s + e.amount, 0);
+    const totalVariable = variableExpensesData.reduce((s, e) => s + e.amount, 0);
+    const totalDebtPayment = debtData.reduce((s, d) => s + d.minimum_payment, 0);
+    const totalExpenses = totalFixed + totalVariable + totalDebtPayment;
+    const cashFlow = totalIncome - totalExpenses;
+    const savingsTotal = savings?.emergency_fund || 0;
+    return { totalIncome, totalFixed, totalVariable, totalDebtPayment, totalExpenses, cashFlow, savingsTotal };
+  }, [incomeData, debtData, fixedExpensesData, variableExpensesData, savings]);
 
   // CALCULAR ESTRATEGIA DE DEUDA
   const debtStrategy = useMemo(() => {
@@ -1030,26 +1038,25 @@ const DebtPlanner = ({ language }: { language: Language }) => {
 
     const extraForDebt = Math.max(0, cashFlow - monthlySavings);
 
-    const sortFn =
-      debtMethod === "avalanche"
-        ? (a, b) => b.apr - a.apr
-        : debtMethod === "snowball"
-          ? (a, b) => a.balance - b.balance
-          : (a, b) => b.apr * 0.6 + (b.balance / 1000) * 0.4 - (a.apr * 0.6 + (a.balance / 1000) * 0.4);
+    const sortFn = debtMethod === "avalanche"
+      ? (a, b) => b.apr - a.apr
+      : debtMethod === "snowball"
+      ? (a, b) => a.balance - b.balance
+      : (a, b) => (b.apr * 0.6 + b.balance / 1000 * 0.4) - (a.apr * 0.6 + a.balance / 1000 * 0.4);
 
     const sortedDebts = [...debtData].sort(sortFn);
 
-    let remainingBalances = sortedDebts.map((d) => ({ ...d, balance: d.balance }));
+    let remainingBalances = sortedDebts.map(d => ({ ...d, balance: d.balance }));
     let months = 0;
     let totalInterest = 0;
-    let allocation = sortedDebts.map((d) => ({
+    let allocation = sortedDebts.map(d => ({
       name: d.name,
       minPayment: d.minimum_payment,
       extra: 0,
       totalPayment: d.minimum_payment,
     }));
 
-    while (remainingBalances.some((d) => d.balance > 0) && months < 120) {
+    while (remainingBalances.some(d => d.balance > 0) && months < 120) {
       let monthlyInterest = 0;
       remainingBalances.forEach((debt, index) => {
         if (debt.balance <= 0) return;
@@ -1059,14 +1066,14 @@ const DebtPlanner = ({ language }: { language: Language }) => {
 
         const payment = debt.minimum_payment + (index === 0 ? extraForDebt : 0);
         allocation[index].totalPayment += payment;
+        allocation[index].extra += (index === 0 ? extraForDebt : 0);
         debt.balance = Math.max(0, debt.balance - payment);
       });
       totalInterest += monthlyInterest;
       months++;
     }
 
-    const monthsToEmergency =
-      monthlySavings > 0 ? ((totalExpenses * 3 - savingsTotal) / monthlySavings).toFixed(1) : "N/A";
+    const monthsToEmergency = monthlySavings > 0 ? ((totalExpenses * 3 - savingsTotal) / monthlySavings).toFixed(1) : "N/A";
 
     return {
       sortedDebts,
@@ -1078,7 +1085,16 @@ const DebtPlanner = ({ language }: { language: Language }) => {
     };
   }, [debtData, cashFlow, monthlySavings, debtMethod, totalExpenses, savingsTotal]);
 
-  if (!debtStrategy) return null;
+  if (!debtStrategy) return (
+    <Card>
+      <CardHeader>
+        <CardTitle className="text-sm">{t.debtPlanner}</CardTitle>
+      </CardHeader>
+      <CardContent>
+        <p className="text-center text-muted-foreground py-6">No debts to plan</p>
+      </CardContent>
+    </Card>
+  );
 
   return (
     <div className="space-y-6">
@@ -1176,15 +1192,16 @@ const DebtPlanner = ({ language }: { language: Language }) => {
                   <p className="text-xs font-medium text-emerald-600">
                     Extra: {formatCurrency(debtStrategy.allocation[index].extra)}
                   </p>
+                  <p className="text-xs font-medium text-indigo-600">
+                    Total: {formatCurrency(debtStrategy.allocation[index].totalPayment)}
+                  </p>
                 </div>
               </div>
             ))}
           </div>
           <div className="mt-4 p-3 bg-muted rounded-lg">
             <p className="text-sm text-muted-foreground">
-              <strong>Total extra for debt:</strong> {formatCurrency(debtStrategy.extraForDebt)} |{" "}
-              <strong>Time to debt-free:</strong> {debtStrategy.months} {t.months} | <strong>{t.totalInterest}:</strong>{" "}
-              {formatCurrency(debtStrategy.totalInterest)}
+              <strong>Total extra for debt:</strong> {formatCurrency(debtStrategy.extraForDebt)} | <strong>Time to debt-free:</strong> {debtStrategy.months} {t.months} | <strong>{t.totalInterest}:</strong> {formatCurrency(debtStrategy.totalInterest)}
             </p>
           </div>
         </CardContent>
