@@ -58,7 +58,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 
-type Language = "en" | "es" | "pl"; // AÑADIDO "pl"
+type Language = "en" | "es" | "pl";
 type Event = {
   id: string;
   date: string;
@@ -116,6 +116,13 @@ const Index = () => {
   const [editingEvent, setEditingEvent] = useState<Event | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
 
+  // MODAL PARA VARIABLE INCOME
+  const [showIncomeModal, setShowIncomeModal] = useState(false);
+  const [newIncome, setNewIncome] = useState({
+    description: "",
+    amount: 0,
+  });
+
   const [newEvent, setNewEvent] = useState<{
     name: string;
     amount: number;
@@ -133,7 +140,6 @@ const Index = () => {
   const { data: savings } = useSavings();
   const { data: variableIncome = [], addIncome, deleteIncome } = useVariableIncome();
 
-  // FIX: Envuelve setLanguage en callback
   const handleLanguageChange = useCallback((lang: Language) => {
     setLanguage(lang);
   }, []);
@@ -418,7 +424,7 @@ const Index = () => {
                   <p className="text-4xl font-bold">{format(debtFreeDate, "d MMM yyyy")}</p>
                   <p className="text-lg text-muted-foreground">{monthsToDebtFree} months away</p>
                 </div>
-                <Progress value={80} className="h-4 mt-4" />
+                <Progress value={80} className="h-4 mt-3" />
               </CardContent>
             </Card>
           )}
@@ -510,14 +516,22 @@ const Index = () => {
                   return (
                     <div
                       key={day.toISOString()}
-                      className={`h-16 border rounded p-1 text-xs cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 transition ${isSameDay(day, new Date()) ? "bg-blue-50 dark:bg-blue-900" : ""}`}
+                      className={`h-16 border rounded p-1 text-xs cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 transition ${
+                        isSameDay(day, new Date()) ? "bg-blue-50 dark:bg-blue-900" : ""
+                      }`}
                       onClick={() => setSelectedDate(day)}
                     >
                       <div className="font-medium">{format(day, "d")}</div>
                       {dayEvents.slice(0, 2).map((e, i) => (
                         <div
                           key={i}
-                          className={`text-[9px] truncate ${e.type === "income" ? "text-green-600" : e.type === "debt" ? "text-red-600" : "text-blue-600"}`}
+                          className={`text-[9px] truncate ${
+                            e.type === "income"
+                              ? "text-green-600"
+                              : e.type === "debt"
+                                ? "text-red-600"
+                                : "text-blue-600"
+                          }`}
                         >
                           {e.name}
                         </div>
@@ -681,6 +695,49 @@ const Index = () => {
             </AlertDialogContent>
           </AlertDialog>
 
+          {/* MODAL PARA VARIABLE INCOME - ESTILO VARIABLE EXPENSES */}
+          <AlertDialog open={showIncomeModal} onOpenChange={setShowIncomeModal}>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Add Variable Income</AlertDialogTitle>
+                <AlertDialogDescription>Extra income like bonuses, gifts, side hustles</AlertDialogDescription>
+              </AlertDialogHeader>
+              <div className="space-y-4">
+                <div>
+                  <Label>Description</Label>
+                  <Input
+                    placeholder="e.g. Freelance work, Bonus, Gift"
+                    value={newIncome.description}
+                    onChange={(e) => setNewIncome({ ...newIncome, description: e.target.value })}
+                  />
+                </div>
+                <div>
+                  <Label>Amount (£)</Label>
+                  <Input
+                    type="number"
+                    placeholder="0"
+                    value={newIncome.amount || ""}
+                    onChange={(e) => setNewIncome({ ...newIncome, amount: parseFloat(e.target.value) || 0 })}
+                  />
+                </div>
+              </div>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction
+                  onClick={() => {
+                    if (newIncome.description && newIncome.amount > 0) {
+                      addIncome(newIncome.amount, newIncome.description);
+                      setNewIncome({ description: "", amount: 0 });
+                      setShowIncomeModal(false);
+                    }
+                  }}
+                >
+                  Add Income
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+
           {/* TABS */}
           <Tabs defaultValue="overview" className="no-print">
             <TabsList className="grid w-full grid-cols-4 mb-6">
@@ -720,14 +777,7 @@ const Index = () => {
                     <CardHeader>
                       <CardTitle className="text-lg font-semibold flex items-center justify-between">
                         Variable Income
-                        <Button
-                          size="sm"
-                          onClick={() => {
-                            const desc = prompt("Description (e.g. Bonus, Freelance)");
-                            const amount = parseFloat(prompt("Amount (£)") || "0");
-                            if (desc && amount > 0) addIncome(amount, desc);
-                          }}
-                        >
+                        <Button size="sm" onClick={() => setShowIncomeModal(true)}>
                           <Plus className="h-4 w-4 mr-1" /> Add
                         </Button>
                       </CardTitle>
