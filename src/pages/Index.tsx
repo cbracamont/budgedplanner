@@ -1,16 +1,245 @@
 // src/pages/Index.tsx
 "use client";
 
-import React, { useState, useEffect, useMemo, useCallback } from "react";
-import { format, addMonths, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, add, sub } from "date-fns";
+import React, { useState, useEffect, useMemo } from "react";
 import {
-  TrendingUp,
-  Download,
-  LogOut,
-  Bot,
-  Calendar,
-  DollarSign,
-  PiggyBank,
+  Card, CardContent, CardHeader, CardTitle, CardFooter
+} from "@/components/ui/card";
+
+import React, { useState, useEffect, useMemo } from "react";
+import {
+  Card, CardContent, CardHeader, CardTitle, CardFooter
+} from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { AlertCircle } from "lucide-react";
+import { useTheme } from "@/hooks/useTheme";
+
+// 💰 Tipos de datos
+type Transaction = {
+  id: string;
+  name: string;
+  amount: number;
+  type: "income" | "expense";
+  date: string;
+  category?: string;
+};
+
+type Reminder = {
+  id: string;
+  name: string;
+  amount: number;
+  date: string;
+  type: "income" | "expense";
+};
+
+// 🎨 Componente principal
+export default function Index() {
+  useTheme();
+
+  // Datos principales
+  const [transactions, setTransactions] = useState<Transaction[]>([]);
+  const [newTransaction, setNewTransaction] = useState<Partial<Transaction>>({});
+  const [error, setError] = useState("");
+  const [aiResponse, setAiResponse] = useState("");
+  const [aiLoading, setAiLoading] = useState(false);
+  const [aiInput, setAiInput] = useState("");
+
+  // Recordatorios
+  const [reminders, setReminders] = useState<Reminder[]>([]);
+
+  // Cargar desde localStorage
+  useEffect(() => {
+    const stored = localStorage.getItem("transactions");
+    if (stored) setTransactions(JSON.parse(stored));
+  }, []);
+
+  // Guardar en localStorage
+  useEffect(() => {
+    localStorage.setItem("transactions", JSON.stringify(transactions));
+  }, [transactions]);
+
+  // Generar recordatorios locales (notificaciones)
+  useEffect(() => {
+    if (Notification.permission === "default") Notification.requestPermission();
+  }, []);
+
+  useEffect(() => {
+    const today = new Date();
+
+    transactions.forEach((t) => {
+      const date = new Date(t.date);
+      const diffDays = Math.ceil(
+        (date.getTime() - today.getTime()) / (1000 * 60 * 60 * 24)
+      );
+
+      // Notificar 1 día antes
+      if (diffDays === 1 && Notification.permission === "granted") {
+        new Notification(`📅 Recordatorio: ${t.name}`, {
+          body: `Mañana tienes un ${t.type === "income" ? "ingreso" : "pago"} de £${t.amount}`,
+          icon: "/icons/calendar.png",
+        });
+      }
+    });
+  }, [transactions]);
+
+  // Cálculos
+  const totalIncome = useMemo(
+    () => transactions.filter(t => t.type === "income").reduce((sum, t) => sum + t.amount, 0),
+    [transactions]
+  );
+
+  const totalExpenses = useMemo(
+    () => transactions.filter(t => t.type === "expense").reduce((sum, t) => sum + t.amount, 0),
+    [transactions]
+  );
+
+  const cashFlow = totalIncome - totalExpenses;
+
+  // Agregar transacción
+  const addTransaction = () => {
+    setError("");
+
+    if (!newTransaction.name || !newTransaction.amount || !newTransaction.type || !newTransaction.date) {
+      setError("Please fill out all fields");
+      return;
+    }
+
+    const t: Transaction = {
+      id: crypto.randomUUID(),
+      name: newTransaction.name,
+      amount: Number(newTransaction.amount),
+      type: newTransaction.type as "income" | "expense",
+      date: newTransaction.date,
+      category: newTransaction.category || "General",
+    };
+
+    setTransactions([...transactions, t]);
+    setNewTransaction({});
+  };
+
+  // Eliminar
+  const deleteTransaction = (id: string) => {
+    setTransactions(transactions.filter(t => t.id !== id));
+  };
+
+  // IA simulada (mock)
+  const sendToAI = async () => {
+    if (!aiInput.trim()) return;
+    setAiLoading(true);
+    setAiResponse("");
+
+    // Simula una respuesta con un pequeño retraso
+    await new Promise(res => setTimeout(res, 800));
+
+    const message = `
+      💬 Análisis de tu consulta:
+      • Ingresos totales: £${totalIncome}
+      • Gastos totales: £${totalExpenses}
+      • Flujo de caja: £${cashFlow}
+
+      👉 Recomendación: ${cashFlow > 0
+        ? "Vas por buen camino, podrías destinar parte del sobrante a ahorro o pago de deudas."
+        : "Tus gastos superan tus ingresos. Considerá reducir gastos variables o revisar tus deudas más grandes."
+      }
+    `;
+
+    setAiResponse(message);
+    setAiLoading(false);
+  };
+
+  return (
+    <div className="min-h-screen flex flex-col items-center justify-start bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-slate-900 dark:to-slate-800 p-4 space-y-6">
+      {/* HEADER */}
+      <h1 className="text-3xl font-bold text-center mt-6">💸 Family Budget Planner</h1>
+
+      {/* NUEVA TRANSACCIÓN */}
+      <Card className="w-full max-w-lg shadow-lg">
+        <CardHeader>
+          <CardTitle>Add Transaction</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <Input placeholder="Name" value={newTransaction.name || ""} onChange={e => setNewTransaction({ ...newTransaction, name: e.target.value })} />
+          <Input type="number" placeholder="Amount (£)" value={newTransaction.amount || ""} onChange={e => setNewTransaction({ ...newTransaction, amount: e.target.valueAsNumber })} />
+          <Input type="date" value={newTransaction.date || ""} onChange={e => setNewTransaction({ ...newTransaction, date: e.target.value })} />
+          <select className="w-full p-2 border rounded-md" value={newTransaction.type || ""} onChange={e => setNewTransaction({ ...newTransaction, type: e.target.value as "income" | "expense" })}>
+            <option value="">Select type</option>
+            <option value="income">Income</option>
+            <option value="expense">Expense</option>
+          </select>
+          {error && (
+            <Alert variant="destructive">
+              <AlertCircle className="h-4 w-4" />
+              <AlertDescription>{error}</AlertDescription>
+            </Alert>
+          )}
+        </CardContent>
+        <CardFooter>
+          <Button className="w-full" onClick={addTransaction}>Add</Button>
+        </CardFooter>
+      </Card>
+
+      {/* RESUMEN */}
+      <Card className="w-full max-w-lg text-center">
+        <CardHeader>
+          <CardTitle>Resumen Financiero</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <p>Ingresos: <strong className="text-green-600">£{totalIncome}</strong></p>
+          <p>Gastos: <strong className="text-red-600">£{totalExpenses}</strong></p>
+          <p>Flujo de Caja: <strong className={cashFlow >= 0 ? "text-green-700" : "text-red-700"}>£{cashFlow}</strong></p>
+        </CardContent>
+      </Card>
+
+      {/* LISTA DE TRANSACCIONES */}
+      <Card className="w-full max-w-lg">
+        <CardHeader>
+          <CardTitle>Transactions</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-2">
+          {transactions.length === 0 && <p className="text-sm text-muted-foreground">No transactions yet</p>}
+          {transactions.map(t => (
+            <div key={t.id} className="flex justify-between items-center border-b py-1">
+              <div>
+                <p className="font-medium">{t.name}</p>
+                <p className="text-xs text-muted-foreground">{t.date}</p>
+              </div>
+              <div className="flex items-center space-x-2">
+                <span className={t.type === "income" ? "text-green-600" : "text-red-600"}>£{t.amount}</span>
+                <Button variant="ghost" size="sm" onClick={() => deleteTransaction(t.id)}>🗑️</Button>
+              </div>
+            </div>
+          ))}
+        </CardContent>
+      </Card>
+
+      {/* IA SIMULADA */}
+      <Card className="w-full max-w-lg">
+        <CardHeader>
+          <CardTitle>AI Financial Assistant 🤖</CardTitle>
+        </CardHeader>
+        <CardContent className="space-y-3">
+          <Input
+            placeholder="Ask something about your finances..."
+            value={aiInput}
+            onChange={(e) => setAiInput(e.target.value)}
+            onKeyDown={(e) => e.key === "Enter" && sendToAI()}
+          />
+          <Button className="w-full" onClick={sendToAI} disabled={aiLoading}>
+            {aiLoading ? "Thinking..." : "Ask AI"}
+          </Button>
+          {aiResponse && (
+            <div className="p-3 bg-muted rounded-md whitespace-pre-wrap text-sm text-left">
+              {aiResponse}
+            </div>
+          )}
+        </CardContent>
+      </Card>
+    </div>
+  );
+}
+
   Home,
   Edit2,
   Trash2,
@@ -30,6 +259,10 @@ import {
 } from "@/hooks/useFinancialData";
 import { useFinancialProfiles } from "@/hooks/useFinancialProfiles";
 import { Auth } from "@/components/Auth";
+import { IncomeManager } from "@/components/IncomeManager";
+import { DebtsManager } from "@/components/DebtsManager";
+import { FixedExpensesManager } from "@/components/FixedExpensesManager";
+import { VariableExpensesManager } from "@/components/VariableExpensesManager";
 import { LanguageToggle } from "@/components/LanguageToggle";
 import { ProfileSelector } from "@/components/ProfileSelector";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -54,47 +287,45 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 
-type Language = "en" | "es" | "pl";
+type Language = "en" | "es";
 type Event = {
   id: string;
   date: string;
-  type: "income" | "debt" | "fixed" | "variable" | "annual";
+  type: "income" | "debt" | "fixed" | "variable";
   name: string;
   amount: number;
-  recurring?: "monthly" | "annually";
+  recurring?: boolean;
 };
 
 const useVariableIncome = () => {
   const [data, setData] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
 
   useEffect(() => {
     const saved = localStorage.getItem("variable_income");
     if (saved) setData(JSON.parse(saved));
+    setLoading(false);
   }, []);
 
-  const addIncome = useCallback((amount: number, description: string) => {
+  const addIncome = (amount: number, description: string) => {
     const newEntry = {
       id: Date.now().toString(),
       amount,
       description: description || "Extra income",
       date: new Date().toISOString(),
     };
-    setData((prev) => {
-      const updated = [newEntry, ...prev];
-      localStorage.setItem("variable_income", JSON.stringify(updated));
-      return updated;
-    });
-  }, []);
+    const updated = [newEntry, ...data];
+    setData(updated);
+    localStorage.setItem("variable_income", JSON.stringify(updated));
+  };
 
-  const deleteIncome = useCallback((id: string) => {
-    setData((prev) => {
-      const updated = prev.filter((i) => i.id !== id);
-      localStorage.setItem("variable_income", JSON.stringify(updated));
-      return updated;
-    });
-  }, []);
+  const deleteIncome = (id: string) => {
+    const updated = data.filter((i) => i.id !== id);
+    setData(updated);
+    localStorage.setItem("variable_income", JSON.stringify(updated));
+  };
 
-  return { data, addIncome, deleteIncome };
+  return { data, loading, addIncome, deleteIncome };
 };
 
 const Index = () => {
@@ -113,14 +344,16 @@ const Index = () => {
   const [showEventDialog, setShowEventDialog] = useState(false);
   const [editingEvent, setEditingEvent] = useState<Event | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
+
+  // CORREGIDO: type permite todos los valores
   const [newEvent, setNewEvent] = useState<{
     name: string;
     amount: number;
-    type: "income" | "debt" | "fixed" | "variable" | "annual";
+    type: "income" | "debt" | "fixed" | "variable";
   }>({ name: "", amount: 0, type: "income" });
 
   const { data: profiles = [] } = useFinancialProfiles();
-  const activeProfile = useMemo(() => profiles.find((p) => p.is_active) || { name: "Family" }, [profiles]);
+  const activeProfile = profiles.find((p) => p.is_active) || { name: "Family" };
 
   const { data: incomeData = [] } = useIncomeSources();
   const { data: debtData = [] } = useDebts();
@@ -142,6 +375,11 @@ const Index = () => {
     monthsToDebtFree,
     pieData,
     calendarEvents,
+    monthStart,
+    monthEnd,
+    monthDays,
+    firstDayOfWeek,
+    blankDays,
   } = useMemo(() => {
     const totalIncome = incomeData.reduce((s, i) => s + i.amount, 0) + variableIncome.reduce((s, i) => s + i.amount, 0);
     const totalFixed = fixedExpensesData.reduce((s, e) => s + e.amount, 0);
@@ -169,94 +407,45 @@ const Index = () => {
       { name: "Debt", value: totalDebtPayment, color: "#ef4444" },
     ].filter((d) => d.value > 0);
 
-    // === CALENDARIO: EVENTOS EN TODOS LOS MESES ===
     const allEvents: Event[] = [];
-    const startYear = currentMonth.getFullYear() - 1;
-    const endYear = currentMonth.getFullYear() + 1;
+    incomeData.forEach((inc) => {
+      allEvents.push({
+        id: `inc-${inc.id}`,
+        date: format(new Date(new Date().getFullYear(), new Date().getMonth(), 1), "yyyy-MM-dd"),
+        type: "income",
+        name: inc.name,
+        amount: inc.amount,
+        recurring: true,
+      });
+    });
+    fixedExpensesData.forEach((exp) => {
+      const day = exp.payment_day || 1;
+      const date = new Date(new Date().getFullYear(), new Date().getMonth(), day);
+      allEvents.push({
+        id: `fix-${exp.id}`,
+        date: format(date, "yyyy-MM-dd"),
+        type: "fixed",
+        name: exp.name,
+        amount: exp.amount,
+        recurring: true,
+      });
+    });
+    debtData.forEach((debt) => {
+      allEvents.push({
+        id: `debt-${debt.id}`,
+        date: format(new Date(new Date().getFullYear(), new Date().getMonth(), 15), "yyyy-MM-dd"),
+        type: "debt",
+        name: `${debt.name} (min)`,
+        amount: debt.minimum_payment,
+        recurring: true,
+      });
+    });
 
-    for (let year = startYear; year <= endYear; year++) {
-      for (let month = 0; month < 12; month++) {
-        const currentDate = new Date(year, month, 1);
-        if (currentDate > new Date(endYear, 11, 31)) break;
-
-        // INGRESOS FIJOS (día 1)
-        incomeData.forEach((inc) => {
-          const date = new Date(year, month, 1);
-          allEvents.push({
-            id: `inc-${inc.id}-${year}-${month}`,
-            date: format(date, "yyyy-MM-dd"),
-            type: "income",
-            name: inc.name,
-            amount: inc.amount,
-            recurring: true,
-          });
-        });
-
-        // GASTOS FIJOS (día de pago)
-        fixedExpensesData.forEach((exp) => {
-          const day = exp.payment_day || 1;
-          const lastDayOfMonth = new Date(year, month + 1, 0).getDate();
-          const date = new Date(year, month, Math.min(day, lastDayOfMonth));
-          allEvents.push({
-            id: `fix-${exp.id}-${year}-${month}`,
-            date: format(date, "yyyy-MM-dd"),
-            type: "fixed",
-            name: exp.name,
-            amount: exp.amount,
-            recurring: true,
-          });
-        });
-
-        // DEUDAS (día 15)
-        debtData.forEach((debt) => {
-          const date = new Date(year, month, 15);
-          allEvents.push({
-            id: `debt-${debt.id}-${year}-${month}`,
-            date: format(date, "yyyy-MM-dd"),
-            type: "debt",
-            name: `${debt.name} (min)`,
-            amount: debt.minimum_payment,
-            recurring: true,
-          });
-        });
-
-        // === EVENTOS MANUALES MENSUALES ===
-        recurringManualEvents.forEach((event) => {
-          const [_, __, dayStr] = event.date.split("-");
-          const day = parseInt(dayStr);
-          const lastDayOfMonth = new Date(year, month + 1, 0).getDate();
-          if (day <= lastDayOfMonth) {
-            const date = new Date(year, month, day);
-            allEvents.push({
-              id: `man-${event.id}-${year}-${month}`,
-              date: format(date, "yyyy-MM-dd"),
-              type: event.type,
-              name: event.name,
-              amount: event.amount,
-              recurring: true,
-            });
-          }
-        });
-
-        // === EVENTOS ANUALES ===
-        annualEvents.forEach((event) => {
-          const [eventYear, eventMonth, eventDay] = event.date.split("-").map(Number);
-          if (eventYear === year && eventMonth - 1 === month) {
-            const lastDayOfMonth = new Date(year, month + 1, 0).getDate();
-            const day = Math.min(eventDay, lastDayOfMonth);
-            const date = new Date(year, month, day);
-            allEvents.push({
-              id: `ann-${event.id}-${year}`,
-              date: format(date, "yyyy-MM-dd"),
-              type: event.type,
-              name: event.name,
-              amount: event.amount,
-              recurring: true,
-            });
-          }
-        });
-      }
-    }
+    const monthStart = startOfMonth(currentMonth);
+    const monthEnd = endOfMonth(currentMonth);
+    const monthDays = eachDayOfInterval({ start: monthStart, end: monthEnd });
+    const firstDayOfWeek = monthStart.getDay();
+    const blankDays = Array(firstDayOfWeek).fill(null);
 
     return {
       totalIncome,
@@ -270,6 +459,11 @@ const Index = () => {
       monthsToDebtFree: months,
       pieData,
       calendarEvents: allEvents,
+      monthStart,
+      monthEnd,
+      monthDays,
+      firstDayOfWeek,
+      blankDays,
     };
   }, [
     incomeData,
@@ -280,11 +474,9 @@ const Index = () => {
     savings,
     savingsGoalsData,
     currentMonth,
-    recurringManualEvents,
-    annualEvents,
   ]);
 
-  const formatCurrency = useCallback((amount: number) => `£${amount.toFixed(0)}`, []);
+  const formatCurrency = (amount: number) => `£${amount.toFixed(0)}`;
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -301,91 +493,42 @@ const Index = () => {
     );
   if (!user) return <Auth />;
 
-  const getEventsForDay = useCallback(
-    (date: Date) => calendarEvents.filter((e) => isSameDay(new Date(e.date), date)),
-    [calendarEvents],
-  );
+  const getEventsForDay = (date: Date) => calendarEvents.filter((e) => isSameDay(new Date(e.date), date));
 
-  const addEvent = useCallback(() => {
+  const addEvent = () => {
     if (selectedDate && newEvent.name && newEvent.amount) {
-      const baseEvent: Event = {
+      const newEntry: Event = {
         id: Date.now().toString(),
         date: format(selectedDate, "yyyy-MM-dd"),
         type: newEvent.type,
         name: newEvent.name,
         amount: newEvent.amount,
-        recurring: newEvent.type === "annual" ? "annually" : "monthly",
       };
-
-      if (newEvent.type === "annual") {
-        setAnnualEvents((prev) => {
-          const updated = [...prev, baseEvent];
-          localStorage.setItem("annual_events", JSON.stringify(updated));
-          return updated;
-        });
-      } else {
-        setRecurringManualEvents((prev) => {
-          const updated = [...prev, baseEvent];
-          localStorage.setItem("recurring_manual_events", JSON.stringify(updated));
-          return updated;
-        });
-      }
-
+      setEvents([...events, newEntry]);
       setShowEventDialog(false);
       setNewEvent({ name: "", amount: 0, type: "income" });
     }
-  }, [selectedDate, newEvent]);
+  };
 
-  const updateEvent = useCallback(() => {
+  const updateEvent = () => {
     if (editingEvent && newEvent.name && newEvent.amount) {
-      const updatedEvent = {
-        ...editingEvent,
-        name: newEvent.name,
-        amount: newEvent.amount,
-        type: newEvent.type,
-      };
-
-      if (editingEvent.recurring === "annually") {
-        setAnnualEvents((prev) => {
-          const updated = prev.map((e) => (e.id === editingEvent.id ? updatedEvent : e));
-          localStorage.setItem("annual_events", JSON.stringify(updated));
-          return updated;
-        });
-      } else {
-        setRecurringManualEvents((prev) => {
-          const updated = prev.map((e) => (e.id === editingEvent.id ? updatedEvent : e));
-          localStorage.setItem("recurring_manual_events", JSON.stringify(updated));
-          return updated;
-        });
-      }
-
+      const updated = events.map((e) =>
+        e.id === editingEvent.id ? { ...e, name: newEvent.name, amount: newEvent.amount } : e,
+      );
+      setEvents(updated);
       setEditingEvent(null);
       setShowEventDialog(false);
       setNewEvent({ name: "", amount: 0, type: "income" });
     }
-  }, [editingEvent, newEvent]);
+  };
 
-  const deleteEvent = useCallback((id: string) => {
-    const prefix = id.split("-")[0];
-    const baseId = id.split("-").slice(1, -1).join("-");
-
-    if (prefix === "ann") {
-      setAnnualEvents((prev) => {
-        const updated = prev.filter((e) => e.id !== baseId);
-        localStorage.setItem("annual_events", JSON.stringify(updated));
-        return updated;
-      });
-    } else if (prefix === "man") {
-      setRecurringManualEvents((prev) => {
-        const updated = prev.filter((e) => e.id !== baseId);
-        localStorage.setItem("recurring_manual_events", JSON.stringify(updated));
-        return updated;
-      });
-    }
+  const deleteEvent = (id: string) => {
+    setEvents(events.filter((e) => e.id !== id));
     setDeleteId(null);
-  }, []);
+  };
 
-  const sendToAI = useCallback(() => {
+  // === AI LOCAL ===
+  const sendToAI = () => {
     if (!aiInput.trim()) return;
     setAiLoading(true);
     setAiResponse("");
@@ -409,15 +552,7 @@ const Index = () => {
       setAiResponse(response);
       setAiLoading(false);
     }, 800);
-  }, [aiInput, totalVariable, cashFlow, monthsToDebtFree, totalExpenses, savingsTotal, totalIncome, formatCurrency]);
-
-  const { monthStart, monthEnd, monthDays, blankDays } = useMemo(() => {
-    const monthStart = startOfMonth(currentMonth);
-    const monthEnd = endOfMonth(currentMonth);
-    const monthDays = eachDayOfInterval({ start: monthStart, end: monthEnd });
-    const blankDays = Array(monthStart.getDay()).fill(null);
-    return { monthStart, monthEnd, monthDays, blankDays };
-  }, [currentMonth]);
+  };
 
   return (
     <>
@@ -435,7 +570,7 @@ const Index = () => {
               <p className="text-muted-foreground">Hi, {activeProfile.name}!</p>
             </div>
             <div className="flex items-center gap-3">
-              <LanguageToggle language={language} onLanguageChange={setLanguage} />
+              <LanguageToggle language={language} onLanguageChange={(l: Language) => setLanguage(l)} />
               <ProfileSelector language={language} />
               <Button variant="outline" size="icon" onClick={() => window.print()}>
                 <Download className="h-4 w-4" />
@@ -453,23 +588,25 @@ const Index = () => {
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             <Card className="border-green-200">
               <CardHeader className="pb-2">
-                <CardTitle className="text-sm text-green-600">Total Income</CardTitle>
+                <CardTitle className="text-sm font-medium text-green-600">Total Income</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="text-3xl font-bold text-green-600">{formatCurrency(totalIncome)}</div>
               </CardContent>
             </Card>
+
             <Card className="border-red-200">
               <CardHeader className="pb-2">
-                <CardTitle className="text-sm text-red-600">Total Expenses</CardTitle>
+                <CardTitle className="text-sm font-medium text-red-600">Total Expenses</CardTitle>
               </CardHeader>
               <CardContent>
                 <div className="text-3xl font-bold text-red-600">{formatCurrency(totalExpenses)}</div>
               </CardContent>
             </Card>
+
             <Card className={`${cashFlow >= 0 ? "border-emerald-200" : "border-orange-200"}`}>
               <CardHeader className="pb-2">
-                <CardTitle className={`text-sm ${cashFlow >= 0 ? "text-emerald-600" : "text-orange-600"}`}>
+                <CardTitle className={`text-sm font-medium ${cashFlow >= 0 ? "text-emerald-600" : "text-orange-600"}`}>
                   Cash Flow
                 </CardTitle>
               </CardHeader>
@@ -479,9 +616,10 @@ const Index = () => {
                 </div>
               </CardContent>
             </Card>
+
             <Card className="border-purple-200">
               <CardHeader className="pb-2">
-                <CardTitle className="text-sm text-purple-600 flex items-center gap-1">
+                <CardTitle className="text-sm font-medium text-purple-600 flex items-center gap-1">
                   <PiggyBank className="h-4 w-4" /> Total Savings
                 </CardTitle>
               </CardHeader>
@@ -496,7 +634,8 @@ const Index = () => {
             <Card className="border-2 border-orange-200">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-orange-600">
-                  <TrendingUp className="h-6 w-6" /> Debt Free Date
+                  <TrendingUp className="h-6 w-6" />
+                  Debt Free Date
                 </CardTitle>
               </CardHeader>
               <CardContent>
@@ -563,7 +702,8 @@ const Index = () => {
             <CardHeader>
               <CardTitle className="flex items-center justify-between">
                 <span className="flex items-center gap-2">
-                  <Calendar className="h-5 w-5" /> {format(currentMonth, "MMMM yyyy")}
+                  <Calendar className="h-5 w-5" />
+                  {format(currentMonth, "MMMM yyyy")}
                 </span>
                 <div className="flex gap-2">
                   <Button size="sm" variant="outline" onClick={() => setCurrentMonth(sub(currentMonth, { months: 1 }))}>
@@ -680,7 +820,11 @@ const Index = () => {
                               variant="ghost"
                               onClick={() => {
                                 setEditingEvent(e);
-                                setNewEvent({ name: e.name, amount: e.amount, type: e.type });
+                                setNewEvent({
+                                  name: e.name,
+                                  amount: e.amount,
+                                  type: e.type,
+                                });
                                 setShowEventDialog(true);
                               }}
                             >
@@ -735,7 +879,6 @@ const Index = () => {
                       <SelectItem value="fixed">Fixed Expense</SelectItem>
                       <SelectItem value="variable">Variable Expense</SelectItem>
                       <SelectItem value="debt">Debt Payment</SelectItem>
-                      <SelectItem value="annual">Annual Event</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -763,8 +906,8 @@ const Index = () => {
             </AlertDialogContent>
           </AlertDialog>
 
-          {/* TABS */}
-          <Tabs value="overview" className="no-print">
+          {/* TABS CON VARIABLE INCOME */}
+          <Tabs defaultValue="overview" className="no-print">
             <TabsList className="grid w-full grid-cols-4 mb-6">
               <TabsTrigger value="overview">Overview</TabsTrigger>
               <TabsTrigger value="income">Income</TabsTrigger>
@@ -794,9 +937,7 @@ const Index = () => {
                 </TabsList>
 
                 <TabsContent value="fixed">
-                  <React.Suspense fallback={<Skeleton className="h-64 w-full" />}>
-                    <IncomeManager language={language} />
-                  </React.Suspense>
+                  <IncomeManager language={language} />
                 </TabsContent>
 
                 <TabsContent value="variable">
@@ -807,7 +948,7 @@ const Index = () => {
                         <Button
                           size="sm"
                           onClick={() => {
-                            const desc = prompt("Description");
+                            const desc = prompt("Description (e.g. Bonus, Freelance)");
                             const amount = parseFloat(prompt("Amount (£)") || "0");
                             if (desc && amount > 0) addIncome(amount, desc);
                           }}
@@ -853,22 +994,16 @@ const Index = () => {
                   <TabsTrigger value="variable">Variable</TabsTrigger>
                 </TabsList>
                 <TabsContent value="fixed">
-                  <React.Suspense fallback={<Skeleton className="h-64 w-full" />}>
-                    <FixedExpensesManager language={language} />
-                  </React.Suspense>
+                  <FixedExpensesManager language={language} />
                 </TabsContent>
                 <TabsContent value="variable">
-                  <React.Suspense fallback={<Skeleton className="h-64 w-full" />}>
-                    <VariableExpensesManager language={language} />
-                  </React.Suspense>
+                  <VariableExpensesManager language={language} />
                 </TabsContent>
               </Tabs>
             </TabsContent>
 
             <TabsContent value="debts">
-              <React.Suspense fallback={<Skeleton className="h-64 w-full" />}>
-                <DebtsManager language={language} />
-              </React.Suspense>
+              <DebtsManager language={language} />
             </TabsContent>
           </Tabs>
 
@@ -883,4 +1018,5 @@ const Index = () => {
   );
 };
 
+// EXPORT CORRECTO
 export default Index;
