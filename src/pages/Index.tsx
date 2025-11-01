@@ -1,3 +1,4 @@
+// src/pages/Index.tsx
 "use client";
 
 import React, { useState, useEffect, useMemo, useCallback } from "react";
@@ -63,37 +64,6 @@ type Event = {
   recurring?: "monthly" | "annually";
 };
 
-// === STUB COMPONENTS (para evitar errores) ===
-const IncomeManager = ({ language }: { language: Language }) => (
-  <Card>
-    <CardContent>
-      <p className="text-center py-8 text-muted-foreground">Income management coming soon</p>
-    </CardContent>
-  </Card>
-);
-const FixedExpensesManager = ({ language }: { language: Language }) => (
-  <Card>
-    <CardContent>
-      <p className="text-center py-8 text-muted-foreground">Fixed expenses coming soon</p>
-    </CardContent>
-  </Card>
-);
-const VariableExpensesManager = ({ language }: { language: Language }) => (
-  <Card>
-    <CardContent>
-      <p className="text-center py-8 text-muted-foreground">Variable expenses coming soon</p>
-    </CardContent>
-  </Card>
-);
-const DebtsManager = ({ language }: { language: Language }) => (
-  <Card>
-    <CardContent>
-      <p className="text-center py-8 text-muted-foreground">Debt management coming soon</p>
-    </CardContent>
-  </Card>
-);
-
-// === VARIABLE INCOME HOOK ===
 const useVariableIncome = () => {
   const [data, setData] = useState<any[]>([]);
 
@@ -139,8 +109,7 @@ const Index = () => {
 
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [currentMonth, setCurrentMonth] = useState(new Date());
-  const [recurringManualEvents, setRecurringManualEvents] = useState<Event[]>([]);
-  const [annualEvents, setAnnualEvents] = useState<Event[]>([]);
+  const [events, setEvents] = useState<Event[]>([]);
   const [showEventDialog, setShowEventDialog] = useState(false);
   const [editingEvent, setEditingEvent] = useState<Event | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
@@ -161,18 +130,6 @@ const Index = () => {
   const { data: savings } = useSavings();
   const { data: variableIncome = [], addIncome, deleteIncome } = useVariableIncome();
 
-  // === CARGA DE EVENTOS DESDE LOCALSTORAGE ===
-  useEffect(() => {
-    const loadEvents = () => {
-      const manual = localStorage.getItem("recurring_manual_events");
-      const annual = localStorage.getItem("annual_events");
-      if (manual) setRecurringManualEvents(JSON.parse(manual));
-      if (annual) setAnnualEvents(JSON.parse(annual));
-    };
-    loadEvents();
-  }, []);
-
-  // === CÁLCULOS FINANCIEROS ===
   const {
     totalIncome,
     totalFixed,
@@ -212,7 +169,7 @@ const Index = () => {
       { name: "Debt", value: totalDebtPayment, color: "#ef4444" },
     ].filter((d) => d.value > 0);
 
-    // === EVENTOS EN CALENDARIO ===
+    // === CALENDARIO: EVENTOS EN TODOS LOS MESES ===
     const allEvents: Event[] = [];
     const startYear = currentMonth.getFullYear() - 1;
     const endYear = currentMonth.getFullYear() + 1;
@@ -222,7 +179,7 @@ const Index = () => {
         const currentDate = new Date(year, month, 1);
         if (currentDate > new Date(endYear, 11, 31)) break;
 
-        // INGRESOS FIJOS
+        // INGRESOS FIJOS (día 1)
         incomeData.forEach((inc) => {
           const date = new Date(year, month, 1);
           allEvents.push({
@@ -231,11 +188,11 @@ const Index = () => {
             type: "income",
             name: inc.name,
             amount: inc.amount,
-            recurring: "monthly",
+            recurring: true,
           });
         });
 
-        // GASTOS FIJOS
+        // GASTOS FIJOS (día de pago)
         fixedExpensesData.forEach((exp) => {
           const day = exp.payment_day || 1;
           const lastDayOfMonth = new Date(year, month + 1, 0).getDate();
@@ -246,11 +203,11 @@ const Index = () => {
             type: "fixed",
             name: exp.name,
             amount: exp.amount,
-            recurring: "monthly",
+            recurring: true,
           });
         });
 
-        // DEUDAS
+        // DEUDAS (día 15)
         debtData.forEach((debt) => {
           const date = new Date(year, month, 15);
           allEvents.push({
@@ -259,11 +216,11 @@ const Index = () => {
             type: "debt",
             name: `${debt.name} (min)`,
             amount: debt.minimum_payment,
-            recurring: "monthly",
+            recurring: true,
           });
         });
 
-        // EVENTOS MANUALES RECURRENTES
+        // === EVENTOS MANUALES MENSUALES ===
         recurringManualEvents.forEach((event) => {
           const [_, __, dayStr] = event.date.split("-");
           const day = parseInt(dayStr);
@@ -276,12 +233,12 @@ const Index = () => {
               type: event.type,
               name: event.name,
               amount: event.amount,
-              recurring: "monthly",
+              recurring: true,
             });
           }
         });
 
-        // EVENTOS ANUALES
+        // === EVENTOS ANUALES ===
         annualEvents.forEach((event) => {
           const [eventYear, eventMonth, eventDay] = event.date.split("-").map(Number);
           if (eventYear === year && eventMonth - 1 === month) {
@@ -294,7 +251,7 @@ const Index = () => {
               type: event.type,
               name: event.name,
               amount: event.amount,
-              recurring: "annually",
+              recurring: true,
             });
           }
         });
@@ -349,75 +306,68 @@ const Index = () => {
     [calendarEvents],
   );
 
-  // === AGREGAR EVENTO ===
   const addEvent = useCallback(() => {
-    if (!newEvent.name || !newEvent.amount) return;
-    const eventDate = selectedDate || new Date();
+    if (selectedDate && newEvent.name && newEvent.amount) {
+      const baseEvent: Event = {
+        id: Date.now().toString(),
+        date: format(selectedDate, "yyyy-MM-dd"),
+        type: newEvent.type,
+        name: newEvent.name,
+        amount: newEvent.amount,
+        recurring: newEvent.type === "annual" ? "annually" : "monthly",
+      };
 
-    const baseEvent: Event = {
-      id: Date.now().toString(),
-      date: format(eventDate, "yyyy-MM-dd"),
-      type: newEvent.type,
-      name: newEvent.name,
-      amount: newEvent.amount,
-      recurring: newEvent.type === "annual" ? "annually" : "monthly",
-    };
+      if (newEvent.type === "annual") {
+        setAnnualEvents((prev) => {
+          const updated = [...prev, baseEvent];
+          localStorage.setItem("annual_events", JSON.stringify(updated));
+          return updated;
+        });
+      } else {
+        setRecurringManualEvents((prev) => {
+          const updated = [...prev, baseEvent];
+          localStorage.setItem("recurring_manual_events", JSON.stringify(updated));
+          return updated;
+        });
+      }
 
-    if (newEvent.type === "annual") {
-      setAnnualEvents((prev) => {
-        const updated = [...prev, baseEvent];
-        localStorage.setItem("annual_events", JSON.stringify(updated));
-        return updated;
-      });
-    } else {
-      setRecurringManualEvents((prev) => {
-        const updated = [...prev, baseEvent];
-        localStorage.setItem("recurring_manual_events", JSON.stringify(updated));
-        return updated;
-      });
+      setShowEventDialog(false);
+      setNewEvent({ name: "", amount: 0, type: "income" });
     }
-
-    setShowEventDialog(false);
-    setNewEvent({ name: "", amount: 0, type: "income" });
   }, [selectedDate, newEvent]);
 
-  // === EDITAR EVENTO ===
   const updateEvent = useCallback(() => {
-    if (!editingEvent || !newEvent.name || !newEvent.amount) return;
+    if (editingEvent && newEvent.name && newEvent.amount) {
+      const updatedEvent = {
+        ...editingEvent,
+        name: newEvent.name,
+        amount: newEvent.amount,
+        type: newEvent.type,
+      };
 
-    const updatedEvent = {
-      ...editingEvent,
-      name: newEvent.name,
-      amount: newEvent.amount,
-      type: newEvent.type,
-    };
+      if (editingEvent.recurring === "annually") {
+        setAnnualEvents((prev) => {
+          const updated = prev.map((e) => (e.id === editingEvent.id ? updatedEvent : e));
+          localStorage.setItem("annual_events", JSON.stringify(updated));
+          return updated;
+        });
+      } else {
+        setRecurringManualEvents((prev) => {
+          const updated = prev.map((e) => (e.id === editingEvent.id ? updatedEvent : e));
+          localStorage.setItem("recurring_manual_events", JSON.stringify(updated));
+          return updated;
+        });
+      }
 
-    if (editingEvent.recurring === "annually") {
-      setAnnualEvents((prev) => {
-        const updated = prev.map((e) => (e.id === editingEvent.id ? updatedEvent : e));
-        localStorage.setItem("annual_events", JSON.stringify(updated));
-        return updated;
-      });
-    } else {
-      setRecurringManualEvents((prev) => {
-        const updated = prev.map((e) => (e.id === editingEvent.id ? updatedEvent : e));
-        localStorage.setItem("recurring_manual_events", JSON.stringify(updated));
-        return updated;
-      });
+      setEditingEvent(null);
+      setShowEventDialog(false);
+      setNewEvent({ name: "", amount: 0, type: "income" });
     }
-
-    setEditingEvent(null);
-    setShowEventDialog(false);
-    setNewEvent({ name: "", amount: 0, type: "income" });
   }, [editingEvent, newEvent]);
 
-  // === ELIMINAR EVENTO (más seguro) ===
   const deleteEvent = useCallback((id: string) => {
-    const parts = id.split("-");
-    if (parts.length < 3) return;
-
-    const prefix = parts[0];
-    const baseId = parts.slice(1, parts.length - 2).join("-");
+    const prefix = id.split("-")[0];
+    const baseId = id.split("-").slice(1, -1).join("-");
 
     if (prefix === "ann") {
       setAnnualEvents((prev) => {
@@ -435,7 +385,6 @@ const Index = () => {
     setDeleteId(null);
   }, []);
 
-  // === AI MOCK ===
   const sendToAI = useCallback(() => {
     if (!aiInput.trim()) return;
     setAiLoading(true);
@@ -461,36 +410,6 @@ const Index = () => {
       setAiLoading(false);
     }, 800);
   }, [aiInput, totalVariable, cashFlow, monthsToDebtFree, totalExpenses, savingsTotal, totalIncome, formatCurrency]);
-
-  // === EXPORTAR DATOS ===
-  const exportData = useCallback(() => {
-    const data = {
-      incomeData,
-      debtData,
-      fixedExpensesData,
-      variableExpensesData,
-      savingsGoalsData,
-      variableIncome,
-      recurringManualEvents,
-      annualEvents,
-    };
-    const blob = new Blob([JSON.stringify(data, null, 2)], { type: "application/json" });
-    const url = URL.createObjectURL(blob);
-    const a = document.createElement("a");
-    a.href = url;
-    a.download = `budget-backup-${format(new Date(), "yyyy-MM-dd")}.json`;
-    a.click();
-    URL.revokeObjectURL(url);
-  }, [
-    incomeData,
-    debtData,
-    fixedExpensesData,
-    variableExpensesData,
-    savingsGoalsData,
-    variableIncome,
-    recurringManualEvents,
-    annualEvents,
-  ]);
 
   const { monthStart, monthEnd, monthDays, blankDays } = useMemo(() => {
     const monthStart = startOfMonth(currentMonth);
@@ -518,26 +437,128 @@ const Index = () => {
             <div className="flex items-center gap-3">
               <LanguageToggle language={language} onLanguageChange={setLanguage} />
               <ProfileSelector language={language} />
-              <Button variant="outline" size="icon" onClick={() => window.print()} title="Print">
+              <Button variant="outline" size="icon" onClick={() => window.print()}>
                 <Download className="h-4 w-4" />
               </Button>
-              <Button variant="outline" size="icon" onClick={exportData} title="Export Data">
-                <Download className="h-4 w-4" />
-              </Button>
-              <Button variant="outline" size="icon" onClick={() => setShowAI(true)} title="AI Assistant">
+              <Button variant="outline" size="icon" onClick={() => setShowAI(true)}>
                 <Bot className="h-4 w-4" />
               </Button>
-              <Button variant="outline" size="icon" onClick={() => supabase.auth.signOut()} title="Logout">
+              <Button variant="outline" size="icon" onClick={() => supabase.auth.signOut()}>
                 <LogOut className="h-4 w-4" />
               </Button>
             </div>
           </div>
 
-          {/* ... RESTO DEL JSX (sin cambios) ... */}
-          {/* (Mantiene todo el resto: resumen, debt free, pastel, calendario, AI, diálogos, tabs) */}
-          {/* Solo se muestra el HEADER modificado arriba */}
+          {/* RESUMEN */}
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+            <Card className="border-green-200">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm text-green-600">Total Income</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-3xl font-bold text-green-600">{formatCurrency(totalIncome)}</div>
+              </CardContent>
+            </Card>
+            <Card className="border-red-200">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm text-red-600">Total Expenses</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-3xl font-bold text-red-600">{formatCurrency(totalExpenses)}</div>
+              </CardContent>
+            </Card>
+            <Card className={`${cashFlow >= 0 ? "border-emerald-200" : "border-orange-200"}`}>
+              <CardHeader className="pb-2">
+                <CardTitle className={`text-sm ${cashFlow >= 0 ? "text-emerald-600" : "text-orange-600"}`}>
+                  Cash Flow
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className={`text-3xl font-bold ${cashFlow >= 0 ? "text-emerald-600" : "text-orange-600"}`}>
+                  {formatCurrency(cashFlow)}
+                </div>
+              </CardContent>
+            </Card>
+            <Card className="border-purple-200">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm text-purple-600 flex items-center gap-1">
+                  <PiggyBank className="h-4 w-4" /> Total Savings
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-3xl font-bold text-purple-600">{formatCurrency(savingsTotal)}</div>
+              </CardContent>
+            </Card>
+          </div>
 
-          {/* CALENDARIO (sin cambios) */}
+          {/* DEBT FREE */}
+          {debtData.length > 0 && (
+            <Card className="border-2 border-orange-200">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-orange-600">
+                  <TrendingUp className="h-6 w-6" /> Debt Free Date
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-center">
+                  <p className="text-4xl font-bold">{format(debtFreeDate, "d MMM yyyy")}</p>
+                  <p className="text-lg text-muted-foreground">{monthsToDebtFree} months away</p>
+                </div>
+                <Progress value={80} className="h-4 mt-3" />
+              </CardContent>
+            </Card>
+          )}
+
+          {/* GASTOS PASTEL */}
+          {pieData.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Expense Breakdown</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="relative w-64 h-64 mx-auto">
+                  <svg viewBox="0 0 32 32" className="w-full h-full">
+                    {(() => {
+                      const total = pieData.reduce((s, d) => s + d.value, 0);
+                      let cum = 0;
+                      return pieData.map((d, i) => {
+                        const percent = (d.value / total) * 100;
+                        const start = (cum / total) * 360;
+                        cum += d.value;
+                        const end = (cum / total) * 360;
+                        const large = percent > 50 ? 1 : 0;
+                        const sr = (start * Math.PI) / 180;
+                        const er = (end * Math.PI) / 180;
+                        const x1 = 16 + 16 * Math.cos(sr);
+                        const y1 = 16 + 16 * Math.sin(sr);
+                        const x2 = 16 + 16 * Math.cos(er);
+                        const y2 = 16 + 16 * Math.sin(er);
+                        return (
+                          <path key={i} d={`M16,16 L${x1},${y1} A16,16 0 ${large},1 ${x2},${y2} Z`} fill={d.color} />
+                        );
+                      });
+                    })()}
+                  </svg>
+                  <div className="absolute inset-0 flex items-center justify-center text-2xl font-bold">
+                    {formatCurrency(totalExpenses)}
+                  </div>
+                </div>
+                <div className="mt-4 space-y-2">
+                  {pieData.map((d, i) => (
+                    <div key={i} className="flex justify-between text-sm">
+                      <span className="flex items-center gap-2">
+                        <div className="w-3 h-3 rounded" style={{ backgroundColor: d.color }} />
+                        {d.name}
+                      </span>
+                      <span>{formatCurrency(d.value)}</span>
+                    </div>
+                  ))}
+                </div>
+              </CardContent>
+            </Card>
+          )}
+
+          {/* CALENDARIO */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center justify-between">
@@ -551,13 +572,7 @@ const Index = () => {
                   <Button size="sm" variant="outline" onClick={() => setCurrentMonth(add(currentMonth, { months: 1 }))}>
                     <ChevronRight className="h-4 w-4" />
                   </Button>
-                  <Button
-                    size="sm"
-                    onClick={() => {
-                      setSelectedDate(new Date());
-                      setShowEventDialog(true);
-                    }}
-                  >
+                  <Button size="sm" onClick={() => setShowEventDialog(true)}>
                     <Plus className="h-4 w-4 mr-1" /> Add
                   </Button>
                 </div>
@@ -602,8 +617,151 @@ const Index = () => {
             </CardContent>
           </Card>
 
-          {/* === MODALES: AI, DETALLE, AGREGAR, ELIMINAR === */}
-          {/* (Sin cambios, solo se asegura que `selectedDate` esté disponible) */}
+          {/* AI MODAL */}
+          <AlertDialog open={showAI} onOpenChange={setShowAI}>
+            <AlertDialogContent className="max-w-2xl">
+              <AlertDialogHeader>
+                <AlertDialogTitle className="flex items-center gap-2">
+                  <Bot className="h-5 w-5" /> Budget Assistant
+                </AlertDialogTitle>
+              </AlertDialogHeader>
+              <div className="space-y-4">
+                <Textarea
+                  placeholder="Ask anything: 'How can I save £200/month?' or 'Should I pay off debt first?'"
+                  value={aiInput}
+                  onChange={(e) => setAiInput(e.target.value)}
+                  className="min-h-24"
+                />
+                <Button onClick={sendToAI} disabled={aiLoading} className="w-full">
+                  {aiLoading ? (
+                    "Thinking..."
+                  ) : (
+                    <>
+                      <Send className="h-4 w-4 mr-2" /> Send
+                    </>
+                  )}
+                </Button>
+                {aiResponse && (
+                  <Card>
+                    <CardContent className="pt-4 whitespace-pre-wrap text-sm">{aiResponse}</CardContent>
+                  </Card>
+                )}
+              </div>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Close</AlertDialogCancel>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+
+          {/* DETALLE DEL DÍA */}
+          {selectedDate && (
+            <AlertDialog open={!!selectedDate} onOpenChange={() => setSelectedDate(null)}>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>{format(selectedDate, "PPP")}</AlertDialogTitle>
+                </AlertDialogHeader>
+                <AlertDialogDescription className="space-y-3">
+                  {getEventsForDay(selectedDate).length === 0 ? (
+                    <p className="text-center py-4">No events</p>
+                  ) : (
+                    getEventsForDay(selectedDate).map((e) => (
+                      <div key={e.id} className="flex justify-between items-center p-3 bg-muted rounded-lg">
+                        <div>
+                          <p className="font-medium">{e.name}</p>
+                          <p className="text-xs text-muted-foreground">{e.type}</p>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className={e.type === "income" ? "text-green-600 font-bold" : "text-red-600 font-bold"}>
+                            {formatCurrency(e.amount)}
+                          </span>
+                          <div className="flex gap-1">
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => {
+                                setEditingEvent(e);
+                                setNewEvent({ name: e.name, amount: e.amount, type: e.type });
+                                setShowEventDialog(true);
+                              }}
+                            >
+                              <Edit2 className="h-4 w-4" />
+                            </Button>
+                            <Button size="sm" variant="ghost" onClick={() => setDeleteId(e.id)}>
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </AlertDialogDescription>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Close</AlertDialogCancel>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          )}
+
+          {/* AGREGAR/EDITAR EVENTO */}
+          <AlertDialog open={showEventDialog} onOpenChange={setShowEventDialog}>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>{editingEvent ? "Edit Event" : "Add Event"}</AlertDialogTitle>
+              </AlertDialogHeader>
+              <div className="space-y-4">
+                <div>
+                  <Label>Name</Label>
+                  <Input value={newEvent.name} onChange={(e) => setNewEvent({ ...newEvent, name: e.target.value })} />
+                </div>
+                <div>
+                  <Label>Amount</Label>
+                  <Input
+                    type="number"
+                    value={newEvent.amount || ""}
+                    onChange={(e) => setNewEvent({ ...newEvent, amount: parseFloat(e.target.value) || 0 })}
+                  />
+                </div>
+                <div>
+                  <Label>Type</Label>
+                  <Select
+                    value={newEvent.type}
+                    onValueChange={(v: Event["type"]) => setNewEvent({ ...newEvent, type: v })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="income">Income</SelectItem>
+                      <SelectItem value="fixed">Fixed Expense</SelectItem>
+                      <SelectItem value="variable">Variable Expense</SelectItem>
+                      <SelectItem value="debt">Debt Payment</SelectItem>
+                      <SelectItem value="annual">Annual Event</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction onClick={editingEvent ? updateEvent : addEvent}>
+                  {editingEvent ? "Save" : "Add"}
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+
+          {/* CONFIRMAR ELIMINAR */}
+          <AlertDialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Delete Event?</AlertDialogTitle>
+                <AlertDialogDescription>This cannot be undone.</AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction onClick={() => deleteEvent(deleteId!)}>Delete</AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
 
           {/* TABS */}
           <Tabs value="overview" className="no-print">
@@ -636,7 +794,9 @@ const Index = () => {
                 </TabsList>
 
                 <TabsContent value="fixed">
-                  <IncomeManager language={language} />
+                  <React.Suspense fallback={<Skeleton className="h-64 w-full" />}>
+                    <IncomeManager language={language} />
+                  </React.Suspense>
                 </TabsContent>
 
                 <TabsContent value="variable">
@@ -693,16 +853,22 @@ const Index = () => {
                   <TabsTrigger value="variable">Variable</TabsTrigger>
                 </TabsList>
                 <TabsContent value="fixed">
-                  <FixedExpensesManager language={language} />
+                  <React.Suspense fallback={<Skeleton className="h-64 w-full" />}>
+                    <FixedExpensesManager language={language} />
+                  </React.Suspense>
                 </TabsContent>
                 <TabsContent value="variable">
-                  <VariableExpensesManager language={language} />
+                  <React.Suspense fallback={<Skeleton className="h-64 w-full" />}>
+                    <VariableExpensesManager language={language} />
+                  </React.Suspense>
                 </TabsContent>
               </Tabs>
             </TabsContent>
 
             <TabsContent value="debts">
-              <DebtsManager language={language} />
+              <React.Suspense fallback={<Skeleton className="h-64 w-full" />}>
+                <DebtsManager language={language} />
+              </React.Suspense>
             </TabsContent>
           </Tabs>
 
