@@ -12,7 +12,8 @@ import { Checkbox } from "@/components/ui/checkbox";
 import { AlertCircle, Mail, Lock, User, Chrome } from "lucide-react";
 import { useTheme } from "@/hooks/useTheme";
 
-type Language = "en" | "es" | "pl" | "pt";
+// NUEVO: Tipo ampliado para LanguageToggle
+type Language = "en" | "es" | "pl";
 
 export const Auth = () => {
   useTheme();
