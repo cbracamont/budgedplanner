@@ -75,26 +75,62 @@ type Event = {
 
 const translations = {
   en: {
+    overview: "Overview",
+    income: "Income",
+    expenses: "Expenses",
+    debts: "Debts",
+    totalIncome: "Total Income",
+    totalExpenses: "Total Expenses",
+    cashFlow: "Cash Flow",
+    totalSavings: "Total Savings",
+    healthy: "Healthy",
+    review: "Review",
+    fixedIncome: "Fixed Income",
+    variableIncome: "Variable Income",
+    fixedExpenses: "Fixed Expenses",
+    variableExpenses: "Variable Expenses",
+    noData: "No data yet",
+    add: "Add",
+    description: "Description",
+    strategy: "Debt Payoff Strategy",
     avalanche: "Avalanche (High APR First)",
-    snowball: "Snowball (Smallest First)",
+    snowball: "Snowball (Smallest Balance First)",
     hybrid: "Hybrid (APR + Balance)",
-    priority: "Priority",
-    method: "Debt Payoff Method",
     recommended: "Recommended",
     months: "months",
-    totalInterest: "Total Interest",
-    strategy: "Strategy",
+    totalInterest: "Total Interest Saved",
+    priority: "Debt Priority",
+    payFirst: "Pay First",
+    minPayment: "Min Payment",
   },
   es: {
+    overview: "Resumen",
+    income: "Ingresos",
+    expenses: "Gastos",
+    debts: "Deudas",
+    totalIncome: "Ingresos Totales",
+    totalExpenses: "Gastos Totales",
+    cashFlow: "Flujo de Caja",
+    totalSavings: "Ahorros Totales",
+    healthy: "Saludable",
+    review: "Revisar",
+    fixedIncome: "Ingresos Fijos",
+    variableIncome: "Ingresos Variables",
+    fixedExpenses: "Gastos Fijos",
+    variableExpenses: "Gastos Variables",
+    noData: "No hay datos",
+    add: "Añadir",
+    description: "Descripción",
+    strategy: "Estrategia de Pago de Deudas",
     avalanche: "Avalancha (APR Alto Primero)",
-    snowball: "Bola de Nieve (Pequeño Primero)",
+    snowball: "Bola de Nieve (Saldo Pequeño Primero)",
     hybrid: "Híbrido (APR + Saldo)",
-    priority: "Prioridad",
-    method: "Método de Pago",
     recommended: "Recomendado",
     months: "meses",
-    totalInterest: "Interés Total",
-    strategy: "Estrategia",
+    totalInterest: "Interés Total Ahorrado",
+    priority: "Prioridad de Deudas",
+    payFirst: "Pagar Primero",
+    minPayment: "Pago Mínimo",
   },
 };
 
@@ -147,64 +183,59 @@ const Index = () => {
   const { data: savings } = useSavings();
   const { data: variableIncome = [], addIncome, deleteIncome } = useVariableIncome();
 
-  // === CÁLCULOS DE ESTRATEGIAS DE DEUDA ===
-  const debtStrategies = useMemo(() => {
-    if (debtData.length === 0) return null;
+  const t = translations[language];
 
+  const {
+    totalIncome,
+    totalFixed,
+    totalVariable,
+    totalDebtPayment,
+    totalExpenses,
+    cashFlow,
+    savingsTotal,
+    debtFreeDate,
+    monthsToDebtFree,
+    pieData,
+    calendarEvents,
+    monthDays,
+    blankDays,
+  } = useMemo(() => {
     const totalIncome = incomeData.reduce((s, i) => s + i.amount, 0) + variableIncome.reduce((s, i) => s + i.amount, 0);
     const totalFixed = fixedExpensesData.reduce((s, e) => s + e.amount, 0);
     const totalVariable = variableExpensesData.reduce((s, e) => s + e.amount, 0);
-    const minPayments = debtData.reduce((s, d) => s + d.minimum_payment, 0);
-    const cashFlow = totalIncome - totalFixed - totalVariable - minPayments;
-    const extra = Math.max(0, cashFlow);
+    const totalDebtPayment = debtData.reduce((s, d) => s + d.minimum_payment, 0);
+    const totalExpenses = totalFixed + totalVariable + totalDebtPayment;
+    const cashFlow = totalIncome - totalExpenses;
+    const savingsTotal =
+      (savings?.emergency_fund || 0) + savingsGoalsData.reduce((s, g) => s + (g.current_amount || 0), 0);
 
-    const calculateStrategy = (sortFn: (a: any, b: any) => number) => {
-      const debts = [...debtData].sort(sortFn);
-      let remaining = debts.map((d) => ({ ...d, balance: d.balance }));
-      let months = 0;
-      let totalInterest = 0;
+    let remaining = debtData.reduce((s, d) => s + d.balance, 0);
+    let months = 0;
+    const extra = Math.max(0, cashFlow * 0.3);
+    const monthlyPay = totalDebtPayment + extra;
+    while (remaining > 0 && months < 120) {
+      const interest = debtData.reduce((s, d) => s + d.balance * (d.apr / 100 / 12), 0);
+      remaining = Math.max(0, remaining + interest - monthlyPay);
+      months++;
+    }
+    const debtFreeDate = addMonths(new Date(), months);
 
-      while (remaining.some((d) => d.balance > 0) && months < 240) {
-        let paidThisMonth = 0;
-        remaining.forEach((d, i) => {
-          if (d.balance <= 0) return;
-          const interest = d.balance * (d.apr / 100 / 12);
-          totalInterest += interest;
-          d.balance += interest;
+    const pieData = [
+      { name: "Fixed", value: totalFixed, color: "#3b82f6" },
+      { name: "Variable", value: totalVariable, color: "#10b981" },
+      { name: "Debt", value: totalDebtPayment, color: "#ef4444" },
+    ].filter((d) => d.value > 0);
 
-          const payment = i === 0 ? d.minimum_payment + extra : d.minimum_payment;
-          d.balance = Math.max(0, d.balance - payment);
-          paidThisMonth += payment;
-        });
-        months++;
-      }
-
-      return { months, totalInterest: Math.round(totalInterest), payoffOrder: remaining.map((d) => d.name) };
-    };
-
-    const avalanche = calculateStrategy((a, b) => b.apr - a.apr);
-    const snowball = calculateStrategy((a, b) => a.balance - b.balance);
-    const hybrid = calculateStrategy((a, b) => {
-      const scoreA = a.apr * 0.6 + (a.balance / 1000) * 0.4;
-      const scoreB = b.apr * 0.6 + (b.balance / 1000) * 0.4;
-      return scoreB - scoreA;
-    });
-
-    const best = [avalanche, snowball, hybrid].reduce((prev, curr) =>
-      curr.totalInterest < prev.totalInterest ? curr : prev,
-    );
-
-    return { avalanche, snowball, hybrid, best, extra, minPayments };
-  }, [debtData, incomeData, variableIncome, fixedExpensesData, variableExpensesData]);
-
-  // === EVENTOS RECURRENTES EN TODOS LOS MESES ===
-  const { calendarEvents, monthDays, blankDays } = useMemo(() => {
     const allEvents: Event[] = [];
     const startYear = currentMonth.getFullYear() - 1;
     const endYear = currentMonth.getFullYear() + 1;
 
     for (let year = startYear; year <= endYear; year++) {
       for (let month = 0; month < 12; month++) {
+        const currentDate = new Date(year, month, 1);
+        if (currentDate > new Date(endYear, 11, 31)) break;
+
+        // INGRESOS FIJOS - DIA 1 DE CADA MES
         incomeData.forEach((inc) => {
           const date = new Date(year, month, 1);
           allEvents.push({
@@ -217,10 +248,11 @@ const Index = () => {
           });
         });
 
+        // GASTOS FIJOS - DIA DE PAGO
         fixedExpensesData.forEach((exp) => {
           const day = exp.payment_day || 1;
-          const lastDay = new Date(year, month + 1, 0).getDate();
-          const date = new Date(year, month, Math.min(day, lastDay));
+          const lastDayOfMonth = new Date(year, month + 1, 0).getDate();
+          const date = new Date(year, month, Math.min(day, lastDayOfMonth));
           allEvents.push({
             id: `fix-${exp.id}-${year}-${month}`,
             date: format(date, "yyyy-MM-dd"),
@@ -231,6 +263,7 @@ const Index = () => {
           });
         });
 
+        // DEUDAS - DIA 15 DE CADA MES
         debtData.forEach((debt) => {
           const date = new Date(year, month, 15);
           allEvents.push({
@@ -242,6 +275,19 @@ const Index = () => {
             recurring: true,
           });
         });
+
+        // GASTOS VARIABLES - SIMULACIÓN RECURRENTES (ejemplo: día 10 de cada mes)
+        variableExpensesData.forEach((exp) => {
+          const date = new Date(year, month, 10);
+          allEvents.push({
+            id: `var-${exp.id}-${year}-${month}`,
+            date: format(date, "yyyy-MM-dd"),
+            type: "variable",
+            name: exp.name,
+            amount: exp.amount,
+            recurring: true,
+          });
+        });
       }
     }
 
@@ -250,11 +296,33 @@ const Index = () => {
     const monthDays = eachDayOfInterval({ start: monthStart, end: monthEnd });
     const blankDays = Array(monthStart.getDay()).fill(null);
 
-    return { calendarEvents: allEvents, monthDays, blankDays };
-  }, [currentMonth, incomeData, fixedExpensesData, debtData]);
+    return {
+      totalIncome,
+      totalFixed,
+      totalVariable,
+      totalDebtPayment,
+      totalExpenses,
+      cashFlow,
+      savingsTotal,
+      debtFreeDate,
+      monthsToDebtFree,
+      pieData,
+      calendarEvents: allEvents,
+      monthDays,
+      blankDays,
+    };
+  }, [
+    incomeData,
+    variableIncome,
+    fixedExpensesData,
+    variableExpensesData,
+    debtData,
+    savings,
+    savingsGoalsData,
+    currentMonth,
+  ]);
 
-  const t = translations[language];
-  const formatCurrency = (n: number) => `£${n.toFixed(0)}`;
+  const formatCurrency = (amount: number) => `£${amount.toFixed(0)}`;
 
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
@@ -272,6 +340,32 @@ const Index = () => {
   if (!user) return <Auth />;
 
   const getEventsForDay = (date: Date) => calendarEvents.filter((e) => isSameDay(new Date(e.date), date));
+
+  const sendToAI = () => {
+    if (!aiInput.trim()) return;
+    setAiLoading(true);
+    setAiResponse("");
+
+    setTimeout(() => {
+      const lower = aiInput.toLowerCase();
+      let response = "";
+
+      if (lower.includes("save") || lower.includes("ahorrar") || lower.includes("cut")) {
+        response = `To save more:\n1. Review variable expenses (£${totalVariable}) — cut £50-100 on food/entertainment.\n2. Put 50% of any extra income into savings.\n3. Set a "no-spend" weekend each month.`;
+      } else if (lower.includes("debt") || lower.includes("deuda") || lower.includes("pay off")) {
+        response = `Debt strategy:\n• Pay minimums on all debts.\n• Use 30% of surplus (£${Math.round(cashFlow * 0.3)}) to attack highest APR first.\n• You'll be debt-free in ${monthsToDebtFree} months.`;
+      } else if (lower.includes("emergency") || lower.includes("fondo")) {
+        response = `Emergency fund goal: 3-6 months of expenses (£${totalExpenses * 3}-£${totalExpenses * 6}).\nYou have £${savingsTotal}. Keep building!`;
+      } else if (lower.includes("budget") || lower.includes("presupuesto")) {
+        response = `Your budget:\n• Income: ${formatCurrency(totalIncome)}\n• Expenses: ${formatCurrency(totalExpenses)}\n• Cash Flow: ${formatCurrency(cashFlow)}\n${cashFlow > 0 ? "You're saving!" : "Reduce spending by £" + -cashFlow}`;
+      } else {
+        response = `I see you're asking about "${aiInput}".\n\nQuick tip: Track every expense for 30 days. Most families find £100-200 in hidden waste.\nWant help with a specific category?`;
+      }
+
+      setAiResponse(response);
+      setAiLoading(false);
+    }, 800);
+  };
 
   return (
     <>
@@ -305,136 +399,118 @@ const Index = () => {
 
           {/* RESUMEN */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            {/* ... tarjetas de resumen ... */}
-          </div>
+            <Card className="border-green-200">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium text-green-600">Total Income</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-3xl font-bold text-green-600">{formatCurrency(totalIncome)}</div>
+              </CardContent>
+            </Card>
 
-          {/* ESTRATEGIAS DE DEUDA */}
-          {debtStrategies && (
-            <Card className="border-2 border-orange-200">
-              <CardHeader>
-                <CardTitle className="flex items-center justify-between">
-                  <span className="flex items-center gap-2">
-                    <Zap className="h-5 w-5 text-orange-600" />
-                    {t.strategy}
-                  </span>
-                  <Select value={debtMethod} onValueChange={(v) => setDebtMethod(v as DebtMethod)}>
-                    <SelectTrigger className="w-64">
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="avalanche">
-                        <div className="flex items-center gap-2">
-                          <Zap className="h-4 w-4" />
-                          {t.avalanche}
-                        </div>
-                      </SelectItem>
-                      <SelectItem value="snowball">
-                        <div className="flex items-center gap-2">
-                          <Snowflake className="h-4 w-4" />
-                          {t.snowball}
-                        </div>
-                      </SelectItem>
-                      <SelectItem value="hybrid">
-                        <div className="flex items-center gap-2">
-                          <Zap className="h-4 w-4" />
-                          {t.hybrid}
-                        </div>
-                      </SelectItem>
-                    </SelectContent>
-                  </Select>
+            <Card className="border-red-200">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium text-red-600">Total Expenses</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-3xl font-bold text-red-600">{formatCurrency(totalExpenses)}</div>
+              </CardContent>
+            </Card>
+
+            <Card className={`${cashFlow >= 0 ? "border-emerald-200" : "border-orange-200"}`}>
+              <CardHeader className="pb-2">
+                <CardTitle className={`text-sm font-medium ${cashFlow >= 0 ? "text-emerald-600" : "text-orange-600"}`}>
+                  Cash Flow
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                  {["avalanche", "snowball", "hybrid"].map((method) => {
-                    const strat = debtStrategies[method as DebtMethod];
-                    const isBest = debtStrategies.best === strat;
-                    return (
-                      <Card key={method} className={`${isBest ? "ring-2 ring-orange-500" : ""}`}>
-                        <CardHeader className="pb-3">
-                          <CardTitle className="text-sm flex items-center justify-between">
-                            {method === "avalanche" && <Zap className="h-4 w-4 text-orange-600" />}
-                            {method === "snowball" && <Snowflake className="h-4 w-4 text-blue-600" />}
-                            {method === "hybrid" && <Zap className="h-4 w-4 text-purple-600" />}
-                            {t[method as keyof typeof t]}
-                            {isBest && <Badge variant="secondary">{t.recommended}</Badge>}
-                          </CardTitle>
-                        </CardHeader>
-                        <CardContent>
-                          <div className="space-y-2">
-                            <div className="flex justify-between text-sm">
-                              <span>Time:</span>
-                              <span className="font-bold">
-                                {strat.months} {t.months}
-                              </span>
-                            </div>
-                            <div className="flex justify-between text-sm">
-                              <span>{t.totalInterest}:</span>
-                              <span className="font-bold text-red-600">{formatCurrency(strat.totalInterest)}</span>
-                            </div>
-                            <div className="text-xs text-muted-foreground mt-2">
-                              <strong>Order:</strong> {strat.payoffOrder.join(" → ")}
-                            </div>
-                          </div>
-                        </CardContent>
-                      </Card>
-                    );
-                  })}
+                <div className={`text-3xl font-bold ${cashFlow >= 0 ? "text-emerald-600" : "text-orange-600"}`}>
+                  {formatCurrency(cashFlow)}
+                </div>
+              </CardContent>
+            </Card>
+
+            <Card className="border-purple-200">
+              <CardHeader className="pb-2">
+                <CardTitle className="text-sm font-medium text-purple-600 flex items-center gap-1">
+                  <PiggyBank className="h-4 w-4" /> Total Savings
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-3xl font-bold text-purple-600">{formatCurrency(savingsTotal)}</div>
+              </CardContent>
+            </Card>
+          </div>
+
+          {/* DEBT FREE */}
+          {debtData.length > 0 && (
+            <Card className="border-2 border-orange-200">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-orange-600">
+                  <TrendingUp className="h-6 w-6" />
+                  Debt Free Date
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-center">
+                  <p className="text-4xl font-bold">{format(debtFreeDate, "d MMM yyyy")}</p>
+                  <p className="text-lg text-muted-foreground">{monthsToDebtFree} months away</p>
+                </div>
+                <Progress value={80} className="h-4 mt-3" />
+              </CardContent>
+            </Card>
+          )}
+
+          {/* GASTOS PASTEL */}
+          {pieData.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Expense Breakdown</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="relative w-64 h-64 mx-auto">
+                  <svg viewBox="0 0 32 32" className="w-full h-full">
+                    {(() => {
+                      const total = pieData.reduce((s, d) => s + d.value, 0);
+                      let cum = 0;
+                      return pieData.map((d, i) => {
+                        const percent = (d.value / total) * 100;
+                        const start = (cum / total) * 360;
+                        cum += d.value;
+                        const end = (cum / total) * 360;
+                        const large = percent > 50 ? 1 : 0;
+                        const sr = (start * Math.PI) / 180;
+                        const er = (end * Math.PI) / 180;
+                        const x1 = 16 + 16 * Math.cos(sr);
+                        const y1 = 16 + 16 * Math.sin(sr);
+                        const x2 = 16 + 16 * Math.cos(er);
+                        const y2 = 16 + 16 * Math.sin(er);
+                        return (
+                          <path key={i} d={`M16,16 L${x1},${y1} A16,16 0 ${large},1 ${x2},${y2} Z`} fill={d.color} />
+                        );
+                      });
+                    })()}
+                  </svg>
+                  <div className="absolute inset-0 flex items-center justify-center text-2xl font-bold">
+                    {formatCurrency(totalExpenses)}
+                  </div>
+                </div>
+                <div className="mt-4 space-y-2">
+                  {pieData.map((d, i) => (
+                    <div key={i} className="flex justify-between text-sm">
+                      <span className="flex items-center gap-2">
+                        <div className="w-3 h-3 rounded" style={{ backgroundColor: d.color }} />
+                        {d.name}
+                      </span>
+                      <span>{formatCurrency(d.value)}</span>
+                    </div>
+                  ))}
                 </div>
               </CardContent>
             </Card>
           )}
 
-          {/* PRIORIDAD DE DEUDAS EN LISTA */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <TrendingUp className="h-5 w-5" />
-                Debt Priority ({t[debtMethod]})
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              {debtData.length === 0 ? (
-                <p className="text-center text-muted-foreground py-6">No debts</p>
-              ) : (
-                <div className="space-y-3">
-                  {(() => {
-                    const sorted = [...debtData];
-                    if (debtMethod === "avalanche") sorted.sort((a, b) => b.apr - a.apr);
-                    else if (debtMethod === "snowball") sorted.sort((a, b) => a.balance - b.balance);
-                    else
-                      sorted.sort(
-                        (a, b) => b.apr * 0.6 + (b.balance / 1000) * 0.4 - (a.apr * 0.6 + (a.balance / 1000) * 0.4),
-                      );
-
-                    return sorted.map((debt, i) => (
-                      <div
-                        key={debt.id}
-                        className={`p-4 rounded-lg border-l-4 ${i === 0 ? "border-orange-500 bg-orange-50" : "border-gray-200"}`}
-                      >
-                        <div className="flex justify-between items-center">
-                          <div className="flex items-center gap-3">
-                            <div className="text-2xl font-bold text-orange-600">#{i + 1}</div>
-                            <div>
-                              <p className="font-semibold">{debt.name}</p>
-                              <p className="text-sm text-muted-foreground">
-                                APR {debt.apr}% • Balance {formatCurrency(debt.balance)}
-                              </p>
-                            </div>
-                          </div>
-                          <Badge variant={i === 0 ? "destructive" : "secondary"}>
-                            {i === 0 ? "Pay First" : `Min: ${formatCurrency(debt.minimum_payment)}`}
-                          </Badge>
-                        </div>
-                      </div>
-                    ));
-                  })()}
-                </div>
-              )}
-            </CardContent>
-          </Card>
-
-          {/* CALENDARIO CON EVENTOS RECURRENTES */}
+          {/* CALENDARIO CON GASTOS RECURRENTES */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center justify-between">
@@ -472,7 +548,7 @@ const Index = () => {
                       className={`h-16 border rounded p-1 text-xs cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 transition ${isSameDay(day, new Date()) ? "bg-blue-50 dark:bg-blue-900" : ""}`}
                     >
                       <div className="font-medium">{format(day, "d")}</div>
-                      {dayEvents.slice(0, 2).map((e, i) => (
+                      {dayEvents.slice(0, 3).map((e, i) => (
                         <div
                           key={i}
                           className={`text-[9px] truncate ${e.type === "income" ? "text-green-600" : e.type === "debt" ? "text-red-600" : "text-blue-600"}`}
@@ -480,8 +556,8 @@ const Index = () => {
                           {e.name}
                         </div>
                       ))}
-                      {dayEvents.length > 2 && (
-                        <div className="text-[9px] text-muted-foreground">+{dayEvents.length - 2}</div>
+                      {dayEvents.length > 3 && (
+                        <div className="text-[9px] text-muted-foreground">+{dayEvents.length - 3}</div>
                       )}
                     </div>
                   );
@@ -490,20 +566,143 @@ const Index = () => {
             </CardContent>
           </Card>
 
-          {/* TABS CON GESTORES */}
+          {/* AI MODAL */}
+          <AlertDialog open={showAI} onOpenChange={setShowAI}>
+            <AlertDialogContent className="max-w-2xl">
+              <AlertDialogHeader>
+                <AlertDialogTitle className="flex items-center gap-2">
+                  <Bot className="h-5 w-5" /> Budget Assistant
+                </AlertDialogTitle>
+              </AlertDialogHeader>
+              <div className="space-y-4">
+                <Textarea
+                  placeholder="Ask anything: 'How can I save £200/month?' or 'Should I pay off debt first?'"
+                  value={aiInput}
+                  onChange={(e) => setAiInput(e.target.value)}
+                  className="min-h-24"
+                />
+                <Button onClick={sendToAI} disabled={aiLoading} className="w-full">
+                  {aiLoading ? (
+                    "Thinking..."
+                  ) : (
+                    <>
+                      <Send className="h-4 w-4 mr-2" /> Send
+                    </>
+                  )}
+                </Button>
+                {aiResponse && (
+                  <Card>
+                    <CardContent className="pt-4 whitespace-pre-wrap text-sm">{aiResponse}</CardContent>
+                  </Card>
+                )}
+              </div>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Close</AlertDialogCancel>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+
+          {/* TABS CON SECCIONES COMPLETAS */}
           <Tabs defaultValue="overview" className="no-print">
             <TabsList className="grid w-full grid-cols-4 mb-6">
-              <TabsTrigger value="overview">Overview</TabsTrigger>
-              <TabsTrigger value="income">Income</TabsTrigger>
-              <TabsTrigger value="expenses">Expenses</TabsTrigger>
-              <TabsTrigger value="debts">Debts</TabsTrigger>
+              <TabsTrigger value="overview">{t.overview}</TabsTrigger>
+              <TabsTrigger value="income">{t.income}</TabsTrigger>
+              <TabsTrigger value="expenses">{t.expenses}</TabsTrigger>
+              <TabsTrigger value="debts">{t.debts}</TabsTrigger>
             </TabsList>
+
+            <TabsContent value="overview">
+              <Card>
+                <CardHeader>
+                  <CardTitle>{t.overview}</CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-6xl font-bold text-center text-blue-600">
+                    {cashFlow > 0 ? t.healthy : t.review}
+                  </div>
+                  <Progress value={cashFlow > 0 ? 80 : 40} className="mt-4" />
+                </CardContent>
+              </Card>
+            </TabsContent>
+
+            <TabsContent value="income">
+              <Tabs defaultValue="fixed" className="mt-6">
+                <TabsList>
+                  <TabsTrigger value="fixed">{t.fixedIncome}</TabsTrigger>
+                  <TabsTrigger value="variable">{t.variableIncome}</TabsTrigger>
+                </TabsList>
+
+                <TabsContent value="fixed">
+                  <IncomeManager language={language} />
+                </TabsContent>
+
+                <TabsContent value="variable">
+                  <Card>
+                    <CardHeader>
+                      <CardTitle className="text-lg font-semibold flex items-center justify-between">
+                        {t.variableIncome}
+                        <Button
+                          size="sm"
+                          onClick={() => {
+                            const desc = prompt(t.description);
+                            const amount = parseFloat(prompt("Amount (£)") || "0");
+                            if (desc && amount > 0) addIncome(amount, desc);
+                          }}
+                        >
+                          <Plus className="h-4 w-4 mr-1" /> {t.add}
+                        </Button>
+                      </CardTitle>
+                      <CardDescription>Extra income like bonuses, gifts, side hustles</CardDescription>
+                    </CardHeader>
+                    <CardContent>
+                      {variableIncome.length === 0 ? (
+                        <p className="text-center text-muted-foreground py-6">{t.noData}</p>
+                      ) : (
+                        <div className="space-y-2">
+                          {variableIncome.map((inc) => (
+                            <div key={inc.id} className="flex justify-between items-center p-3 bg-muted rounded-lg">
+                              <div>
+                                <p className="font-medium">{inc.description}</p>
+                                <p className="text-xs text-muted-foreground">
+                                  {format(new Date(inc.date), "d MMM yyyy")}
+                                </p>
+                              </div>
+                              <div className="flex items-center gap-2">
+                                <span className="font-bold text-green-600">{formatCurrency(inc.amount)}</span>
+                                <Button size="sm" variant="ghost" onClick={() => deleteIncome(inc.id)}>
+                                  <Trash2 className="h-4 w-4" />
+                                </Button>
+                              </div>
+                            </div>
+                          ))}
+                        </div>
+                      )}
+                    </CardContent>
+                  </Card>
+                </TabsContent>
+              </Tabs>
+            </TabsContent>
+
+            <TabsContent value="expenses">
+              <Tabs defaultValue="fixed" className="mt-6">
+                <TabsList>
+                  <TabsTrigger value="fixed">{t.fixedExpenses}</TabsTrigger>
+                  <TabsTrigger value="variable">{t.variableExpenses}</TabsTrigger>
+                </TabsList>
+
+                <TabsContent value="fixed">
+                  <FixedExpensesManager language={language} />
+                </TabsContent>
+
+                <TabsContent value="variable">
+                  <VariableExpensesManager language={language} />
+                </TabsContent>
+              </Tabs>
+            </TabsContent>
 
             <TabsContent value="debts">
               <DebtsManager language={language} />
             </TabsContent>
-
-            {/* ... resto de pestañas ... */}
           </Tabs>
 
           <footer className="no-print py-8 text-center text-xs text-muted-foreground border-t mt-12">
