@@ -164,7 +164,7 @@ const Index = () => {
   const { data: savings } = useSavings();
   const { data: variableIncome = [], addIncome, deleteIncome } = useVariableIncome();
 
-  // CARGAR EVENTOS
+  // === CARGAR EVENTOS ===
   useEffect(() => {
     const loadEvents = () => {
       const manual = localStorage.getItem("recurring_manual_events");
@@ -175,7 +175,7 @@ const Index = () => {
     loadEvents();
   }, []);
 
-  // AUTENTICACIÓN
+  // === AUTENTICACIÓN ===
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null);
@@ -183,7 +183,7 @@ const Index = () => {
     });
   }, []);
 
-  // === 2. EARLY RETURNS (AHORA SEGUROS) ===
+  // === EARLY RETURNS (AHORA SEGUROS) ===
   if (authLoading) {
     return (
       <div className="min-h-screen flex items-center justify-center p-8">
@@ -196,7 +196,7 @@ const Index = () => {
     return <Auth />;
   }
 
-  // === 3. TODOS LOS useMemo / useCallback DESPUÉS DE LOS RETURNS ===
+  // === TODOS LOS useMemo / useCallback DESPUÉS DE LOS RETURNS ===
   const {
     totalIncome,
     totalFixed,
@@ -643,7 +643,7 @@ const Index = () => {
             </CardContent>
           </Card>
 
-          {/* TABS (simplificado para evitar errores) */}
+          {/* TABS */}
           <Tabs value="overview" className="no-print">
             <TabsList className="grid w-full grid-cols-4 mb-6">
               <TabsTrigger value="overview">Overview</TabsTrigger>
