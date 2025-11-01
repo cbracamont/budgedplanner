@@ -46,7 +46,6 @@ import { Slider } from "@/components/ui/slider";
 import { supabase } from "@/integrations/supabase/client";
 import { useTheme } from "@/hooks/useTheme";
 import { Skeleton } from "@/components/ui/skeleton";
-import { formatCurrency } from "@/lib/i18n";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -568,102 +567,73 @@ const Index = () => {
             </Card>
           </div>
 
-          {/* DEBT PLANNER */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center justify-between">
-                <span className="flex items-center gap-2">
-                  <Zap className="h-5 w-5 text-orange-600" />
-                  Debt Planner & Emergency Fund
-                </span>
-                <Button variant="outline" size="sm">
-                  Simulate
-                </Button>
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              {/* SLIDER AHORROS */}
-              <div className="space-y-2">
-                <Label className="text-sm font-medium">{t.monthlySavings}</Label>
-                <Slider
-                  value={[monthlySavings]}
-                  onValueChange={(value) => setMonthlySavings(value[0])}
-                  max={Math.max(cashFlow, 0)}
-                  step={50}
-                  className="w-full"
-                />
-                <div className="flex justify-between text-sm text-muted-foreground">
-                  <span>£0</span>
-                  <span className="font-medium">{formatCurrency(monthlySavings)}</span>
-                  <span>{formatCurrency(Math.max(cashFlow, 0))}</span>
+          {/* DEBT FREE */}
+          {debtData.length > 0 && (
+            <Card className="border-2 border-orange-200">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-orange-600">
+                  <TrendingUp className="h-6 w-6" />
+                  Debt Free Date
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-center">
+                  <p className="text-4xl font-bold">{format(debtFreeDate, "d MMM yyyy")}</p>
+                  <p className="text-lg text-muted-foreground">{monthsToDebtFree} months away</p>
                 </div>
-                <p className="text-sm text-muted-foreground">
-                  {t.cashFlowAfterSavings}: {formatCurrency(cashFlow - monthlySavings)}
-                </p>
-              </div>
+                <Progress value={80} className="h-4 mt-3" />
+              </CardContent>
+            </Card>
+          )}
 
-              {/* FONDO DE EMERGENCIA */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <Card>
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-sm">{t.emergencyFund}</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-2xl font-bold">{formatCurrency(totalExpenses * 3)}</p>
-                    <p className="text-xs text-muted-foreground">3 months of expenses</p>
-                    <Progress value={(savingsTotal / (totalExpenses * 3)) * 100} className="mt-2" />
-                    <p className="text-xs text-muted-foreground mt-1">
-                      {t.monthsToEmergency}: {((totalExpenses * 3 - savingsTotal) / monthlySavings).toFixed(1)}
-                    </p>
-                  </CardContent>
-                </Card>
-                <Card>
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-sm">{t.debtPayment}</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-2xl font-bold">{formatCurrency(cashFlow - monthlySavings - totalDebtPayment)}</p>
-                    <p className="text-xs text-muted-foreground">Available for extra debt payments</p>
-                    <Progress
-                      value={((cashFlow - monthlySavings - totalDebtPayment) / cashFlow) * 100}
-                      className="mt-2"
-                    />
-                  </CardContent>
-                </Card>
-              </div>
-
-              {/* PRIORIDAD DE DEUDAS */}
-              <div className="space-y-4">
-                <Label className="text-sm font-medium">{t.priority}</Label>
-                <div className="space-y-3">
-                  {debtData.map((debt, index) => (
-                    <Card key={debt.id} className="p-4">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-full bg-orange-100 flex items-center justify-center">
-                            <span className="text-sm font-bold text-orange-600">{index + 1}</span>
-                          </div>
-                          <div>
-                            <p className="font-medium">{debt.name}</p>
-                            <p className="text-xs text-muted-foreground">
-                              APR {debt.apr}% • Balance {formatCurrency(debt.balance)}
-                            </p>
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <p className="font-bold text-red-600">{formatCurrency(debt.minimum_payment)}</p>
-                          <p className="text-xs text-muted-foreground">{t.minPayment}</p>
-                          <p className="text-xs font-medium text-emerald-600">
-                            Extra: {formatCurrency((cashFlow - monthlySavings - totalDebtPayment) / debtData.length)}
-                          </p>
-                        </div>
-                      </div>
-                    </Card>
+          {/* GASTOS PASTEL */}
+          {pieData.length > 0 && (
+            <Card>
+              <CardHeader>
+                <CardTitle>Expense Breakdown</CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="relative w-64 h-64 mx-auto">
+                  <svg viewBox="0 0 32 32" className="w-full h-full">
+                    {(() => {
+                      const total = pieData.reduce((s, d) => s + d.value, 0);
+                      let cum = 0;
+                      return pieData.map((d, i) => {
+                        const percent = (d.value / total) * 100;
+                        const start = (cum / total) * 360;
+                        cum += d.value;
+                        const end = (cum / total) * 360;
+                        const large = percent > 50 ? 1 : 0;
+                        const sr = (start * Math.PI) / 180;
+                        const er = (end * Math.PI) / 180;
+                        const x1 = 16 + 16 * Math.cos(sr);
+                        const y1 = 16 + 16 * Math.sin(sr);
+                        const x2 = 16 + 16 * Math.cos(er);
+                        const y2 = 16 + 16 * Math.sin(er);
+                        return (
+                          <path key={i} d={`M16,16 L${x1},${y1} A16,16 0 ${large},1 ${x2},${y2} Z`} fill={d.color} />
+                        );
+                      });
+                    })()}
+                  </svg>
+                  <div className="absolute inset-0 flex items-center justify-center text-2xl font-bold">
+                    {formatCurrency(totalExpenses)}
+                  </div>
+                </div>
+                <div className="mt-4 space-y-2">
+                  {pieData.map((d, i) => (
+                    <div key={i} className="flex justify-between text-sm">
+                      <span className="flex items-center gap-2">
+                        <div className="w-3 h-3 rounded" style={{ backgroundColor: d.color }} />
+                        {d.name}
+                      </span>
+                      <span>{formatCurrency(d.value)}</span>
+                    </div>
                   ))}
                 </div>
-              </div>
-            </CardContent>
-          </Card>
+              </CardContent>
+            </Card>
+          )}
 
           {/* CALENDARIO */}
           <Card>
@@ -679,6 +649,9 @@ const Index = () => {
                   </Button>
                   <Button size="sm" variant="outline" onClick={() => setCurrentMonth(add(currentMonth, { months: 1 }))}>
                     <ChevronRight className="h-4 w-4" />
+                  </Button>
+                  <Button size="sm" onClick={() => setShowEventDialog(true)}>
+                    <Plus className="h-4 w-4 mr-1" /> Add
                   </Button>
                 </div>
               </CardTitle>
@@ -703,6 +676,7 @@ const Index = () => {
                       className={`h-16 border rounded p-1 text-xs cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 transition ${
                         isSameDay(day, new Date()) ? "bg-blue-50 dark:bg-blue-900" : ""
                       }`}
+                      onClick={() => setSelectedDate(day)}
                     >
                       <div className="font-medium">{format(day, "d")}</div>
                       {dayEvents.slice(0, 2).map((e, i) => (
@@ -755,7 +729,7 @@ const Index = () => {
                 </Button>
                 {aiResponse && (
                   <Card>
-                    <CardContent className="pt-4 whitespace-pre-wrap text-sm">{aiResponse}</CardContent>
+                    <CardContent className="pt-4 space-y-4 whitespace-pre-wrap text-sm">{aiResponse}</CardContent>
                   </Card>
                 )}
               </div>
