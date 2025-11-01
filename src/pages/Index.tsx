@@ -188,39 +188,71 @@ const Index = () => {
       { name: "Debt", value: totalDebtPayment, color: "#ef4444" },
     ].filter((d) => d.value > 0);
 
+    // === EVENTOS RECURRENTES EN MÚLTIPLES MESES ===
     const allEvents: Event[] = [];
-    incomeData.forEach((inc) => {
-      allEvents.push({
-        id: `inc-${inc.id}`,
-        date: format(new Date(new Date().getFullYear(), new Date().getMonth(), 1), "yyyy-MM-dd"),
-        type: "income",
-        name: inc.name,
-        amount: inc.amount,
-        recurring: true,
-      });
-    });
-    fixedExpensesData.forEach((exp) => {
-      const day = exp.payment_day || 1;
-      const date = new Date(new Date().getFullYear(), new Date().getMonth(), day);
-      allEvents.push({
-        id: `fix-${exp.id}`,
-        date: format(date, "yyyy-MM-dd"),
-        type: "fixed",
-        name: exp.name,
-        amount: exp.amount,
-        recurring: true,
-      });
-    });
-    debtData.forEach((debt) => {
-      allEvents.push({
-        id: `debt-${debt.id}`,
-        date: format(new Date(new Date().getFullYear(), new Date().getMonth(), 15), "yyyy-MM-dd"),
-        type: "debt",
-        name: `${debt.name} (min)`,
-        amount: debt.minimum_payment,
-        recurring: true,
-      });
-    });
+    const startYear = currentMonth.getFullYear() - 1; // -1 año
+    const endYear = currentMonth.getFullYear() + 1; // +1 año
+
+    for (let year = startYear; year <= endYear; year++) {
+      for (let month = 0; month < 12; month++) {
+        const currentDate = new Date(year, month, 1);
+        if (currentDate > new Date(endYear, 11, 31)) break;
+
+        // INGRESOS FIJOS - Día 1 de cada mes
+        incomeData.forEach((inc) => {
+          const date = new Date(year, month, 1);
+          allEvents.push({
+            id: `inc-${inc.id}-${year}-${month}`,
+            date: format(date, "yyyy-MM-dd"),
+            type: "income",
+            name: inc.name,
+            amount: inc.amount,
+            recurring: true,
+          });
+        });
+
+        // GASTOS FIJOS - Día de pago de cada mes
+        fixedExpensesData.forEach((exp) => {
+          const day = exp.payment_day || 1;
+          const lastDayOfMonth = new Date(year, month + 1, 0).getDate();
+          const date = new Date(year, month, Math.min(day, lastDayOfMonth));
+          allEvents.push({
+            id: `fix-${exp.id}-${year}-${month}`,
+            date: format(date, "yyyy-MM-dd"),
+            type: "fixed",
+            name: exp.name,
+            amount: exp.amount,
+            recurring: true,
+          });
+        });
+
+        // DEUDAS - Día 15 de cada mes
+        debtData.forEach((debt) => {
+          const date = new Date(year, month, 15);
+          allEvents.push({
+            id: `debt-${debt.id}-${year}-${month}`,
+            date: format(date, "yyyy-MM-dd"),
+            type: "debt",
+            name: `${debt.name} (min)`,
+            amount: debt.minimum_payment,
+            recurring: true,
+          });
+        });
+
+        // GASTOS VARIABLES - Simulación recurrente (día 10 de cada mes)
+        variableExpensesData.forEach((exp) => {
+          const date = new Date(year, month, 10);
+          allEvents.push({
+            id: `var-${exp.id}-${year}-${month}`,
+            date: format(date, "yyyy-MM-dd"),
+            type: "variable",
+            name: exp.name,
+            amount: exp.amount,
+            recurring: true,
+          });
+        });
+      }
+    }
 
     const monthStart = startOfMonth(currentMonth);
     const monthEnd = endOfMonth(currentMonth);
@@ -339,7 +371,7 @@ const Index = () => {
     <>
       <style>{`@media print { .no-print { display: none !important; } }`}</style>
 
-      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-slate-900 dark:to-slate-800">
+      <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-slate-900 dark:to-indigo-900">
         <div className="max-w-7xl mx-auto p-6 space-y-8">
           {/* HEADER */}
           <div className="no-print flex justify-between items-center mb-8">
@@ -454,7 +486,11 @@ const Index = () => {
                         const x2 = 16 + 16 * Math.cos(er);
                         const y2 = 16 + 16 * Math.sin(er);
                         return (
-                          <path key={i} d={`M16,16 L${x1},${y1} A16,16 0 ${large},1 ${x2},${y2} Z`} fill={d.color} />
+                          <path
+                            key={i}
+                            d={`M16,16 L${x1},${y1} A16,16 0 ${large},1 ${x2},${y2} Z`}
+                            fill={d.color}
+                          />
                         );
                       });
                     })()}
@@ -529,8 +565,8 @@ const Index = () => {
                             e.type === "income"
                               ? "text-green-600"
                               : e.type === "debt"
-                                ? "text-red-600"
-                                : "text-blue-600"
+                              ? "text-red-600"
+                              : "text-blue-600"
                           }`}
                         >
                           {e.name}
@@ -584,263 +620,4 @@ const Index = () => {
 
           {/* DETALLE DEL DÍA */}
           {selectedDate && (
-            <AlertDialog open={!!selectedDate} onOpenChange={() => setSelectedDate(null)}>
-              <AlertDialogContent>
-                <AlertDialogHeader>
-                  <AlertDialogTitle>{format(selectedDate, "PPP")}</AlertDialogTitle>
-                </AlertDialogHeader>
-                <AlertDialogDescription className="space-y-3">
-                  {getEventsForDay(selectedDate).length === 0 ? (
-                    <p className="text-center py-4">No events</p>
-                  ) : (
-                    getEventsForDay(selectedDate).map((e) => (
-                      <div key={e.id} className="flex justify-between items-center p-3 bg-muted rounded-lg">
-                        <div>
-                          <p className="font-medium">{e.name}</p>
-                          <p className="text-xs text-muted-foreground">{e.type}</p>
-                        </div>
-                        <div className="flex items-center gap-2">
-                          <span className={e.type === "income" ? "text-green-600 font-bold" : "text-red-600 font-bold"}>
-                            {formatCurrency(e.amount)}
-                          </span>
-                          <div className="flex gap-1">
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              onClick={() => {
-                                setEditingEvent(e);
-                                setNewEvent({
-                                  name: e.name,
-                                  amount: e.amount,
-                                  type: e.type,
-                                });
-                                setShowEventDialog(true);
-                              }}
-                            >
-                              <Edit2 className="h-4 w-4" />
-                            </Button>
-                            <Button size="sm" variant="ghost" onClick={() => setDeleteId(e.id)}>
-                              <Trash2 className="h-4 w-4" />
-                            </Button>
-                          </div>
-                        </div>
-                      </div>
-                    ))
-                  )}
-                </AlertDialogDescription>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>Close</AlertDialogCancel>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
-          )}
-
-          {/* AGREGAR/EDITAR EVENTO */}
-          <AlertDialog open={showEventDialog} onOpenChange={setShowEventDialog}>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>{editingEvent ? "Edit Event" : "Add Event"}</AlertDialogTitle>
-              </AlertDialogHeader>
-              <div className="space-y-4">
-                <div>
-                  <Label>Name</Label>
-                  <Input value={newEvent.name} onChange={(e) => setNewEvent({ ...newEvent, name: e.target.value })} />
-                </div>
-                <div>
-                  <Label>Amount</Label>
-                  <Input
-                    type="number"
-                    value={newEvent.amount || ""}
-                    onChange={(e) => setNewEvent({ ...newEvent, amount: parseFloat(e.target.value) || 0 })}
-                  />
-                </div>
-                <div>
-                  <Label>Type</Label>
-                  <Select
-                    value={newEvent.type}
-                    onValueChange={(v: Event["type"]) => setNewEvent({ ...newEvent, type: v })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="income">Income</SelectItem>
-                      <SelectItem value="fixed">Fixed Expense</SelectItem>
-                      <SelectItem value="variable">Variable Expense</SelectItem>
-                      <SelectItem value="debt">Debt Payment</SelectItem>
-                    </SelectContent>
-                  </Select>
-                </div>
-              </div>
-              <AlertDialogFooter>
-                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction onClick={editingEvent ? updateEvent : addEvent}>
-                  {editingEvent ? "Save" : "Add"}
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
-
-          {/* CONFIRMAR ELIMINAR */}
-          <AlertDialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>Delete Event?</AlertDialogTitle>
-                <AlertDialogDescription>This cannot be undone.</AlertDialogDescription>
-              </AlertDialogHeader>
-              <AlertDialogFooter>
-                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction onClick={() => deleteEvent(deleteId!)}>Delete</AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
-
-          {/* MODAL PARA VARIABLE INCOME - ESTILO VARIABLE EXPENSES */}
-          <AlertDialog open={showIncomeModal} onOpenChange={setShowIncomeModal}>
-            <AlertDialogContent>
-              <AlertDialogHeader>
-                <AlertDialogTitle>Add Variable Income</AlertDialogTitle>
-                <AlertDialogDescription>Extra income like bonuses, gifts, side hustles</AlertDialogDescription>
-              </AlertDialogHeader>
-              <div className="space-y-4">
-                <div>
-                  <Label>Description</Label>
-                  <Input
-                    placeholder="e.g. Freelance work, Bonus, Gift"
-                    value={newIncome.description}
-                    onChange={(e) => setNewIncome({ ...newIncome, description: e.target.value })}
-                  />
-                </div>
-                <div>
-                  <Label>Amount (£)</Label>
-                  <Input
-                    type="number"
-                    placeholder="0"
-                    value={newIncome.amount || ""}
-                    onChange={(e) => setNewIncome({ ...newIncome, amount: parseFloat(e.target.value) || 0 })}
-                  />
-                </div>
-              </div>
-              <AlertDialogFooter>
-                <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction
-                  onClick={() => {
-                    if (newIncome.description && newIncome.amount > 0) {
-                      addIncome(newIncome.amount, newIncome.description);
-                      setNewIncome({ description: "", amount: 0 });
-                      setShowIncomeModal(false);
-                    }
-                  }}
-                >
-                  Add Income
-                </AlertDialogAction>
-              </AlertDialogFooter>
-            </AlertDialogContent>
-          </AlertDialog>
-
-          {/* TABS */}
-          <Tabs defaultValue="overview" className="no-print">
-            <TabsList className="grid w-full grid-cols-4 mb-6">
-              <TabsTrigger value="overview">Overview</TabsTrigger>
-              <TabsTrigger value="income">Income</TabsTrigger>
-              <TabsTrigger value="expenses">Expenses</TabsTrigger>
-              <TabsTrigger value="debts">Debts</TabsTrigger>
-            </TabsList>
-
-            <TabsContent value="overview">
-              <Card>
-                <CardHeader>
-                  <CardTitle>Family Budget</CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-6xl font-bold text-center text-blue-600">
-                    {cashFlow > 0 ? "Healthy" : "Review"}
-                  </div>
-                  <Progress value={cashFlow > 0 ? 80 : 40} className="mt-4" />
-                </CardContent>
-              </Card>
-            </TabsContent>
-
-            <TabsContent value="income">
-              <Tabs defaultValue="fixed" className="mt-6">
-                <TabsList>
-                  <TabsTrigger value="fixed">Fixed Income</TabsTrigger>
-                  <TabsTrigger value="variable">Variable Income</TabsTrigger>
-                </TabsList>
-
-                <TabsContent value="fixed">
-                  <IncomeManager language={language} />
-                </TabsContent>
-
-                <TabsContent value="variable">
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="text-lg font-semibold flex items-center justify-between">
-                        Variable Income
-                        <Button size="sm" onClick={() => setShowIncomeModal(true)}>
-                          <Plus className="h-4 w-4 mr-1" /> Add
-                        </Button>
-                      </CardTitle>
-                      <CardDescription>Extra income like bonuses, gifts, side hustles</CardDescription>
-                    </CardHeader>
-                    <CardContent>
-                      {variableIncome.length === 0 ? (
-                        <p className="text-center text-muted-foreground py-6">No variable income yet</p>
-                      ) : (
-                        <div className="space-y-2">
-                          {variableIncome.map((inc) => (
-                            <div key={inc.id} className="flex justify-between items-center p-3 bg-muted rounded-lg">
-                              <div>
-                                <p className="font-medium">{inc.description}</p>
-                                <p className="text-xs text-muted-foreground">
-                                  {format(new Date(inc.date), "d MMM yyyy")}
-                                </p>
-                              </div>
-                              <div className="flex items-center gap-2">
-                                <span className="font-bold text-green-600">{formatCurrency(inc.amount)}</span>
-                                <Button size="sm" variant="ghost" onClick={() => deleteIncome(inc.id)}>
-                                  <Trash2 className="h-4 w-4" />
-                                </Button>
-                              </div>
-                            </div>
-                          ))}
-                        </div>
-                      )}
-                    </CardContent>
-                  </Card>
-                </TabsContent>
-              </Tabs>
-            </TabsContent>
-
-            <TabsContent value="expenses">
-              <Tabs defaultValue="fixed" className="mt-6">
-                <TabsList>
-                  <TabsTrigger value="fixed">Fixed</TabsTrigger>
-                  <TabsTrigger value="variable">Variable</TabsTrigger>
-                </TabsList>
-                <TabsContent value="fixed">
-                  <FixedExpensesManager language={language} />
-                </TabsContent>
-                <TabsContent value="variable">
-                  <VariableExpensesManager language={language} />
-                </TabsContent>
-              </Tabs>
-            </TabsContent>
-
-            <TabsContent value="debts">
-              <DebtsManager language={language} />
-            </TabsContent>
-          </Tabs>
-
-          <footer className="no-print py-8 text-center text-xs text-muted-foreground border-t mt-12">
-            <p className="font-semibold mb-2">Legal Disclaimer (UK)</p>
-            <p>This app is for educational use only. Not financial advice. Consult an FCA adviser.</p>
-            <p className="mt-2">© 2025 Family Budget Planner UK</p>
-          </footer>
-        </div>
-      </div>
-    </>
-  );
-};
-
-export default Index;
+            <AlertDialog open={!!selectedDate}
