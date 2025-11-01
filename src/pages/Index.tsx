@@ -78,19 +78,19 @@ const translations = {
   en: {
     overview: "Overview",
     income: "Income",
-    expenses: "Expense",
+    expenses: "Expenses",
     debts: "Debts",
     debtPlanner: "Debt Planner",
     totalIncome: "Total Income",
-    totalExpenses: "Total Expense",
+    totalExpenses: "Total Expenses",
     cashFlow: "Cash Flow",
     totalSavings: "Total Savings",
     healthy: "Healthy",
     review: "Review",
     fixedIncome: "Fixed Income",
     variableIncome: "Variable Income",
-    fixedExpenses: "Fixed Expense",
-    variableExpenses: "Variable Expense",
+    fixedExpenses: "Fixed Expenses",
+    variableExpenses: "Variable Expenses",
     noData: "No data yet",
     add: "Add",
     description: "Description",
@@ -448,7 +448,7 @@ const Index = () => {
     }
   };
 
-  const updateEvent = () => {
+  const updatedEvent = () => {
     if (editingEvent && newEvent.name && newEvent.amount) {
       const updated = events.map((e) =>
         e.id === editingEvent.id ? { ...e, name: newEvent.name, amount: newEvent.amount } : e,
@@ -476,7 +476,7 @@ const Index = () => {
 
       if (lower.includes("save") || lower.includes("ahorrar") || lower.includes("cut")) {
         response = `To save more:\n1. Review variable expenses (£${totalVariable}) — cut £50-100 on food/entertainment.\n2. Put 50% of any extra income into savings.\n3. Set a "no-spend" weekend each month.`;
-      } else else if (lower.includes("debt") || lower.includes("deuda") || lower.includes("pay off")) {
+      } else if (lower.includes("debt") || lower.includes("deuda") || lower.includes("pay off")) {
         response = `Debt strategy:\n• Pay minimums on all debts.\n• Use 30% of surplus (£${Math.round(cashFlow * 0.3)}) to attack highest APR first.\n• You'll be debt-free in ${monthsToDebtFree} months.`;
       } else if (lower.includes("emergency") || lower.includes("fondo")) {
         response = `Emergency fund goal: 3-6 months of expenses (£${totalExpenses * 3}-£${totalExpenses * 6}).\nYou have £${savingsTotal}. Keep building!`;
@@ -580,7 +580,7 @@ const Index = () => {
                   <p className="text-4xl font-bold">{format(debtFreeDate, "d MMM yyyy")}</p>
                   <p className="text-lg text-muted-foreground">{monthsToDebtFree} months away</p>
                 </div>
-                <Progress value={80} className="h-4 mt-3" />
+                <Progress value={80} className="h-4 mt-4" />
               </CardContent>
             </Card>
           )}
@@ -738,7 +738,7 @@ const Index = () => {
             </AlertDialogContent>
           </AlertDialog>
 
-          {/* DETALLE DEL DÍA */}
+          {/* DETALLE DEL DIA */}
           {selectedDate && (
             <AlertDialog open={!!selectedDate} onOpenChange={() => setSelectedDate(null)}>
               <AlertDialogContent>
@@ -833,7 +833,7 @@ const Index = () => {
               </div>
               <AlertDialogFooter>
                 <AlertDialogCancel>Cancel</AlertDialogFooter>
-                <AlertDialogAction onClick={editingEvent ? updateEvent : addEvent}>
+                <AlertDialogAction onClick={editingEvent ? updatedEvent : addEvent}>
                   {editingEvent ? "Save" : "Add"}
                 </AlertDialogAction>
               </AlertDialogFooter>
@@ -984,7 +984,7 @@ const Index = () => {
               </Tabs>
             </TabsContent>
 
-            <TabsContent value="debts">
+            <TabsContent value="debtPlanner">
               <DebtPlanner language={language} />
             </TabsContent>
           </Tabs>
@@ -1000,7 +1000,6 @@ const Index = () => {
   );
 };
 
-// COMPONENTE DEBT PLANNER
 const DebtPlanner = ({ language }: { language: Language }) => {
   const [monthlySavings, setMonthlySavings] = useState(0);
   const [debtMethod, setDebtMethod] = useState<DebtMethod>("avalanche");
