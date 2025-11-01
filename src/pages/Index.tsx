@@ -46,6 +46,7 @@ import { Slider } from "@/components/ui/slider";
 import { supabase } from "@/integrations/supabase/client";
 import { useTheme } from "@/hooks/useTheme";
 import { Skeleton } from "@/components/ui/skeleton";
+import { formatCurrency } from "@/lib/i18n";
 import {
   AlertDialog,
   AlertDialogAction,
