@@ -1,9 +1,138 @@
+// src/pages/Index.tsx
+"use client";
+
+import React, { useState, useEffect, useMemo, useCallback } from "react";
+import { format, addMonths, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, add, sub } from "date-fns";
+import {
+  TrendingUp,
+  Download,
+  LogOut,
+  Bot,
+  Calendar,
+  DollarSign,
+  PiggyBank,
+  Home,
+  Edit2,
+  Trash2,
+  Plus,
+  ChevronLeft,
+  ChevronRight,
+  Send,
+  X,
+} from "lucide-react";
+import {
+  useIncomeSources,
+  useDebts,
+  useFixedExpenses,
+  useVariableExpenses,
+  useSavingsGoals,
+  useSavings,
+} from "@/hooks/useFinancialData";
+import { useFinancialProfiles } from "@/hooks/useFinancialProfiles";
+import { Auth } from "@/components/Auth";
+import { LanguageToggle } from "@/components/LanguageToggle";
+import { ProfileSelector } from "@/components/ProfileSelector";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Button } from "@/components/ui/button";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
+import { Progress } from "@/components/ui/progress";
+import { supabase } from "@/integrations/supabase/client";
+import { useTheme } from "@/hooks/useTheme";
+import { Skeleton } from "@/components/ui/skeleton";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
+import { Label } from "@/components/ui/label";
+import { Input } from "@/components/ui/input";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Textarea } from "@/components/ui/textarea";
+
+type Language = "en" | "es" | "pl" | "pt";
+
+type Event = {
+  id: string;
+  date: string;
+  type: "income" | "debt" | "fixed" | "variable" | "annual";
+  name: string;
+  amount: number;
+  recurring?: "monthly" | "annually";
+};
+
+// === STUB COMPONENTS ===
+const IncomeManager = ({ language }: { language: Language }) => (
+  <Card>
+    <CardContent>
+      <p className="text-center py-8 text-muted-foreground">Income management coming soon</p>
+    </CardContent>
+  </Card>
+);
+const FixedExpensesManager = ({ language }: { language: Language }) => (
+  <Card>
+    <CardContent>
+      <p className="text-center py-8 text-muted-foreground">Fixed expenses coming soon</p>
+    </CardContent>
+  </Card>
+);
+const VariableExpensesManager = ({ language }: { language: Language }) => (
+  <Card>
+    <CardContent>
+      <p className="text-center py-8 text-muted-foreground">Variable expenses coming soon</p>
+    </CardContent>
+  </Card>
+);
+const DebtsManager = ({ language }: { language: Language }) => (
+  <Card>
+    <CardContent>
+      <p className="text-center py-8 text-muted-foreground">Debt management coming soon</p>
+    </CardContent>
+  </Card>
+);
+
+// === VARIABLE INCOME HOOK (localStorage) ===
+const useVariableIncome = () => {
+  const [data, setData] = useState<any[]>([]);
+
+  useEffect(() => {
+    const saved = localStorage.getItem("variable_income");
+    if (saved) setData(JSON.parse(saved));
+  }, []);
+
+  const addIncome = useCallback((amount: number, description: string) => {
+    const newEntry = {
+      id: Date.now().toString(),
+      amount,
+      description: description || "Extra income",
+      date: new Date().toISOString(),
+    };
+    setData((prev) => {
+      const updated = [newEntry, ...prev];
+      localStorage.setItem("variable_income", JSON.stringify(updated));
+      return updated;
+    });
+  }, []);
+
+  const deleteIncome = useCallback((id: string) => {
+    setData((prev) => {
+      const updated = prev.filter((i) => i.id !== id);
+      localStorage.setItem("variable_income", JSON.stringify(updated));
+      return updated;
+    });
+  }, []);
+
+  return { data, addIncome, deleteIncome };
+};
+
 const Index = () => {
   useTheme();
 
-  /* -------------------------------------------------
-     1. TODOS LOS HOOKS (state + data + memo + callback)
-     ------------------------------------------------- */
+  // === 1. TODOS LOS HOOKS (state + data + effects) ===
   const [language, setLanguage] = useState<Language>("en");
   const [user, setUser] = useState<any>(null);
   const [authLoading, setAuthLoading] = useState(true);
@@ -19,12 +148,14 @@ const Index = () => {
   const [showEventDialog, setShowEventDialog] = useState(false);
   const [editingEvent, setEditingEvent] = useState<Event | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
-  const [newEvent, setNewEvent] = useState<{name:string; amount:number; type:Event['type']}>({
-    name: '', amount: 0, type: 'income'
-  });
+  const [newEvent, setNewEvent] = useState<{
+    name: string;
+    amount: number;
+    type: "income" | "debt" | "fixed" | "variable" | "annual";
+  }>({ name: "", amount: 0, type: "income" });
 
   const { data: profiles = [] } = useFinancialProfiles();
-  const activeProfile = useMemo(() => profiles.find(p => p.is_active) || { name: "Family" }, [profiles]);
+  const activeProfile = useMemo(() => profiles.find((p) => p.is_active) || { name: "Family" }, [profiles]);
 
   const { data: incomeData = [] } = useIncomeSources();
   const { data: debtData = [] } = useDebts();
@@ -34,15 +165,18 @@ const Index = () => {
   const { data: savings } = useSavings();
   const { data: variableIncome = [], addIncome, deleteIncome } = useVariableIncome();
 
-  // Cargar eventos recurrentes
+  // === CARGAR EVENTOS RECURRENTES ===
   useEffect(() => {
-    const manual = localStorage.getItem("recurring_manual_events");
-    const annual = localStorage.getItem("annual_events");
-    if (manual) setRecurringManualEvents(JSON.parse(manual));
-    if (annual) setAnnualEvents(JSON.parse(annual));
+    const loadEvents = () => {
+      const manual = localStorage.getItem("recurring_manual_events");
+      const annual = localStorage.getItem("annual_events");
+      if (manual) setRecurringManualEvents(JSON.parse(manual));
+      if (annual) setAnnualEvents(JSON.parse(annual));
+    };
+    loadEvents();
   }, []);
 
-  // Autenticación
+  // === AUTENTICACIÓN ===
   useEffect(() => {
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null);
@@ -50,83 +184,7 @@ const Index = () => {
     });
   }, []);
 
-  /* -------------------------------------------------
-     2. CÁLCULOS PESADOS (useMemo) – ANTES DE LOS RETURN
-     ------------------------------------------------- */
-  const {
-    totalIncome, totalFixed, totalVariable, totalDebtPayment,
-    totalExpenses, cashFlow, savingsTotal, debtFreeDate, monthsToDebtFree,
-    pieData, calendarEvents
-  } = useMemo(() => {
-    /* … mismo cálculo que tenías … */
-    // (copia exacta del bloque anterior)
-    return { … };
-  }, [
-    incomeData, variableIncome, fixedExpensesData, variableExpensesData,
-    debtData, savings, savingsGoalsData, currentMonth,
-    recurringManualEvents, annualEvents
-  ]);
-
-  const formatCurrency = useCallback((n: number) => `£${n.toFixed(0)}`, []);
-
-  const getEventsForDay = useCallback((d: Date) =>
-    calendarEvents.filter(e => isSameDay(new Date(e.date), d)),
-    [calendarEvents]
-  );
-
-  const addEvent = useCallback(() => { … }, [selectedDate, newEvent]);
-  const updateEvent = useCallback(() => { … }, [editingEvent, newEvent]);
-  const deleteEvent = useCallback((id: string) => { … }, []);
-  const sendToAI = useCallback(() => { … }, [aiInput, totalVariable, cashFlow, …]);
-  const exportData = useCallback(() => { … }, [incomeData, …]);
-  const handleLanguageChange = useCallback((l: Language) => setLanguage(l), []);
-
-  const { monthDays, blankDays } = useMemo(() => {
-    const start = startOfMonth(currentMonth);
-    const end   = endOfMonth(currentMonth);
-    return {
-      monthDays: eachDayOfInterval({ start, end }),
-      blankDays: Array(start.getDay()).fill(null)
-    };
-  }, [currentMonth]);
-
-  /* -------------------------------------------------
-     3. RETURN TEMPRANOS – AHORA SON SEGUROS
-     ------------------------------------------------- */
-  if (authLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center p-8">
-        <Skeleton className="h-64 w-full max-w-2xl" />
-      </div>
-    );
-  }
-
-  if (!user) return <Auth />;
-
-  /* -------------------------------------------------
-     4. RENDER PRINCIPAL
-     ------------------------------------------------- */
-  return (
-    <>
-      {/* … todo el JSX que ya tenías … */}
-    </>
-  );
-};
-
-  // === EARLY RETURNS (AHORA SEGUROS) ===
-  if (authLoading) {
-    return (
-      <div className="min-h-screen flex items-center justify-center p-8">
-        <Skeleton className="h-64 w-full max-w-2xl" />
-      </div>
-    );
-  }
-
-  if (!user) {
-    return <Auth />;
-  }
-
-  // === TODOS LOS useMemo / useCallback DESPUÉS DE LOS RETURNS ===
+  // === 2. CÁLCULOS PESADOS (useMemo) ANTES DE CUALQUIER RETURN ===
   const {
     totalIncome,
     totalFixed,
@@ -432,7 +490,20 @@ const Index = () => {
     return { monthDays, blankDays };
   }, [currentMonth]);
 
-  // === RENDER FINAL ===
+  // === 3. EARLY RETURNS (AHORA SEGUROS) ===
+  if (authLoading) {
+    return (
+      <div className="min-h-screen flex items-center justify-center p-8">
+        <Skeleton className="h-64 w-full max-w-2xl" />
+      </div>
+    );
+  }
+
+  if (!user) {
+    return <Auth />;
+  }
+
+  // === 4. RENDER PRINCIPAL ===
   return (
     <>
       <style>{`@media print { .no-print { display: none !important; } }`}</style>
