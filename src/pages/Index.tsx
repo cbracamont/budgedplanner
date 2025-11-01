@@ -109,7 +109,7 @@ const translations = {
     cashFlowAfterSavings: "Cash Flow After Savings",
     debtPayment: "Available for Debt Payment",
     monthsToEmergency: "Months to Emergency Fund Goal",
-    monthlyDebtAllocation: "Monthly Debt Allocation"
+    monthlyDebtAllocation: "Monthly Debt Allocation",
   },
   es: {
     overview: "Resumen",
@@ -145,7 +145,7 @@ const translations = {
     cashFlowAfterSavings: "Flujo de Caja Después de Ahorros",
     debtPayment: "Disponible para Pago de Deuda",
     monthsToEmergency: "Meses para Meta de Fondo de Emergencia",
-    monthlyDebtAllocation: "Asignación Mensual de Deuda"
+    monthlyDebtAllocation: "Asignación Mensual de Deuda",
   },
   pl: {
     overview: "Przegląd",
@@ -181,8 +181,8 @@ const translations = {
     cashFlowAfterSavings: "Przepływ Gotówki Po Oszczędnościach",
     debtPayment: "Dostępne na Płatność Długu",
     monthsToEmergency: "Miesiące do Celu Funduszu Awaryjnego",
-    monthlyDebtAllocation: "Miesięczna Alokacja Długu"
-  }
+    monthlyDebtAllocation: "Miesięczna Alokacja Długu",
+  },
 };
 
 const useVariableIncome = () => {
@@ -243,6 +243,9 @@ const Index = () => {
   // SLIDER PARA AHORROS MENSUALES
   const [monthlySavings, setMonthlySavings] = useState(0);
 
+  // ESTRATEGIA DE DEUDA
+  const [debtMethod, setDebtMethod] = useState<DebtMethod>("avalanche");
+
   const [newEvent, setNewEvent] = useState<{
     name: string;
     amount: number;
@@ -290,7 +293,8 @@ const Index = () => {
     const totalDebtPayment = debtData.reduce((s, d) => s + d.minimum_payment, 0);
     const totalExpenses = totalFixed + totalVariable + totalDebtPayment;
     const cashFlow = totalIncome - totalExpenses;
-    const savingsTotal = (savings?.emergency_fund || 0) + savingsGoalsData.reduce((s, g) => s + (g.current_amount || 0), 0);
+    const savingsTotal =
+      (savings?.emergency_fund || 0) + savingsGoalsData.reduce((s, g) => s + (g.current_amount || 0), 0);
 
     let remaining = debtData.reduce((s, d) => s + d.balance, 0);
     let months = 0;
@@ -563,94 +567,24 @@ const Index = () => {
             </Card>
           </div>
 
-          {/* SECCIÓN DE PLANIFICADOR DE DEUDAS Y AHORROS */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center justify-between">
-                <h2 className="text-lg font-bold">Debt Planner & Emergency Fund</h2>
-                <Button variant="outline" size="sm">
-                  <Zap className="h-4 w-4 mr-1" /> Simulate
-                </Button>
-              </CardTitle>
-            </CardHeader>
-            <CardContent className="space-y-6">
-              {/* SLIDER PARA AHORROS MENSUALES */}
-              <div className="space-y-2">
-                <Label className="text-sm font-medium">{t.monthlySavings}</Label>
-                <Slider
-                  value={[monthlySavings]}
-                  onValueChange={(value) => setMonthlySavings(value[0])}
-                  max={Math.max(cashFlow, 0)}
-                  step={50}
-                  className="w-full"
-                />
-                <div className="flex justify-between text-sm text-muted-foreground">
-                  <span>£0</span>
-                  <span className="font-medium">{formatCurrency(monthlySavings)}</span>
-                  <span>{formatCurrency(Math.max(cashFlow, 0))}</span>
+          {/* DEBT FREE */}
+          {debtData.length > 0 && (
+            <Card className="border-2 border-orange-200">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-orange-600">
+                  <TrendingUp className="h-6 w-6" />
+                  Debt Free Date
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-center">
+                  <p className="text-4xl font-bold">{format(debtFreeDate, "d MMM yyyy")}</p>
+                  <p className="text-lg text-muted-foreground">{monthsToDebtFree} months away</p>
                 </div>
-                <p className="text-sm text-muted-foreground">
-                  {t.cashFlowAfterSavings}: {formatCurrency(cashFlow - monthlySavings)}
-                </p>
-              </div>
-
-              {/* ESTIMACIÓN FONDO DE EMERGENCIA */}
-              <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <Card>
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-sm">{t.emergencyFund}</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-2xl font-bold">{formatCurrency(totalExpenses * 3)}</p>
-                    <p className="text-xs text-muted-foreground">3 months of expenses</p>
-                    <Progress value={(savingsTotal / (totalExpenses * 3)) * 100} className="mt-2" />
-                    <p className="text-xs text-muted-foreground mt-1">
-                      {t.monthsToEmergency}: {((totalExpenses * 3 - savingsTotal) / monthlySavings).toFixed(1)}
-                    </p>
-                  </CardContent>
-                </Card>
-                <Card>
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-sm">{t.debtPayment}</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <p className="text-2xl font-bold">{formatCurrency(cashFlow - monthlySavings - totalDebtPayment)}</p>
-                    <p className="text-xs text-muted-foreground">Available for extra debt payments</p>
-                    <Progress value={((cashFlow - monthlySavings - totalDebtPayment) / cashFlow) * 100} className="mt-2" />
-                  </CardContent>
-                </Card>
-              </div>
-
-              {/* PRIORIDAD DE DEUDAS */}
-              <div className="space-y-4">
-                <Label className="text-sm font-medium">{t.priority}</Label>
-                <div className="space-y-3">
-                  {debtData.map((debt, index) => (
-                    <Card key={debt.id} className="p-4">
-                      <div className="flex items-center justify-between">
-                        <div className="flex items-center gap-3">
-                          <div className="w-8 h-8 rounded-full bg-orange-100 flex items-center justify-center">
-                            <span className="text-sm font-bold text-orange-600">{index + 1}</span>
-                          </div>
-                          <div>
-                            <p className="font-medium">{debt.name}</p>
-                            <p className="text-xs text-muted-foreground">APR {debt.apr}% • Balance {formatCurrency(debt.balance)}</p>
-                          </div>
-                        </div>
-                        <div className="text-right">
-                          <p className="font-bold text-red-600">{formatCurrency(debt.minimum_payment)}</p>
-                          <p className="text-xs text-muted-foreground">{t.minPayment}</p>
-                          <p className="text-xs text-emerald-600 font-medium">
-                            Extra: {formatCurrency((cashFlow - monthlySavings - totalDebtPayment) / debtData.length)}
-                          </p>
-                        </div>
-                      </div>
-                    </Card>
-                  ))}
-                </div>
-              </div>
-            </div>
-          </div>
+                <Progress value={80} className="h-4 mt-3" />
+              </CardContent>
+            </Card>
+          )}
 
           {/* GASTOS PASTEL */}
           {pieData.length > 0 && (
@@ -752,8 +686,8 @@ const Index = () => {
                             e.type === "income"
                               ? "text-green-600"
                               : e.type === "debt"
-                              ? "text-red-600"
-                              : "text-blue-600"
+                                ? "text-red-600"
+                                : "text-blue-600"
                           }`}
                         >
                           {e.name}
@@ -867,10 +801,7 @@ const Index = () => {
               <div className="space-y-4">
                 <div>
                   <Label>Name</Label>
-                  <Input
-                    value={newEvent.name}
-                    onChange={(e) => setNewEvent({ ...newEvent, name: e.target.value })}
-                  />
+                  <Input value={newEvent.name} onChange={(e) => setNewEvent({ ...newEvent, name: e.target.value })} />
                 </div>
                 <div>
                   <Label>Amount</Label>
@@ -915,7 +846,7 @@ const Index = () => {
                 <AlertDialogDescription>This cannot be undone.</AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
-                <AlertDialogCancel>Cancel</AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
                 <AlertDialogAction onClick={() => deleteEvent(deleteId!)}>Delete</AlertDialogAction>
               </AlertDialogFooter>
             </AlertDialogContent>
@@ -949,13 +880,15 @@ const Index = () => {
               </div>
               <AlertDialogFooter>
                 <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction onClick={() => {
-                  if (newIncome.description && newIncome.amount > 0) {
-                    addIncome(newIncome.amount, newIncome.description);
-                    setNewIncome({ description: "", amount: 0 });
-                    setShowIncomeModal(false);
-                  }
-                }}>
+                <AlertDialogAction
+                  onClick={() => {
+                    if (newIncome.description && newIncome.amount > 0) {
+                      addIncome(newIncome.amount, newIncome.description);
+                      setNewIncome({ description: "", amount: 0 });
+                      setShowIncomeModal(false);
+                    }
+                  }}
+                >
                   Add Income
                 </AlertDialogAction>
               </AlertDialogFooter>
@@ -1052,7 +985,7 @@ const Index = () => {
             </TabsContent>
 
             <TabsContent value="debts">
-              <DebtsManager language={language} />
+              <DebtPlanner language={language} />
             </TabsContent>
           </Tabs>
 
@@ -1064,6 +997,199 @@ const Index = () => {
         </div>
       </div>
     </>
+  );
+};
+
+const DebtPlanner = ({ language }: { language: Language }) => {
+  const [monthlySavings, setMonthlySavings] = useState(0);
+  const [debtMethod, setDebtMethod] = useState<DebtMethod>("avalanche");
+
+  const { data: incomeData = [] } = useIncomeSources();
+  const { data: debtData = [] } = useDebts();
+  const { data: fixedExpensesData = [] } = useFixedExpenses();
+  const { data: variableExpensesData = [] } = useVariableExpenses();
+  const { data: savings } = useSavings();
+
+  const t = translations[language];
+
+  const { totalIncome, totalFixed, totalVariable, totalDebtPayment, totalExpenses, cashFlow, savingsTotal } =
+    useMemo(() => {
+      const totalIncome = incomeData.reduce((s, i) => s + i.amount, 0);
+      const totalFixed = fixedExpensesData.reduce((s, e) => s + e.amount, 0);
+      const totalVariable = variableExpensesData.reduce((s, e) => s + e.amount, 0);
+      const totalDebtPayment = debtData.reduce((s, d) => s + d.minimum_payment, 0);
+      const totalExpenses = totalFixed + totalVariable + totalDebtPayment;
+      const cashFlow = totalIncome - totalExpenses;
+      const savingsTotal = savings?.emergency_fund || 0;
+      return { totalIncome, totalFixed, totalVariable, totalDebtPayment, totalExpenses, cashFlow, savingsTotal };
+    }, [incomeData, debtData, fixedExpensesData, variableExpensesData, savings]);
+
+  // CALCULAR ESTRATEGIA DE DEUDA
+  const debtStrategy = useMemo(() => {
+    if (debtData.length === 0) return null;
+
+    const extraForDebt = Math.max(0, cashFlow - monthlySavings);
+
+    const sortFn =
+      debtMethod === "avalanche"
+        ? (a, b) => b.apr - a.apr
+        : debtMethod === "snowball"
+          ? (a, b) => a.balance - b.balance
+          : (a, b) => b.apr * 0.6 + (b.balance / 1000) * 0.4 - (a.apr * 0.6 + (a.balance / 1000) * 0.4);
+
+    const sortedDebts = [...debtData].sort(sortFn);
+
+    let remainingBalances = sortedDebts.map((d) => ({ ...d, balance: d.balance }));
+    let months = 0;
+    let totalInterest = 0;
+    let allocation = sortedDebts.map((d) => ({
+      name: d.name,
+      minPayment: d.minimum_payment,
+      extra: 0,
+      totalPayment: d.minimum_payment,
+    }));
+
+    while (remainingBalances.some((d) => d.balance > 0) && months < 120) {
+      let monthlyInterest = 0;
+      remainingBalances.forEach((debt, index) => {
+        if (debt.balance <= 0) return;
+        const interest = debt.balance * (debt.apr / 100 / 12);
+        monthlyInterest += interest;
+        debt.balance += interest;
+
+        const payment = debt.minimum_payment + (index === 0 ? extraForDebt : 0);
+        allocation[index].totalPayment += payment;
+        debt.balance = Math.max(0, debt.balance - payment);
+      });
+      totalInterest += monthlyInterest;
+      months++;
+    }
+
+    const monthsToEmergency =
+      monthlySavings > 0 ? ((totalExpenses * 3 - savingsTotal) / monthlySavings).toFixed(1) : "N/A";
+
+    return {
+      sortedDebts,
+      allocation,
+      months,
+      totalInterest: Math.round(totalInterest),
+      monthsToEmergency,
+      extraForDebt,
+    };
+  }, [debtData, cashFlow, monthlySavings, debtMethod, totalExpenses, savingsTotal]);
+
+  if (!debtStrategy) return null;
+
+  return (
+    <div className="space-y-6">
+      {/* SLIDER AHORROS */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-sm">{t.monthlySavings}</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <Slider
+            value={[monthlySavings]}
+            onValueChange={(value) => setMonthlySavings(value[0])}
+            max={Math.max(cashFlow, 0)}
+            step={50}
+            className="w-full"
+          />
+          <div className="flex justify-between text-sm text-muted-foreground mt-2">
+            <span>£0</span>
+            <span className="font-medium">{formatCurrency(monthlySavings)}</span>
+            <span>{formatCurrency(Math.max(cashFlow, 0))}</span>
+          </div>
+          <p className="text-sm text-muted-foreground mt-1">
+            {t.cashFlowAfterSavings}: {formatCurrency(cashFlow - monthlySavings)}
+          </p>
+        </CardContent>
+      </Card>
+
+      {/* FONDO DE EMERGENCIA */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="text-sm">{t.emergencyFund}</CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            <div className="flex justify-between">
+              <span className="text-sm text-muted-foreground">Goal (3 months expenses):</span>
+              <span className="font-bold">{formatCurrency(totalExpenses * 3)}</span>
+            </div>
+            <div className="flex justify-between">
+              <span className="text-sm text-muted-foreground">Current:</span>
+              <span className="font-bold text-green-600">{formatCurrency(savingsTotal)}</span>
+            </div>
+            <Progress value={(savingsTotal / (totalExpenses * 3)) * 100} />
+            <p className="text-sm text-muted-foreground">
+              {t.monthsToEmergency}: {debtStrategy.monthsToEmergency}
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+
+      {/* PRIORIDAD DE DEUDAS */}
+      <Card>
+        <CardHeader>
+          <CardTitle className="flex items-center justify-between">
+            <span>{t.priority}</span>
+            <Select value={debtMethod} onValueChange={(value) => setDebtMethod(value as DebtMethod)}>
+              <SelectTrigger className="w-[180px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="avalanche">
+                  <Zap className="mr-2 h-4 w-4" />
+                  {t.avalanche}
+                </SelectItem>
+                <SelectItem value="snowball">
+                  <Snowflake className="mr-2 h-4 w-4" />
+                  {t.snowball}
+                </SelectItem>
+                <SelectItem value="hybrid">
+                  <Zap className="mr-2 h-4 w-4" />
+                  {t.hybrid}
+                </SelectItem>
+              </SelectContent>
+            </Select>
+          </CardTitle>
+        </CardHeader>
+        <CardContent>
+          <div className="space-y-4">
+            {debtStrategy.sortedDebts.map((debt, index) => (
+              <div key={debt.id} className="flex items-center justify-between p-3 bg-muted rounded-lg">
+                <div className="flex items-center gap-3">
+                  <Badge variant="secondary" className="w-8 h-8 flex items-center justify-center">
+                    {index + 1}
+                  </Badge>
+                  <div>
+                    <p className="font-medium">{debt.name}</p>
+                    <p className="text-sm text-muted-foreground">
+                      APR {debt.apr}% • Balance {formatCurrency(debt.balance)}
+                    </p>
+                  </div>
+                </div>
+                <div className="text-right">
+                  <p className="font-bold text-red-600">{formatCurrency(debt.minimum_payment)}</p>
+                  <p className="text-xs text-muted-foreground">{t.minPayment}</p>
+                  <p className="text-xs font-medium text-emerald-600">
+                    Extra: {formatCurrency(debtStrategy.allocation[index].extra)}
+                  </p>
+                </div>
+              </div>
+            ))}
+          </div>
+          <div className="mt-4 p-3 bg-muted rounded-lg">
+            <p className="text-sm text-muted-foreground">
+              <strong>Total extra for debt:</strong> {formatCurrency(debtStrategy.extraForDebt)} |{" "}
+              <strong>Time to debt-free:</strong> {debtStrategy.months} {t.months} | <strong>{t.totalInterest}:</strong>{" "}
+              {formatCurrency(debtStrategy.totalInterest)}
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+    </div>
   );
 };
 
