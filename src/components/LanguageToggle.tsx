@@ -1,50 +1,45 @@
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
-import { Languages } from "lucide-react";
-import { Language } from "@/lib/i18n";
+// src/components/LanguageToggle.tsx
+import { Button } from "@/components/ui/button";
+import { Globe } from "lucide-react";
+
+type Language = "en" | "es" | "pl" | "pt";
+
+const flags: Record<Language, string> = {
+  en: "UK",
+  es: "Spain",
+  pl: "Poland",
+  pt: "Portugal",
+};
+
+const labels: Record<Language, string> = {
+  en: "English",
+  es: "Español",
+  pl: "Polski",
+  pt: "Português",
+};
 
 interface LanguageToggleProps {
   language: Language;
   onLanguageChange: (lang: Language) => void;
 }
 
-const languageOptions = [
-  { value: 'en', label: 'English', flag: '🇬🇧' },
-  { value: 'es', label: 'Español', flag: '🇪🇸' },
-  { value: 'pt', label: 'Português', flag: '🇵🇹' },
-  { value: 'pl', label: 'Polski', flag: '🇵🇱' },
-  { value: 'ro', label: 'Română', flag: '🇷🇴' },
-];
+const languages: Language[] = ["en", "es", "pl", "pt"];
 
 export const LanguageToggle = ({ language, onLanguageChange }: LanguageToggleProps) => {
-  const currentLanguage = languageOptions.find(opt => opt.value === language);
-  
   return (
-    <Select value={language} onValueChange={(value) => onLanguageChange(value as Language)}>
-      <SelectTrigger className="w-[140px] gap-2">
-        <Languages className="h-4 w-4" />
-        <SelectValue>
-          <span className="flex items-center gap-1.5">
-            <span>{currentLanguage?.flag}</span>
-            <span>{currentLanguage?.label}</span>
-          </span>
-        </SelectValue>
-      </SelectTrigger>
-      <SelectContent>
-        {languageOptions.map((option) => (
-          <SelectItem key={option.value} value={option.value}>
-            <span className="flex items-center gap-2">
-              <span>{option.flag}</span>
-              <span>{option.label}</span>
-            </span>
-          </SelectItem>
-        ))}
-      </SelectContent>
-    </Select>
+    <div className="flex gap-1 bg-muted p-1 rounded-lg">
+      {languages.map((lang) => (
+        <Button
+          key={lang}
+          variant={language === lang ? "default" : "ghost"}
+          size="sm"
+          onClick={() => onLanguageChange(lang)}
+          className="text-xs"
+        >
+          <Globe className="h-3 w-3 mr-1" />
+          {flags[lang]}
+        </Button>
+      ))}
+    </div>
   );
 };
