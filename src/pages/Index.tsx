@@ -1,4 +1,3 @@
-// src/pages/Index.tsx
 "use client";
 
 import { useState, useEffect, useMemo, useCallback } from "react";
@@ -620,7 +619,7 @@ const Index = () => {
                 </p>
               </div>
 
-              {/* FONDO DE EMERGENCIA */}
+              {/* FONDO DE EMERGENCY FUND */}
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <Card>
                   <CardHeader className="pb-2">
@@ -650,7 +649,7 @@ const Index = () => {
                 </Card>
               </div>
 
-              {/* PRIORIDAD DE DEUDAS */}
+              {/* PRIORITY DE DEUDAS */}
               <div className="space-y-4">
                 <Label className="text-sm font-medium">{t.priority}</Label>
                 <div className="space-y-3">
@@ -681,7 +680,7 @@ const Index = () => {
             </CardContent>
           </Card>
 
-          {/* CALENDARIO */}
+          {/* CALENDAR */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center justify-between">
@@ -946,7 +945,7 @@ const Index = () => {
             <TabsList className="grid w-full grid-cols-4 mb-6">
               <TabsTrigger value="overview">Overview</TabsTrigger>
               <TabsTrigger value="income">Income</TabsTrigger>
-              <TabsTrigger value="expenses">Expense</TabsTrigger>
+              <TabsTrigger value="expenses">Expenses</TabsTrigger>
               <TabsTrigger value="debts">Debts</TabsTrigger>
             </TabsList>
 
@@ -1101,7 +1100,7 @@ const DebtPlanner = ({ language }: { language: Language }) => {
       remainingBalances.forEach((debt, index) => {
         if (debt.balance <= 0) return;
         const interest = debt.balance * (debt.apr / 100 / 12);
-        monthlyInterest += interest;
+        monthly_interest += interest;
         debt.balance += interest;
 
         const payment = debt.minimum_payment + (index === 0 ? extraForDebt : 0);
@@ -1109,7 +1108,7 @@ const DebtPlanner = ({ language }: { language: Language }) => {
         allocation[index].extra += index === 0 ? extraForDebt : 0;
         debt.balance = Math.max(0, debt.balance - payment);
       });
-      totalInterest += monthlyInterest;
+      totalInterest += monthly_interest;
       months++;
     }
 
@@ -1164,7 +1163,7 @@ const DebtPlanner = ({ language }: { language: Language }) => {
         </CardContent>
       </Card>
 
-      {/* FONDO DE EMERGENCY FUND */}
+      {/* FONDO DE EMERGENCIA */}
       <Card>
         <CardHeader>
           <CardTitle className="text-sm">{t.emergencyFund}</CardTitle>
