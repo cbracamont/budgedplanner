@@ -37,15 +37,33 @@ serve(async (req) => {
       throw new Error("Unauthorized");
     }
 
-    // Fetch user's financial data
+    // Get active profile
+    const { data: activeProfile, error: profileError } = await supabase
+      .from('financial_profiles')
+      .select('*')
+      .eq('user_id', user.id)
+      .eq('is_active', true)
+      .maybeSingle();
+
+    if (profileError) {
+      console.error("Error fetching active profile:", profileError);
+      throw new Error("Error fetching active profile");
+    }
+
+    // If no active profile found, return error
+    if (!activeProfile) {
+      throw new Error("No active profile found. Please select a profile first.");
+    }
+
+    // Fetch user's financial data filtered by active profile
     const [incomeData, debtsData, fixedExpensesData, variableExpensesData, savingsData, savingsGoalsData, debtPaymentsData] = await Promise.all([
-      supabase.from('income_sources').select('*').eq('user_id', user.id),
-      supabase.from('debts').select('*').eq('user_id', user.id),
-      supabase.from('fixed_expenses').select('*').eq('user_id', user.id),
-      supabase.from('variable_expenses').select('*').eq('user_id', user.id),
-      supabase.from('savings').select('*').eq('user_id', user.id).maybeSingle(),
-      supabase.from('savings_goals').select('*').eq('user_id', user.id),
-      supabase.from('debt_payments').select('*, debts(name, bank)').eq('user_id', user.id).order('payment_date', { ascending: false }),
+      supabase.from('income_sources').select('*').eq('user_id', user.id).eq('profile_id', activeProfile.id),
+      supabase.from('debts').select('*').eq('user_id', user.id).eq('profile_id', activeProfile.id),
+      supabase.from('fixed_expenses').select('*').eq('user_id', user.id).eq('profile_id', activeProfile.id),
+      supabase.from('variable_expenses').select('*').eq('user_id', user.id).eq('profile_id', activeProfile.id),
+      supabase.from('savings').select('*').eq('user_id', user.id).eq('profile_id', activeProfile.id).maybeSingle(),
+      supabase.from('savings_goals').select('*').eq('user_id', user.id).eq('profile_id', activeProfile.id),
+      supabase.from('debt_payments').select('*, debts(name, bank)').eq('user_id', user.id).eq('profile_id', activeProfile.id).order('payment_date', { ascending: false }),
     ]);
 
     // Calculate totals
@@ -70,6 +88,8 @@ serve(async (req) => {
 
     // Prepare financial context (exactly same rules as dashboard)
     const financialContext = `
+PERFIL ACTIVO: ${activeProfile.name} (${activeProfile.type})
+
 REGLAS: Usa estrictamente los TOTALES OFICIALES provistos abajo; no los recalcules a partir de los listados. Si detectas discrepancias, prioriza "Balance disponible mensual".
 
 Totales oficiales (mismo cálculo que el dashboard):
