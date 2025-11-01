@@ -19,6 +19,8 @@ import {
   ChevronRight,
   Send,
   X,
+  Zap,
+  Snowflake,
 } from "lucide-react";
 import {
   useIncomeSources,
@@ -40,6 +42,7 @@ import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
+import { Slider } from "@/components/ui/slider";
 import { supabase } from "@/integrations/supabase/client";
 import { useTheme } from "@/hooks/useTheme";
 import { Skeleton } from "@/components/ui/skeleton";
@@ -57,8 +60,11 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+import { Badge } from "@/components/ui/badge";
 
 type Language = "en" | "es" | "pl";
+type DebtMethod = "avalanche" | "snowball" | "hybrid";
+
 type Event = {
   id: string;
   date: string;
@@ -66,6 +72,114 @@ type Event = {
   name: string;
   amount: number;
   recurring?: boolean;
+};
+
+const translations = {
+  en: {
+    overview: "Overview",
+    income: "Income",
+    expenses: "Expenses",
+    debts: "Debts",
+    debtPlanner: "Debt Planner",
+    totalIncome: "Total Income",
+    totalExpenses: "Total Expenses",
+    cashFlow: "Cash Flow",
+    totalSavings: "Total Savings",
+    healthy: "Healthy",
+    review: "Review",
+    fixedIncome: "Fixed Income",
+    variableIncome: "Variable Income",
+    fixedExpenses: "Fixed Expenses",
+    variableExpenses: "Variable Expenses",
+    noData: "No data yet",
+    add: "Add",
+    description: "Description",
+    strategy: "Debt Payoff Strategy",
+    avalanche: "Avalanche (High APR First)",
+    snowball: "Snowball (Smallest Balance First)",
+    hybrid: "Hybrid (APR + Balance)",
+    recommended: "Recommended",
+    months: "months",
+    totalInterest: "Total Interest Saved",
+    priority: "Debt Priority Order",
+    payFirst: "Pay First",
+    minPayment: "Min Payment",
+    monthlySavings: "Monthly Savings for Emergency Fund",
+    emergencyFund: "Emergency Fund Estimate",
+    cashFlowAfterSavings: "Cash Flow After Savings",
+    debtPayment: "Available for Debt Payment",
+    monthsToEmergency: "Months to Emergency Fund Goal"
+  },
+  es: {
+    overview: "Resumen",
+    income: "Ingresos",
+    expenses: "Gastos",
+    debts: "Deudas",
+    debtPlanner: "Planificador de Deudas",
+    totalIncome: "Ingresos Totales",
+    totalExpenses: "Gastos Totales",
+    cashFlow: "Flujo de Caja",
+    totalSavings: "Ahorros Totales",
+    healthy: "Saludable",
+    review: "Revisar",
+    fixedIncome: "Ingresos Fijos",
+    variableIncome: "Ingresos Variables",
+    fixedExpenses: "Gastos Fijos",
+    variableExpenses: "Gastos Variables",
+    noData: "No hay datos",
+    add: "Añadir",
+    description: "Descripción",
+    strategy: "Estrategia de Pago de Deudas",
+    avalanche: "Avalancha (APR Alto Primero)",
+    snowball: "Bola de Nieve (Saldo Pequeño Primero)",
+    hybrid: "Híbrido (APR + Saldo)",
+    recommended: "Recomendado",
+    months: "meses",
+    totalInterest: "Interés Total Ahorrado",
+    priority: "Orden de Prioridad de Deudas",
+    payFirst: "Pagar Primero",
+    minPayment: "Pago Mínimo",
+    monthlySavings: "Ahorros Mensuales para Fondo de Emergencia",
+    emergencyFund: "Estimación de Fondo de Emergencia",
+    cashFlowAfterSavings: "Flujo de Caja Después de Ahorros",
+    debtPayment: "Disponible para Pago de Deuda",
+    monthsToEmergency: "Meses para Meta de Fondo de Emergencia"
+  },
+  pl: {
+    overview: "Przegląd",
+    income: "Dochody",
+    expenses: "Wydatki",
+    debts: "Długi",
+    debtPlanner: "Plan Spłaty Długów",
+    totalIncome: "Całkowity Dochód",
+    totalExpenses: "Całkowite Wydatki",
+    cashFlow: "Przepływ Gotówki",
+    totalSavings: "Całkowite Oszczędności",
+    healthy: "Zdrowy",
+    review: "Przejrzyj",
+    fixedIncome: "Stałe Dochody",
+    variableIncome: "Zmienne Dochody",
+    fixedExpenses: "Stałe Wydatki",
+    variableExpenses: "Zmienne Wydatki",
+    noData: "Brak danych",
+    add: "Dodaj",
+    description: "Opis",
+    strategy: "Strategia Spłaty Długów",
+    avalanche: "Lawina (Najwyższe Oprocentowanie Najpierw)",
+    snowball: "Kula Śnieżna (Najmniejszy Saldo Najpierw)",
+    hybrid: "Hybrydowa (Oprocentowanie + Saldo)",
+    recommended: "Zalecane",
+    months: "miesiące",
+    totalInterest: "Całkowite Oszczędności Oprocentowania",
+    priority: "Kolejność Priorytetu Długów",
+    payFirst: "Spłać Najpierw",
+    minPayment: "Minimalna Płatność",
+    monthlySavings: "Miesięczne Oszczędności na Fundusz Awaryjny",
+    emergencyFund: "Szacowany Fundusz Awaryjny",
+    cashFlowAfterSavings: "Przepływ Gotówki Po Oszczędnościach",
+    debtPayment: "Dostępne na Płatność Długu",
+    monthsToEmergency: "Miesiące do Celu Funduszu Awaryjnego"
+  }
 };
 
 const useVariableIncome = () => {
@@ -123,6 +237,9 @@ const Index = () => {
     amount: 0,
   });
 
+  // SLIDER PARA AHORROS MENSUALES
+  const [monthlySavings, setMonthlySavings] = useState(0);
+
   const [newEvent, setNewEvent] = useState<{
     name: string;
     amount: number;
@@ -143,6 +260,8 @@ const Index = () => {
   const handleLanguageChange = useCallback((lang: Language) => {
     setLanguage(lang);
   }, []);
+
+  const t = translations[language];
 
   const {
     totalIncome,
@@ -168,12 +287,11 @@ const Index = () => {
     const totalDebtPayment = debtData.reduce((s, d) => s + d.minimum_payment, 0);
     const totalExpenses = totalFixed + totalVariable + totalDebtPayment;
     const cashFlow = totalIncome - totalExpenses;
-    const savingsTotal =
-      (savings?.emergency_fund || 0) + savingsGoalsData.reduce((s, g) => s + (g.current_amount || 0), 0);
+    const savingsTotal = (savings?.emergency_fund || 0) + savingsGoalsData.reduce((s, g) => s + (g.current_amount || 0), 0);
 
     let remaining = debtData.reduce((s, d) => s + d.balance, 0);
     let months = 0;
-    const extra = Math.max(0, cashFlow * 0.3);
+    const extra = Math.max(0, (cashFlow - monthlySavings) * 0.3);
     const monthlyPay = totalDebtPayment + extra;
     while (remaining > 0 && months < 120) {
       const interest = debtData.reduce((s, d) => s + d.balance * (d.apr / 100 / 12), 0);
@@ -287,6 +405,7 @@ const Index = () => {
     savings,
     savingsGoalsData,
     currentMonth,
+    monthlySavings,
   ]);
 
   const formatCurrency = (amount: number) => `£${amount.toFixed(0)}`;
@@ -395,6 +514,7 @@ const Index = () => {
               </Button>
             </div>
           </div>
+
           {/* RESUMEN */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             <Card className="border-green-200">
@@ -439,6 +559,7 @@ const Index = () => {
               </CardContent>
             </Card>
           </div>
+
           {/* DEBT FREE */}
           {debtData.length > 0 && (
             <Card className="border-2 border-orange-200">
@@ -457,6 +578,7 @@ const Index = () => {
               </CardContent>
             </Card>
           )}
+
           {/* GASTOS PASTEL */}
           {pieData.length > 0 && (
             <Card>
@@ -505,6 +627,7 @@ const Index = () => {
               </CardContent>
             </Card>
           )}
+
           {/* CALENDARIO */}
           <Card>
             <CardHeader>
@@ -556,8 +679,8 @@ const Index = () => {
                             e.type === "income"
                               ? "text-green-600"
                               : e.type === "debt"
-                                ? "text-red-600"
-                                : "text-blue-600"
+                              ? "text-red-600"
+                              : "text-blue-600"
                           }`}
                         >
                           {e.name}
@@ -572,6 +695,7 @@ const Index = () => {
               </div>
             </CardContent>
           </Card>
+
           {/* AI MODAL */}
           <AlertDialog open={showAI} onOpenChange={setShowAI}>
             <AlertDialogContent className="max-w-2xl">
@@ -607,6 +731,7 @@ const Index = () => {
               </AlertDialogFooter>
             </AlertDialogContent>
           </AlertDialog>
+
           {/* DETALLE DEL DÍA */}
           {selectedDate && (
             <AlertDialog open={!!selectedDate} onOpenChange={() => setSelectedDate(null)}>
@@ -659,6 +784,7 @@ const Index = () => {
               </AlertDialogContent>
             </AlertDialog>
           )}
+
           {/* AGREGAR/EDITAR EVENTO */}
           <AlertDialog open={showEventDialog} onOpenChange={setShowEventDialog}>
             <AlertDialogContent>
@@ -668,7 +794,10 @@ const Index = () => {
               <div className="space-y-4">
                 <div>
                   <Label>Name</Label>
-                  <Input value={newEvent.name} onChange={(e) => setNewEvent({ ...newEvent, name: e.target.value })} />
+                  <Input
+                    value={newEvent.name}
+                    onChange={(e) => setNewEvent({ ...newEvent, name: e.target.value })}
+                  />
                 </div>
                 <div>
                   <Label>Amount</Label>
@@ -704,6 +833,7 @@ const Index = () => {
               </AlertDialogFooter>
             </AlertDialogContent>
           </AlertDialog>
+
           {/* CONFIRMAR ELIMINAR */}
           <AlertDialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>
             <AlertDialogContent>
@@ -712,12 +842,13 @@ const Index = () => {
                 <AlertDialogDescription>This cannot be undone.</AlertDialogDescription>
               </AlertDialogHeader>
               <AlertDialogFooter>
-                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogCancel>Cancel</AlertDialogFooter>
                 <AlertDialogAction onClick={() => deleteEvent(deleteId!)}>Delete</AlertDialogAction>
               </AlertDialogFooter>
             </AlertDialogContent>
           </AlertDialog>
-          ;{/* MODAL PARA VARIABLE INCOME */}
+
+          {/* MODAL PARA VARIABLE INCOME */}
           <AlertDialog open={showIncomeModal} onOpenChange={setShowIncomeModal}>
             <AlertDialogContent>
               <AlertDialogHeader>
@@ -745,20 +876,19 @@ const Index = () => {
               </div>
               <AlertDialogFooter>
                 <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction
-                  onClick={() => {
-                    if (newIncome.description && newIncome.amount > 0) {
-                      addIncome(newIncome.amount, newIncome.description);
-                      setNewIncome({ description: "", amount: 0 });
-                      setShowIncomeModal(false);
-                    }
-                  }}
-                >
+                <AlertDialogAction onClick={() => {
+                  if (newIncome.description && newIncome.amount > 0) {
+                    addIncome(newIncome.amount, newIncome.description);
+                    setNewIncome({ description: "", amount: 0 });
+                    setShowIncomeModal(false);
+                  }
+                }}>
                   Add Income
                 </AlertDialogAction>
               </AlertDialogFooter>
             </AlertDialogContent>
           </AlertDialog>
+
           {/* TABS */}
           <Tabs defaultValue="overview" className="no-print">
             <TabsList className="grid w-full grid-cols-4 mb-6">
@@ -852,6 +982,7 @@ const Index = () => {
               <DebtsManager language={language} />
             </TabsContent>
           </Tabs>
+
           <footer className="no-print py-8 text-center text-xs text-muted-foreground border-t mt-12">
             <p className="font-semibold mb-2">Legal Disclaimer (UK)</p>
             <p>This app is for educational use only. Not financial advice. Consult an FCA adviser.</p>
