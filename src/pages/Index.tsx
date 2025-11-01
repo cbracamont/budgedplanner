@@ -1,7 +1,7 @@
 // src/pages/Index.tsx
 "use client";
 
-import { useState, useEffect, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { format, addMonths, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, add, sub } from "date-fns";
 import {
   TrendingUp,
@@ -19,8 +19,6 @@ import {
   ChevronRight,
   Send,
   X,
-  Zap,
-  Snowflake,
 } from "lucide-react";
 import {
   useIncomeSources,
@@ -59,11 +57,8 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-import { Badge } from "@/components/ui/badge";
 
-type Language = "en" | "es";
-type DebtMethod = "avalanche" | "snowball" | "hybrid";
-
+type Language = "en" | "es" | "pl"; // AÑADIDO "pl"
 type Event = {
   id: string;
   date: string;
@@ -73,90 +68,35 @@ type Event = {
   recurring?: boolean;
 };
 
-const translations = {
-  en: {
-    overview: "Overview",
-    income: "Income",
-    expenses: "Expenses",
-    debts: "Debts",
-    totalIncome: "Total Income",
-    totalExpenses: "Total Expenses",
-    cashFlow: "Cash Flow",
-    totalSavings: "Total Savings",
-    healthy: "Healthy",
-    review: "Review",
-    fixedIncome: "Fixed Income",
-    variableIncome: "Variable Income",
-    fixedExpenses: "Fixed Expenses",
-    variableExpenses: "Variable Expenses",
-    noData: "No data yet",
-    add: "Add",
-    description: "Description",
-    strategy: "Debt Payoff Strategy",
-    avalanche: "Avalanche (High APR First)",
-    snowball: "Snowball (Smallest Balance First)",
-    hybrid: "Hybrid (APR + Balance)",
-    recommended: "Recommended",
-    months: "months",
-    totalInterest: "Total Interest Saved",
-    priority: "Debt Priority",
-    payFirst: "Pay First",
-    minPayment: "Min Payment",
-  },
-  es: {
-    overview: "Resumen",
-    income: "Ingresos",
-    expenses: "Gastos",
-    debts: "Deudas",
-    totalIncome: "Ingresos Totales",
-    totalExpenses: "Gastos Totales",
-    cashFlow: "Flujo de Caja",
-    totalSavings: "Ahorros Totales",
-    healthy: "Saludable",
-    review: "Revisar",
-    fixedIncome: "Ingresos Fijos",
-    variableIncome: "Ingresos Variables",
-    fixedExpenses: "Gastos Fijos",
-    variableExpenses: "Gastos Variables",
-    noData: "No hay datos",
-    add: "Añadir",
-    description: "Descripción",
-    strategy: "Estrategia de Pago de Deudas",
-    avalanche: "Avalancha (APR Alto Primero)",
-    snowball: "Bola de Nieve (Saldo Pequeño Primero)",
-    hybrid: "Híbrido (APR + Saldo)",
-    recommended: "Recomendado",
-    months: "meses",
-    totalInterest: "Interés Total Ahorrado",
-    priority: "Prioridad de Deudas",
-    payFirst: "Pagar Primero",
-    minPayment: "Pago Mínimo",
-  },
-};
-
 const useVariableIncome = () => {
   const [data, setData] = useState<any[]>([]);
+  const [loading, setLoading] = useState(false);
+
   useEffect(() => {
     const saved = localStorage.getItem("variable_income");
     if (saved) setData(JSON.parse(saved));
+    setLoading(false);
   }, []);
+
   const addIncome = (amount: number, description: string) => {
     const newEntry = {
       id: Date.now().toString(),
       amount,
-      description: description || "Extra",
+      description: description || "Extra income",
       date: new Date().toISOString(),
     };
     const updated = [newEntry, ...data];
     setData(updated);
     localStorage.setItem("variable_income", JSON.stringify(updated));
   };
+
   const deleteIncome = (id: string) => {
     const updated = data.filter((i) => i.id !== id);
     setData(updated);
     localStorage.setItem("variable_income", JSON.stringify(updated));
   };
-  return { data, addIncome, deleteIncome };
+
+  return { data, loading, addIncome, deleteIncome };
 };
 
 const Index = () => {
@@ -168,9 +108,19 @@ const Index = () => {
   const [aiInput, setAiInput] = useState("");
   const [aiResponse, setAiResponse] = useState("");
   const [aiLoading, setAiLoading] = useState(false);
-  const [debtMethod, setDebtMethod] = useState<DebtMethod>("avalanche");
 
+  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [currentMonth, setCurrentMonth] = useState(new Date());
+  const [events, setEvents] = useState<Event[]>([]);
+  const [showEventDialog, setShowEventDialog] = useState(false);
+  const [editingEvent, setEditingEvent] = useState<Event | null>(null);
+  const [deleteId, setDeleteId] = useState<string | null>(null);
+
+  const [newEvent, setNewEvent] = useState<{
+    name: string;
+    amount: number;
+    type: "income" | "debt" | "fixed" | "variable";
+  }>({ name: "", amount: 0, type: "income" });
 
   const { data: profiles = [] } = useFinancialProfiles();
   const activeProfile = profiles.find((p) => p.is_active) || { name: "Family" };
@@ -183,7 +133,10 @@ const Index = () => {
   const { data: savings } = useSavings();
   const { data: variableIncome = [], addIncome, deleteIncome } = useVariableIncome();
 
-  const t = translations[language];
+  // FIX: Envuelve setLanguage en callback
+  const handleLanguageChange = useCallback((lang: Language) => {
+    setLanguage(lang);
+  }, []);
 
   const {
     totalIncome,
@@ -197,7 +150,10 @@ const Index = () => {
     monthsToDebtFree,
     pieData,
     calendarEvents,
+    monthStart,
+    monthEnd,
     monthDays,
+    firstDayOfWeek,
     blankDays,
   } = useMemo(() => {
     const totalIncome = incomeData.reduce((s, i) => s + i.amount, 0) + variableIncome.reduce((s, i) => s + i.amount, 0);
@@ -227,74 +183,44 @@ const Index = () => {
     ].filter((d) => d.value > 0);
 
     const allEvents: Event[] = [];
-    const startYear = currentMonth.getFullYear() - 1;
-    const endYear = currentMonth.getFullYear() + 1;
-
-    for (let year = startYear; year <= endYear; year++) {
-      for (let month = 0; month < 12; month++) {
-        const currentDate = new Date(year, month, 1);
-        if (currentDate > new Date(endYear, 11, 31)) break;
-
-        // INGRESOS FIJOS - DIA 1 DE CADA MES
-        incomeData.forEach((inc) => {
-          const date = new Date(year, month, 1);
-          allEvents.push({
-            id: `inc-${inc.id}-${year}-${month}`,
-            date: format(date, "yyyy-MM-dd"),
-            type: "income",
-            name: inc.name,
-            amount: inc.amount,
-            recurring: true,
-          });
-        });
-
-        // GASTOS FIJOS - DIA DE PAGO
-        fixedExpensesData.forEach((exp) => {
-          const day = exp.payment_day || 1;
-          const lastDayOfMonth = new Date(year, month + 1, 0).getDate();
-          const date = new Date(year, month, Math.min(day, lastDayOfMonth));
-          allEvents.push({
-            id: `fix-${exp.id}-${year}-${month}`,
-            date: format(date, "yyyy-MM-dd"),
-            type: "fixed",
-            name: exp.name,
-            amount: exp.amount,
-            recurring: true,
-          });
-        });
-
-        // DEUDAS - DIA 15 DE CADA MES
-        debtData.forEach((debt) => {
-          const date = new Date(year, month, 15);
-          allEvents.push({
-            id: `debt-${debt.id}-${year}-${month}`,
-            date: format(date, "yyyy-MM-dd"),
-            type: "debt",
-            name: `${debt.name} (min)`,
-            amount: debt.minimum_payment,
-            recurring: true,
-          });
-        });
-
-        // GASTOS VARIABLES - SIMULACIÓN RECURRENTES (ejemplo: día 10 de cada mes)
-        variableExpensesData.forEach((exp) => {
-          const date = new Date(year, month, 10);
-          allEvents.push({
-            id: `var-${exp.id}-${year}-${month}`,
-            date: format(date, "yyyy-MM-dd"),
-            type: "variable",
-            name: exp.name,
-            amount: exp.amount,
-            recurring: true,
-          });
-        });
-      }
-    }
+    incomeData.forEach((inc) => {
+      allEvents.push({
+        id: `inc-${inc.id}`,
+        date: format(new Date(new Date().getFullYear(), new Date().getMonth(), 1), "yyyy-MM-dd"),
+        type: "income",
+        name: inc.name,
+        amount: inc.amount,
+        recurring: true,
+      });
+    });
+    fixedExpensesData.forEach((exp) => {
+      const day = exp.payment_day || 1;
+      const date = new Date(new Date().getFullYear(), new Date().getMonth(), day);
+      allEvents.push({
+        id: `fix-${exp.id}`,
+        date: format(date, "yyyy-MM-dd"),
+        type: "fixed",
+        name: exp.name,
+        amount: exp.amount,
+        recurring: true,
+      });
+    });
+    debtData.forEach((debt) => {
+      allEvents.push({
+        id: `debt-${debt.id}`,
+        date: format(new Date(new Date().getFullYear(), new Date().getMonth(), 15), "yyyy-MM-dd"),
+        type: "debt",
+        name: `${debt.name} (min)`,
+        amount: debt.minimum_payment,
+        recurring: true,
+      });
+    });
 
     const monthStart = startOfMonth(currentMonth);
     const monthEnd = endOfMonth(currentMonth);
     const monthDays = eachDayOfInterval({ start: monthStart, end: monthEnd });
-    const blankDays = Array(monthStart.getDay()).fill(null);
+    const firstDayOfWeek = monthStart.getDay();
+    const blankDays = Array(firstDayOfWeek).fill(null);
 
     return {
       totalIncome,
@@ -305,10 +231,13 @@ const Index = () => {
       cashFlow,
       savingsTotal,
       debtFreeDate,
-      monthsToDebtFree,
+      monthsToDebtFree: months,
       pieData,
       calendarEvents: allEvents,
+      monthStart,
+      monthEnd,
       monthDays,
+      firstDayOfWeek,
       blankDays,
     };
   }, [
@@ -341,6 +270,39 @@ const Index = () => {
 
   const getEventsForDay = (date: Date) => calendarEvents.filter((e) => isSameDay(new Date(e.date), date));
 
+  const addEvent = () => {
+    if (selectedDate && newEvent.name && newEvent.amount) {
+      const newEntry: Event = {
+        id: Date.now().toString(),
+        date: format(selectedDate, "yyyy-MM-dd"),
+        type: newEvent.type,
+        name: newEvent.name,
+        amount: newEvent.amount,
+      };
+      setEvents([...events, newEntry]);
+      setShowEventDialog(false);
+      setNewEvent({ name: "", amount: 0, type: "income" });
+    }
+  };
+
+  const updateEvent = () => {
+    if (editingEvent && newEvent.name && newEvent.amount) {
+      const updated = events.map((e) =>
+        e.id === editingEvent.id ? { ...e, name: newEvent.name, amount: newEvent.amount } : e,
+      );
+      setEvents(updated);
+      setEditingEvent(null);
+      setShowEventDialog(false);
+      setNewEvent({ name: "", amount: 0, type: "income" });
+    }
+  };
+
+  const deleteEvent = (id: string) => {
+    setEvents(events.filter((e) => e.id !== id));
+    setDeleteId(null);
+  };
+
+  // === AI LOCAL ===
   const sendToAI = () => {
     if (!aiInput.trim()) return;
     setAiLoading(true);
@@ -383,7 +345,7 @@ const Index = () => {
               <p className="text-muted-foreground">Hi, {activeProfile.name}!</p>
             </div>
             <div className="flex items-center gap-3">
-              <LanguageToggle language={language} onLanguageChange={setLanguage} />
+              <LanguageToggle language={language} onLanguageChange={handleLanguageChange} />
               <ProfileSelector language={language} />
               <Button variant="outline" size="icon" onClick={() => window.print()}>
                 <Download className="h-4 w-4" />
@@ -456,7 +418,7 @@ const Index = () => {
                   <p className="text-4xl font-bold">{format(debtFreeDate, "d MMM yyyy")}</p>
                   <p className="text-lg text-muted-foreground">{monthsToDebtFree} months away</p>
                 </div>
-                <Progress value={80} className="h-4 mt-3" />
+                <Progress value={80} className="h-4 mt-4" />
               </CardContent>
             </Card>
           )}
@@ -510,7 +472,7 @@ const Index = () => {
             </Card>
           )}
 
-          {/* CALENDARIO CON GASTOS RECURRENTES */}
+          {/* CALENDARIO */}
           <Card>
             <CardHeader>
               <CardTitle className="flex items-center justify-between">
@@ -524,6 +486,9 @@ const Index = () => {
                   </Button>
                   <Button size="sm" variant="outline" onClick={() => setCurrentMonth(add(currentMonth, { months: 1 }))}>
                     <ChevronRight className="h-4 w-4" />
+                  </Button>
+                  <Button size="sm" onClick={() => setShowEventDialog(true)}>
+                    <Plus className="h-4 w-4 mr-1" /> Add
                   </Button>
                 </div>
               </CardTitle>
@@ -546,9 +511,10 @@ const Index = () => {
                     <div
                       key={day.toISOString()}
                       className={`h-16 border rounded p-1 text-xs cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 transition ${isSameDay(day, new Date()) ? "bg-blue-50 dark:bg-blue-900" : ""}`}
+                      onClick={() => setSelectedDate(day)}
                     >
                       <div className="font-medium">{format(day, "d")}</div>
-                      {dayEvents.slice(0, 3).map((e, i) => (
+                      {dayEvents.slice(0, 2).map((e, i) => (
                         <div
                           key={i}
                           className={`text-[9px] truncate ${e.type === "income" ? "text-green-600" : e.type === "debt" ? "text-red-600" : "text-blue-600"}`}
@@ -556,8 +522,8 @@ const Index = () => {
                           {e.name}
                         </div>
                       ))}
-                      {dayEvents.length > 3 && (
-                        <div className="text-[9px] text-muted-foreground">+{dayEvents.length - 3}</div>
+                      {dayEvents.length > 2 && (
+                        <div className="text-[9px] text-muted-foreground">+{dayEvents.length - 2}</div>
                       )}
                     </div>
                   );
@@ -602,23 +568,136 @@ const Index = () => {
             </AlertDialogContent>
           </AlertDialog>
 
-          {/* TABS CON SECCIONES COMPLETAS */}
+          {/* DETALLE DEL DÍA */}
+          {selectedDate && (
+            <AlertDialog open={!!selectedDate} onOpenChange={() => setSelectedDate(null)}>
+              <AlertDialogContent>
+                <AlertDialogHeader>
+                  <AlertDialogTitle>{format(selectedDate, "PPP")}</AlertDialogTitle>
+                </AlertDialogHeader>
+                <AlertDialogDescription className="space-y-3">
+                  {getEventsForDay(selectedDate).length === 0 ? (
+                    <p className="text-center py-4">No events</p>
+                  ) : (
+                    getEventsForDay(selectedDate).map((e) => (
+                      <div key={e.id} className="flex justify-between items-center p-3 bg-muted rounded-lg">
+                        <div>
+                          <p className="font-medium">{e.name}</p>
+                          <p className="text-xs text-muted-foreground">{e.type}</p>
+                        </div>
+                        <div className="flex items-center gap-2">
+                          <span className={e.type === "income" ? "text-green-600 font-bold" : "text-red-600 font-bold"}>
+                            {formatCurrency(e.amount)}
+                          </span>
+                          <div className="flex gap-1">
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => {
+                                setEditingEvent(e);
+                                setNewEvent({
+                                  name: e.name,
+                                  amount: e.amount,
+                                  type: e.type,
+                                });
+                                setShowEventDialog(true);
+                              }}
+                            >
+                              <Edit2 className="h-4 w-4" />
+                            </Button>
+                            <Button size="sm" variant="ghost" onClick={() => setDeleteId(e.id)}>
+                              <Trash2 className="h-4 w-4" />
+                            </Button>
+                          </div>
+                        </div>
+                      </div>
+                    ))
+                  )}
+                </AlertDialogDescription>
+                <AlertDialogFooter>
+                  <AlertDialogCancel>Close</AlertDialogCancel>
+                </AlertDialogFooter>
+              </AlertDialogContent>
+            </AlertDialog>
+          )}
+
+          {/* AGREGAR/EDITAR EVENTO */}
+          <AlertDialog open={showEventDialog} onOpenChange={setShowEventDialog}>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>{editingEvent ? "Edit Event" : "Add Event"}</AlertDialogTitle>
+              </AlertDialogHeader>
+              <div className="space-y-4">
+                <div>
+                  <Label>Name</Label>
+                  <Input value={newEvent.name} onChange={(e) => setNewEvent({ ...newEvent, name: e.target.value })} />
+                </div>
+                <div>
+                  <Label>Amount</Label>
+                  <Input
+                    type="number"
+                    value={newEvent.amount || ""}
+                    onChange={(e) => setNewEvent({ ...newEvent, amount: parseFloat(e.target.value) || 0 })}
+                  />
+                </div>
+                <div>
+                  <Label>Type</Label>
+                  <Select
+                    value={newEvent.type}
+                    onValueChange={(v: Event["type"]) => setNewEvent({ ...newEvent, type: v })}
+                  >
+                    <SelectTrigger>
+                      <SelectValue />
+                    </SelectTrigger>
+                    <SelectContent>
+                      <SelectItem value="income">Income</SelectItem>
+                      <SelectItem value="fixed">Fixed Expense</SelectItem>
+                      <SelectItem value="variable">Variable Expense</SelectItem>
+                      <SelectItem value="debt">Debt Payment</SelectItem>
+                    </SelectContent>
+                  </Select>
+                </div>
+              </div>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction onClick={editingEvent ? updateEvent : addEvent}>
+                  {editingEvent ? "Save" : "Add"}
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+
+          {/* CONFIRMAR ELIMINAR */}
+          <AlertDialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Delete Event?</AlertDialogTitle>
+                <AlertDialogDescription>This cannot be undone.</AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction onClick={() => deleteEvent(deleteId!)}>Delete</AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+
+          {/* TABS */}
           <Tabs defaultValue="overview" className="no-print">
             <TabsList className="grid w-full grid-cols-4 mb-6">
-              <TabsTrigger value="overview">{t.overview}</TabsTrigger>
-              <TabsTrigger value="income">{t.income}</TabsTrigger>
-              <TabsTrigger value="expenses">{t.expenses}</TabsTrigger>
-              <TabsTrigger value="debts">{t.debts}</TabsTrigger>
+              <TabsTrigger value="overview">Overview</TabsTrigger>
+              <TabsTrigger value="income">Income</TabsTrigger>
+              <TabsTrigger value="expenses">Expenses</TabsTrigger>
+              <TabsTrigger value="debts">Debts</TabsTrigger>
             </TabsList>
 
             <TabsContent value="overview">
               <Card>
                 <CardHeader>
-                  <CardTitle>{t.overview}</CardTitle>
+                  <CardTitle>Family Budget</CardTitle>
                 </CardHeader>
                 <CardContent>
                   <div className="text-6xl font-bold text-center text-blue-600">
-                    {cashFlow > 0 ? t.healthy : t.review}
+                    {cashFlow > 0 ? "Healthy" : "Review"}
                   </div>
                   <Progress value={cashFlow > 0 ? 80 : 40} className="mt-4" />
                 </CardContent>
@@ -628,8 +707,8 @@ const Index = () => {
             <TabsContent value="income">
               <Tabs defaultValue="fixed" className="mt-6">
                 <TabsList>
-                  <TabsTrigger value="fixed">{t.fixedIncome}</TabsTrigger>
-                  <TabsTrigger value="variable">{t.variableIncome}</TabsTrigger>
+                  <TabsTrigger value="fixed">Fixed Income</TabsTrigger>
+                  <TabsTrigger value="variable">Variable Income</TabsTrigger>
                 </TabsList>
 
                 <TabsContent value="fixed">
@@ -640,23 +719,23 @@ const Index = () => {
                   <Card>
                     <CardHeader>
                       <CardTitle className="text-lg font-semibold flex items-center justify-between">
-                        {t.variableIncome}
+                        Variable Income
                         <Button
                           size="sm"
                           onClick={() => {
-                            const desc = prompt(t.description);
+                            const desc = prompt("Description (e.g. Bonus, Freelance)");
                             const amount = parseFloat(prompt("Amount (£)") || "0");
                             if (desc && amount > 0) addIncome(amount, desc);
                           }}
                         >
-                          <Plus className="h-4 w-4 mr-1" /> {t.add}
+                          <Plus className="h-4 w-4 mr-1" /> Add
                         </Button>
                       </CardTitle>
                       <CardDescription>Extra income like bonuses, gifts, side hustles</CardDescription>
                     </CardHeader>
                     <CardContent>
                       {variableIncome.length === 0 ? (
-                        <p className="text-center text-muted-foreground py-6">{t.noData}</p>
+                        <p className="text-center text-muted-foreground py-6">No variable income yet</p>
                       ) : (
                         <div className="space-y-2">
                           {variableIncome.map((inc) => (
@@ -686,14 +765,12 @@ const Index = () => {
             <TabsContent value="expenses">
               <Tabs defaultValue="fixed" className="mt-6">
                 <TabsList>
-                  <TabsTrigger value="fixed">{t.fixedExpenses}</TabsTrigger>
-                  <TabsTrigger value="variable">{t.variableExpenses}</TabsTrigger>
+                  <TabsTrigger value="fixed">Fixed</TabsTrigger>
+                  <TabsTrigger value="variable">Variable</TabsTrigger>
                 </TabsList>
-
                 <TabsContent value="fixed">
                   <FixedExpensesManager language={language} />
                 </TabsContent>
-
                 <TabsContent value="variable">
                   <VariableExpensesManager language={language} />
                 </TabsContent>
