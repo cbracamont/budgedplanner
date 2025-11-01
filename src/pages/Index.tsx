@@ -30,7 +30,7 @@ import {
   useSavingsGoals,
   useSavings,
 } from "@/hooks/useFinancialData";
-import { useFinancialProfiles } from "@/hooks/useFinancialData";
+import { useFinancialProfiles } from "@/hooks/useFinancialProfiles";
 import { Auth } from "@/components/Auth";
 import { IncomeManager } from "@/components/IncomeManager";
 import { DebtsManager } from "@/components/DebtsManager";
@@ -523,7 +523,7 @@ const Index = () => {
           </div>
 
           {/* RESUMEN */}
-          <div className="gap-6 grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4">
+          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             <Card className="border-green-200">
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm font-medium text-green-600">Total Income</CardTitle>
@@ -775,7 +775,7 @@ const Index = () => {
                 </Button>
                 {aiResponse && (
                   <Card>
-                    <CardContent className="pt-4 whitespace-pre-wrap text-sm">{aiResponse}</CardContent>
+                    <CardContent className="pt-4 space-y-4 whitespace-pre-wrap text-sm">{aiResponse}</CardContent>
                   </Card>
                 )}
               </div>
@@ -946,7 +946,7 @@ const Index = () => {
             <TabsList className="grid w-full grid-cols-4 mb-6">
               <TabsTrigger value="overview">Overview</TabsTrigger>
               <TabsTrigger value="income">Income</TabsTrigger>
-              <TabsTrigger value="expenses">Expenses</TabsTrigger>
+              <TabsTrigger value="expenses">Expense</TabsTrigger>
               <TabsTrigger value="debts">Debts</TabsTrigger>
             </TabsList>
 
@@ -1164,7 +1164,7 @@ const DebtPlanner = ({ language }: { language: Language }) => {
         </CardContent>
       </Card>
 
-      {/* FONDO DE EMERGENCIA */}
+      {/* FONDO DE EMERGENCY FUND */}
       <Card>
         <CardHeader>
           <CardTitle className="text-sm">{t.emergencyFund}</CardTitle>
