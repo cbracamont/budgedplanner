@@ -19,7 +19,9 @@ import {
   ChevronRight,
   Send,
   X,
+  LineChart,
 } from "lucide-react";
+import { MonthlyProjection } from "@/components/MonthlyProjection";
 import {
   useIncomeSources,
   useDebts,
@@ -467,6 +469,9 @@ const Index = () => {
               </CardContent>
             </Card>
           )}
+
+          {/* PROYECCIÓN MENSUAL */}
+          <MonthlyProjection language={language} />
 
           {/* CALENDARIO */}
           <Card>
