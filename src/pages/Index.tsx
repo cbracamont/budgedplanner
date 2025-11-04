@@ -418,10 +418,21 @@ const Index = () => {
   const formatCurrency = (amount: number) => `£${amount.toFixed(0)}`;
 
   useEffect(() => {
+    // Set up auth state listener FIRST
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (_event, session) => {
+        setUser(session?.user ?? null);
+        setAuthLoading(false);
+      }
+    );
+
+    // THEN check for existing session
     supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null);
       setAuthLoading(false);
     });
+
+    return () => subscription.unsubscribe();
   }, []);
 
   if (authLoading)
