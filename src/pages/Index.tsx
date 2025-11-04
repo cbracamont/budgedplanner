@@ -23,6 +23,7 @@ import {
   Snowflake,
   Moon,
   Sun,
+  PoundSterling,
 } from "lucide-react";
 import {
   useIncomeSources,
@@ -563,7 +564,7 @@ const Index = () => {
             >
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm font-medium text-red-600 flex items-center gap-2">
-                  <PoundSign className="h-4 w-4" />
+                  <PoundSterling className="h-4 w-4" />
                   Total Expenses
                 </CardTitle>
               </CardHeader>
