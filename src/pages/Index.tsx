@@ -38,6 +38,7 @@ import { IncomeManager } from "@/components/IncomeManager";
 import { DebtsManager } from "@/components/DebtsManager";
 import { FixedExpensesManager } from "@/components/FixedExpensesManager";
 import { VariableExpensesManager } from "@/components/VariableExpensesManager";
+import { SavingsManager } from "@/components/SavingsManager";
 import { LanguageToggle } from "@/components/LanguageToggle";
 import { ProfileSelector } from "@/components/ProfileSelector";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -544,47 +545,84 @@ const Index = () => {
             </div>
           </div>
 
-          {/* RESUMEN */}
+          {/* RESUMEN - Enhanced Interactive Cards */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <Card className="border-green-200">
+            <Card className="border-green-200 hover-scale transition-all duration-300 hover:shadow-lg animate-fade-in">
               <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-green-600">Total Income</CardTitle>
+                <CardTitle className="text-sm font-medium text-green-600 flex items-center gap-2">
+                  <TrendingUp className="h-4 w-4" />
+                  Total Income
+                </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-3xl font-bold text-green-600">{formatCurrency(totalIncome)}</div>
+                <div className="text-3xl font-bold text-green-600 animate-scale-in">
+                  {formatCurrency(totalIncome)}
+                </div>
+                <Progress value={100} className="mt-3 h-2 bg-green-100" />
+                <p className="text-xs text-muted-foreground mt-2">Monthly total</p>
               </CardContent>
             </Card>
 
-            <Card className="border-red-200">
+            <Card className="border-red-200 hover-scale transition-all duration-300 hover:shadow-lg animate-fade-in" style={{ animationDelay: '0.1s' }}>
               <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-red-600">Total Expenses</CardTitle>
+                <CardTitle className="text-sm font-medium text-red-600 flex items-center gap-2">
+                  <DollarSign className="h-4 w-4" />
+                  Total Expenses
+                </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-3xl font-bold text-red-600">{formatCurrency(totalExpenses)}</div>
+                <div className="text-3xl font-bold text-red-600 animate-scale-in">
+                  {formatCurrency(totalExpenses)}
+                </div>
+                <Progress 
+                  value={(totalExpenses / totalIncome) * 100} 
+                  className="mt-3 h-2 bg-red-100"
+                />
+                <p className="text-xs text-muted-foreground mt-2">
+                  {totalIncome > 0 ? `${((totalExpenses / totalIncome) * 100).toFixed(1)}% of income` : '0% of income'}
+                </p>
               </CardContent>
             </Card>
 
-            <Card className={`${cashFlow >= 0 ? "border-emerald-200" : "border-orange-200"}`}>
+            <Card className={`${cashFlow >= 0 ? "border-emerald-200" : "border-orange-200"} hover-scale transition-all duration-300 hover:shadow-lg animate-fade-in`} style={{ animationDelay: '0.2s' }}>
               <CardHeader className="pb-2">
-                <CardTitle className={`text-sm font-medium ${cashFlow >= 0 ? "text-emerald-600" : "text-orange-600"}`}>
+                <CardTitle className={`text-sm font-medium ${cashFlow >= 0 ? "text-emerald-600" : "text-orange-600"} flex items-center gap-2`}>
+                  {cashFlow >= 0 ? <TrendingUp className="h-4 w-4" /> : <Zap className="h-4 w-4" />}
                   Cash Flow
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className={`text-3xl font-bold ${cashFlow >= 0 ? "text-emerald-600" : "text-orange-600"}`}>
+                <div className={`text-3xl font-bold ${cashFlow >= 0 ? "text-emerald-600" : "text-orange-600"} animate-scale-in`}>
                   {formatCurrency(cashFlow)}
                 </div>
+                <Progress 
+                  value={cashFlow >= 0 ? 100 : 40} 
+                  className={`mt-3 h-2 ${cashFlow >= 0 ? 'bg-emerald-100' : 'bg-orange-100'}`}
+                />
+                <p className="text-xs text-muted-foreground mt-2">
+                  {cashFlow >= 0 ? 'Positive flow 💰' : 'Needs attention ⚠️'}
+                </p>
               </CardContent>
             </Card>
 
-            <Card className="border-purple-200">
+            <Card className="border-purple-200 hover-scale transition-all duration-300 hover:shadow-lg animate-fade-in" style={{ animationDelay: '0.3s' }}>
               <CardHeader className="pb-2">
-                <CardTitle className="text-sm font-medium text-purple-600 flex items-center gap-1">
-                  <PiggyBank className="h-4 w-4" /> Total Savings
+                <CardTitle className="text-sm font-medium text-purple-600 flex items-center gap-2">
+                  <PiggyBank className="h-4 w-4" /> 
+                  Total Savings
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div className="text-3xl font-bold text-purple-600">{formatCurrency(savingsTotal)}</div>
+                <div className="text-3xl font-bold text-purple-600 animate-scale-in">
+                  {formatCurrency(savingsTotal)}
+                </div>
+                <Progress 
+                  value={savingsTotal > 0 ? Math.min((savingsTotal / (totalIncome * 3)) * 100, 100) : 0} 
+                  className="mt-3 h-2 bg-purple-100"
+                />
+                <p className="text-xs text-muted-foreground mt-2">
+                  {savingsTotal > 0 ? 'Great progress! 🎯' : 'Start saving today'}
+                </p>
               </CardContent>
             </Card>
           </div>
@@ -918,23 +956,65 @@ const Index = () => {
 
           {/* TABS */}
           <Tabs defaultValue="overview" className="no-print">
-            <TabsList className="grid w-full grid-cols-4 mb-6">
+            <TabsList className="grid w-full grid-cols-5 mb-6">
               <TabsTrigger value="overview">Overview</TabsTrigger>
               <TabsTrigger value="income">Income</TabsTrigger>
               <TabsTrigger value="expenses">Expenses</TabsTrigger>
               <TabsTrigger value="debts">Debts</TabsTrigger>
+              <TabsTrigger value="savings">Savings</TabsTrigger>
             </TabsList>
 
-            <TabsContent value="overview">
-              <Card>
+            <TabsContent value="overview" className="space-y-6">
+              {/* Enhanced Budget Health Card with Interactive Visualization */}
+              <Card className="border-2 animate-fade-in">
                 <CardHeader>
-                  <CardTitle>Family Budget</CardTitle>
+                  <CardTitle className="flex items-center gap-2">
+                    <TrendingUp className="h-6 w-6 text-primary" />
+                    Budget Health Dashboard
+                  </CardTitle>
+                  <CardDescription>Your financial overview at a glance</CardDescription>
                 </CardHeader>
-                <CardContent>
-                  <div className="text-6xl font-bold text-center text-blue-600">
-                    {cashFlow > 0 ? "Healthy" : "Review"}
+                <CardContent className="space-y-6">
+                  {/* Main Status */}
+                  <div className="text-center py-8">
+                    <div className={`text-7xl font-bold ${cashFlow > 0 ? 'text-emerald-600' : 'text-orange-600'} animate-scale-in`}>
+                      {cashFlow > 0 ? "💰 Healthy" : "⚠️ Review"}
+                    </div>
+                    <Progress 
+                      value={cashFlow > 0 ? 85 : 45} 
+                      className="mt-6 h-3" 
+                    />
+                    <p className="mt-4 text-muted-foreground">
+                      {cashFlow > 0 
+                        ? `You're saving ${formatCurrency(cashFlow)} per month!` 
+                        : `You need to reduce expenses by ${formatCurrency(Math.abs(cashFlow))}`
+                      }
+                    </p>
                   </div>
-                  <Progress value={cashFlow > 0 ? 80 : 40} className="mt-4" />
+
+                  {/* Cash Flow Breakdown */}
+                  <div className="grid md:grid-cols-3 gap-4">
+                    <div className="p-4 bg-green-50 dark:bg-green-950/20 rounded-lg border border-green-200">
+                      <p className="text-sm text-green-700 dark:text-green-400 font-medium mb-2">Income</p>
+                      <p className="text-2xl font-bold text-green-600">{formatCurrency(totalIncome)}</p>
+                    </div>
+                    <div className="p-4 bg-red-50 dark:bg-red-950/20 rounded-lg border border-red-200">
+                      <p className="text-sm text-red-700 dark:text-red-400 font-medium mb-2">Expenses</p>
+                      <p className="text-2xl font-bold text-red-600">{formatCurrency(totalExpenses)}</p>
+                    </div>
+                    <div className={`p-4 rounded-lg border ${
+                      cashFlow >= 0 
+                        ? 'bg-emerald-50 dark:bg-emerald-950/20 border-emerald-200' 
+                        : 'bg-orange-50 dark:bg-orange-950/20 border-orange-200'
+                    }`}>
+                      <p className={`text-sm font-medium mb-2 ${
+                        cashFlow >= 0 ? 'text-emerald-700 dark:text-emerald-400' : 'text-orange-700 dark:text-orange-400'
+                      }`}>Net Cash Flow</p>
+                      <p className={`text-2xl font-bold ${
+                        cashFlow >= 0 ? 'text-emerald-600' : 'text-orange-600'
+                      }`}>{formatCurrency(cashFlow)}</p>
+                    </div>
+                  </div>
                 </CardContent>
               </Card>
             </TabsContent>
@@ -1008,6 +1088,67 @@ const Index = () => {
             <TabsContent value="debts">
               <DebtsManager language={language} />
               <DebtPlanner language={language} />
+            </TabsContent>
+
+            <TabsContent value="savings" className="space-y-6">
+              <div className="grid md:grid-cols-2 gap-6">
+                <SavingsManager language={language} availableToSave={cashFlow} />
+                
+                {/* Savings Progress Visualization */}
+                <Card className="animate-fade-in">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <PiggyBank className="h-5 w-5 text-purple-600" />
+                      Savings Progress
+                    </CardTitle>
+                    <CardDescription>Track your savings journey</CardDescription>
+                  </CardHeader>
+                  <CardContent className="space-y-6">
+                    {/* Visual Progress */}
+                    <div className="relative">
+                      <div className="text-center mb-4">
+                        <div className="text-5xl font-bold text-purple-600 mb-2">
+                          {formatCurrency(savingsTotal)}
+                        </div>
+                        <p className="text-sm text-muted-foreground">Total Saved</p>
+                      </div>
+                      
+                      {/* Savings Goals Progress */}
+                      {savingsGoalsData.length > 0 && (
+                        <div className="space-y-3 mt-6">
+                          <h4 className="font-semibold text-sm">Active Goals</h4>
+                          {savingsGoalsData.slice(0, 3).map((goal, index) => (
+                            <div key={goal.id || index} className="space-y-2">
+                              <div className="flex justify-between text-sm">
+                                <span>{goal.goal_name}</span>
+                                <span className="font-medium">
+                                  {formatCurrency(goal.current_amount)} / {formatCurrency(goal.target_amount)}
+                                </span>
+                              </div>
+                              <Progress 
+                                value={(goal.current_amount / goal.target_amount) * 100} 
+                                className="h-2"
+                              />
+                            </div>
+                          ))}
+                        </div>
+                      )}
+
+                      {/* Motivational Messages */}
+                      <div className="mt-6 p-4 bg-purple-50 dark:bg-purple-950/20 rounded-lg border border-purple-200">
+                        <p className="text-sm text-center">
+                          {cashFlow > 0 
+                            ? `💪 You can save ${formatCurrency(cashFlow)} this month!`
+                            : savingsTotal > 0
+                            ? `🎯 Great work! You've saved ${formatCurrency(savingsTotal)} so far.`
+                            : '🌱 Start your savings journey today!'
+                          }
+                        </p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
             </TabsContent>
           </Tabs>
 
