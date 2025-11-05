@@ -40,6 +40,7 @@ import { DebtsManager } from "@/components/DebtsManager";
 import { FixedExpensesManager } from "@/components/FixedExpensesManager";
 import { VariableExpensesManager } from "@/components/VariableExpensesManager";
 import { SavingsManager } from "@/components/SavingsManager";
+import { SavingsGoalsManager } from "@/components/SavingsGoalsManager";
 import { LanguageToggle } from "@/components/LanguageToggle";
 import { ProfileSelector } from "@/components/ProfileSelector";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -1109,6 +1110,12 @@ const Index = () => {
             </TabsContent>
 
             <TabsContent value="savings" className="space-y-6">
+              <SavingsGoalsManager 
+                language={language} 
+                availableForSavings={cashFlow} 
+                availableBudget={cashFlow}
+              />
+              
               <div className="grid md:grid-cols-2 gap-6">
                 <SavingsManager language={language} availableToSave={cashFlow} />
 
