@@ -560,211 +560,150 @@ const Index = () => {
             </Card>
           )}
 
-          {/* GASTOS PASTEL - MEJORADO */}
-          {pieData.length > 0 && (
-            <Card className="overflow-hidden">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-lg font-semibold flex items-center gap-2">
-                  <Zap className="h-5 w-5 text-blue-600" />
-                  Expense Breakdown
-                </CardTitle>
-                <CardDescription className="text-sm">Monthly spending distribution with trends</CardDescription>
-              </CardHeader>
-              <CardContent className="p-6">
-                <div className="grid md:grid-cols-2 gap-6">
-                  {/* Gráfico SVG mejorado */}
-                  <div className="relative flex items-center justify-center">
-                    <div className="relative w-56 h-56 md:w-64 md:h-64">
-                      <div className="absolute inset-0 rounded-full bg-gradient-to-br from-slate-100 to-slate-50 dark:from-slate-800 dark:to-slate-900 shadow-inner"></div>
-                      {/* Main Status - Multi-Stage Enhanced */}
-                      <div className="text-center py-8 rounded-2xl bg-gradient-to-br from-white to-slate-50 dark:from-slate-900 dark:to-slate-800 border border-slate-200 dark:border-slate-700 shadow-lg p-6">
-                        {(() => {
-                          // Sophisticated status calculation with more stages and data
-                          const expenseRatio = totalExpenses / totalIncome || 0;
-                          const savingsRate = savingsTotal / totalIncome || 0;
-                          const debtRatio = totalDebtPayment / totalIncome || 0;
-                          const overallScore = Math.round(
-                            (cashFlow > 0 ? 100 : 0) +
-                              savingsRate * 50 +
-                              (debtRatio < 0.1 ? 30 : debtRatio < 0.2 ? 15 : 0) -
-                              (expenseRatio > 0.8 ? 20 : 0),
-                          );
+{/* GASTOS PASTEL - VERSIÓN CORREGIDA Y SOPHISTICADA */}
+{pieData.length > 0 && (
+  <Card className="overflow-hidden">
+    <CardHeader className="pb-3">
+      <CardTitle className="text-lg font-semibold flex items-center gap-2">
+        <Zap className="h-5 w-5 text-blue-600" />
+        Expense Breakdown
+      </CardTitle>
+      <CardDescription className="text-sm">Monthly spending distribution with trends</CardDescription>
+    </CardHeader>
+    <CardContent className="p-6">
+      <div className="grid md:grid-cols-2 gap-6">
+        {/* Gráfico SVG corregido - Sin superposiciones */}
+        <div className="relative flex items-center justify-center">
+          <div className="relative w-56 h-56 md:w-64 md:h-64">
+            {/* Fondo circular */}
+            <div className="absolute inset-0 rounded-full bg-gradient-to-br from-slate-100 to-slate-50 dark:from-slate-800 dark:to-slate-900 shadow-inner"></div>
 
-                          const status = (() => {
-                            if (overallScore >= 90)
-                              return {
-                                emoji: "🚀",
-                                label: "Excellent",
-                                color: "text-emerald-600",
-                                progress: 95,
-                                icon: <TrendingUp className="h-6 w-6 inline" />,
-                                message: `Outstanding! Cash flow +${formatCurrency(cashFlow)}/month, savings rate ${Math.round(savingsRate * 100)}%, debt  ${Math.round(debtRatio * 100)}%. You're crushing it! 💪`,
-                              };
-                            if (overallScore >= 75)
-                              return {
-                                emoji: "💪",
-                                label: "Strong",
-                                color: "text-green-600",
-                                progress: 80,
-                                icon: <Zap className="h-6 w-6 inline" />,
-                                message: `Great work! Cash flow +${formatCurrency(cashFlow)}/month, savings ${Math.round(savingsRate * 100)}%, expenses ${Math.round(expenseRatio * 100)}% of income. Keep the momentum!`,
-                              };
-                            if (overallScore >= 60)
-                              return {
-                                emoji: "✅",
-                                label: "Healthy",
-                                color: "text-blue-600",
-                                progress: 65,
-                                icon: <DollarSign className="h-6 w-6 inline" />,
-                                message: `Solid! Cash flow +${formatCurrency(cashFlow)}/month, savings ${Math.round(savingsRate * 100)}%. Debt at ${Math.round(debtRatio * 100)}% — room for optimization. 🎯`,
-                              };
-                            if (overallScore >= 40)
-                              return {
-                                emoji: "⚠️",
-                                label: "Review",
-                                color: "text-orange-600",
-                                progress: 40,
-                                icon: <Snowflake className="h-6 w-6 inline" />,
-                                message: `Watch closely: Cash flow ${formatCurrency(cashFlow)}/month, expenses ${Math.round(expenseRatio * 100)}% of income. Debt ${Math.round(debtRatio * 100)}% — small adjustments needed. 🔧`,
-                              };
-                            return {
-                              emoji: "🔴",
-                              label: "Critical",
-                              color: "text-red-600",
-                              progress: 20,
-                              icon: <AlertCircle className="h-6 w-6 inline" />,
-                              message: `Urgent! Cash flow ${formatCurrency(cashFlow)}/month, expenses ${Math.round(expenseRatio * 100)}% of income, debt ${Math.round(debtRatio * 100)}%. Cut expenses immediately to avoid debt trap. 🚨`,
-                            };
-                          })();
+            {/* SVG del donut chart - CORREGIDO */}
+            <svg viewBox="0 0 32 32" className="w-full h-full">
+              <defs>
+                <filter id="shadow">
+                  <feDropShadow dx="0" dy="2" stdDeviation="3" floodOpacity="0.15"/>
+                </filter>
+                <linearGradient id="textGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                  <stop offset="0%" stopColor="#3b82f6" />
+                  <stop offset="100%" stopColor="#1d4ed8" />
+                </linearGradient>
+              </defs>
 
-                          return (
-                            <div className="space-y-6">
-                              {/* Header with icon and emoji */}
-                              <div className="flex items-center justify-center gap-4">
-                                <div
-                                  className={`p-3 rounded-full bg-white/20 backdrop-blur-sm shadow-lg ${status.color}`}
-                                >
-                                  {status.icon}
-                                </div>
-                                <div className={`text-6xl font-black ${status.color}`}>{status.emoji}</div>
-                                <div className="text-2xl font-bold ${status.color}">{status.label}</div>
-                              </div>
+              {(() => {
+                const total = pieData.reduce((s, d) => s + d.value, 0);
+                let cum = 0;
+                return pieData.map((d, i) => {
+                  const percent = (d.value / total) * 100;
+                  const start = (cum / total) * 360;
+                  cum += d.value;
+                  const end = (cum / total) * 360;
+                  const large = end - start <= 180 ? 0 : 1;
 
-                              {/* Progress bar with animated fill */}
-                              <div className="flex items-center gap-4">
-                                <div className="w-full bg-slate-200 rounded-full h-3 dark:bg-slate-700">
-                                  <div
-                                    className={`h-3 rounded-full transition-all duration-1000 ease-out ${status.color} bg-gradient-to-r from-${status.color.replace("text-", "")} to-${status.color.replace("text-", "")} bg-opacity-20`}
-                                    style={{ width: `${status.progress}%` }}
-                                  />
-                                </div>
-                                <span className="text-sm font-medium text-slate-600 dark:text-slate-400">
-                                  {status.progress}%
-                                </span>
-                              </div>
+                  // CORRECCIÓN: Cálculo correcto del arco
+                  const startRad = (start * Math.PI) / 180;
+                  const endRad = (end * Math.PI) / 180;
+                  const x1 = 16 + 16 * Math.cos(startRad);
+                  const y1 = 16 + 16 * Math.sin(startRad);
+                  const x2 = 16 + 16 * Math.cos(endRad);
+                  const y2 = 16 + 16 * Math.sin(endRad);
+                  const largeArcFlag = end - start > 180 ? 1 : 0;
+                  const sweepFlag = 1;
 
-                              {/* Sophisticated data cards */}
-                              <div className="grid grid-cols-2 gap-4">
-                                <Card className="border-l-4 border-emerald-500">
-                                  <CardContent className="p-4">
-                                    <p className="text-xs text-slate-500 dark:text-slate-400">Cash Flow</p>
-                                    <p className="text-lg font-bold text-emerald-600">{formatCurrency(cashFlow)}</p>
-                                  </CardContent>
-                                </Card>
-                                <Card className="border-l-4 border-blue-500">
-                                  <CardContent className="p-4">
-                                    <p className="text-xs text-slate-500 dark:text-slate-400">Savings Rate</p>
-                                    <p className="text-lg font-bold text-blue-600">
-                                      {Math.round((savingsTotal / totalIncome || 0) * 100)}%
-                                    </p>
-                                  </CardContent>
-                                </Card>
-                                <Card className="border-l-4 border-orange-500">
-                                  <CardContent className="p-4">
-                                    <p className="text-xs text-slate-500 dark:text-slate-400">Debt Ratio</p>
-                                    <p className="text-lg font-bold text-orange-600">
-                                      {Math.round((totalDebtPayment / totalIncome || 0) * 100)}%
-                                    </p>
-                                  </CardContent>
-                                </Card>
-                                <Card className="border-l-4 border-purple-500">
-                                  <CardContent className="p-4">
-                                    <p className="text-xs text-slate-500 dark:text-slate-400">Overview Score</p>
-                                    <p className="text-lg font-bold text-purple-600">{overallScore}%</p>
-                                  </CardContent>
-                                </Card>
-                              </div>
+                  const pathData = `M16,16 L${x1},${y1} A16,16 0 ${largeArcFlag},${sweepFlag} ${x2},${y2} Z`;
 
-                              {/* Actionable message with buttons */}
-                              <div className="space-y-4">
-                                <p className="text-muted-foreground font-medium">{status.message}</p>
-                                <div className="flex flex-col sm:flex-row gap-2 justify-center">
-                                  <Button variant="outline" size="sm" className="w-full sm:w-auto">
-                                    <Zap className="mr-2 h-4 w-4" /> Quick Tip
-                                  </Button>
-                                  <Button variant="ghost" size="sm" className="w-full sm:w-auto">
-                                    <Edit2 className="mr-2 h-4 w-4" /> Adjust Budget
-                                  </Button>
-                                </div>
-                              </div>
-                            </div>
-                          );
-                        })()}
-                      </div>
-                      <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                        <div className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-slate-800 to-slate-600 bg-clip-text text-transparent dark:from-slate-100 dark:to-slate-300">
-                          {formatCurrency(totalExpenses)}
-                        </div>
-                        <div className="text-xs text-slate-500 dark:text-slate-400 mt-1">Monthly Total</div>
-                      </div>
-                    </div>
-                  </div>
+                  return (
+                    <g key={i}>
+                      <path
+                        d={pathData}
+                        fill={d.color}
+                        stroke="white"
+                        strokeWidth="1"
+                        className="transition-all duration-500 ease-in-out cursor-pointer hover:scale-105"
+                        filter="url(#shadow)"
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.strokeWidth = '2';
+                          e.currentTarget.style.transform = 'scale(1.05)';
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.strokeWidth = '1';
+                          e.currentTarget.style.transform = 'scale(1)';
+                        }}
+                      />
+                      <animate
+                        attributeName="opacity"
+                        from="0"
+                        to="1"
+                        dur="0.8s"
+                        begin={`${i * 0.2}s`}
+                        fill="freeze"
+                      />
+                      {/* Etiqueta de porcentaje */}
+                      <text
+                        x={(x1 + x2) / 2}
+                        y={(y1 + y2) / 2}
+                        textAnchor="middle"
+                        dominantBaseline="middle"
+                        className="text-[8px] font-bold fill-white drop-shadow-sm"
+                      >
+                        {percent.toFixed(0)}%
+                      </text>
+                    </g>
+                  );
+                });
+              })()}
 
-                  <div className="flex flex-col justify-center space-y-4">
-                    {pieData.map((d, i) => {
-                      const percent = ((d.value / totalExpenses) * 100).toFixed(1);
-                      const trend =
-                        d.value > totalExpenses * 0.2 ? "High" : d.value > totalExpenses * 0.1 ? "Medium" : "Low";
-                      return (
-                        <div
-                          key={i}
-                          className="flex items-center justify-between p-3 rounded-lg bg-slate-50 dark:bg-slate-800/50 hover:bg-slate-100 dark:hover:bg-slate-700/50 transition-all"
-                        >
-                          <div className="flex items-center gap-3">
-                            <div className="w-4 h-4 rounded-full shadow-md" style={{ backgroundColor: d.color }} />
-                            <div>
-                              <p className="font-medium text-sm">{d.name}</p>
-                              <p className="text-xs text-slate-500 dark:text-slate-400">{percent}%</p>
-                              <p className="text-xs text-slate-400 dark:text-slate-500">{trend} impact</p>
-                            </div>
-                          </div>
-                          <div className="text-right">
-                            <p className="font-bold text-sm">{formatCurrency(d.value)}</p>
-                            <p className="text-xs text-slate-500 dark:text-slate-400">Monthly</p>
-                          </div>
-                        </div>
-                      );
-                    })}
+              {/* Círculo central */}
+              <circle cx="16" cy="16" r="10" fill="white" className="dark:fill-slate-900 shadow-inner" />
+            </svg>
+
+            <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+              <div className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-slate-800 to-slate-600 bg-clip-text text-transparent dark:from-slate-100 dark:to-slate-300">
+                {formatCurrency(totalExpenses)}
+              </div>
+              <div className="text-xs text-slate-500 dark:text-slate-400 mt-1">Monthly Total</div>
+            </div>
+          </div>
+        </div>
+
+        <div className="flex flex-col justify-center space-y-4">
+          {pieData.map((d, i) => {
+            const percent = ((d.value / totalExpenses) * 100).toFixed(1);
+            const trend = d.value > totalExpenses * 0.2 ? 'High' : d.value > totalExpenses * 0.1 ? 'Medium' : 'Low';
+            return (
+              <div key={i} className="flex items-center justify-between p-3 rounded-lg bg-slate-50 dark:bg-slate-800/50 hover:bg-slate-100 dark:hover:bg-slate-700/50 transition-all">
+                <div className="flex items-center gap-3">
+                  <div className="w-4 h-4 rounded-full shadow-md" style={{ backgroundColor: d.color }} />
+                  <div>
+                    <p className="font-medium text-sm">{d.name}</p>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">{percent}%</p>
+                    <p className="text-xs text-slate-400 dark:text-slate-500">{trend} impact</p>
                   </div>
                 </div>
-                <div className="border-t px-6 py-4 bg-gradient-to-r from-slate-50 to-slate-100 dark:from-slate-800 dark:to-slate-900 rounded-b-lg">
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm font-medium text-slate-600 dark:text-slate-300">Monthly Total</span>
-                    <div className="flex items-center gap-2">
-                      <span className="text-xl font-bold text-slate-800 dark:text-slate-100">
-                        {formatCurrency(totalExpenses)}
-                      </span>
-                      <div className="flex items-center gap-1 text-xs text-slate-500 dark:text-slate-400">
-                        <TrendingUp className="h-3 w-3 text-emerald-500" />
-                        <span>{((totalExpenses / totalIncome) * 100).toFixed(0)}% of income</span>
-                      </div>
-                    </div>
-                  </div>
+                <div className="text-right">
+                  <p className="font-bold text-sm">{formatCurrency(d.value)}</p>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">Monthly</p>
                 </div>
-              </CardContent>
-            </Card>
-          )}
+              </div>
+            );
+          })}
+        </div>
+      </div>
 
+      <div className="border-t px-6 py-4 bg-gradient-to-r from-slate-50 to-slate-100 dark:from-slate-800 dark:to-slate-900 rounded-b-lg">
+        <div className="flex justify-between items-center">
+          <span className="text-sm font-medium text-slate-600 dark:text-slate-300">Monthly Total</span>
+          <div className="flex items-center gap-2">
+            <span className="text-xl font-bold text-slate-800 dark:text-slate-100">{formatCurrency(totalExpenses)}</span>
+            <div className="flex items-center gap-1 text-xs text-slate-500 dark:text-slate-400">
+              <TrendingUp className="h-3 w-3 text-emerald-500" />
+              <span>{((totalExpenses / totalIncome) * 100).toFixed(0)}% of income</span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </Card>
+)}
           {/* CALENDARIO */}
           <Card>
             <CardHeader>
