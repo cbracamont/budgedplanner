@@ -3,7 +3,8 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
-import { PiggyBank, TrendingUp } from "lucide-react";
+import { Progress } from "@/components/ui/progress";
+import { PiggyBank, TrendingUp, Edit2 } from "lucide-react";
 import { getTranslation, Language } from "@/lib/i18n";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -23,6 +24,8 @@ export const SavingsManager = ({ language, availableToSave }: SavingsManagerProp
   const [totalAccumulated, setTotalAccumulated] = useState(0);
   const [savingsId, setSavingsId] = useState<string | null>(null);
   const [customSavingsAmount, setCustomSavingsAmount] = useState("");
+  const [isEditingAccumulated, setIsEditingAccumulated] = useState(false);
+  const [editAccumulatedValue, setEditAccumulatedValue] = useState("");
 
   useEffect(() => {
     loadSavings();
@@ -96,10 +99,33 @@ export const SavingsManager = ({ language, availableToSave }: SavingsManagerProp
       return;
     }
 
-  setTotalAccumulated(newTotal);
-  toast({ title: "Success", description: "Monthly savings added to total" });
-  queryClient.invalidateQueries({ queryKey: ["savings"] });
+    setTotalAccumulated(newTotal);
+    toast({ title: "Success", description: "Monthly savings added to total" });
+    queryClient.invalidateQueries({ queryKey: ["savings"] });
   };
+
+  const updateAccumulated = async () => {
+    if (!savingsId) return;
+
+    const newValue = parseFloat(editAccumulatedValue) || 0;
+
+    const { error } = await supabase
+      .from('savings')
+      .update({ total_accumulated: newValue })
+      .eq('id', savingsId);
+
+    if (error) {
+      toast({ title: "Error", description: "Failed to update accumulated savings", variant: "destructive" });
+      return;
+    }
+
+    setTotalAccumulated(newValue);
+    setIsEditingAccumulated(false);
+    toast({ title: "Success", description: "Accumulated savings updated successfully" });
+    queryClient.invalidateQueries({ queryKey: ["savings"] });
+  };
+
+  const savingsProgress = monthlyGoal ? (parseFloat(customSavingsAmount || "0") / parseFloat(monthlyGoal)) * 100 : 0;
 
   return (
     <Card className="shadow-medium border-muted">
@@ -174,13 +200,74 @@ export const SavingsManager = ({ language, availableToSave }: SavingsManagerProp
           </div>
         </div>
 
+        {/* Savings Progress */}
+        {parseFloat(monthlyGoal) > 0 && (
+          <div className="space-y-3">
+            <div className="flex items-center justify-between">
+              <Label className="text-base font-semibold">
+                {language === 'en' ? 'Savings Progress This Month' : 'Progreso de Ahorro Este Mes'}
+              </Label>
+              <span className="text-sm text-muted-foreground">
+                {savingsProgress.toFixed(0)}%
+              </span>
+            </div>
+            <Progress value={savingsProgress} className="h-3" />
+            <div className="flex justify-between text-sm text-muted-foreground">
+              <span>£{parseFloat(customSavingsAmount || "0").toFixed(2)}</span>
+              <span>£{parseFloat(monthlyGoal).toFixed(2)}</span>
+            </div>
+          </div>
+        )}
+
         {/* Total Accumulated */}
         <div className="p-4 bg-gradient-income text-income-foreground rounded-lg">
           <div className="space-y-2">
-            <p className="text-sm opacity-90">
-              {language === 'en' ? 'Total Accumulated' : 'Total Acumulado'}
-            </p>
-            <p className="text-3xl font-bold">£{totalAccumulated.toFixed(2)}</p>
+            <div className="flex items-center justify-between">
+              <p className="text-sm opacity-90">
+                {language === 'en' ? 'Total Accumulated' : 'Total Acumulado'}
+              </p>
+              {!isEditingAccumulated && (
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => {
+                    setIsEditingAccumulated(true);
+                    setEditAccumulatedValue(totalAccumulated.toString());
+                  }}
+                  className="text-income-foreground hover:bg-income-foreground/20"
+                >
+                  <Edit2 className="h-4 w-4" />
+                </Button>
+              )}
+            </div>
+            {isEditingAccumulated ? (
+              <div className="flex gap-2">
+                <Input
+                  type="number"
+                  step="0.01"
+                  value={editAccumulatedValue}
+                  onChange={(e) => setEditAccumulatedValue(e.target.value)}
+                  className="text-lg font-medium bg-income-foreground/20 text-income-foreground border-income-foreground/30"
+                />
+                <Button
+                  onClick={updateAccumulated}
+                  variant="secondary"
+                  size="sm"
+                >
+                  {language === 'en' ? 'Save' : 'Guardar'}
+                </Button>
+                <Button
+                  onClick={() => setIsEditingAccumulated(false)}
+                  variant="ghost"
+                  size="sm"
+                  className="text-income-foreground hover:bg-income-foreground/20"
+                >
+                  {language === 'en' ? 'Cancel' : 'Cancelar'}
+                </Button>
+              </div>
+            ) : (
+              <p className="text-3xl font-bold">£{totalAccumulated.toFixed(2)}</p>
+            )}
           </div>
         </div>
 
