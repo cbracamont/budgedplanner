@@ -1,7 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo, useCallback } from "react";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQueryClient, useQuery } from "@tanstack/react-query";
 import { format, addMonths, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, add, sub } from "date-fns";
 import { formatCurrency } from "@/lib/i18n";
 import {
@@ -304,6 +304,25 @@ const Index = () => {
   const { data: savingsGoalsData = [] } = useSavingsGoals();
   const { data: savings } = useSavings();
   
+  // Fetch variable income separately
+  const { data: variableIncomeData = [] } = useQuery({
+    queryKey: ['variable-income'],
+    queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return [];
+      
+      const { data, error } = await supabase
+        .from('income_sources')
+        .select('*')
+        .eq('user_id', user.id)
+        .eq('income_type', 'variable')
+        .order('created_at', { ascending: false });
+      
+      if (error) throw error;
+      return data || [];
+    }
+  });
+  
   // Mutation hooks for adding financial data
   const addIncomeMutation = useAddIncome();
   const addDebtMutation = useAddDebt();
@@ -331,6 +350,7 @@ const Index = () => {
     blankDays,
   } = useMemo(() => {
     const totalIncome = incomeData.reduce((s, i) => s + i.amount, 0);
+    const totalVariableIncome = variableIncomeData.reduce((s, i) => s + i.amount, 0);
     const totalFixed = fixedExpensesData.reduce((s, e) => s + e.amount, 0);
     const totalVariable = variableExpensesData.reduce((s, e) => s + e.amount, 0);
     const totalDebtPayment = debtData.reduce((s, d) => s + d.minimum_payment, 0);
@@ -341,8 +361,8 @@ const Index = () => {
       .filter(g => g.is_active && g.monthly_contribution)
       .reduce((s, g) => s + (g.monthly_contribution || 0), 0);
     
-    // Deduct savings commitments from cashflow
-    const grossCashFlow = totalIncome - totalExpenses;
+    // Deduct savings commitments from cashflow, include variable income
+    const grossCashFlow = totalIncome + totalVariableIncome - totalExpenses;
     const cashFlow = grossCashFlow - totalSavingsCommitments;
     
     const savingsTotal =
@@ -389,9 +409,11 @@ const Index = () => {
         const currentDate = new Date(year, month, 1);
         if (currentDate > new Date(endYear, 11, 31)) break;
 
-        // INGRESOS FIJOS - Día 1
+        // INGRESOS FIJOS - payment_day
         incomeData.forEach((inc) => {
-          const date = new Date(year, month, 1);
+          const day = inc.payment_day || 1;
+          const lastDayOfMonth = new Date(year, month + 1, 0).getDate();
+          const date = new Date(year, month, Math.min(day, lastDayOfMonth));
           allEvents.push({
             id: `inc-${inc.id}-${year}-${month}`,
             date: format(date, "yyyy-MM-dd"),
@@ -400,6 +422,44 @@ const Index = () => {
             amount: inc.amount,
             recurring: true,
           });
+        });
+        
+        // VARIABLE INCOME - Based on frequency and payment_day
+        variableIncomeData.forEach((inc) => {
+          const shouldInclude = (() => {
+            switch (inc.frequency) {
+              case 'weekly':
+                // Show every week (approximately 4 times per month)
+                return true;
+              case 'monthly':
+                return true;
+              case 'quarterly':
+                // Every 3 months
+                return month % 3 === 0;
+              case 'semi-annually':
+                // Every 6 months
+                return month % 6 === 0;
+              case 'annually':
+                // Once per year (January)
+                return month === 0;
+              default:
+                return true;
+            }
+          })();
+          
+          if (shouldInclude) {
+            const day = inc.payment_day || 1;
+            const lastDayOfMonth = new Date(year, month + 1, 0).getDate();
+            const date = new Date(year, month, Math.min(day, lastDayOfMonth));
+            allEvents.push({
+              id: `var-inc-${inc.id}-${year}-${month}`,
+              date: format(date, "yyyy-MM-dd"),
+              type: "income",
+              name: `${inc.name} (${inc.frequency})`,
+              amount: inc.amount,
+              recurring: true,
+            });
+          }
         });
 
         // GASTOS FIJOS - Día de pago
