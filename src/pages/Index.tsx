@@ -987,50 +987,7 @@ const Index = () => {
             <TabsContent value="savings" className="space-y-6">
               <SavingsGoalsManager language={language} availableForSavings={cashFlow} availableBudget={cashFlow} />
               
-              <div className="grid md:grid-cols-2 gap-6">
-                <SavingsManager language={language} availableToSave={cashFlow} />
-
-                {/* Savings Progress Visualization */}
-                <Card className="animate-fade-in">
-                  <CardHeader>
-                    <CardTitle className="flex items-center gap-2">
-                      <PiggyBank className="h-5 w-5 text-purple-600" />
-                      Savings Progress
-                    </CardTitle>
-                    <CardDescription>Track your savings journey</CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-6">
-                    {/* Visual Progress */}
-                    <div className="relative">
-                      <div className="text-center mb-4">
-                        <div className="text-5xl font-bold text-purple-600 mb-2">{formatCurrency(savingsTotal)}</div>
-                        <p className="text-sm text-muted-foreground">Total Saved</p>
-                      </div>
-
-                      {/* Savings Goals Progress */}
-                      {savingsGoalsData.length > 0 && <div className="space-y-3 mt-6">
-                          <h4 className="font-semibold text-sm">Active Goals</h4>
-                          {savingsGoalsData.slice(0, 3).map((goal, index) => <div key={goal.id || index} className="space-y-2">
-                              <div className="flex justify-between text-sm">
-                                <span>{goal.goal_name}</span>
-                                <span className="font-medium">
-                                  {formatCurrency(goal.current_amount)} / {formatCurrency(goal.target_amount)}
-                                </span>
-                              </div>
-                              <Progress value={goal.current_amount / goal.target_amount * 100} className="h-2" />
-                            </div>)}
-                        </div>}
-
-                      {/* Motivational Messages */}
-                      <div className="mt-6 p-4 bg-purple-50 dark:bg-purple-950/20 rounded-lg border border-purple-200">
-                        <p className="text-sm text-center">
-                          {cashFlow > 0 ? `💪 You can save ${formatCurrency(cashFlow)} this month!` : savingsTotal > 0 ? `🎯 Great work! You've saved ${formatCurrency(savingsTotal)} so far.` : "🌱 Start your savings journey today!"}
-                        </p>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
+              
             </TabsContent>
           </Tabs>
 
