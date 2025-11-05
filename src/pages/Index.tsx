@@ -312,13 +312,26 @@ const Index = () => {
     const totalVariable = variableExpensesData.reduce((s, e) => s + e.amount, 0);
     const totalDebtPayment = debtData.reduce((s, d) => s + d.minimum_payment, 0);
     const totalExpenses = totalFixed + totalVariable + totalDebtPayment;
-    const cashFlow = totalIncome - totalExpenses;
+    
+    // Calculate total active monthly contributions from savings goals
+    const totalSavingsCommitments = savingsGoalsData
+      .filter(g => g.is_active && g.monthly_contribution)
+      .reduce((s, g) => s + (g.monthly_contribution || 0), 0);
+    
+    // Deduct savings commitments from cashflow
+    const grossCashFlow = totalIncome - totalExpenses;
+    const cashFlow = grossCashFlow - totalSavingsCommitments;
+    
     const savingsTotal =
       (savings?.emergency_fund || 0) + savingsGoalsData.reduce((s, g) => s + (g.current_amount || 0), 0);
     let remaining = debtData.reduce((s, d) => s + d.balance, 0);
     let months = 0;
-    const extra = Math.max(0, (cashFlow - monthlySavings) * 0.3);
+    
+    // Calculate extra payment for debt, accounting for savings commitments
+    const availableForDebt = Math.max(0, grossCashFlow - monthlySavings - totalSavingsCommitments);
+    const extra = Math.max(0, availableForDebt * 0.3);
     const monthlyPay = totalDebtPayment + extra;
+    
     while (remaining > 0 && months < 120) {
       const interest = debtData.reduce((s, d) => s + d.balance * (d.apr / 100 / 12), 0);
       remaining = Math.max(0, remaining + interest - monthlyPay);
@@ -1579,7 +1592,11 @@ const Index = () => {
 
                 {/* Savings Goals Manager */}
                 <div className="mb-6">
-                  <SavingsGoalsManager language={language} availableForSavings={cashFlow} availableBudget={cashFlow} />
+                  <SavingsGoalsManager 
+                    language={language} 
+                    availableForSavings={Math.max(0, totalIncome - totalExpenses - savingsGoalsData.filter(g => g.is_active && g.monthly_contribution).reduce((s, g) => s + (g.monthly_contribution || 0), 0))} 
+                    availableBudget={Math.max(0, totalIncome - totalExpenses - savingsGoalsData.filter(g => g.is_active && g.monthly_contribution).reduce((s, g) => s + (g.monthly_contribution || 0), 0))} 
+                  />
                 </div>
 
                 {/* Savings Goals Pots */}
