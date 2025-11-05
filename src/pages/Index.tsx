@@ -4,8 +4,39 @@ import { useState, useEffect, useMemo, useCallback } from "react";
 import { useQueryClient } from "@tanstack/react-query";
 import { format, addMonths, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, add, sub } from "date-fns";
 import { formatCurrency } from "@/lib/i18n";
-import { TrendingUp, Download, LogOut, Bot, Calendar, DollarSign, PiggyBank, Home, Edit2, Trash2, Plus, ChevronLeft, ChevronRight, Send, X, Zap, Snowflake, Moon, Sun, PoundSterling, Shield, AlertCircle, Wallet } from "lucide-react";
-import { useIncomeSources, useDebts, useFixedExpenses, useVariableExpenses, useSavingsGoals, useSavings } from "@/hooks/useFinancialData";
+import {
+  TrendingUp,
+  Download,
+  LogOut,
+  Bot,
+  Calendar,
+  DollarSign,
+  PiggyBank,
+  Home,
+  Edit2,
+  Trash2,
+  Plus,
+  ChevronLeft,
+  ChevronRight,
+  Send,
+  X,
+  Zap,
+  Snowflake,
+  Moon,
+  Sun,
+  PoundSterling,
+  Shield,
+  AlertCircle,
+  Wallet,
+} from "lucide-react";
+import {
+  useIncomeSources,
+  useDebts,
+  useFixedExpenses,
+  useVariableExpenses,
+  useSavingsGoals,
+  useSavings,
+} from "@/hooks/useFinancialData";
 import { toast } from "@/hooks/use-toast";
 import { useFinancialProfiles } from "@/hooks/useFinancialProfiles";
 import { Auth } from "@/components/Auth";
@@ -26,7 +57,16 @@ import { supabase } from "@/integrations/supabase/client";
 import { useTheme } from "@/hooks/useTheme";
 import { useTheme as useNextTheme } from "next-themes";
 import { Skeleton } from "@/components/ui/skeleton";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+} from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -77,7 +117,7 @@ const translations = {
     cashFlowAfterSavings: "Cash Flow After Savings",
     debtPayment: "Available for Debt Payment",
     monthsToEmergency: "Months to Emergency Fund Goal",
-    monthlyDebtAllocation: "Monthly Debt Allocation"
+    monthlyDebtAllocation: "Monthly Debt Allocation",
   },
   es: {
     overview: "Resumen",
@@ -113,7 +153,7 @@ const translations = {
     cashFlowAfterSavings: "Flujo de Caja Después de Ahorros",
     debtPayment: "Disponible para Pago de Deuda",
     monthsToEmergency: "Meses para Meta de Fondo de Emergencia",
-    monthlyDebtAllocation: "Asignación Mensual de Deuda"
+    monthlyDebtAllocation: "Asignación Mensual de Deuda",
   },
   pl: {
     overview: "Przegląd",
@@ -149,8 +189,8 @@ const translations = {
     cashFlowAfterSavings: "Przepływ Gotówki Po Oszczędnościach",
     debtPayment: "Dostępne na Płatność Długu",
     monthsToEmergency: "Miesiące do Celu Funduszu Awaryjnego",
-    monthlyDebtAllocation: "Miesięczna Alokacja Długu"
-  }
+    monthlyDebtAllocation: "Miesięczna Alokacja Długu",
+  },
 };
 const useVariableIncome = () => {
   const [data, setData] = useState<any[]>([]);
@@ -165,17 +205,17 @@ const useVariableIncome = () => {
       id: Date.now().toString(),
       amount,
       description: description || "Extra income",
-      date: new Date().toISOString()
+      date: new Date().toISOString(),
     };
-    setData(prev => {
+    setData((prev) => {
       const updated = [newEntry, ...prev];
       localStorage.setItem("variable_income", JSON.stringify(updated));
       return updated;
     });
   }, []);
   const deleteIncome = useCallback((id: string) => {
-    setData(prev => {
-      const updated = prev.filter(i => i.id !== id);
+    setData((prev) => {
+      const updated = prev.filter((i) => i.id !== id);
       localStorage.setItem("variable_income", JSON.stringify(updated));
       return updated;
     });
@@ -184,16 +224,13 @@ const useVariableIncome = () => {
     data,
     loading,
     addIncome,
-    deleteIncome
+    deleteIncome,
   };
 };
 const Index = () => {
   useTheme();
   const queryClient = useQueryClient();
-  const {
-    theme,
-    setTheme
-  } = useNextTheme();
+  const { theme, setTheme } = useNextTheme();
   const [language, setLanguage] = useState<Language>("en");
   const [user, setUser] = useState<any>(null);
   const [authLoading, setAuthLoading] = useState(true);
@@ -209,7 +246,7 @@ const Index = () => {
   const [showIncomeModal, setShowIncomeModal] = useState(false);
   const [newIncome, setNewIncome] = useState({
     description: "",
-    amount: 0
+    amount: 0,
   });
   const [monthlySavings, setMonthlySavings] = useState(0);
   const [debtMethod, setDebtMethod] = useState<DebtMethod>("avalanche");
@@ -231,32 +268,22 @@ const Index = () => {
     name: "",
     amount: 0,
     type: "income",
-    recurring: false
+    recurring: false,
   });
-  const {
-    data: profiles = []
-  } = useFinancialProfiles();
-  const activeProfile = useMemo(() => profiles.find(p => p.is_active) || {
-    name: "Family"
-  }, [profiles]);
-  const {
-    data: incomeData = []
-  } = useIncomeSources();
-  const {
-    data: debtData = []
-  } = useDebts();
-  const {
-    data: fixedExpensesData = []
-  } = useFixedExpenses();
-  const {
-    data: variableExpensesData = []
-  } = useVariableExpenses();
-  const {
-    data: savingsGoalsData = []
-  } = useSavingsGoals();
-  const {
-    data: savings
-  } = useSavings();
+  const { data: profiles = [] } = useFinancialProfiles();
+  const activeProfile = useMemo(
+    () =>
+      profiles.find((p) => p.is_active) || {
+        name: "Family",
+      },
+    [profiles],
+  );
+  const { data: incomeData = [] } = useIncomeSources();
+  const { data: debtData = [] } = useDebts();
+  const { data: fixedExpensesData = [] } = useFixedExpenses();
+  const { data: variableExpensesData = [] } = useVariableExpenses();
+  const { data: savingsGoalsData = [] } = useSavingsGoals();
+  const { data: savings } = useSavings();
   const t = translations[language];
   const {
     totalIncome,
@@ -274,7 +301,7 @@ const Index = () => {
     monthEnd,
     monthDays,
     firstDayOfWeek,
-    blankDays
+    blankDays,
   } = useMemo(() => {
     const totalIncome = incomeData.reduce((s, i) => s + i.amount, 0);
     const totalFixed = fixedExpensesData.reduce((s, e) => s + e.amount, 0);
@@ -282,7 +309,8 @@ const Index = () => {
     const totalDebtPayment = debtData.reduce((s, d) => s + d.minimum_payment, 0);
     const totalExpenses = totalFixed + totalVariable + totalDebtPayment;
     const cashFlow = totalIncome - totalExpenses;
-    const savingsTotal = (savings?.emergency_fund || 0) + savingsGoalsData.reduce((s, g) => s + (g.current_amount || 0), 0);
+    const savingsTotal =
+      (savings?.emergency_fund || 0) + savingsGoalsData.reduce((s, g) => s + (g.current_amount || 0), 0);
     let remaining = debtData.reduce((s, d) => s + d.balance, 0);
     let months = 0;
     const extra = Math.max(0, (cashFlow - monthlySavings) * 0.3);
@@ -294,19 +322,23 @@ const Index = () => {
     }
     const monthsToDebtFree = months;
     const debtFreeDate = addMonths(new Date(), months);
-    const pieData = [{
-      name: "Fixed",
-      value: totalFixed,
-      color: "#3b82f6"
-    }, {
-      name: "Variable",
-      value: totalVariable,
-      color: "#10b981"
-    }, {
-      name: "Debt",
-      value: totalDebtPayment,
-      color: "#ef4444"
-    }].filter(d => d.value > 0);
+    const pieData = [
+      {
+        name: "Fixed",
+        value: totalFixed,
+        color: "#3b82f6",
+      },
+      {
+        name: "Variable",
+        value: totalVariable,
+        color: "#10b981",
+      },
+      {
+        name: "Debt",
+        value: totalDebtPayment,
+        color: "#ef4444",
+      },
+    ].filter((d) => d.value > 0);
 
     // CALENDARIO CON EVENTOS EN TODOS LOS MESES
     const allEvents: Event[] = [];
@@ -318,7 +350,7 @@ const Index = () => {
         if (currentDate > new Date(endYear, 11, 31)) break;
 
         // INGRESOS FIJOS - Día 1
-        incomeData.forEach(inc => {
+        incomeData.forEach((inc) => {
           const date = new Date(year, month, 1);
           allEvents.push({
             id: `inc-${inc.id}-${year}-${month}`,
@@ -326,12 +358,12 @@ const Index = () => {
             type: "income",
             name: inc.name,
             amount: inc.amount,
-            recurring: true
+            recurring: true,
           });
         });
 
         // GASTOS FIJOS - Día de pago
-        fixedExpensesData.forEach(exp => {
+        fixedExpensesData.forEach((exp) => {
           const day = exp.payment_day || 1;
           const lastDayOfMonth = new Date(year, month + 1, 0).getDate();
           const date = new Date(year, month, Math.min(day, lastDayOfMonth));
@@ -341,12 +373,12 @@ const Index = () => {
             type: "fixed",
             name: exp.name,
             amount: exp.amount,
-            recurring: true
+            recurring: true,
           });
         });
 
         // DEUDAS - Día 15
-        debtData.forEach(debt => {
+        debtData.forEach((debt) => {
           const date = new Date(year, month, 15);
           allEvents.push({
             id: `debt-${debt.id}-${year}-${month}`,
@@ -354,12 +386,12 @@ const Index = () => {
             type: "debt",
             name: `${debt.name} (min)`,
             amount: debt.minimum_payment,
-            recurring: true
+            recurring: true,
           });
         });
 
         // GASTOS VARIABLES - Día 10
-        variableExpensesData.forEach(exp => {
+        variableExpensesData.forEach((exp) => {
           const date = new Date(year, month, 10);
           allEvents.push({
             id: `var-${exp.id}-${year}-${month}`,
@@ -367,7 +399,7 @@ const Index = () => {
             type: "variable",
             name: exp.name,
             amount: exp.amount,
-            recurring: true
+            recurring: true,
           });
         });
       }
@@ -376,7 +408,7 @@ const Index = () => {
     const monthEnd = endOfMonth(currentMonth);
     const monthDays = eachDayOfInterval({
       start: monthStart,
-      end: monthEnd
+      end: monthEnd,
     });
     const firstDayOfWeek = monthStart.getDay();
     const blankDays = Array(firstDayOfWeek).fill(null);
@@ -396,24 +428,32 @@ const Index = () => {
       monthEnd,
       monthDays,
       firstDayOfWeek,
-      blankDays
+      blankDays,
     };
-  }, [incomeData, fixedExpensesData, variableExpensesData, debtData, savings, savingsGoalsData, currentMonth, monthlySavings]);
+  }, [
+    incomeData,
+    fixedExpensesData,
+    variableExpensesData,
+    debtData,
+    savings,
+    savingsGoalsData,
+    currentMonth,
+    monthlySavings,
+  ]);
   useEffect(() => {
-    supabase.auth.getSession().then(({
-      data: {
-        session
-      }
-    }) => {
+    supabase.auth.getSession().then(({ data: { session } }) => {
       setUser(session?.user ?? null);
       setAuthLoading(false);
     });
   }, []);
-  if (authLoading) return <div className="p-8">
+  if (authLoading)
+    return (
+      <div className="p-8">
         <Skeleton className="h-64 w-full" />
-      </div>;
+      </div>
+    );
   if (!user) return <Auth />;
-  const getEventsForDay = (date: Date) => calendarEvents.filter(e => isSameDay(new Date(e.date), date));
+  const getEventsForDay = (date: Date) => calendarEvents.filter((e) => isSameDay(new Date(e.date), date));
   const addEvent = () => {
     if (selectedDate && newEvent.name && newEvent.amount > 0) {
       const event: Event = {
@@ -422,7 +462,7 @@ const Index = () => {
         type: newEvent.type,
         name: newEvent.name,
         amount: newEvent.amount,
-        recurring: false
+        recurring: false,
       };
       setEvents([...events, event]);
       setShowEventDialog(false);
@@ -430,45 +470,48 @@ const Index = () => {
         name: "",
         amount: 0,
         type: "income",
-        recurring: false
+        recurring: false,
       });
     }
   };
   const updateEvent = () => {
     if (editingEvent && newEvent.name && newEvent.amount > 0) {
-      setEvents(events.map(e => e.id === editingEvent.id ? {
-        ...e,
-        name: newEvent.name,
-        amount: newEvent.amount,
-        type: newEvent.type,
-        recurring: newEvent.recurring
-      } : e));
+      setEvents(
+        events.map((e) =>
+          e.id === editingEvent.id
+            ? {
+                ...e,
+                name: newEvent.name,
+                amount: newEvent.amount,
+                type: newEvent.type,
+                recurring: newEvent.recurring,
+              }
+            : e,
+        ),
+      );
       setEditingEvent(null);
       setShowEventDialog(false);
       setNewEvent({
         name: "",
         amount: 0,
         type: "income",
-        recurring: false
+        recurring: false,
       });
     }
   };
   const deleteEvent = (id: string) => {
-    setEvents(events.filter(e => e.id !== id));
+    setEvents(events.filter((e) => e.id !== id));
     setDeleteId(null);
   };
 
   const handleDeleteGoal = async (goalId: string) => {
     try {
-      const { error } = await supabase
-        .from('savings_goals')
-        .delete()
-        .eq('id', goalId);
+      const { error } = await supabase.from("savings_goals").delete().eq("id", goalId);
 
       if (error) throw error;
 
       // Invalidate and refetch savings goals
-      await queryClient.invalidateQueries({ queryKey: ['savings_goals'] });
+      await queryClient.invalidateQueries({ queryKey: ["savings_goals"] });
 
       toast({
         title: "Success",
@@ -476,7 +519,7 @@ const Index = () => {
       });
       setDeleteGoalId(null);
     } catch (error) {
-      console.error('Error deleting goal:', error);
+      console.error("Error deleting goal:", error);
       toast({
         title: "Error",
         description: "Failed to delete savings goal",
@@ -489,20 +532,20 @@ const Index = () => {
     if (!addMoneyGoalId || addMoneyAmount <= 0) return;
 
     try {
-      const goal = savingsGoalsData.find(g => g.id === addMoneyGoalId);
+      const goal = savingsGoalsData.find((g) => g.id === addMoneyGoalId);
       if (!goal) return;
 
       const newAmount = goal.current_amount + addMoneyAmount;
 
       const { error } = await supabase
-        .from('savings_goals')
+        .from("savings_goals")
         .update({ current_amount: newAmount })
-        .eq('id', addMoneyGoalId);
+        .eq("id", addMoneyGoalId);
 
       if (error) throw error;
 
       // Invalidate and refetch savings goals
-      await queryClient.invalidateQueries({ queryKey: ['savings_goals'] });
+      await queryClient.invalidateQueries({ queryKey: ["savings_goals"] });
 
       toast({
         title: "Success",
@@ -511,7 +554,7 @@ const Index = () => {
       setAddMoneyGoalId(null);
       setAddMoneyAmount(0);
     } catch (error) {
-      console.error('Error adding money:', error);
+      console.error("Error adding money:", error);
       toast({
         title: "Error",
         description: "Failed to add money to savings goal",
@@ -525,17 +568,17 @@ const Index = () => {
 
     try {
       const { error } = await supabase
-        .from('savings_goals')
+        .from("savings_goals")
         .update({
           current_amount: editGoalData.current_amount,
-          target_amount: editGoalData.target_amount
+          target_amount: editGoalData.target_amount,
         })
-        .eq('id', editingGoalId);
+        .eq("id", editingGoalId);
 
       if (error) throw error;
 
       // Invalidate and refetch savings goals
-      await queryClient.invalidateQueries({ queryKey: ['savings_goals'] });
+      await queryClient.invalidateQueries({ queryKey: ["savings_goals"] });
 
       toast({
         title: "Success",
@@ -543,7 +586,7 @@ const Index = () => {
       });
       setEditingGoalId(null);
     } catch (error) {
-      console.error('Error updating goal:', error);
+      console.error("Error updating goal:", error);
       toast({
         title: "Error",
         description: "Failed to update savings goal",
@@ -557,12 +600,15 @@ const Index = () => {
     setTimeout(() => {
       const lower = aiInput.toLowerCase();
       let response = "";
-      if (lower.includes("save")) response = `Cut £50-100 from variable expenses (£${totalVariable}).`;else if (lower.includes("debt")) response = `Pay highest APR first. Debt-free in ${monthsToDebtFree} months.`;else response = `Track every expense for 30 days.`;
+      if (lower.includes("save")) response = `Cut £50-100 from variable expenses (£${totalVariable}).`;
+      else if (lower.includes("debt")) response = `Pay highest APR first. Debt-free in ${monthsToDebtFree} months.`;
+      else response = `Track every expense for 30 days.`;
       setAiResponse(response);
       setAiLoading(false);
     }, 800);
   };
-  return <>
+  return (
+    <>
       <style>{`@media print { .no-print { display: none !important; } }`}</style>
 
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-slate-900 dark:to-slate-800">
@@ -578,8 +624,8 @@ const Index = () => {
             <div className="flex items-center gap-3">
               <LanguageToggle language={language} onLanguageChange={setLanguage} />
               <ProfileSelector language={language} />
-              <Button variant="outline" size="icon" onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}>
-                {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+              <Button variant="outline" size="icon" onClick={() => setTheme(theme === "dark" ? "light" : "dark")}>
+                {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
               </Button>
               <Button variant="outline" size="icon" onClick={() => window.print()}>
                 <Download className="h-4 w-4" />
@@ -636,7 +682,8 @@ const Index = () => {
           </div>
 
           {/* DEBT FREE */}
-          {debtData.length > 0 && <Card className="border-2 border-orange-200">
+          {debtData.length > 0 && (
+            <Card className="border-2 border-orange-200">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-orange-600">
                   <TrendingUp className="h-6 w-6" /> Debt Free Date
@@ -649,10 +696,12 @@ const Index = () => {
                 </div>
                 <Progress value={80} className="h-4 mt-3" />
               </CardContent>
-            </Card>}
+            </Card>
+          )}
 
           {/* GASTOS PASTEL - VERSIÓN CORREGIDA Y SOPHISTICADA */}
-          {pieData.length > 0 && <Card className="overflow-hidden">
+          {pieData.length > 0 && (
+            <Card className="overflow-hidden">
               <CardHeader className="pb-3">
                 <CardTitle className="text-lg font-semibold flex items-center gap-2">
                   <Zap className="h-5 w-5 text-blue-600" />
@@ -669,7 +718,6 @@ const Index = () => {
                       <div className="absolute inset-0 rounded-full bg-gradient-to-br from-slate-100 to-slate-50 dark:from-slate-800 dark:to-slate-900 shadow-inner"></div>
 
                       {/* SVG del donut chart - CORREGIDO */}
-                      
 
                       <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
                         <div className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-slate-800 to-slate-600 bg-clip-text text-transparent dark:from-slate-100 dark:to-slate-300">
@@ -682,13 +730,21 @@ const Index = () => {
 
                   <div className="flex flex-col justify-center space-y-4">
                     {pieData.map((d, i) => {
-                  const percent = (d.value / totalExpenses * 100).toFixed(1);
-                  const trend = d.value > totalExpenses * 0.2 ? "High" : d.value > totalExpenses * 0.1 ? "Medium" : "Low";
-                  return <div key={i} className="flex items-center justify-between p-3 rounded-lg bg-slate-50 dark:bg-slate-800/50 hover:bg-slate-100 dark:hover:bg-slate-700/50 transition-all">
+                      const percent = ((d.value / totalExpenses) * 100).toFixed(1);
+                      const trend =
+                        d.value > totalExpenses * 0.2 ? "High" : d.value > totalExpenses * 0.1 ? "Medium" : "Low";
+                      return (
+                        <div
+                          key={i}
+                          className="flex items-center justify-between p-3 rounded-lg bg-slate-50 dark:bg-slate-800/50 hover:bg-slate-100 dark:hover:bg-slate-700/50 transition-all"
+                        >
                           <div className="flex items-center gap-3">
-                            <div className="w-4 h-4 rounded-full shadow-md" style={{
-                        backgroundColor: d.color
-                      }} />
+                            <div
+                              className="w-4 h-4 rounded-full shadow-md"
+                              style={{
+                                backgroundColor: d.color,
+                              }}
+                            />
                             <div>
                               <p className="font-medium text-sm">{d.name}</p>
                               <p className="text-xs text-slate-500 dark:text-slate-400">{percent}%</p>
@@ -699,8 +755,9 @@ const Index = () => {
                             <p className="font-bold text-sm">{formatCurrency(d.value)}</p>
                             <p className="text-xs text-slate-500 dark:text-slate-400">Monthly</p>
                           </div>
-                        </div>;
-                })}
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
 
@@ -713,13 +770,14 @@ const Index = () => {
                       </span>
                       <div className="flex items-center gap-1 text-xs text-slate-500 dark:text-slate-400">
                         <TrendingUp className="h-3 w-3 text-emerald-500" />
-                        <span>{(totalExpenses / totalIncome * 100).toFixed(0)}% of income</span>
+                        <span>{((totalExpenses / totalIncome) * 100).toFixed(0)}% of income</span>
                       </div>
                     </div>
                   </div>
                 </div>
               </CardContent>
-            </Card>}
+            </Card>
+          )}
           {/* CALENDARIO */}
           <Card>
             <CardHeader>
@@ -729,14 +787,30 @@ const Index = () => {
                   {format(currentMonth, "MMMM yyyy")}
                 </span>
                 <div className="flex gap-2">
-                  <Button size="sm" variant="outline" onClick={() => setCurrentMonth(sub(currentMonth, {
-                  months: 1
-                }))}>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() =>
+                      setCurrentMonth(
+                        sub(currentMonth, {
+                          months: 1,
+                        }),
+                      )
+                    }
+                  >
                     <ChevronLeft className="h-4 w-4" />
                   </Button>
-                  <Button size="sm" variant="outline" onClick={() => setCurrentMonth(add(currentMonth, {
-                  months: 1
-                }))}>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() =>
+                      setCurrentMonth(
+                        add(currentMonth, {
+                          months: 1,
+                        }),
+                      )
+                    }
+                  >
                     <ChevronRight className="h-4 w-4" />
                   </Button>
                 </div>
@@ -744,22 +818,39 @@ const Index = () => {
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-7 gap-1 text-center text-sm font-medium">
-                {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map(d => <div key={d} className="p-2">
+                {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((d) => (
+                  <div key={d} className="p-2">
                     {d}
-                  </div>)}
+                  </div>
+                ))}
               </div>
               <div className="grid grid-cols-7 gap-1 mt-2">
-                {blankDays.map((_, i) => <div key={`blank-${i}`} className="h-16 border rounded" />)}
-                {monthDays.map(day => {
-                const dayEvents = getEventsForDay(day);
-                return <div key={day.toISOString()} className={`h-16 border rounded p-1 text-xs cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 transition ${isSameDay(day, new Date()) ? "bg-blue-50 dark:bg-blue-900" : ""}`} onClick={() => setSelectedDate(day)}>
+                {blankDays.map((_, i) => (
+                  <div key={`blank-${i}`} className="h-16 border rounded" />
+                ))}
+                {monthDays.map((day) => {
+                  const dayEvents = getEventsForDay(day);
+                  return (
+                    <div
+                      key={day.toISOString()}
+                      className={`h-16 border rounded p-1 text-xs cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 transition ${isSameDay(day, new Date()) ? "bg-blue-50 dark:bg-blue-900" : ""}`}
+                      onClick={() => setSelectedDate(day)}
+                    >
                       <div className="font-medium">{format(day, "d")}</div>
-                      {dayEvents.slice(0, 2).map((e, i) => <div key={i} className={`text-[9px] truncate ${e.type === "income" ? "text-green-600" : e.type === "debt" ? "text-red-600" : "text-blue-600"}`}>
+                      {dayEvents.slice(0, 2).map((e, i) => (
+                        <div
+                          key={i}
+                          className={`text-[9px] truncate ${e.type === "income" ? "text-green-600" : e.type === "debt" ? "text-red-600" : "text-blue-600"}`}
+                        >
                           {e.name}
-                        </div>)}
-                      {dayEvents.length > 2 && <div className="text-[9px] text-muted-foreground">+{dayEvents.length - 2}</div>}
-                    </div>;
-              })}
+                        </div>
+                      ))}
+                      {dayEvents.length > 2 && (
+                        <div className="text-[9px] text-muted-foreground">+{dayEvents.length - 2}</div>
+                      )}
+                    </div>
+                  );
+                })}
               </div>
             </CardContent>
           </Card>
@@ -773,15 +864,26 @@ const Index = () => {
                 </AlertDialogTitle>
               </AlertDialogHeader>
               <div className="space-y-4">
-                <Textarea placeholder="Ask anything: 'How can I save £200/month?' or 'Should I pay off debt first?'" value={aiInput} onChange={e => setAiInput(e.target.value)} className="min-h-24" />
+                <Textarea
+                  placeholder="Ask anything: 'How can I save £200/month?' or 'Should I pay off debt first?'"
+                  value={aiInput}
+                  onChange={(e) => setAiInput(e.target.value)}
+                  className="min-h-24"
+                />
                 <Button onClick={sendToAI} disabled={aiLoading} className="w-full">
-                  {aiLoading ? "Thinking..." : <>
+                  {aiLoading ? (
+                    "Thinking..."
+                  ) : (
+                    <>
                       <Send className="h-4 w-4 mr-2" /> Send
-                    </>}
+                    </>
+                  )}
                 </Button>
-                {aiResponse && <Card>
+                {aiResponse && (
+                  <Card>
                     <CardContent className="pt-4 space-y-4 whitespace-pre-wrap text-sm">{aiResponse}</CardContent>
-                  </Card>}
+                  </Card>
+                )}
               </div>
               <AlertDialogFooter>
                 <AlertDialogCancel>Close</AlertDialogCancel>
@@ -790,13 +892,18 @@ const Index = () => {
           </AlertDialog>
 
           {/* DETALLE DEL DÍA */}
-          {selectedDate && <AlertDialog open={!!selectedDate} onOpenChange={() => setSelectedDate(null)}>
+          {selectedDate && (
+            <AlertDialog open={!!selectedDate} onOpenChange={() => setSelectedDate(null)}>
               <AlertDialogContent>
                 <AlertDialogHeader>
                   <AlertDialogTitle>{format(selectedDate, "PPP")}</AlertDialogTitle>
                 </AlertDialogHeader>
                 <AlertDialogDescription className="space-y-3">
-                  {getEventsForDay(selectedDate).length === 0 ? <p className="text-center py-4">No events</p> : getEventsForDay(selectedDate).map(e => <div key={e.id} className="flex justify-between items-center p-3 bg-muted rounded-lg">
+                  {getEventsForDay(selectedDate).length === 0 ? (
+                    <p className="text-center py-4">No events</p>
+                  ) : (
+                    getEventsForDay(selectedDate).map((e) => (
+                      <div key={e.id} className="flex justify-between items-center p-3 bg-muted rounded-lg">
                         <div>
                           <p className="font-medium">{e.name}</p>
                           <p className="text-xs text-muted-foreground">{e.type}</p>
@@ -806,16 +913,20 @@ const Index = () => {
                             {formatCurrency(e.amount)}
                           </span>
                           <div className="flex gap-1">
-                            <Button size="sm" variant="ghost" onClick={() => {
-                      setEditingEvent(e);
-                      setNewEvent({
-                        name: e.name,
-                        amount: e.amount,
-                        type: e.type,
-                        recurring: e.recurring || false
-                      });
-                      setShowEventDialog(true);
-                    }}>
+                            <Button
+                              size="sm"
+                              variant="ghost"
+                              onClick={() => {
+                                setEditingEvent(e);
+                                setNewEvent({
+                                  name: e.name,
+                                  amount: e.amount,
+                                  type: e.type,
+                                  recurring: e.recurring || false,
+                                });
+                                setShowEventDialog(true);
+                              }}
+                            >
                               <Edit2 className="h-4 w-4" />
                             </Button>
                             <Button size="sm" variant="ghost" onClick={() => setDeleteId(e.id)}>
@@ -823,25 +934,31 @@ const Index = () => {
                             </Button>
                           </div>
                         </div>
-                      </div>)}
+                      </div>
+                    ))
+                  )}
                 </AlertDialogDescription>
                 <AlertDialogFooter>
-                  <Button variant="default" onClick={() => {
-                setEditingEvent(null);
-                setNewEvent({
-                  name: "",
-                  amount: 0,
-                  type: "income",
-                  recurring: false
-                });
-                setShowEventDialog(true);
-              }}>
+                  <Button
+                    variant="default"
+                    onClick={() => {
+                      setEditingEvent(null);
+                      setNewEvent({
+                        name: "",
+                        amount: 0,
+                        type: "income",
+                        recurring: false,
+                      });
+                      setShowEventDialog(true);
+                    }}
+                  >
                     <Plus className="h-4 w-4 mr-1" /> Add Event
                   </Button>
                   <AlertDialogCancel>Close</AlertDialogCancel>
                 </AlertDialogFooter>
               </AlertDialogContent>
-            </AlertDialog>}
+            </AlertDialog>
+          )}
 
           {/* AGREGAR/EDITAR EVENTO */}
           <AlertDialog open={showEventDialog} onOpenChange={setShowEventDialog}>
@@ -852,24 +969,40 @@ const Index = () => {
               <div className="space-y-4">
                 <div>
                   <Label>Name</Label>
-                  <Input value={newEvent.name} onChange={e => setNewEvent({
-                  ...newEvent,
-                  name: e.target.value
-                })} />
+                  <Input
+                    value={newEvent.name}
+                    onChange={(e) =>
+                      setNewEvent({
+                        ...newEvent,
+                        name: e.target.value,
+                      })
+                    }
+                  />
                 </div>
                 <div>
                   <Label>Amount</Label>
-                  <Input type="number" value={newEvent.amount || ""} onChange={e => setNewEvent({
-                  ...newEvent,
-                  amount: parseFloat(e.target.value) || 0
-                })} />
+                  <Input
+                    type="number"
+                    value={newEvent.amount || ""}
+                    onChange={(e) =>
+                      setNewEvent({
+                        ...newEvent,
+                        amount: parseFloat(e.target.value) || 0,
+                      })
+                    }
+                  />
                 </div>
                 <div>
                   <Label>Type</Label>
-                  <Select value={newEvent.type} onValueChange={(v: Event["type"]) => setNewEvent({
-                  ...newEvent,
-                  type: v
-                })}>
+                  <Select
+                    value={newEvent.type}
+                    onValueChange={(v: Event["type"]) =>
+                      setNewEvent({
+                        ...newEvent,
+                        type: v,
+                      })
+                    }
+                  >
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
@@ -882,10 +1015,18 @@ const Index = () => {
                   </Select>
                 </div>
                 <div className="flex items-center space-x-2 p-3 bg-muted rounded-lg">
-                  <input type="checkbox" id="recurring" checked={newEvent.recurring} onChange={e => setNewEvent({
-                  ...newEvent,
-                  recurring: e.target.checked
-                })} className="h-4 w-4 rounded border-gray-300" />
+                  <input
+                    type="checkbox"
+                    id="recurring"
+                    checked={newEvent.recurring}
+                    onChange={(e) =>
+                      setNewEvent({
+                        ...newEvent,
+                        recurring: e.target.checked,
+                      })
+                    }
+                    className="h-4 w-4 rounded border-gray-300"
+                  />
                   <Label htmlFor="recurring" className="cursor-pointer">
                     Repeat monthly for following months
                   </Label>
@@ -923,24 +1064,39 @@ const Index = () => {
               <div className="space-y-4">
                 <div>
                   <Label>Description</Label>
-                  <Input value={newIncome.description} onChange={e => setNewIncome({
-                  ...newIncome,
-                  description: e.target.value
-                })} placeholder="e.g. Freelance work, Bonus, Gift" />
+                  <Input
+                    value={newIncome.description}
+                    onChange={(e) =>
+                      setNewIncome({
+                        ...newIncome,
+                        description: e.target.value,
+                      })
+                    }
+                    placeholder="e.g. Freelance work, Bonus, Gift"
+                  />
                 </div>
                 <div>
                   <Label>Amount (£)</Label>
-                  <Input type="number" value={newIncome.amount || ""} onChange={e => setNewIncome({
-                  ...newIncome,
-                  amount: parseFloat(e.target.value) || 0
-                })} placeholder="0" />
+                  <Input
+                    type="number"
+                    value={newIncome.amount || ""}
+                    onChange={(e) =>
+                      setNewIncome({
+                        ...newIncome,
+                        amount: parseFloat(e.target.value) || 0,
+                      })
+                    }
+                    placeholder="0"
+                  />
                 </div>
               </div>
               <AlertDialogFooter>
                 <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction onClick={() => {
-                setShowIncomeModal(false);
-              }}>
+                <AlertDialogAction
+                  onClick={() => {
+                    setShowIncomeModal(false);
+                  }}
+                >
                   Close
                 </AlertDialogAction>
               </AlertDialogFooter>
@@ -948,24 +1104,25 @@ const Index = () => {
           </AlertDialog>
 
           {/* ADD MONEY TO GOAL MODAL */}
-          <AlertDialog open={!!addMoneyGoalId} onOpenChange={() => {
-            setAddMoneyGoalId(null);
-            setAddMoneyAmount(0);
-          }}>
+          <AlertDialog
+            open={!!addMoneyGoalId}
+            onOpenChange={() => {
+              setAddMoneyGoalId(null);
+              setAddMoneyAmount(0);
+            }}
+          >
             <AlertDialogContent>
               <AlertDialogHeader>
                 <AlertDialogTitle>Add Money to Goal</AlertDialogTitle>
-                <AlertDialogDescription>
-                  How much would you like to add to this savings goal?
-                </AlertDialogDescription>
+                <AlertDialogDescription>How much would you like to add to this savings goal?</AlertDialogDescription>
               </AlertDialogHeader>
               <div className="space-y-4">
                 <div>
                   <Label>Amount (£)</Label>
-                  <Input 
-                    type="number" 
-                    value={addMoneyAmount || ""} 
-                    onChange={e => setAddMoneyAmount(parseFloat(e.target.value) || 0)} 
+                  <Input
+                    type="number"
+                    value={addMoneyAmount || ""}
+                    onChange={(e) => setAddMoneyAmount(parseFloat(e.target.value) || 0)}
                     placeholder="0"
                     min="0"
                     step="0.01"
@@ -986,20 +1143,20 @@ const Index = () => {
             <AlertDialogContent>
               <AlertDialogHeader>
                 <AlertDialogTitle>Edit Savings Goal</AlertDialogTitle>
-                <AlertDialogDescription>
-                  Update the saved and target amounts for this goal
-                </AlertDialogDescription>
+                <AlertDialogDescription>Update the saved and target amounts for this goal</AlertDialogDescription>
               </AlertDialogHeader>
               <div className="space-y-4">
                 <div>
                   <Label>Current Amount Saved (£)</Label>
-                  <Input 
-                    type="number" 
-                    value={editGoalData.current_amount || ""} 
-                    onChange={e => setEditGoalData({
-                      ...editGoalData,
-                      current_amount: parseFloat(e.target.value) || 0
-                    })} 
+                  <Input
+                    type="number"
+                    value={editGoalData.current_amount || ""}
+                    onChange={(e) =>
+                      setEditGoalData({
+                        ...editGoalData,
+                        current_amount: parseFloat(e.target.value) || 0,
+                      })
+                    }
                     placeholder="0"
                     min="0"
                     step="0.01"
@@ -1007,13 +1164,15 @@ const Index = () => {
                 </div>
                 <div>
                   <Label>Target Amount (£)</Label>
-                  <Input 
-                    type="number" 
-                    value={editGoalData.target_amount || ""} 
-                    onChange={e => setEditGoalData({
-                      ...editGoalData,
-                      target_amount: parseFloat(e.target.value) || 0
-                    })} 
+                  <Input
+                    type="number"
+                    value={editGoalData.target_amount || ""}
+                    onChange={(e) =>
+                      setEditGoalData({
+                        ...editGoalData,
+                        target_amount: parseFloat(e.target.value) || 0,
+                      })
+                    }
                     placeholder="0"
                     min="0"
                     step="0.01"
@@ -1022,9 +1181,7 @@ const Index = () => {
               </div>
               <AlertDialogFooter>
                 <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction onClick={handleEditGoal}>
-                  Update
-                </AlertDialogAction>
+                <AlertDialogAction onClick={handleEditGoal}>Update</AlertDialogAction>
               </AlertDialogFooter>
             </AlertDialogContent>
           </AlertDialog>
@@ -1062,51 +1219,57 @@ const Index = () => {
               <div className="text-center py-8">
                 {/* Determine status based on cashFlow relative to totalExpenses */}
                 {(() => {
-                const status = (() => {
-                  if (cashFlow > totalExpenses * 0.3) return {
-                    emoji: "🚀",
-                    label: "Excellent",
-                    color: "text-emerald-600",
-                    progress: 95,
-                    message: `Amazing! You're saving ${formatCurrency(cashFlow)} per month — 30%+ of expenses. Keep going!`
-                  };
-                  if (cashFlow > totalExpenses * 0.1) return {
-                    emoji: "💪",
-                    label: "Strong",
-                    color: "text-green-600",
-                    progress: 80,
-                    message: `Great job! You're saving ${formatCurrency(cashFlow)} per month — 10-30% of expenses. Solid foundation.`
-                  };
-                  if (cashFlow > 0) return {
-                    emoji: "✅",
-                    label: "Healthy",
-                    color: "text-blue-600",
-                    progress: 65,
-                    message: `You're in the green! Saving ${formatCurrency(cashFlow)} per month. Small wins add up.`
-                  };
-                  if (cashFlow > -totalExpenses * 0.1) return {
-                    emoji: "⚠️",
-                    label: "Review",
-                    color: "text-orange-600",
-                    progress: 40,
-                    message: `Close call! You're overspending by ${formatCurrency(Math.abs(cashFlow))} — less than 10% of expenses. Trim a little.`
-                  };
-                  return {
-                    emoji: "🔴",
-                    label: "Critical",
-                    color: "text-red-600",
-                    progress: 20,
-                    message: `Alert! Overspending by ${formatCurrency(Math.abs(cashFlow))} — over 10% of expenses. Cut now to avoid debt.`
-                  };
-                })();
-                return <div>
+                  const status = (() => {
+                    if (cashFlow > totalExpenses * 0.3)
+                      return {
+                        emoji: "🚀",
+                        label: "Excellent",
+                        color: "text-emerald-600",
+                        progress: 95,
+                        message: `Amazing! You're saving ${formatCurrency(cashFlow)} per month — 30%+ of expenses. Keep going!`,
+                      };
+                    if (cashFlow > totalExpenses * 0.1)
+                      return {
+                        emoji: "💪",
+                        label: "Strong",
+                        color: "text-green-600",
+                        progress: 80,
+                        message: `Great job! You have disposable money ${formatCurrency(cashFlow)} per month — 10-30% of expenses. Solid foundation.`,
+                      };
+                    if (cashFlow > 0)
+                      return {
+                        emoji: "✅",
+                        label: "Healthy",
+                        color: "text-blue-600",
+                        progress: 65,
+                        message: `You're in the green! Saving ${formatCurrency(cashFlow)} per month. Small wins add up.`,
+                      };
+                    if (cashFlow > -totalExpenses * 0.1)
+                      return {
+                        emoji: "⚠️",
+                        label: "Review",
+                        color: "text-orange-600",
+                        progress: 40,
+                        message: `Close call! You're overspending by ${formatCurrency(Math.abs(cashFlow))} — less than 10% of expenses. Trim a little.`,
+                      };
+                    return {
+                      emoji: "🔴",
+                      label: "Critical",
+                      color: "text-red-600",
+                      progress: 20,
+                      message: `Alert! Overspending by ${formatCurrency(Math.abs(cashFlow))} — over 10% of expenses. Cut now to avoid debt.`,
+                    };
+                  })();
+                  return (
+                    <div>
                       <div className={`text-7xl font-bold ${status.color} animate-scale-in`}>
                         {status.emoji} {status.label}
                       </div>
                       <Progress value={status.progress} className="mt-6 h-3" />
                       <p className="mt-4 text-muted-foreground">{status.message}</p>
-                    </div>;
-              })()}
+                    </div>
+                  );
+                })()}
               </div>
             </TabsContent>
 
@@ -1133,7 +1296,9 @@ const Index = () => {
                       <CardDescription>Extra income like bonuses, gifts, side hustles</CardDescription>
                     </CardHeader>
                     <CardContent>
-                      <p className="text-center text-muted-foreground py-6">Variable income has been moved to the Income Manager</p>
+                      <p className="text-center text-muted-foreground py-6">
+                        Variable income has been moved to the Income Manager
+                      </p>
                     </CardContent>
                   </Card>
                 </TabsContent>
@@ -1157,7 +1322,13 @@ const Index = () => {
 
             <TabsContent value="debts">
               <DebtsManager language={language} />
-              <DebtPlanner language={language} monthlySavings={monthlySavings} setMonthlySavings={setMonthlySavings} debtMethod={debtMethod} setDebtMethod={setDebtMethod} />
+              <DebtPlanner
+                language={language}
+                monthlySavings={monthlySavings}
+                setMonthlySavings={setMonthlySavings}
+                debtMethod={debtMethod}
+                setDebtMethod={setDebtMethod}
+              />
             </TabsContent>
 
             <TabsContent value="savings">
@@ -1177,7 +1348,9 @@ const Index = () => {
                     <div className="grid grid-cols-2 gap-4 mt-4">
                       <div className="bg-white/50 dark:bg-black/20 rounded-lg p-3">
                         <p className="text-sm text-muted-foreground">Emergency Fund</p>
-                        <p className="text-xl font-bold text-green-600">{formatCurrency(savings?.emergency_fund || 0)}</p>
+                        <p className="text-xl font-bold text-green-600">
+                          {formatCurrency(savings?.emergency_fund || 0)}
+                        </p>
                       </div>
                       <div className="bg-white/50 dark:bg-black/20 rounded-lg p-3">
                         <p className="text-sm text-muted-foreground">Goals Saved</p>
@@ -1190,10 +1363,7 @@ const Index = () => {
                 </Card>
 
                 {/* Emergency Fund Manager */}
-                <Card>
-                  
-                  
-                </Card>
+                <Card></Card>
 
                 {/* Savings Goals Manager */}
                 <div className="mb-6">
@@ -1208,26 +1378,38 @@ const Index = () => {
                       My Savings Goals
                     </h2>
                   </div>
-                  
-                  {savingsGoalsData.length === 0 ? <Card className="border-dashed">
+
+                  {savingsGoalsData.length === 0 ? (
+                    <Card className="border-dashed">
                       <CardContent className="py-12 text-center">
                         <PiggyBank className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
-                        <p className="text-muted-foreground mb-4">No savings goals yet. Start saving for something special!</p>
+                        <p className="text-muted-foreground mb-4">
+                          No savings goals yet. Start saving for something special!
+                        </p>
                       </CardContent>
-                    </Card> : <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
-                      {savingsGoalsData.map(goal => {
-                    const progress = goal.target_amount > 0 ? goal.current_amount / goal.target_amount * 100 : 0;
-                    const remaining = Math.max(0, goal.target_amount - goal.current_amount);
-                    const monthsRemaining = goal.monthly_contribution > 0 ? Math.ceil(remaining / goal.monthly_contribution) : 0;
-                    return <Card key={goal.id} className="border-2 hover:shadow-lg transition-shadow overflow-hidden">
-                            <div className="h-2 bg-gradient-to-r from-blue-500 to-purple-500" style={{
-                        width: `${Math.min(100, progress)}%`
-                      }} />
+                    </Card>
+                  ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                      {savingsGoalsData.map((goal) => {
+                        const progress = goal.target_amount > 0 ? (goal.current_amount / goal.target_amount) * 100 : 0;
+                        const remaining = Math.max(0, goal.target_amount - goal.current_amount);
+                        const monthsRemaining =
+                          goal.monthly_contribution > 0 ? Math.ceil(remaining / goal.monthly_contribution) : 0;
+                        return (
+                          <Card key={goal.id} className="border-2 hover:shadow-lg transition-shadow overflow-hidden">
+                            <div
+                              className="h-2 bg-gradient-to-r from-blue-500 to-purple-500"
+                              style={{
+                                width: `${Math.min(100, progress)}%`,
+                              }}
+                            />
                             <CardHeader className="pb-3">
                               <div className="flex justify-between items-start">
                                 <div>
                                   <CardTitle className="text-lg">{goal.goal_name}</CardTitle>
-                                  {goal.goal_description && <CardDescription className="text-sm">{goal.goal_description}</CardDescription>}
+                                  {goal.goal_description && (
+                                    <CardDescription className="text-sm">{goal.goal_description}</CardDescription>
+                                  )}
                                 </div>
                                 <div className="flex gap-1">
                                   <Button
@@ -1237,7 +1419,7 @@ const Index = () => {
                                       setEditingGoalId(goal.id);
                                       setEditGoalData({
                                         current_amount: goal.current_amount,
-                                        target_amount: goal.target_amount
+                                        target_amount: goal.target_amount,
                                       });
                                     }}
                                     title="Edit amounts"
@@ -1295,33 +1477,43 @@ const Index = () => {
                                   <span className="text-muted-foreground">Remaining</span>
                                   <span className="font-semibold">{formatCurrency(remaining)}</span>
                                 </div>
-                                {goal.monthly_contribution > 0 && <div className="flex justify-between">
+                                {goal.monthly_contribution > 0 && (
+                                  <div className="flex justify-between">
                                     <span className="text-muted-foreground">Monthly</span>
                                     <span className="font-semibold text-purple-600">
                                       {formatCurrency(goal.monthly_contribution)}
                                     </span>
-                                  </div>}
-                                {monthsRemaining > 0 && <div className="flex justify-between">
+                                  </div>
+                                )}
+                                {monthsRemaining > 0 && (
+                                  <div className="flex justify-between">
                                     <span className="text-muted-foreground">Time left</span>
                                     <span className="font-semibold">{monthsRemaining} months</span>
-                                  </div>}
-                                {goal.target_date && <div className="flex justify-between">
+                                  </div>
+                                )}
+                                {goal.target_date && (
+                                  <div className="flex justify-between">
                                     <span className="text-muted-foreground">Target date</span>
                                     <span className="font-semibold">
                                       {format(new Date(goal.target_date), "MMM d, yyyy")}
                                     </span>
-                                  </div>}
+                                  </div>
+                                )}
                               </div>
 
-                              {progress >= 100 && <div className="bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-800 rounded-lg p-3 text-center">
+                              {progress >= 100 && (
+                                <div className="bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-800 rounded-lg p-3 text-center">
                                   <p className="text-green-700 dark:text-green-300 font-semibold text-sm">
                                     🎉 Goal Achieved!
                                   </p>
-                                </div>}
+                                </div>
+                              )}
                             </CardContent>
-                          </Card>;
-                  })}
-                    </div>}
+                          </Card>
+                        );
+                      })}
+                    </div>
+                  )}
                 </div>
               </div>
             </TabsContent>
@@ -1334,14 +1526,15 @@ const Index = () => {
           </footer>
         </div>
       </div>
-    </>;
+    </>
+  );
 };
 const DebtPlanner = ({
   language,
   monthlySavings,
   setMonthlySavings,
   debtMethod,
-  setDebtMethod
+  setDebtMethod,
 }: {
   language: Language;
   monthlySavings: number;
@@ -1350,65 +1543,53 @@ const DebtPlanner = ({
   setDebtMethod: (v: DebtMethod) => void;
 }) => {
   const t = translations[language];
-  const {
-    data: debtData = []
-  } = useDebts();
-  const {
-    data: incomeData = []
-  } = useIncomeSources();
-  const {
-    data: fixedExpensesData = []
-  } = useFixedExpenses();
-  const {
-    data: variableExpensesData = []
-  } = useVariableExpenses();
-  const {
-    data: savings
-  } = useSavings();
-  const {
-    totalIncome,
-    totalFixed,
-    totalVariable,
-    totalDebtPayment,
-    totalExpenses,
-    cashFlow,
-    savingsTotal
-  } = useMemo(() => {
-    const totalIncome = incomeData.reduce((s, i) => s + i.amount, 0);
-    const totalFixed = fixedExpensesData.reduce((s, e) => s + e.amount, 0);
-    const totalVariable = variableExpensesData.reduce((s, e) => s + e.amount, 0);
-    const totalDebtPayment = debtData.reduce((s, d) => s + d.minimum_payment, 0);
-    const totalExpenses = totalFixed + totalVariable + totalDebtPayment;
-    const cashFlow = totalIncome - totalExpenses;
-    const savingsTotal = savings?.emergency_fund || 0;
-    return {
-      totalIncome,
-      totalFixed,
-      totalVariable,
-      totalDebtPayment,
-      totalExpenses,
-      cashFlow,
-      savingsTotal
-    };
-  }, [incomeData, debtData, fixedExpensesData, variableExpensesData, savings]);
+  const { data: debtData = [] } = useDebts();
+  const { data: incomeData = [] } = useIncomeSources();
+  const { data: fixedExpensesData = [] } = useFixedExpenses();
+  const { data: variableExpensesData = [] } = useVariableExpenses();
+  const { data: savings } = useSavings();
+  const { totalIncome, totalFixed, totalVariable, totalDebtPayment, totalExpenses, cashFlow, savingsTotal } =
+    useMemo(() => {
+      const totalIncome = incomeData.reduce((s, i) => s + i.amount, 0);
+      const totalFixed = fixedExpensesData.reduce((s, e) => s + e.amount, 0);
+      const totalVariable = variableExpensesData.reduce((s, e) => s + e.amount, 0);
+      const totalDebtPayment = debtData.reduce((s, d) => s + d.minimum_payment, 0);
+      const totalExpenses = totalFixed + totalVariable + totalDebtPayment;
+      const cashFlow = totalIncome - totalExpenses;
+      const savingsTotal = savings?.emergency_fund || 0;
+      return {
+        totalIncome,
+        totalFixed,
+        totalVariable,
+        totalDebtPayment,
+        totalExpenses,
+        cashFlow,
+        savingsTotal,
+      };
+    }, [incomeData, debtData, fixedExpensesData, variableExpensesData, savings]);
   const debtStrategy = useMemo(() => {
     if (debtData.length === 0) return null;
     const extraForDebt = Math.max(0, cashFlow - monthlySavings);
-    const sortFn = debtMethod === "avalanche" ? (a, b) => b.apr - a.apr : debtMethod === "snowball" ? (a, b) => a.balance - b.balance : (a, b) => b.apr * 0.6 + b.balance / 1000 * 0.4 - (a.apr * 0.6 + a.balance / 1000 * 0.4);
+    const sortFn =
+      debtMethod === "avalanche"
+        ? (a, b) => b.apr - a.apr
+        : debtMethod === "snowball"
+          ? (a, b) => a.balance - b.balance
+          : (a, b) => b.apr * 0.6 + (b.balance / 1000) * 0.4 - (a.apr * 0.6 + (a.balance / 1000) * 0.4);
     const sortedDebts = [...debtData].sort(sortFn);
-    let remainingBalances = sortedDebts.map(d => ({
+    let remainingBalances = sortedDebts.map((d) => ({
       ...d,
-      balance: d.balance
+      balance: d.balance,
     }));
     let months = 0;
     let totalInterest = 0;
-    let allocation = sortedDebts.map(d => ({
+    let allocation = sortedDebts.map((d) => ({
       name: d.name,
       minPayment: d.minimum_payment,
       extra: 0,
-      totalPayment: d.minimum_payment
+      totalPayment: d.minimum_payment,
     }));
-    while (remainingBalances.some(d => d.balance > 0) && months < 120) {
+    while (remainingBalances.some((d) => d.balance > 0) && months < 120) {
       let monthlyInterest = 0;
       remainingBalances.forEach((debt, index) => {
         if (debt.balance <= 0) return;
@@ -1423,31 +1604,42 @@ const DebtPlanner = ({
       totalInterest += monthlyInterest;
       months++;
     }
-    const monthsToEmergency = monthlySavings > 0 ? ((totalExpenses * 3 - savingsTotal) / monthlySavings).toFixed(1) : "N/A";
+    const monthsToEmergency =
+      monthlySavings > 0 ? ((totalExpenses * 3 - savingsTotal) / monthlySavings).toFixed(1) : "N/A";
     return {
       sortedDebts,
       allocation,
       months,
       totalInterest: Math.round(totalInterest),
       monthsToEmergency,
-      extraForDebt
+      extraForDebt,
     };
   }, [debtData, cashFlow, monthlySavings, debtMethod, totalExpenses, savingsTotal]);
-  if (!debtStrategy) return <Card>
+  if (!debtStrategy)
+    return (
+      <Card>
         <CardHeader>
           <CardTitle>{t.debtPlanner}</CardTitle>
         </CardHeader>
         <CardContent>
           <p className="text-center text-muted-foreground py-6">No debts to plan</p>
         </CardContent>
-      </Card>;
-  return <div className="space-y-6">
+      </Card>
+    );
+  return (
+    <div className="space-y-6">
       <Card>
         <CardHeader>
           <CardTitle>{t.monthlySavings}</CardTitle>
         </CardHeader>
         <CardContent>
-          <Slider value={[monthlySavings]} onValueChange={value => setMonthlySavings(value[0])} max={Math.max(cashFlow, 0)} step={50} className="w-full" />
+          <Slider
+            value={[monthlySavings]}
+            onValueChange={(value) => setMonthlySavings(value[0])}
+            max={Math.max(cashFlow, 0)}
+            step={50}
+            className="w-full"
+          />
           <div className="flex justify-between text-sm text-muted-foreground mt-2">
             <span>£0</span>
             <span className="font-medium">{formatCurrency(monthlySavings)}</span>
@@ -1473,7 +1665,7 @@ const DebtPlanner = ({
               <span className="text-sm text-muted-foreground">Current:</span>
               <span className="font-bold text-green-600">{formatCurrency(savingsTotal)}</span>
             </div>
-            <Progress value={savingsTotal / (totalExpenses * 3) * 100} />
+            <Progress value={(savingsTotal / (totalExpenses * 3)) * 100} />
             <p className="text-sm text-muted-foreground">
               {t.monthsToEmergency}: {debtStrategy.monthsToEmergency}
             </p>
@@ -1485,7 +1677,7 @@ const DebtPlanner = ({
         <CardHeader>
           <CardTitle className="flex items-center justify-between">
             <span>{t.priority}</span>
-            <Select value={debtMethod} onValueChange={value => setDebtMethod(value as DebtMethod)}>
+            <Select value={debtMethod} onValueChange={(value) => setDebtMethod(value as DebtMethod)}>
               <SelectTrigger className="w-[180px]">
                 <SelectValue />
               </SelectTrigger>
@@ -1505,7 +1697,8 @@ const DebtPlanner = ({
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            {debtStrategy.sortedDebts.map((debt, index) => <div key={debt.id} className="flex items-center justify-between p-3 bg-muted rounded-lg">
+            {debtStrategy.sortedDebts.map((debt, index) => (
+              <div key={debt.id} className="flex items-center justify-between p-3 bg-muted rounded-lg">
                 <div className="flex items-center gap-3">
                   <Badge variant="secondary" className="w-8 h-8 flex items-center justify-center">
                     {index + 1}
@@ -1527,7 +1720,8 @@ const DebtPlanner = ({
                     Total: {formatCurrency(debtStrategy.allocation[index].totalPayment)}
                   </p>
                 </div>
-              </div>)}
+              </div>
+            ))}
           </div>
           <div className="mt-4 p-3 bg-muted rounded-lg">
             <p className="text-sm text-muted-foreground">
@@ -1538,6 +1732,7 @@ const DebtPlanner = ({
           </div>
         </CardContent>
       </Card>
-    </div>;
+    </div>
+  );
 };
 export default Index;
