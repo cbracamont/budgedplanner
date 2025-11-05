@@ -990,6 +990,11 @@ const Index = () => {
                   
                 </Card>
 
+                {/* Savings Goals Manager */}
+                <div className="mb-6">
+                  <SavingsGoalsManager language={language} availableForSavings={cashFlow} availableBudget={cashFlow} />
+                </div>
+
                 {/* Savings Goals Pots */}
                 <div>
                   <div className="flex items-center justify-between mb-4">
@@ -1073,11 +1078,6 @@ const Index = () => {
                           </Card>;
                   })}
                     </div>}
-
-                  {/* Savings Goals Manager */}
-                  <div className="mt-6">
-                    <SavingsGoalsManager language={language} availableForSavings={cashFlow} availableBudget={cashFlow} />
-                  </div>
                 </div>
               </div>
             </TabsContent>
