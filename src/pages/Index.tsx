@@ -3,7 +3,7 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { format, addMonths, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, add, sub } from "date-fns";
 import { formatCurrency } from "@/lib/i18n";
-import { TrendingUp, Download, LogOut, Bot, Calendar, DollarSign, PiggyBank, Home, Edit2, Trash2, Plus, ChevronLeft, ChevronRight, Send, X, Zap, Snowflake, Moon, Sun, PoundSterling } from "lucide-react";
+import { TrendingUp, Download, LogOut, Bot, Calendar, DollarSign, PiggyBank, Home, Edit2, Trash2, Plus, ChevronLeft, ChevronRight, Send, X, Zap, Snowflake, Moon, Sun, PoundSterling, Shield, AlertCircle } from "lucide-react";
 import { useIncomeSources, useDebts, useFixedExpenses, useVariableExpenses, useSavingsGoals, useSavings } from "@/hooks/useFinancialData";
 import { useFinancialProfiles } from "@/hooks/useFinancialProfiles";
 import { Auth } from "@/components/Auth";
@@ -847,11 +847,12 @@ const Index = () => {
 
           {/* TABS */}
           <Tabs defaultValue="overview" className="no-print">
-            <TabsList className="grid w-full grid-cols-4 mb-6">
+            <TabsList className="grid w-full grid-cols-5 mb-6">
               <TabsTrigger value="overview">Overview</TabsTrigger>
               <TabsTrigger value="income">Income</TabsTrigger>
               <TabsTrigger value="expenses">Expenses</TabsTrigger>
               <TabsTrigger value="debts">Debts</TabsTrigger>
+              <TabsTrigger value="savings">Savings</TabsTrigger>
             </TabsList>
 
             <TabsContent value="overview">
@@ -955,6 +956,166 @@ const Index = () => {
             <TabsContent value="debts">
               <DebtsManager language={language} />
               <DebtPlanner language={language} monthlySavings={monthlySavings} setMonthlySavings={setMonthlySavings} debtMethod={debtMethod} setDebtMethod={setDebtMethod} />
+            </TabsContent>
+
+            <TabsContent value="savings">
+              <div className="space-y-6">
+                {/* Overall Savings Summary */}
+                <Card className="border-2 border-purple-200 bg-gradient-to-br from-purple-50 to-pink-50 dark:from-purple-950 dark:to-pink-950">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2 text-purple-700 dark:text-purple-300">
+                      <PiggyBank className="h-6 w-6" />
+                      Total Savings
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-5xl font-bold text-purple-600 dark:text-purple-400 mb-2">
+                      {formatCurrency(savingsTotal)}
+                    </div>
+                    <div className="grid grid-cols-2 gap-4 mt-4">
+                      <div className="bg-white/50 dark:bg-black/20 rounded-lg p-3">
+                        <p className="text-sm text-muted-foreground">Emergency Fund</p>
+                        <p className="text-xl font-bold text-green-600">{formatCurrency(savings?.emergency_fund || 0)}</p>
+                      </div>
+                      <div className="bg-white/50 dark:bg-black/20 rounded-lg p-3">
+                        <p className="text-sm text-muted-foreground">Goals Saved</p>
+                        <p className="text-xl font-bold text-blue-600">
+                          {formatCurrency(savingsGoalsData.reduce((s, g) => s + (g.current_amount || 0), 0))}
+                        </p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+
+                {/* Emergency Fund Manager */}
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2">
+                      <AlertCircle className="h-5 w-5 text-orange-600" />
+                      Emergency Fund
+                    </CardTitle>
+                    <CardDescription>Build a safety net for unexpected expenses</CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <SavingsManager language={language} availableToSave={cashFlow} />
+                  </CardContent>
+                </Card>
+
+                {/* Savings Goals Pots */}
+                <div>
+                  <div className="flex items-center justify-between mb-4">
+                    <h2 className="text-2xl font-bold flex items-center gap-2">
+                      <TrendingUp className="h-6 w-6 text-blue-600" />
+                      My Savings Goals
+                    </h2>
+                  </div>
+                  
+                  {savingsGoalsData.length === 0 ? (
+                    <Card className="border-dashed">
+                      <CardContent className="py-12 text-center">
+                        <PiggyBank className="h-16 w-16 mx-auto text-muted-foreground mb-4" />
+                        <p className="text-muted-foreground mb-4">No savings goals yet. Start saving for something special!</p>
+                      </CardContent>
+                    </Card>
+                  ) : (
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-6">
+                      {savingsGoalsData.map((goal) => {
+                        const progress = goal.target_amount > 0 
+                          ? (goal.current_amount / goal.target_amount) * 100 
+                          : 0;
+                        const remaining = Math.max(0, goal.target_amount - goal.current_amount);
+                        const monthsRemaining = goal.monthly_contribution > 0 
+                          ? Math.ceil(remaining / goal.monthly_contribution)
+                          : 0;
+
+                        return (
+                          <Card key={goal.id} className="border-2 hover:shadow-lg transition-shadow overflow-hidden">
+                            <div className="h-2 bg-gradient-to-r from-blue-500 to-purple-500" style={{
+                              width: `${Math.min(100, progress)}%`
+                            }} />
+                            <CardHeader className="pb-3">
+                              <CardTitle className="text-lg">{goal.goal_name}</CardTitle>
+                              {goal.goal_description && (
+                                <CardDescription className="text-sm">{goal.goal_description}</CardDescription>
+                              )}
+                            </CardHeader>
+                            <CardContent className="space-y-4">
+                              <div>
+                                <div className="flex justify-between text-sm mb-2">
+                                  <span className="text-muted-foreground">Progress</span>
+                                  <span className="font-bold">{progress.toFixed(1)}%</span>
+                                </div>
+                                <Progress value={progress} className="h-3" />
+                              </div>
+
+                              <div className="grid grid-cols-2 gap-3">
+                                <div className="bg-muted rounded-lg p-3">
+                                  <p className="text-xs text-muted-foreground">Saved</p>
+                                  <p className="text-lg font-bold text-green-600">
+                                    {formatCurrency(goal.current_amount)}
+                                  </p>
+                                </div>
+                                <div className="bg-muted rounded-lg p-3">
+                                  <p className="text-xs text-muted-foreground">Target</p>
+                                  <p className="text-lg font-bold text-blue-600">
+                                    {formatCurrency(goal.target_amount)}
+                                  </p>
+                                </div>
+                              </div>
+
+                              <div className="space-y-2 text-sm">
+                                <div className="flex justify-between">
+                                  <span className="text-muted-foreground">Remaining</span>
+                                  <span className="font-semibold">{formatCurrency(remaining)}</span>
+                                </div>
+                                {goal.monthly_contribution > 0 && (
+                                  <div className="flex justify-between">
+                                    <span className="text-muted-foreground">Monthly</span>
+                                    <span className="font-semibold text-purple-600">
+                                      {formatCurrency(goal.monthly_contribution)}
+                                    </span>
+                                  </div>
+                                )}
+                                {monthsRemaining > 0 && (
+                                  <div className="flex justify-between">
+                                    <span className="text-muted-foreground">Time left</span>
+                                    <span className="font-semibold">{monthsRemaining} months</span>
+                                  </div>
+                                )}
+                                {goal.target_date && (
+                                  <div className="flex justify-between">
+                                    <span className="text-muted-foreground">Target date</span>
+                                    <span className="font-semibold">
+                                      {format(new Date(goal.target_date), "MMM d, yyyy")}
+                                    </span>
+                                  </div>
+                                )}
+                              </div>
+
+                              {progress >= 100 && (
+                                <div className="bg-green-50 dark:bg-green-950 border border-green-200 dark:border-green-800 rounded-lg p-3 text-center">
+                                  <p className="text-green-700 dark:text-green-300 font-semibold text-sm">
+                                    🎉 Goal Achieved!
+                                  </p>
+                                </div>
+                              )}
+                            </CardContent>
+                          </Card>
+                        );
+                      })}
+                    </div>
+                  )}
+
+                  {/* Savings Goals Manager */}
+                  <div className="mt-6">
+                    <SavingsGoalsManager 
+                      language={language}
+                      availableForSavings={cashFlow}
+                      availableBudget={cashFlow}
+                    />
+                  </div>
+                </div>
+              </div>
             </TabsContent>
           </Tabs>
 
