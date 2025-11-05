@@ -36,6 +36,11 @@ import {
   useVariableExpenses,
   useSavingsGoals,
   useSavings,
+  useAddIncome,
+  useAddDebt,
+  useAddFixedExpense,
+  useAddVariableExpense,
+  useAddSavingsGoal,
 } from "@/hooks/useFinancialData";
 import { toast } from "@/hooks/use-toast";
 import { useFinancialProfiles } from "@/hooks/useFinancialProfiles";
@@ -77,7 +82,7 @@ type DebtMethod = "avalanche" | "snowball" | "hybrid";
 type Event = {
   id: string;
   date: string;
-  type: "income" | "debt" | "fixed" | "variable";
+  type: "income" | "debt" | "fixed" | "variable" | "savings";
   name: string;
   amount: number;
   recurring?: boolean;
@@ -266,13 +271,22 @@ const Index = () => {
   const [newEvent, setNewEvent] = useState<{
     name: string;
     amount: number;
-    type: "income" | "debt" | "fixed" | "variable";
+    type: "income" | "debt" | "fixed" | "variable" | "savings";
     recurring: boolean;
+    payment_day: number;
+    frequency: string;
+    apr?: number;
+    minimum_payment?: number;
+    balance?: number;
+    target_amount?: number;
+    target_date?: string;
   }>({
     name: "",
     amount: 0,
     type: "income",
     recurring: false,
+    payment_day: 1,
+    frequency: "monthly",
   });
   const { data: profiles = [] } = useFinancialProfiles();
   const activeProfile = useMemo(
@@ -288,6 +302,14 @@ const Index = () => {
   const { data: variableExpensesData = [] } = useVariableExpenses();
   const { data: savingsGoalsData = [] } = useSavingsGoals();
   const { data: savings } = useSavings();
+  
+  // Mutation hooks for adding financial data
+  const addIncomeMutation = useAddIncome();
+  const addDebtMutation = useAddDebt();
+  const addFixedExpenseMutation = useAddFixedExpense();
+  const addVariableExpenseMutation = useAddVariableExpense();
+  const addSavingsGoalMutation = useAddSavingsGoal();
+  
   const t = translations[language];
   const {
     totalIncome,
@@ -471,50 +493,96 @@ const Index = () => {
     );
   if (!user) return <Auth />;
   const getEventsForDay = (date: Date) => calendarEvents.filter((e) => isSameDay(new Date(e.date), date));
-  const addEvent = () => {
-    if (selectedDate && newEvent.name && newEvent.amount > 0) {
-      const event: Event = {
-        id: Date.now().toString(),
-        date: format(selectedDate, "yyyy-MM-dd"),
-        type: newEvent.type,
-        name: newEvent.name,
-        amount: newEvent.amount,
-        recurring: false,
-      };
-      setEvents([...events, event]);
+  
+  const resetEventForm = () => {
+    setNewEvent({
+      name: "",
+      amount: 0,
+      type: "income",
+      recurring: false,
+      payment_day: 1,
+      frequency: "monthly",
+    });
+  };
+  
+  const addEvent = async () => {
+    if (!selectedDate || !newEvent.name || newEvent.amount <= 0) return;
+    
+    try {
+      switch (newEvent.type) {
+        case "income":
+          await addIncomeMutation.mutateAsync({
+            name: newEvent.name,
+            amount: newEvent.amount,
+            payment_day: newEvent.payment_day,
+          });
+          break;
+          
+        case "debt":
+          if (!newEvent.balance || !newEvent.apr || !newEvent.minimum_payment) {
+            toast({
+              title: "Missing Information",
+              description: "Please fill in all debt fields",
+              variant: "destructive",
+            });
+            return;
+          }
+          await addDebtMutation.mutateAsync({
+            name: newEvent.name,
+            balance: newEvent.balance,
+            apr: newEvent.apr,
+            minimum_payment: newEvent.minimum_payment,
+            payment_day: newEvent.payment_day,
+          });
+          break;
+          
+        case "fixed":
+          await addFixedExpenseMutation.mutateAsync({
+            name: newEvent.name,
+            amount: newEvent.amount,
+            payment_day: newEvent.payment_day,
+            frequency_type: newEvent.frequency,
+          });
+          break;
+          
+        case "variable":
+          await addVariableExpenseMutation.mutateAsync({
+            name: newEvent.name,
+            amount: newEvent.amount,
+          });
+          break;
+          
+        case "savings":
+          if (!newEvent.target_amount) {
+            toast({
+              title: "Missing Information",
+              description: "Please enter a target amount for savings goal",
+              variant: "destructive",
+            });
+            return;
+          }
+          await addSavingsGoalMutation.mutateAsync({
+            goal_name: newEvent.name,
+            target_amount: newEvent.target_amount,
+            current_amount: newEvent.amount,
+            target_date: newEvent.target_date || null,
+          });
+          break;
+      }
+      
       setShowEventDialog(false);
-      setNewEvent({
-        name: "",
-        amount: 0,
-        type: "income",
-        recurring: false,
-      });
+      resetEventForm();
+    } catch (error) {
+      console.error("Error adding event:", error);
     }
   };
+  
   const updateEvent = () => {
-    if (editingEvent && newEvent.name && newEvent.amount > 0) {
-      setEvents(
-        events.map((e) =>
-          e.id === editingEvent.id
-            ? {
-                ...e,
-                name: newEvent.name,
-                amount: newEvent.amount,
-                type: newEvent.type,
-                recurring: newEvent.recurring,
-              }
-            : e,
-        ),
-      );
-      setEditingEvent(null);
-      setShowEventDialog(false);
-      setNewEvent({
-        name: "",
-        amount: 0,
-        type: "income",
-        recurring: false,
-      });
-    }
+    // For now, just close the dialog as editing existing entries 
+    // should be done through their respective managers
+    setEditingEvent(null);
+    setShowEventDialog(false);
+    resetEventForm();
   };
   const deleteEvent = (id: string) => {
     setEvents(events.filter((e) => e.id !== id));
@@ -1012,14 +1080,16 @@ const Index = () => {
                               size="sm"
                               variant="ghost"
                               onClick={() => {
-                                setEditingEvent(e);
-                                setNewEvent({
-                                  name: e.name,
-                                  amount: e.amount,
-                                  type: e.type,
-                                  recurring: e.recurring || false,
-                                });
-                                setShowEventDialog(true);
+                              setEditingEvent(e);
+                              setNewEvent({
+                                name: e.name,
+                                amount: e.amount,
+                                type: e.type,
+                                recurring: e.recurring || false,
+                                payment_day: 1,
+                                frequency: "monthly",
+                              });
+                              setShowEventDialog(true);
                               }}
                             >
                               <Edit2 className="h-4 w-4" />
@@ -1038,12 +1108,7 @@ const Index = () => {
                     variant="default"
                     onClick={() => {
                       setEditingEvent(null);
-                      setNewEvent({
-                        name: "",
-                        amount: 0,
-                        type: "income",
-                        recurring: false,
-                      });
+                      resetEventForm();
                       setShowEventDialog(true);
                     }}
                   >
@@ -1057,36 +1122,15 @@ const Index = () => {
 
           {/* AGREGAR/EDITAR EVENTO */}
           <AlertDialog open={showEventDialog} onOpenChange={setShowEventDialog}>
-            <AlertDialogContent>
+            <AlertDialogContent className="max-h-[90vh] overflow-y-auto">
               <AlertDialogHeader>
-                <AlertDialogTitle>{editingEvent ? "Edit Event" : "Add Event"}</AlertDialogTitle>
+                <AlertDialogTitle>{editingEvent ? "Edit Event" : "Add Financial Entry"}</AlertDialogTitle>
+                <p className="text-sm text-muted-foreground">
+                  Create a new entry in your financial records
+                </p>
               </AlertDialogHeader>
               <div className="space-y-4">
-                <div>
-                  <Label>Name</Label>
-                  <Input
-                    value={newEvent.name}
-                    onChange={(e) =>
-                      setNewEvent({
-                        ...newEvent,
-                        name: e.target.value,
-                      })
-                    }
-                  />
-                </div>
-                <div>
-                  <Label>Amount</Label>
-                  <Input
-                    type="number"
-                    value={newEvent.amount || ""}
-                    onChange={(e) =>
-                      setNewEvent({
-                        ...newEvent,
-                        amount: parseFloat(e.target.value) || 0,
-                      })
-                    }
-                  />
-                </div>
+                {/* Type Selection */}
                 <div>
                   <Label>Type</Label>
                   <Select
@@ -1105,30 +1149,184 @@ const Index = () => {
                       <SelectItem value="income">Income</SelectItem>
                       <SelectItem value="fixed">Fixed Expense</SelectItem>
                       <SelectItem value="variable">Variable Expense</SelectItem>
-                      <SelectItem value="debt">Debt Payment</SelectItem>
+                      <SelectItem value="debt">Debt</SelectItem>
+                      <SelectItem value="savings">Savings Goal</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
-                <div className="flex items-center space-x-2 p-3 bg-muted rounded-lg">
-                  <input
-                    type="checkbox"
-                    id="recurring"
-                    checked={newEvent.recurring}
+
+                {/* Common Fields */}
+                <div>
+                  <Label>{newEvent.type === "savings" ? "Goal Name" : "Name"}</Label>
+                  <Input
+                    value={newEvent.name}
                     onChange={(e) =>
                       setNewEvent({
                         ...newEvent,
-                        recurring: e.target.checked,
+                        name: e.target.value,
                       })
                     }
-                    className="h-4 w-4 rounded border-gray-300"
+                    placeholder={
+                      newEvent.type === "income" ? "e.g., Salary" :
+                      newEvent.type === "debt" ? "e.g., Credit Card" :
+                      newEvent.type === "savings" ? "e.g., Vacation" :
+                      "e.g., Rent"
+                    }
                   />
-                  <Label htmlFor="recurring" className="cursor-pointer">
-                    Repeat monthly for following months
-                  </Label>
                 </div>
+
+                {/* Amount (not for debts) */}
+                {newEvent.type !== "debt" && (
+                  <div>
+                    <Label>
+                      {newEvent.type === "savings" ? "Current Saved Amount (£)" : "Amount (£)"}
+                    </Label>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      value={newEvent.amount || ""}
+                      onChange={(e) =>
+                        setNewEvent({
+                          ...newEvent,
+                          amount: parseFloat(e.target.value) || 0,
+                        })
+                      }
+                      placeholder="0.00"
+                    />
+                  </div>
+                )}
+
+                {/* Debt-specific fields */}
+                {newEvent.type === "debt" && (
+                  <>
+                    <div>
+                      <Label>Total Balance (£)</Label>
+                      <Input
+                        type="number"
+                        step="0.01"
+                        value={newEvent.balance || ""}
+                        onChange={(e) =>
+                          setNewEvent({
+                            ...newEvent,
+                            balance: parseFloat(e.target.value) || 0,
+                          })
+                        }
+                        placeholder="0.00"
+                      />
+                    </div>
+                    <div>
+                      <Label>APR (%)</Label>
+                      <Input
+                        type="number"
+                        step="0.1"
+                        value={newEvent.apr || ""}
+                        onChange={(e) =>
+                          setNewEvent({
+                            ...newEvent,
+                            apr: parseFloat(e.target.value) || 0,
+                          })
+                        }
+                        placeholder="e.g., 19.9"
+                      />
+                    </div>
+                    <div>
+                      <Label>Minimum Payment (£)</Label>
+                      <Input
+                        type="number"
+                        step="0.01"
+                        value={newEvent.minimum_payment || ""}
+                        onChange={(e) =>
+                          setNewEvent({
+                            ...newEvent,
+                            minimum_payment: parseFloat(e.target.value) || 0,
+                          })
+                        }
+                        placeholder="0.00"
+                      />
+                    </div>
+                  </>
+                )}
+
+                {/* Savings Goal specific fields */}
+                {newEvent.type === "savings" && (
+                  <>
+                    <div>
+                      <Label>Target Amount (£)</Label>
+                      <Input
+                        type="number"
+                        step="0.01"
+                        value={newEvent.target_amount || ""}
+                        onChange={(e) =>
+                          setNewEvent({
+                            ...newEvent,
+                            target_amount: parseFloat(e.target.value) || 0,
+                          })
+                        }
+                        placeholder="0.00"
+                      />
+                    </div>
+                    <div>
+                      <Label>Target Date (Optional)</Label>
+                      <Input
+                        type="date"
+                        value={newEvent.target_date || ""}
+                        onChange={(e) =>
+                          setNewEvent({
+                            ...newEvent,
+                            target_date: e.target.value,
+                          })
+                        }
+                      />
+                    </div>
+                  </>
+                )}
+
+                {/* Payment Day (for income, fixed expenses, and debts) */}
+                {(newEvent.type === "income" || newEvent.type === "fixed" || newEvent.type === "debt") && (
+                  <div>
+                    <Label>Payment Day of Month</Label>
+                    <Input
+                      type="number"
+                      min="1"
+                      max="31"
+                      value={newEvent.payment_day || ""}
+                      onChange={(e) =>
+                        setNewEvent({
+                          ...newEvent,
+                          payment_day: parseInt(e.target.value) || 1,
+                        })
+                      }
+                      placeholder="1-31"
+                    />
+                  </div>
+                )}
+
+                {/* Frequency (for fixed expenses) */}
+                {newEvent.type === "fixed" && (
+                  <div>
+                    <Label>Frequency</Label>
+                    <Select
+                      value={newEvent.frequency}
+                      onValueChange={(v) =>
+                        setNewEvent({
+                          ...newEvent,
+                          frequency: v,
+                        })
+                      }
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="monthly">Monthly</SelectItem>
+                        <SelectItem value="yearly">Yearly</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
               </div>
               <AlertDialogFooter>
-                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogCancel onClick={resetEventForm}>Cancel</AlertDialogCancel>
                 <AlertDialogAction onClick={editingEvent ? updateEvent : addEvent}>
                   {editingEvent ? "Save" : "Add"}
                 </AlertDialogAction>
