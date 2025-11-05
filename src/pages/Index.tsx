@@ -50,7 +50,7 @@ import { Progress } from "@/components/ui/progress";
 import { Slider } from "@/components/ui/slider";
 import { supabase } from "@/integrations/supabase/client";
 import { useTheme } from "@/hooks/useTheme";
-import { useNextTheme } from "next-themes";
+import { useTheme as useNextTheme } from "next-themes";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   AlertDialog,
@@ -68,7 +68,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 
-type Language = "en" | "es" | "pl";
+import type { Language } from "@/lib/i18n";
 type DebtMethod = "avalanche" | "snowball" | "hybrid";
 type Event = {
   id: string;
@@ -491,7 +491,7 @@ const Index = () => {
               <p className="text-muted-foreground">Hi, {activeProfile.name}!</p>
             </div>
             <div className="flex items-center gap-3">
-              <LanguageToggle language={language} onLanguageChange={(lang) => setLanguage(lang)} />
+              <LanguageToggle language={language} onLanguageChange={setLanguage} />
               <ProfileSelector language={language} />
               <Button variant="outline" size="icon" onClick={() => window.print()}>
                 <Download className="h-4 w-4" />
