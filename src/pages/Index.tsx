@@ -3,36 +3,8 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { format, addMonths, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, add, sub } from "date-fns";
 import { formatCurrency } from "@/lib/i18n";
-import {
-  TrendingUp,
-  Download,
-  LogOut,
-  Bot,
-  Calendar,
-  DollarSign,
-  PiggyBank,
-  Home,
-  Edit2,
-  Trash2,
-  Plus,
-  ChevronLeft,
-  ChevronRight,
-  Send,
-  X,
-  Zap,
-  Snowflake,
-  Moon,
-  Sun,
-  PoundSterling,
-} from "lucide-react";
-import {
-  useIncomeSources,
-  useDebts,
-  useFixedExpenses,
-  useVariableExpenses,
-  useSavingsGoals,
-  useSavings,
-} from "@/hooks/useFinancialData";
+import { TrendingUp, Download, LogOut, Bot, Calendar, DollarSign, PiggyBank, Home, Edit2, Trash2, Plus, ChevronLeft, ChevronRight, Send, X, Zap, Snowflake, Moon, Sun, PoundSterling } from "lucide-react";
+import { useIncomeSources, useDebts, useFixedExpenses, useVariableExpenses, useSavingsGoals, useSavings } from "@/hooks/useFinancialData";
 import { useFinancialProfiles } from "@/hooks/useFinancialProfiles";
 import { Auth } from "@/components/Auth";
 import { IncomeManager } from "@/components/IncomeManager";
@@ -52,25 +24,14 @@ import { supabase } from "@/integrations/supabase/client";
 import { useTheme } from "@/hooks/useTheme";
 import { useTheme as useNextTheme } from "next-themes";
 import { Skeleton } from "@/components/ui/skeleton";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-
 type Language = "en" | "es" | "pl";
 type DebtMethod = "avalanche" | "snowball" | "hybrid";
-
 type Event = {
   id: string;
   date: string;
@@ -79,7 +40,6 @@ type Event = {
   amount: number;
   recurring?: boolean;
 };
-
 const translations = {
   en: {
     overview: "Overview",
@@ -115,7 +75,7 @@ const translations = {
     cashFlowAfterSavings: "Cash Flow After Savings",
     debtPayment: "Available for Debt Payment",
     monthsToEmergency: "Months to Emergency Fund Goal",
-    monthlyDebtAllocation: "Monthly Debt Allocation",
+    monthlyDebtAllocation: "Monthly Debt Allocation"
   },
   es: {
     overview: "Resumen",
@@ -151,7 +111,7 @@ const translations = {
     cashFlowAfterSavings: "Flujo de Caja Después de Ahorros",
     debtPayment: "Disponible para Pago de Deuda",
     monthsToEmergency: "Meses para Meta de Fondo de Emergencia",
-    monthlyDebtAllocation: "Asignación Mensual de Deuda",
+    monthlyDebtAllocation: "Asignación Mensual de Deuda"
   },
   pl: {
     overview: "Przegląd",
@@ -187,44 +147,46 @@ const translations = {
     cashFlowAfterSavings: "Przepływ Gotówki Po Oszczędnościach",
     debtPayment: "Dostępne na Płatność Długu",
     monthsToEmergency: "Miesiące do Celu Funduszu Awaryjnego",
-    monthlyDebtAllocation: "Miesięczna Alokacja Długu",
-  },
+    monthlyDebtAllocation: "Miesięczna Alokacja Długu"
+  }
 };
-
 const useVariableIncome = () => {
   const [data, setData] = useState<any[]>([]);
   const [loading, setLoading] = useState(false);
-
   useEffect(() => {
     const saved = localStorage.getItem("variable_income");
     if (saved) setData(JSON.parse(saved));
     setLoading(false);
   }, []);
-
   const addIncome = (amount: number, description: string) => {
     const newEntry = {
       id: Date.now().toString(),
       amount,
       description: description || "Extra income",
-      date: new Date().toISOString(),
+      date: new Date().toISOString()
     };
     const updated = [newEntry, ...data];
     setData(updated);
     localStorage.setItem("variable_income", JSON.stringify(updated));
   };
-
   const deleteIncome = (id: string) => {
-    const updated = data.filter((i) => i.id !== id);
+    const updated = data.filter(i => i.id !== id);
     setData(updated);
     localStorage.setItem("variable_income", JSON.stringify(updated));
   };
-
-  return { data, loading, addIncome, deleteIncome };
+  return {
+    data,
+    loading,
+    addIncome,
+    deleteIncome
+  };
 };
-
 const Index = () => {
   useTheme();
-  const { theme, setTheme } = useNextTheme();
+  const {
+    theme,
+    setTheme
+  } = useNextTheme();
   const [language, setLanguage] = useState<Language>("en");
   const [user, setUser] = useState<any>(null);
   const [authLoading, setAuthLoading] = useState(true);
@@ -232,7 +194,6 @@ const Index = () => {
   const [aiInput, setAiInput] = useState("");
   const [aiResponse, setAiResponse] = useState("");
   const [aiLoading, setAiLoading] = useState(false);
-
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [events, setEvents] = useState<Event[]>([]);
@@ -244,7 +205,7 @@ const Index = () => {
   const [showIncomeModal, setShowIncomeModal] = useState(false);
   const [newIncome, setNewIncome] = useState({
     description: "",
-    amount: 0,
+    amount: 0
   });
 
   // SLIDER PARA AHORROS MENSUALES
@@ -252,30 +213,48 @@ const Index = () => {
 
   // ESTRATEGIA DE DEUDA
   const [debtMethod, setDebtMethod] = useState<DebtMethod>("avalanche");
-
   const [newEvent, setNewEvent] = useState<{
     name: string;
     amount: number;
     type: "income" | "debt" | "fixed" | "variable";
-  }>({ name: "", amount: 0, type: "income" });
-
-  const { data: profiles = [] } = useFinancialProfiles();
-  const activeProfile = profiles.find((p) => p.is_active) || { name: "Family" };
-
-  const { data: incomeData = [] } = useIncomeSources();
-  const { data: debtData = [] } = useDebts();
-  const { data: fixedExpensesData = [] } = useFixedExpenses();
-  const { data: variableExpensesData = [] } = useVariableExpenses();
-  const { data: savingsGoalsData = [] } = useSavingsGoals();
-  const { data: savings } = useSavings();
-  const { data: variableIncome = [], addIncome, deleteIncome } = useVariableIncome();
-
+  }>({
+    name: "",
+    amount: 0,
+    type: "income"
+  });
+  const {
+    data: profiles = []
+  } = useFinancialProfiles();
+  const activeProfile = profiles.find(p => p.is_active) || {
+    name: "Family"
+  };
+  const {
+    data: incomeData = []
+  } = useIncomeSources();
+  const {
+    data: debtData = []
+  } = useDebts();
+  const {
+    data: fixedExpensesData = []
+  } = useFixedExpenses();
+  const {
+    data: variableExpensesData = []
+  } = useVariableExpenses();
+  const {
+    data: savingsGoalsData = []
+  } = useSavingsGoals();
+  const {
+    data: savings
+  } = useSavings();
+  const {
+    data: variableIncome = [],
+    addIncome,
+    deleteIncome
+  } = useVariableIncome();
   const handleLanguageChange = useCallback((lang: Language) => {
     setLanguage(lang);
   }, []);
-
   const t = translations[language];
-
   const {
     totalIncome,
     totalFixed,
@@ -292,7 +271,7 @@ const Index = () => {
     monthEnd,
     monthDays,
     firstDayOfWeek,
-    blankDays,
+    blankDays
   } = useMemo(() => {
     const totalIncome = incomeData.reduce((s, i) => s + i.amount, 0) + variableIncome.reduce((s, i) => s + i.amount, 0);
     const totalFixed = fixedExpensesData.reduce((s, e) => s + e.amount, 0);
@@ -300,9 +279,7 @@ const Index = () => {
     const totalDebtPayment = debtData.reduce((s, d) => s + d.minimum_payment, 0);
     const totalExpenses = totalFixed + totalVariable + totalDebtPayment;
     const cashFlow = totalIncome - totalExpenses;
-    const savingsTotal =
-      (savings?.emergency_fund || 0) + savingsGoalsData.reduce((s, g) => s + (g.current_amount || 0), 0);
-
+    const savingsTotal = (savings?.emergency_fund || 0) + savingsGoalsData.reduce((s, g) => s + (g.current_amount || 0), 0);
     let remaining = debtData.reduce((s, d) => s + d.balance, 0);
     let months = 0;
     const extra = Math.max(0, (cashFlow - monthlySavings) * 0.3);
@@ -313,25 +290,31 @@ const Index = () => {
       months++;
     }
     const debtFreeDate = addMonths(new Date(), months);
-
-    const pieData = [
-      { name: "Fixed", value: totalFixed, color: "#3b82f6" },
-      { name: "Variable", value: totalVariable, color: "#10b981" },
-      { name: "Debt", value: totalDebtPayment, color: "#ef4444" },
-    ].filter((d) => d.value > 0);
+    const pieData = [{
+      name: "Fixed",
+      value: totalFixed,
+      color: "#3b82f6"
+    }, {
+      name: "Variable",
+      value: totalVariable,
+      color: "#10b981"
+    }, {
+      name: "Debt",
+      value: totalDebtPayment,
+      color: "#ef4444"
+    }].filter(d => d.value > 0);
 
     // === CALENDARIO CON EVENTOS RECURRENTES EN MÚLTIPLES MESES ===
     const allEvents: Event[] = [];
     const startYear = currentMonth.getFullYear() - 1;
     const endYear = currentMonth.getFullYear() + 1;
-
     for (let year = startYear; year <= endYear; year++) {
       for (let month = 0; month < 12; month++) {
         const currentDate = new Date(year, month, 1);
         if (currentDate > new Date(endYear, 11, 31)) break;
 
         // INGRESOS FIJOS - Día 1 de cada mes
-        incomeData.forEach((inc) => {
+        incomeData.forEach(inc => {
           const date = new Date(year, month, 1);
           allEvents.push({
             id: `inc-${inc.id}-${year}-${month}`,
@@ -339,12 +322,12 @@ const Index = () => {
             type: "income",
             name: inc.name,
             amount: inc.amount,
-            recurring: true,
+            recurring: true
           });
         });
 
         // GASTOS FIJOS - Día de pago
-        fixedExpensesData.forEach((exp) => {
+        fixedExpensesData.forEach(exp => {
           const day = exp.payment_day || 1;
           const lastDayOfMonth = new Date(year, month + 1, 0).getDate();
           const date = new Date(year, month, Math.min(day, lastDayOfMonth));
@@ -354,12 +337,12 @@ const Index = () => {
             type: "fixed",
             name: exp.name,
             amount: exp.amount,
-            recurring: true,
+            recurring: true
           });
         });
 
         // DEUDAS - Día 15
-        debtData.forEach((debt) => {
+        debtData.forEach(debt => {
           const date = new Date(year, month, 15);
           allEvents.push({
             id: `debt-${debt.id}-${year}-${month}`,
@@ -367,12 +350,12 @@ const Index = () => {
             type: "debt",
             name: `${debt.name} (min)`,
             amount: debt.minimum_payment,
-            recurring: true,
+            recurring: true
           });
         });
 
         // GASTOS VARIABLES - Día 10 (recurrente)
-        variableExpensesData.forEach((exp) => {
+        variableExpensesData.forEach(exp => {
           const date = new Date(year, month, 10);
           allEvents.push({
             id: `var-${exp.id}-${year}-${month}`,
@@ -380,18 +363,19 @@ const Index = () => {
             type: "variable",
             name: exp.name,
             amount: exp.amount,
-            recurring: true,
+            recurring: true
           });
         });
       }
     }
-
     const monthStart = startOfMonth(currentMonth);
     const monthEnd = endOfMonth(currentMonth);
-    const monthDays = eachDayOfInterval({ start: monthStart, end: monthEnd });
+    const monthDays = eachDayOfInterval({
+      start: monthStart,
+      end: monthEnd
+    });
     const firstDayOfWeek = monthStart.getDay();
     const blankDays = Array(firstDayOfWeek).fill(null);
-
     return {
       totalIncome,
       totalFixed,
@@ -408,50 +392,37 @@ const Index = () => {
       monthEnd,
       monthDays,
       firstDayOfWeek,
-      blankDays,
+      blankDays
     };
-  }, [
-    incomeData,
-    variableIncome,
-    fixedExpensesData,
-    variableExpensesData,
-    debtData,
-    savings,
-    savingsGoalsData,
-    currentMonth,
-    monthlySavings,
-  ]);
-
+  }, [incomeData, variableIncome, fixedExpensesData, variableExpensesData, debtData, savings, savingsGoalsData, currentMonth, monthlySavings]);
   const formatCurrency = (amount: number) => `£${amount.toFixed(0)}`;
-
   useEffect(() => {
     // Set up auth state listener FIRST
     const {
-      data: { subscription },
+      data: {
+        subscription
+      }
     } = supabase.auth.onAuthStateChange((_event, session) => {
       setUser(session?.user ?? null);
       setAuthLoading(false);
     });
 
     // THEN check for existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.getSession().then(({
+      data: {
+        session
+      }
+    }) => {
       setUser(session?.user ?? null);
       setAuthLoading(false);
     });
-
     return () => subscription.unsubscribe();
   }, []);
-
-  if (authLoading)
-    return (
-      <div className="p-8">
+  if (authLoading) return <div className="p-8">
         <Skeleton className="h-64 w-full" />
-      </div>
-    );
+      </div>;
   if (!user) return <Auth />;
-
-  const getEventsForDay = (date: Date) => calendarEvents.filter((e) => isSameDay(new Date(e.date), date));
-
+  const getEventsForDay = (date: Date) => calendarEvents.filter(e => isSameDay(new Date(e.date), date));
   const addEvent = () => {
     if (selectedDate && newEvent.name && newEvent.amount) {
       const newEntry: Event = {
@@ -459,52 +430,60 @@ const Index = () => {
         date: format(selectedDate, "yyyy-MM-dd"),
         type: newEvent.type,
         name: newEvent.name,
-        amount: newEvent.amount,
+        amount: newEvent.amount
       };
       setEvents([...events, newEntry]);
       setShowEventDialog(false);
-      setNewEvent({ name: "", amount: 0, type: "income" });
+      setNewEvent({
+        name: "",
+        amount: 0,
+        type: "income"
+      });
     }
   };
-
   const updateEvent = () => {
     if (editingEvent && newEvent.name && newEvent.amount) {
-      const updated = events.map((e) =>
-        e.id === editingEvent.id ? { ...e, name: newEvent.name, amount: newEvent.amount } : e,
-      );
+      const updated = events.map(e => e.id === editingEvent.id ? {
+        ...e,
+        name: newEvent.name,
+        amount: newEvent.amount
+      } : e);
       setEvents(updated);
       setEditingEvent(null);
       setShowEventDialog(false);
-      setNewEvent({ name: "", amount: 0, type: "income" });
+      setNewEvent({
+        name: "",
+        amount: 0,
+        type: "income"
+      });
     }
   };
-
   const deleteEvent = (id: string) => {
-    setEvents(events.filter((e) => e.id !== id));
+    setEvents(events.filter(e => e.id !== id));
     setDeleteId(null);
   };
-
   const sendToAI = async () => {
     if (!aiInput.trim()) return;
     setAiLoading(true);
     setAiResponse("");
-
     try {
-      const { data, error } = await supabase.functions.invoke('financial-advisor', {
-        body: { 
-          messages: [
-            { role: 'user', content: aiInput }
-          ]
+      const {
+        data,
+        error
+      } = await supabase.functions.invoke('financial-advisor', {
+        body: {
+          messages: [{
+            role: 'user',
+            content: aiInput
+          }]
         }
       });
-
       if (error) {
         console.error('Error calling financial advisor:', error);
         setAiResponse('Lo siento, hubo un error al conectar con el asistente financiero. Por favor, intenta de nuevo.');
         setAiLoading(false);
         return;
       }
-
       if (data.error) {
         setAiResponse(data.error);
       } else {
@@ -518,9 +497,7 @@ const Index = () => {
       setAiLoading(false);
     }
   };
-
-  return (
-    <>
+  return <>
       <style>{`@media print { .no-print { display: none !important; } }`}</style>
 
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-slate-900 dark:to-indigo-900">
@@ -528,7 +505,7 @@ const Index = () => {
           {/* HEADER */}
           <div className="no-print flex justify-between items-center mb-8">
             <div>
-              <h1 className="text-5xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent flex items-center gap-3">
+              <h1 className="text-5xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent flex items-center gap-3 text-center">
                 <Home className="h-12 w-12" />
                 Family Budget Planner UK
               </h1>
@@ -568,10 +545,9 @@ const Index = () => {
               </CardContent>
             </Card>
 
-            <Card
-              className="border-red-200 hover-scale transition-all duration-300 hover:shadow-lg animate-fade-in"
-              style={{ animationDelay: "0.1s" }}
-            >
+            <Card className="border-red-200 hover-scale transition-all duration-300 hover:shadow-lg animate-fade-in" style={{
+            animationDelay: "0.1s"
+          }}>
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm font-medium text-red-600 flex items-center gap-2">
                   <PoundSterling className="h-4 w-4" />
@@ -580,45 +556,36 @@ const Index = () => {
               </CardHeader>
               <CardContent>
                 <div className="text-3xl font-bold text-red-600 animate-scale-in">{formatCurrency(totalExpenses)}</div>
-                <Progress value={(totalExpenses / totalIncome) * 100} className="mt-3 h-2 bg-red-100" />
+                <Progress value={totalExpenses / totalIncome * 100} className="mt-3 h-2 bg-red-100" />
                 <p className="text-xs text-muted-foreground mt-2">
-                  {totalIncome > 0 ? `${((totalExpenses / totalIncome) * 100).toFixed(1)}% of income` : "0% of income"}
+                  {totalIncome > 0 ? `${(totalExpenses / totalIncome * 100).toFixed(1)}% of income` : "0% of income"}
                 </p>
               </CardContent>
             </Card>
 
-            <Card
-              className={`${cashFlow >= 0 ? "border-emerald-200" : "border-orange-200"} hover-scale transition-all duration-300 hover:shadow-lg animate-fade-in`}
-              style={{ animationDelay: "0.2s" }}
-            >
+            <Card className={`${cashFlow >= 0 ? "border-emerald-200" : "border-orange-200"} hover-scale transition-all duration-300 hover:shadow-lg animate-fade-in`} style={{
+            animationDelay: "0.2s"
+          }}>
               <CardHeader className="pb-2">
-                <CardTitle
-                  className={`text-sm font-medium ${cashFlow >= 0 ? "text-emerald-600" : "text-orange-600"} flex items-center gap-2`}
-                >
+                <CardTitle className={`text-sm font-medium ${cashFlow >= 0 ? "text-emerald-600" : "text-orange-600"} flex items-center gap-2`}>
                   {cashFlow >= 0 ? <TrendingUp className="h-4 w-4" /> : <Zap className="h-4 w-4" />}
                   Cash Flow
                 </CardTitle>
               </CardHeader>
               <CardContent>
-                <div
-                  className={`text-3xl font-bold ${cashFlow >= 0 ? "text-emerald-600" : "text-orange-600"} animate-scale-in`}
-                >
+                <div className={`text-3xl font-bold ${cashFlow >= 0 ? "text-emerald-600" : "text-orange-600"} animate-scale-in`}>
                   {formatCurrency(cashFlow)}
                 </div>
-                <Progress
-                  value={cashFlow >= 0 ? 100 : 40}
-                  className={`mt-3 h-2 ${cashFlow >= 0 ? "bg-emerald-100" : "bg-orange-100"}`}
-                />
+                <Progress value={cashFlow >= 0 ? 100 : 40} className={`mt-3 h-2 ${cashFlow >= 0 ? "bg-emerald-100" : "bg-orange-100"}`} />
                 <p className="text-xs text-muted-foreground mt-2">
                   {cashFlow >= 0 ? "Positive flow 💰" : "Needs attention ⚠️"}
                 </p>
               </CardContent>
             </Card>
 
-            <Card
-              className="border-purple-200 hover-scale transition-all duration-300 hover:shadow-lg animate-fade-in"
-              style={{ animationDelay: "0.3s" }}
-            >
+            <Card className="border-purple-200 hover-scale transition-all duration-300 hover:shadow-lg animate-fade-in" style={{
+            animationDelay: "0.3s"
+          }}>
               <CardHeader className="pb-2">
                 <CardTitle className="text-sm font-medium text-purple-600 flex items-center gap-2">
                   <PiggyBank className="h-4 w-4" />
@@ -629,10 +596,7 @@ const Index = () => {
                 <div className="text-3xl font-bold text-purple-600 animate-scale-in">
                   {formatCurrency(savingsTotal)}
                 </div>
-                <Progress
-                  value={savingsTotal > 0 ? Math.min((savingsTotal / (totalIncome * 3)) * 100, 100) : 0}
-                  className="mt-3 h-2 bg-purple-100"
-                />
+                <Progress value={savingsTotal > 0 ? Math.min(savingsTotal / (totalIncome * 3) * 100, 100) : 0} className="mt-3 h-2 bg-purple-100" />
                 <p className="text-xs text-muted-foreground mt-2">
                   {savingsTotal > 0 ? "Great progress! 🎯" : "Start saving today"}
                 </p>
@@ -641,8 +605,7 @@ const Index = () => {
           </div>
 
           {/* DEBT FREE */}
-          {debtData.length > 0 && (
-            <Card className="border-2 border-orange-200">
+          {debtData.length > 0 && <Card className="border-2 border-orange-200">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-orange-600">
                   <TrendingUp className="h-6 w-6" />
@@ -651,17 +614,15 @@ const Index = () => {
               </CardHeader>
               <CardContent>
                 <div className="text-center">
-                  <p className="text-4xl font-bold">{format(debtFreeDate, "d MMM yyyy")}</p>
+                  <p className="font-bold text-6xl">{format(debtFreeDate, "d MMM yyyy")}</p>
                   <p className="text-lg text-muted-foreground">{monthsToDebtFree} months away</p>
                 </div>
                 <Progress value={80} className="h-4 mt-3" />
               </CardContent>
-            </Card>
-          )}
+            </Card>}
 
           {/* GASTOS PASTEL */}
-          {pieData.length > 0 && (
-            <Card>
+          {pieData.length > 0 && <Card>
               <CardHeader>
                 <CardTitle>Expense Breakdown</CardTitle>
               </CardHeader>
@@ -669,44 +630,41 @@ const Index = () => {
                 <div className="relative w-64 h-64 mx-auto">
                   <svg viewBox="0 0 32 32" className="w-full h-full">
                     {(() => {
-                      const total = pieData.reduce((s, d) => s + d.value, 0);
-                      let cum = 0;
-                      return pieData.map((d, i) => {
-                        const percent = (d.value / total) * 100;
-                        const start = (cum / total) * 360;
-                        cum += d.value;
-                        const end = (cum / total) * 360;
-                        const large = percent > 50 ? 1 : 0;
-                        const sr = (start * Math.PI) / 180;
-                        const er = (end * Math.PI) / 180;
-                        const x1 = 16 + 16 * Math.cos(sr);
-                        const y1 = 16 + 16 * Math.sin(sr);
-                        const x2 = 16 + 16 * Math.cos(er);
-                        const y2 = 16 + 16 * Math.sin(er);
-                        return (
-                          <path key={i} d={`M16,16 L${x1},${y1} A16,16 0 ${large},1 ${x2},${y2} Z`} fill={d.color} />
-                        );
-                      });
-                    })()}
+                  const total = pieData.reduce((s, d) => s + d.value, 0);
+                  let cum = 0;
+                  return pieData.map((d, i) => {
+                    const percent = d.value / total * 100;
+                    const start = cum / total * 360;
+                    cum += d.value;
+                    const end = cum / total * 360;
+                    const large = percent > 50 ? 1 : 0;
+                    const sr = start * Math.PI / 180;
+                    const er = end * Math.PI / 180;
+                    const x1 = 16 + 16 * Math.cos(sr);
+                    const y1 = 16 + 16 * Math.sin(sr);
+                    const x2 = 16 + 16 * Math.cos(er);
+                    const y2 = 16 + 16 * Math.sin(er);
+                    return <path key={i} d={`M16,16 L${x1},${y1} A16,16 0 ${large},1 ${x2},${y2} Z`} fill={d.color} />;
+                  });
+                })()}
                   </svg>
                   <div className="absolute inset-0 flex items-center justify-center text-2xl font-bold">
                     {formatCurrency(totalExpenses)}
                   </div>
                 </div>
                 <div className="mt-4 space-y-2">
-                  {pieData.map((d, i) => (
-                    <div key={i} className="flex justify-between text-sm">
+                  {pieData.map((d, i) => <div key={i} className="flex justify-between text-sm">
                       <span className="flex items-center gap-2">
-                        <div className="w-3 h-3 rounded" style={{ backgroundColor: d.color }} />
+                        <div className="w-3 h-3 rounded" style={{
+                    backgroundColor: d.color
+                  }} />
                         {d.name}
                       </span>
                       <span>{formatCurrency(d.value)}</span>
-                    </div>
-                  ))}
+                    </div>)}
                 </div>
               </CardContent>
-            </Card>
-          )}
+            </Card>}
 
           {/* CALENDARIO */}
           <Card>
@@ -717,10 +675,14 @@ const Index = () => {
                   {format(currentMonth, "MMMM yyyy")}
                 </span>
                 <div className="flex gap-2">
-                  <Button size="sm" variant="outline" onClick={() => setCurrentMonth(sub(currentMonth, { months: 1 }))}>
+                  <Button size="sm" variant="outline" onClick={() => setCurrentMonth(sub(currentMonth, {
+                  months: 1
+                }))}>
                     <ChevronLeft className="h-4 w-4" />
                   </Button>
-                  <Button size="sm" variant="outline" onClick={() => setCurrentMonth(add(currentMonth, { months: 1 }))}>
+                  <Button size="sm" variant="outline" onClick={() => setCurrentMonth(add(currentMonth, {
+                  months: 1
+                }))}>
                     <ChevronRight className="h-4 w-4" />
                   </Button>
                   <Button size="sm" onClick={() => setShowEventDialog(true)}>
@@ -731,47 +693,22 @@ const Index = () => {
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-7 gap-1 text-center text-sm font-medium">
-                {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((d) => (
-                  <div key={d} className="p-2">
+                {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map(d => <div key={d} className="p-2">
                     {d}
-                  </div>
-                ))}
+                  </div>)}
               </div>
               <div className="grid grid-cols-7 gap-1 mt-2">
-                {blankDays.map((_, i) => (
-                  <div key={`blank-${i}`} className="h-16 border rounded" />
-                ))}
-                {monthDays.map((day) => {
-                  const dayEvents = getEventsForDay(day);
-                  return (
-                    <div
-                      key={day.toISOString()}
-                      className={`h-16 border rounded p-1 text-xs cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 transition ${
-                        isSameDay(day, new Date()) ? "bg-blue-50 dark:bg-blue-900" : ""
-                      }`}
-                      onClick={() => setSelectedDate(day)}
-                    >
+                {blankDays.map((_, i) => <div key={`blank-${i}`} className="h-16 border rounded" />)}
+                {monthDays.map(day => {
+                const dayEvents = getEventsForDay(day);
+                return <div key={day.toISOString()} className={`h-16 border rounded p-1 text-xs cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 transition ${isSameDay(day, new Date()) ? "bg-blue-50 dark:bg-blue-900" : ""}`} onClick={() => setSelectedDate(day)}>
                       <div className="font-medium">{format(day, "d")}</div>
-                      {dayEvents.slice(0, 2).map((e, i) => (
-                        <div
-                          key={i}
-                          className={`text-[9px] truncate ${
-                            e.type === "income"
-                              ? "text-green-600"
-                              : e.type === "debt"
-                                ? "text-red-600"
-                                : "text-blue-600"
-                          }`}
-                        >
+                      {dayEvents.slice(0, 2).map((e, i) => <div key={i} className={`text-[9px] truncate ${e.type === "income" ? "text-green-600" : e.type === "debt" ? "text-red-600" : "text-blue-600"}`}>
                           {e.name}
-                        </div>
-                      ))}
-                      {dayEvents.length > 2 && (
-                        <div className="text-[9px] text-muted-foreground">+{dayEvents.length - 2}</div>
-                      )}
-                    </div>
-                  );
-                })}
+                        </div>)}
+                      {dayEvents.length > 2 && <div className="text-[9px] text-muted-foreground">+{dayEvents.length - 2}</div>}
+                    </div>;
+              })}
               </div>
             </CardContent>
           </Card>
@@ -785,26 +722,15 @@ const Index = () => {
                 </AlertDialogTitle>
               </AlertDialogHeader>
               <div className="space-y-4">
-                <Textarea
-                  placeholder="Ask anything: 'How can I save £200/month?' or 'Should I pay off debt first?'"
-                  value={aiInput}
-                  onChange={(e) => setAiInput(e.target.value)}
-                  className="min-h-24"
-                />
+                <Textarea placeholder="Ask anything: 'How can I save £200/month?' or 'Should I pay off debt first?'" value={aiInput} onChange={e => setAiInput(e.target.value)} className="min-h-24" />
                 <Button onClick={sendToAI} disabled={aiLoading} className="w-full">
-                  {aiLoading ? (
-                    "Thinking..."
-                  ) : (
-                    <>
+                  {aiLoading ? "Thinking..." : <>
                       <Send className="h-4 w-4 mr-2" /> Send
-                    </>
-                  )}
+                    </>}
                 </Button>
-                {aiResponse && (
-                  <Card>
+                {aiResponse && <Card>
                     <CardContent className="pt-4 space-y-4 whitespace-pre-wrap text-sm">{aiResponse}</CardContent>
-                  </Card>
-                )}
+                  </Card>}
               </div>
               <AlertDialogFooter>
                 <AlertDialogCancel>Close</AlertDialogCancel>
@@ -813,18 +739,13 @@ const Index = () => {
           </AlertDialog>
 
           {/* DETALLE DEL DÍA */}
-          {selectedDate && (
-            <AlertDialog open={!!selectedDate} onOpenChange={() => setSelectedDate(null)}>
+          {selectedDate && <AlertDialog open={!!selectedDate} onOpenChange={() => setSelectedDate(null)}>
               <AlertDialogContent>
                 <AlertDialogHeader>
                   <AlertDialogTitle>{format(selectedDate, "PPP")}</AlertDialogTitle>
                 </AlertDialogHeader>
                 <AlertDialogDescription className="space-y-3">
-                  {getEventsForDay(selectedDate).length === 0 ? (
-                    <p className="text-center py-4">No events</p>
-                  ) : (
-                    getEventsForDay(selectedDate).map((e) => (
-                      <div key={e.id} className="flex justify-between items-center p-3 bg-muted rounded-lg">
+                  {getEventsForDay(selectedDate).length === 0 ? <p className="text-center py-4">No events</p> : getEventsForDay(selectedDate).map(e => <div key={e.id} className="flex justify-between items-center p-3 bg-muted rounded-lg">
                         <div>
                           <p className="font-medium">{e.name}</p>
                           <p className="text-xs text-muted-foreground">{e.type}</p>
@@ -834,19 +755,15 @@ const Index = () => {
                             {formatCurrency(e.amount)}
                           </span>
                           <div className="flex gap-1">
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              onClick={() => {
-                                setEditingEvent(e);
-                                setNewEvent({
-                                  name: e.name,
-                                  amount: e.amount,
-                                  type: e.type,
-                                });
-                                setShowEventDialog(true);
-                              }}
-                            >
+                            <Button size="sm" variant="ghost" onClick={() => {
+                      setEditingEvent(e);
+                      setNewEvent({
+                        name: e.name,
+                        amount: e.amount,
+                        type: e.type
+                      });
+                      setShowEventDialog(true);
+                    }}>
                               <Edit2 className="h-4 w-4" />
                             </Button>
                             <Button size="sm" variant="ghost" onClick={() => setDeleteId(e.id)}>
@@ -854,16 +771,13 @@ const Index = () => {
                             </Button>
                           </div>
                         </div>
-                      </div>
-                    ))
-                  )}
+                      </div>)}
                 </AlertDialogDescription>
                 <AlertDialogFooter>
                   <AlertDialogCancel>Close</AlertDialogCancel>
                 </AlertDialogFooter>
               </AlertDialogContent>
-            </AlertDialog>
-          )}
+            </AlertDialog>}
 
           {/* AGREGAR/EDITAR EVENTO */}
           <AlertDialog open={showEventDialog} onOpenChange={setShowEventDialog}>
@@ -874,22 +788,24 @@ const Index = () => {
               <div className="space-y-4">
                 <div>
                   <Label>Name</Label>
-                  <Input value={newEvent.name} onChange={(e) => setNewEvent({ ...newEvent, name: e.target.value })} />
+                  <Input value={newEvent.name} onChange={e => setNewEvent({
+                  ...newEvent,
+                  name: e.target.value
+                })} />
                 </div>
                 <div>
                   <Label>Amount</Label>
-                  <Input
-                    type="number"
-                    value={newEvent.amount || ""}
-                    onChange={(e) => setNewEvent({ ...newEvent, amount: parseFloat(e.target.value) || 0 })}
-                  />
+                  <Input type="number" value={newEvent.amount || ""} onChange={e => setNewEvent({
+                  ...newEvent,
+                  amount: parseFloat(e.target.value) || 0
+                })} />
                 </div>
                 <div>
                   <Label>Type</Label>
-                  <Select
-                    value={newEvent.type}
-                    onValueChange={(v: Event["type"]) => setNewEvent({ ...newEvent, type: v })}
-                  >
+                  <Select value={newEvent.type} onValueChange={(v: Event["type"]) => setNewEvent({
+                  ...newEvent,
+                  type: v
+                })}>
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
@@ -934,33 +850,31 @@ const Index = () => {
               <div className="space-y-4">
                 <div>
                   <Label>Description</Label>
-                  <Input
-                    value={newIncome.description}
-                    onChange={(e) => setNewIncome({ ...newIncome, description: e.target.value })}
-                    placeholder="e.g. Freelance work, Bonus, Gift"
-                  />
+                  <Input value={newIncome.description} onChange={e => setNewIncome({
+                  ...newIncome,
+                  description: e.target.value
+                })} placeholder="e.g. Freelance work, Bonus, Gift" />
                 </div>
                 <div>
                   <Label>Amount (£)</Label>
-                  <Input
-                    type="number"
-                    value={newIncome.amount || ""}
-                    onChange={(e) => setNewIncome({ ...newIncome, amount: parseFloat(e.target.value) || 0 })}
-                    placeholder="0"
-                  />
+                  <Input type="number" value={newIncome.amount || ""} onChange={e => setNewIncome({
+                  ...newIncome,
+                  amount: parseFloat(e.target.value) || 0
+                })} placeholder="0" />
                 </div>
               </div>
               <AlertDialogFooter>
                 <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction
-                  onClick={() => {
-                    if (newIncome.description && newIncome.amount > 0) {
-                      addIncome(newIncome.amount, newIncome.description);
-                      setNewIncome({ description: "", amount: 0 });
-                      setShowIncomeModal(false);
-                    }
-                  }}
-                >
+                <AlertDialogAction onClick={() => {
+                if (newIncome.description && newIncome.amount > 0) {
+                  addIncome(newIncome.amount, newIncome.description);
+                  setNewIncome({
+                    description: "",
+                    amount: 0
+                  });
+                  setShowIncomeModal(false);
+                }
+              }}>
                   Add Income
                 </AlertDialogAction>
               </AlertDialogFooter>
@@ -990,50 +904,17 @@ const Index = () => {
                 <CardContent className="space-y-6">
                   {/* Main Status */}
                   <div className="text-center py-8">
-                    <div
-                      className={`text-7xl font-bold ${cashFlow > 0 ? "text-emerald-600" : "text-orange-600"} animate-scale-in`}
-                    >
+                    <div className={`text-7xl font-bold ${cashFlow > 0 ? "text-emerald-600" : "text-orange-600"} animate-scale-in`}>
                       {cashFlow > 0 ? "💰 Healthy" : "⚠️ Review"}
                     </div>
                     <Progress value={cashFlow > 0 ? 85 : 45} className="mt-6 h-3" />
                     <p className="mt-4 text-muted-foreground">
-                      {cashFlow > 0
-                        ? `You're saving ${formatCurrency(cashFlow)} per month!`
-                        : `You need to reduce expenses by ${formatCurrency(Math.abs(cashFlow))}`}
+                      {cashFlow > 0 ? `You're saving ${formatCurrency(cashFlow)} per month!` : `You need to reduce expenses by ${formatCurrency(Math.abs(cashFlow))}`}
                     </p>
                   </div>
 
                   {/* Cash Flow Breakdown */}
-                  <div className="grid md:grid-cols-3 gap-4">
-                    <div className="p-4 bg-green-50 dark:bg-green-950/20 rounded-lg border border-green-200">
-                      <p className="text-sm text-green-700 dark:text-green-400 font-medium mb-2">Income</p>
-                      <p className="text-2xl font-bold text-green-600">{formatCurrency(totalIncome)}</p>
-                    </div>
-                    <div className="p-4 bg-red-50 dark:bg-red-950/20 rounded-lg border border-red-200">
-                      <p className="text-sm text-red-700 dark:text-red-400 font-medium mb-2">Expenses</p>
-                      <p className="text-2xl font-bold text-red-600">{formatCurrency(totalExpenses)}</p>
-                    </div>
-                    <div
-                      className={`p-4 rounded-lg border ${
-                        cashFlow >= 0
-                          ? "bg-emerald-50 dark:bg-emerald-950/20 border-emerald-200"
-                          : "bg-orange-50 dark:bg-orange-950/20 border-orange-200"
-                      }`}
-                    >
-                      <p
-                        className={`text-sm font-medium mb-2 ${
-                          cashFlow >= 0
-                            ? "text-emerald-700 dark:text-emerald-400"
-                            : "text-orange-700 dark:text-orange-400"
-                        }`}
-                      >
-                        Net Cash Flow
-                      </p>
-                      <p className={`text-2xl font-bold ${cashFlow >= 0 ? "text-emerald-600" : "text-orange-600"}`}>
-                        {formatCurrency(cashFlow)}
-                      </p>
-                    </div>
-                  </div>
+                  
                 </CardContent>
               </Card>
             </TabsContent>
@@ -1061,12 +942,8 @@ const Index = () => {
                       <CardDescription>Extra income like bonuses, gifts, side hustles</CardDescription>
                     </CardHeader>
                     <CardContent>
-                      {variableIncome.length === 0 ? (
-                        <p className="text-center text-muted-foreground py-6">No variable income yet</p>
-                      ) : (
-                        <div className="space-y-2">
-                          {variableIncome.map((inc) => (
-                            <div key={inc.id} className="flex justify-between items-center p-3 bg-muted rounded-lg">
+                      {variableIncome.length === 0 ? <p className="text-center text-muted-foreground py-6">No variable income yet</p> : <div className="space-y-2">
+                          {variableIncome.map(inc => <div key={inc.id} className="flex justify-between items-center p-3 bg-muted rounded-lg">
                               <div>
                                 <p className="font-medium">{inc.description}</p>
                                 <p className="text-xs text-muted-foreground">
@@ -1079,10 +956,8 @@ const Index = () => {
                                   <Trash2 className="h-4 w-4" />
                                 </Button>
                               </div>
-                            </div>
-                          ))}
-                        </div>
-                      )}
+                            </div>)}
+                        </div>}
                     </CardContent>
                   </Card>
                 </TabsContent>
@@ -1110,11 +985,7 @@ const Index = () => {
             </TabsContent>
 
             <TabsContent value="savings" className="space-y-6">
-              <SavingsGoalsManager 
-                language={language} 
-                availableForSavings={cashFlow} 
-                availableBudget={cashFlow}
-              />
+              <SavingsGoalsManager language={language} availableForSavings={cashFlow} availableBudget={cashFlow} />
               
               <div className="grid md:grid-cols-2 gap-6">
                 <SavingsManager language={language} availableToSave={cashFlow} />
@@ -1137,31 +1008,23 @@ const Index = () => {
                       </div>
 
                       {/* Savings Goals Progress */}
-                      {savingsGoalsData.length > 0 && (
-                        <div className="space-y-3 mt-6">
+                      {savingsGoalsData.length > 0 && <div className="space-y-3 mt-6">
                           <h4 className="font-semibold text-sm">Active Goals</h4>
-                          {savingsGoalsData.slice(0, 3).map((goal, index) => (
-                            <div key={goal.id || index} className="space-y-2">
+                          {savingsGoalsData.slice(0, 3).map((goal, index) => <div key={goal.id || index} className="space-y-2">
                               <div className="flex justify-between text-sm">
                                 <span>{goal.goal_name}</span>
                                 <span className="font-medium">
                                   {formatCurrency(goal.current_amount)} / {formatCurrency(goal.target_amount)}
                                 </span>
                               </div>
-                              <Progress value={(goal.current_amount / goal.target_amount) * 100} className="h-2" />
-                            </div>
-                          ))}
-                        </div>
-                      )}
+                              <Progress value={goal.current_amount / goal.target_amount * 100} className="h-2" />
+                            </div>)}
+                        </div>}
 
                       {/* Motivational Messages */}
                       <div className="mt-6 p-4 bg-purple-50 dark:bg-purple-950/20 rounded-lg border border-purple-200">
                         <p className="text-sm text-center">
-                          {cashFlow > 0
-                            ? `💪 You can save ${formatCurrency(cashFlow)} this month!`
-                            : savingsTotal > 0
-                              ? `🎯 Great work! You've saved ${formatCurrency(savingsTotal)} so far.`
-                              : "🌱 Start your savings journey today!"}
+                          {cashFlow > 0 ? `💪 You can save ${formatCurrency(cashFlow)} this month!` : savingsTotal > 0 ? `🎯 Great work! You've saved ${formatCurrency(savingsTotal)} so far.` : "🌱 Start your savings journey today!"}
                         </p>
                       </div>
                     </div>
@@ -1178,68 +1041,85 @@ const Index = () => {
           </footer>
         </div>
       </div>
-    </>
-  );
+    </>;
 };
 
 // COMPONENTE DEBT PLANNER
-const DebtPlanner = ({ language }: { language: Language }) => {
+const DebtPlanner = ({
+  language
+}: {
+  language: Language;
+}) => {
   const [monthlySavings, setMonthlySavings] = useState(0);
   const [debtMethod, setDebtMethod] = useState<DebtMethod>("avalanche");
-
-  const { data: incomeData = [] } = useIncomeSources();
-  const { data: debtData = [] } = useDebts();
-  const { data: fixedExpensesData = [] } = useFixedExpenses();
-  const { data: variableExpensesData = [] } = useVariableExpenses();
-  const { data: savings } = useSavings();
-
+  const {
+    data: incomeData = []
+  } = useIncomeSources();
+  const {
+    data: debtData = []
+  } = useDebts();
+  const {
+    data: fixedExpensesData = []
+  } = useFixedExpenses();
+  const {
+    data: variableExpensesData = []
+  } = useVariableExpenses();
+  const {
+    data: savings
+  } = useSavings();
   const t = translations[language];
-
-  const { totalIncome, totalFixed, totalVariable, totalDebtPayment, totalExpenses, cashFlow, savingsTotal } =
-    useMemo(() => {
-      const totalIncome = incomeData.reduce((s, i) => s + i.amount, 0);
-      const totalFixed = fixedExpensesData.reduce((s, e) => s + e.amount, 0);
-      const totalVariable = variableExpensesData.reduce((s, e) => s + e.amount, 0);
-      const totalDebtPayment = debtData.reduce((s, d) => s + d.minimum_payment, 0);
-      const totalExpenses = totalFixed + totalVariable + totalDebtPayment;
-      const cashFlow = totalIncome - totalExpenses;
-      const savingsTotal = savings?.emergency_fund || 0;
-      return { totalIncome, totalFixed, totalVariable, totalDebtPayment, totalExpenses, cashFlow, savingsTotal };
-    }, [incomeData, debtData, fixedExpensesData, variableExpensesData, savings]);
+  const {
+    totalIncome,
+    totalFixed,
+    totalVariable,
+    totalDebtPayment,
+    totalExpenses,
+    cashFlow,
+    savingsTotal
+  } = useMemo(() => {
+    const totalIncome = incomeData.reduce((s, i) => s + i.amount, 0);
+    const totalFixed = fixedExpensesData.reduce((s, e) => s + e.amount, 0);
+    const totalVariable = variableExpensesData.reduce((s, e) => s + e.amount, 0);
+    const totalDebtPayment = debtData.reduce((s, d) => s + d.minimum_payment, 0);
+    const totalExpenses = totalFixed + totalVariable + totalDebtPayment;
+    const cashFlow = totalIncome - totalExpenses;
+    const savingsTotal = savings?.emergency_fund || 0;
+    return {
+      totalIncome,
+      totalFixed,
+      totalVariable,
+      totalDebtPayment,
+      totalExpenses,
+      cashFlow,
+      savingsTotal
+    };
+  }, [incomeData, debtData, fixedExpensesData, variableExpensesData, savings]);
 
   // CALCULAR ESTRATEGIA DE DEUDA
   const debtStrategy = useMemo(() => {
     if (debtData.length === 0) return null;
-
     const extraForDebt = Math.max(0, cashFlow - monthlySavings);
-
-    const sortFn =
-      debtMethod === "avalanche"
-        ? (a, b) => b.apr - a.apr
-        : debtMethod === "snowball"
-          ? (a, b) => a.balance - b.balance
-          : (a, b) => b.apr * 0.6 + (b.balance / 1000) * 0.4 - (a.apr * 0.6 + (a.balance / 1000) * 0.4);
-
+    const sortFn = debtMethod === "avalanche" ? (a, b) => b.apr - a.apr : debtMethod === "snowball" ? (a, b) => a.balance - b.balance : (a, b) => b.apr * 0.6 + b.balance / 1000 * 0.4 - (a.apr * 0.6 + a.balance / 1000 * 0.4);
     const sortedDebts = [...debtData].sort(sortFn);
-
-    let remainingBalances = sortedDebts.map((d) => ({ ...d, balance: d.balance }));
+    let remainingBalances = sortedDebts.map(d => ({
+      ...d,
+      balance: d.balance
+    }));
     let months = 0;
     let totalInterest = 0;
-    let allocation = sortedDebts.map((d) => ({
+    let allocation = sortedDebts.map(d => ({
       name: d.name,
       minPayment: d.minimum_payment,
       extra: 0,
-      totalPayment: d.minimum_payment,
+      totalPayment: d.minimum_payment
     }));
-
-    while (remainingBalances.some((d) => d.balance > 0) && months < 120) {
+    while (remainingBalances.some(d => d.balance > 0) && months < 120) {
       let monthlyInterest = 0;
       remainingBalances.forEach((debt, index) => {
         if (debt.balance <= 0) return;
         const interest = debt.balance * (debt.apr / 100 / 12);
         monthlyInterest += interest;
         debt.balance += interest;
-
         const payment = debt.minimum_payment + (index === 0 ? extraForDebt : 0);
         allocation[index].totalPayment += payment;
         allocation[index].extra += index === 0 ? extraForDebt : 0;
@@ -1248,47 +1128,32 @@ const DebtPlanner = ({ language }: { language: Language }) => {
       totalInterest += monthlyInterest;
       months++;
     }
-
-    const monthsToEmergency =
-      monthlySavings > 0 ? ((totalExpenses * 3 - savingsTotal) / monthlySavings).toFixed(1) : "N/A";
-
+    const monthsToEmergency = monthlySavings > 0 ? ((totalExpenses * 3 - savingsTotal) / monthlySavings).toFixed(1) : "N/A";
     return {
       sortedDebts,
       allocation,
       months,
       totalInterest: Math.round(totalInterest),
       monthsToEmergency,
-      extraForDebt,
+      extraForDebt
     };
   }, [debtData, cashFlow, monthlySavings, debtMethod, totalExpenses, savingsTotal]);
-
-  if (!debtStrategy)
-    return (
-      <Card>
+  if (!debtStrategy) return <Card>
         <CardHeader>
           <CardTitle className="text-sm">{t.debtPlanner}</CardTitle>
         </CardHeader>
         <CardContent>
           <p className="text-center text-muted-foreground py-6">No debts to plan</p>
         </CardContent>
-      </Card>
-    );
-
-  return (
-    <div className="space-y-6">
+      </Card>;
+  return <div className="space-y-6">
       {/* SLIDER AHORROS */}
       <Card>
         <CardHeader>
           <CardTitle className="text-sm">{t.monthlySavings}</CardTitle>
         </CardHeader>
         <CardContent>
-          <Slider
-            value={[monthlySavings]}
-            onValueChange={(value) => setMonthlySavings(value[0])}
-            max={Math.max(cashFlow, 0)}
-            step={50}
-            className="w-full"
-          />
+          <Slider value={[monthlySavings]} onValueChange={value => setMonthlySavings(value[0])} max={Math.max(cashFlow, 0)} step={50} className="w-full" />
           <div className="flex justify-between text-sm text-muted-foreground mt-2">
             <span>£0</span>
             <span className="font-medium">{formatCurrency(monthlySavings)}</span>
@@ -1315,7 +1180,7 @@ const DebtPlanner = ({ language }: { language: Language }) => {
               <span className="text-sm text-muted-foreground">Current:</span>
               <span className="font-bold text-green-600">{formatCurrency(savingsTotal)}</span>
             </div>
-            <Progress value={(savingsTotal / (totalExpenses * 3)) * 100} />
+            <Progress value={savingsTotal / (totalExpenses * 3) * 100} />
             <p className="text-sm text-muted-foreground">
               {t.monthsToEmergency}: {debtStrategy.monthsToEmergency}
             </p>
@@ -1328,7 +1193,7 @@ const DebtPlanner = ({ language }: { language: Language }) => {
         <CardHeader>
           <CardTitle className="flex items-center justify-between">
             <span>{t.priority}</span>
-            <Select value={debtMethod} onValueChange={(value) => setDebtMethod(value as DebtMethod)}>
+            <Select value={debtMethod} onValueChange={value => setDebtMethod(value as DebtMethod)}>
               <SelectTrigger className="w-[180px]">
                 <SelectValue />
               </SelectTrigger>
@@ -1351,8 +1216,7 @@ const DebtPlanner = ({ language }: { language: Language }) => {
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            {debtStrategy.sortedDebts.map((debt, index) => (
-              <div key={debt.id} className="flex items-center justify-between p-3 bg-muted rounded-lg">
+            {debtStrategy.sortedDebts.map((debt, index) => <div key={debt.id} className="flex items-center justify-between p-3 bg-muted rounded-lg">
                 <div className="flex items-center gap-3">
                   <Badge variant="secondary" className="w-8 h-8 flex items-center justify-center">
                     {index + 1}
@@ -1374,8 +1238,7 @@ const DebtPlanner = ({ language }: { language: Language }) => {
                     Total: {formatCurrency(debtStrategy.allocation[index].totalPayment)}
                   </p>
                 </div>
-              </div>
-            ))}
+              </div>)}
           </div>
           <div className="mt-4 p-3 bg-muted rounded-lg">
             <p className="text-sm text-muted-foreground">
@@ -1386,8 +1249,6 @@ const DebtPlanner = ({ language }: { language: Language }) => {
           </div>
         </CardContent>
       </Card>
-    </div>
-  );
+    </div>;
 };
-
 export default Index;
