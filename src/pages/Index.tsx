@@ -1,9 +1,8 @@
-// src/pages/Index.tsx
 "use client";
 
-import React, { useState, useEffect, useMemo, useCallback } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { format, addMonths, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, add, sub } from "date-fns";
-import { formatCurrency, Language } from "@/lib/i18n";
+import { formatCurrency } from "@/lib/i18n";
 import {
   TrendingUp,
   Download,
@@ -22,7 +21,9 @@ import {
   X,
   Zap,
   Snowflake,
-  AlertCircle,
+  Moon,
+  Sun,
+  PoundSterling,
 } from "lucide-react";
 import {
   useIncomeSources,
@@ -34,12 +35,14 @@ import {
 } from "@/hooks/useFinancialData";
 import { useFinancialProfiles } from "@/hooks/useFinancialProfiles";
 import { Auth } from "@/components/Auth";
-import { LanguageToggle } from "@/components/LanguageToggle";
-import { ProfileSelector } from "@/components/ProfileSelector";
 import { IncomeManager } from "@/components/IncomeManager";
+import { DebtsManager } from "@/components/DebtsManager";
 import { FixedExpensesManager } from "@/components/FixedExpensesManager";
 import { VariableExpensesManager } from "@/components/VariableExpensesManager";
-import { DebtsManager } from "@/components/DebtsManager";
+import { SavingsManager } from "@/components/SavingsManager";
+import { SavingsGoalsManager } from "@/components/SavingsGoalsManager";
+import { LanguageToggle } from "@/components/LanguageToggle";
+import { ProfileSelector } from "@/components/ProfileSelector";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -47,6 +50,7 @@ import { Progress } from "@/components/ui/progress";
 import { Slider } from "@/components/ui/slider";
 import { supabase } from "@/integrations/supabase/client";
 import { useTheme } from "@/hooks/useTheme";
+import { useNextTheme } from "next-themes";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   AlertDialog,
@@ -64,6 +68,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 
+type Language = "en" | "es" | "pl";
 type DebtMethod = "avalanche" | "snowball" | "hybrid";
 type Event = {
   id: string;
@@ -560,151 +565,157 @@ const Index = () => {
             </Card>
           )}
 
-{/* GASTOS PASTEL - VERSIÓN CORREGIDA Y SOPHISTICADA */}
-{pieData.length > 0 && (
-  <Card className="overflow-hidden">
-    <CardHeader className="pb-3">
-      <CardTitle className="text-lg font-semibold flex items-center gap-2">
-        <Zap className="h-5 w-5 text-blue-600" />
-        Expense Breakdown
-      </CardTitle>
-      <CardDescription className="text-sm">Monthly spending distribution with trends</CardDescription>
-    </CardHeader>
-    <CardContent className="p-6">
-      <div className="grid md:grid-cols-2 gap-6">
-        {/* Gráfico SVG corregido - Sin superposiciones */}
-        <div className="relative flex items-center justify-center">
-          <div className="relative w-56 h-56 md:w-64 md:h-64">
-            {/* Fondo circular */}
-            <div className="absolute inset-0 rounded-full bg-gradient-to-br from-slate-100 to-slate-50 dark:from-slate-800 dark:to-slate-900 shadow-inner"></div>
+          {/* GASTOS PASTEL - VERSIÓN CORREGIDA Y SOPHISTICADA */}
+          {pieData.length > 0 && (
+            <Card className="overflow-hidden">
+              <CardHeader className="pb-3">
+                <CardTitle className="text-lg font-semibold flex items-center gap-2">
+                  <Zap className="h-5 w-5 text-blue-600" />
+                  Expense Breakdown
+                </CardTitle>
+                <CardDescription className="text-sm">Monthly spending distribution with trends</CardDescription>
+              </CardHeader>
+              <CardContent className="p-6">
+                <div className="grid md:grid-cols-2 gap-6">
+                  {/* Gráfico SVG corregido - Sin superposiciones */}
+                  <div className="relative flex items-center justify-center">
+                    <div className="relative w-56 h-56 md:w-64 md:h-64">
+                      {/* Fondo circular */}
+                      <div className="absolute inset-0 rounded-full bg-gradient-to-br from-slate-100 to-slate-50 dark:from-slate-800 dark:to-slate-900 shadow-inner"></div>
 
-            {/* SVG del donut chart - CORREGIDO */}
-            <svg viewBox="0 0 32 32" className="w-full h-full">
-              <defs>
-                <filter id="shadow">
-                  <feDropShadow dx="0" dy="2" stdDeviation="3" floodOpacity="0.15"/>
-                </filter>
-                <linearGradient id="textGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-                  <stop offset="0%" stopColor="#3b82f6" />
-                  <stop offset="100%" stopColor="#1d4ed8" />
-                </linearGradient>
-              </defs>
+                      {/* SVG del donut chart - CORREGIDO */}
+                      <svg viewBox="0 0 32 32" className="w-full h-full">
+                        <defs>
+                          <filter id="shadow">
+                            <feDropShadow dx="0" dy="2" stdDeviation="3" floodOpacity="0.15" />
+                          </filter>
+                          <linearGradient id="textGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                            <stop offset="0%" stopColor="#3b82f6" />
+                            <stop offset="100%" stopColor="#1d4ed8" />
+                          </linearGradient>
+                        </defs>
 
-              {(() => {
-                const total = pieData.reduce((s, d) => s + d.value, 0);
-                let cum = 0;
-                return pieData.map((d, i) => {
-                  const percent = (d.value / total) * 100;
-                  const start = (cum / total) * 360;
-                  cum += d.value;
-                  const end = (cum / total) * 360;
-                  const large = end - start <= 180 ? 0 : 1;
+                        {(() => {
+                          const total = pieData.reduce((s, d) => s + d.value, 0);
+                          let cum = 0;
+                          return pieData.map((d, i) => {
+                            const percent = (d.value / total) * 100;
+                            const start = (cum / total) * 360;
+                            cum += d.value;
+                            const end = (cum / total) * 360;
+                            const large = end - start <= 180 ? 0 : 1;
 
-                  // CORRECCIÓN: Cálculo correcto del arco
-                  const startRad = (start * Math.PI) / 180;
-                  const endRad = (end * Math.PI) / 180;
-                  const x1 = 16 + 16 * Math.cos(startRad);
-                  const y1 = 16 + 16 * Math.sin(startRad);
-                  const x2 = 16 + 16 * Math.cos(endRad);
-                  const y2 = 16 + 16 * Math.sin(endRad);
-                  const largeArcFlag = end - start > 180 ? 1 : 0;
-                  const sweepFlag = 1;
+                            // CORRECCIÓN: Cálculo correcto del arco
+                            const startRad = (start * Math.PI) / 180;
+                            const endRad = (end * Math.PI) / 180;
+                            const x1 = 16 + 16 * Math.cos(startRad);
+                            const y1 = 16 + 16 * Math.sin(startRad);
+                            const x2 = 16 + 16 * Math.cos(endRad);
+                            const y2 = 16 + 16 * Math.sin(endRad);
+                            const largeArcFlag = end - start > 180 ? 1 : 0;
+                            const sweepFlag = 1;
 
-                  const pathData = `M16,16 L${x1},${y1} A16,16 0 ${largeArcFlag},${sweepFlag} ${x2},${y2} Z`;
+                            const pathData = `M16,16 L${x1},${y1} A16,16 0 ${largeArcFlag},${sweepFlag} ${x2},${y2} Z`;
 
-                  return (
-                    <g key={i}>
-                      <path
-                        d={pathData}
-                        fill={d.color}
-                        stroke="white"
-                        strokeWidth="1"
-                        className="transition-all duration-500 ease-in-out cursor-pointer hover:scale-105"
-                        filter="url(#shadow)"
-                        onMouseEnter={(e) => {
-                          e.currentTarget.style.strokeWidth = '2';
-                          e.currentTarget.style.transform = 'scale(1.05)';
-                        }}
-                        onMouseLeave={(e) => {
-                          e.currentTarget.style.strokeWidth = '1';
-                          e.currentTarget.style.transform = 'scale(1)';
-                        }}
-                      />
-                      <animate
-                        attributeName="opacity"
-                        from="0"
-                        to="1"
-                        dur="0.8s"
-                        begin={`${i * 0.2}s`}
-                        fill="freeze"
-                      />
-                      {/* Etiqueta de porcentaje */}
-                      <text
-                        x={(x1 + x2) / 2}
-                        y={(y1 + y2) / 2}
-                        textAnchor="middle"
-                        dominantBaseline="middle"
-                        className="text-[8px] font-bold fill-white drop-shadow-sm"
-                      >
-                        {percent.toFixed(0)}%
-                      </text>
-                    </g>
-                  );
-                });
-              })()}
+                            return (
+                              <g key={i}>
+                                <path
+                                  d={pathData}
+                                  fill={d.color}
+                                  stroke="white"
+                                  strokeWidth="1"
+                                  className="transition-all duration-500 ease-in-out cursor-pointer hover:scale-105"
+                                  filter="url(#shadow)"
+                                  onMouseEnter={(e) => {
+                                    e.currentTarget.style.strokeWidth = "2";
+                                    e.currentTarget.style.transform = "scale(1.05)";
+                                  }}
+                                  onMouseLeave={(e) => {
+                                    e.currentTarget.style.strokeWidth = "1";
+                                    e.currentTarget.style.transform = "scale(1)";
+                                  }}
+                                />
+                                <animate
+                                  attributeName="opacity"
+                                  from="0"
+                                  to="1"
+                                  dur="0.8s"
+                                  begin={`${i * 0.2}s`}
+                                  fill="freeze"
+                                />
+                                {/* Etiqueta de porcentaje */}
+                                <text
+                                  x={(x1 + x2) / 2}
+                                  y={(y1 + y2) / 2}
+                                  textAnchor="middle"
+                                  dominantBaseline="middle"
+                                  className="text-[8px] font-bold fill-white drop-shadow-sm"
+                                >
+                                  {percent.toFixed(0)}%
+                                </text>
+                              </g>
+                            );
+                          });
+                        })()}
 
-              {/* Círculo central */}
-              <circle cx="16" cy="16" r="10" fill="white" className="dark:fill-slate-900 shadow-inner" />
-            </svg>
+                        {/* Círculo central */}
+                        <circle cx="16" cy="16" r="10" fill="white" className="dark:fill-slate-900 shadow-inner" />
+                      </svg>
 
-            <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-              <div className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-slate-800 to-slate-600 bg-clip-text text-transparent dark:from-slate-100 dark:to-slate-300">
-                {formatCurrency(totalExpenses)}
-              </div>
-              <div className="text-xs text-slate-500 dark:text-slate-400 mt-1">Monthly Total</div>
-            </div>
-          </div>
-        </div>
+                      <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                        <div className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-slate-800 to-slate-600 bg-clip-text text-transparent dark:from-slate-100 dark:to-slate-300">
+                          {formatCurrency(totalExpenses)}
+                        </div>
+                        <div className="text-xs text-slate-500 dark:text-slate-400 mt-1">Monthly Total</div>
+                      </div>
+                    </div>
+                  </div>
 
-        <div className="flex flex-col justify-center space-y-4">
-          {pieData.map((d, i) => {
-            const percent = ((d.value / totalExpenses) * 100).toFixed(1);
-            const trend = d.value > totalExpenses * 0.2 ? 'High' : d.value > totalExpenses * 0.1 ? 'Medium' : 'Low';
-            return (
-              <div key={i} className="flex items-center justify-between p-3 rounded-lg bg-slate-50 dark:bg-slate-800/50 hover:bg-slate-100 dark:hover:bg-slate-700/50 transition-all">
-                <div className="flex items-center gap-3">
-                  <div className="w-4 h-4 rounded-full shadow-md" style={{ backgroundColor: d.color }} />
-                  <div>
-                    <p className="font-medium text-sm">{d.name}</p>
-                    <p className="text-xs text-slate-500 dark:text-slate-400">{percent}%</p>
-                    <p className="text-xs text-slate-400 dark:text-slate-500">{trend} impact</p>
+                  <div className="flex flex-col justify-center space-y-4">
+                    {pieData.map((d, i) => {
+                      const percent = ((d.value / totalExpenses) * 100).toFixed(1);
+                      const trend =
+                        d.value > totalExpenses * 0.2 ? "High" : d.value > totalExpenses * 0.1 ? "Medium" : "Low";
+                      return (
+                        <div
+                          key={i}
+                          className="flex items-center justify-between p-3 rounded-lg bg-slate-50 dark:bg-slate-800/50 hover:bg-slate-100 dark:hover:bg-slate-700/50 transition-all"
+                        >
+                          <div className="flex items-center gap-3">
+                            <div className="w-4 h-4 rounded-full shadow-md" style={{ backgroundColor: d.color }} />
+                            <div>
+                              <p className="font-medium text-sm">{d.name}</p>
+                              <p className="text-xs text-slate-500 dark:text-slate-400">{percent}%</p>
+                              <p className="text-xs text-slate-400 dark:text-slate-500">{trend} impact</p>
+                            </div>
+                          </div>
+                          <div className="text-right">
+                            <p className="font-bold text-sm">{formatCurrency(d.value)}</p>
+                            <p className="text-xs text-slate-500 dark:text-slate-400">Monthly</p>
+                          </div>
+                        </div>
+                      );
+                    })}
                   </div>
                 </div>
-                <div className="text-right">
-                  <p className="font-bold text-sm">{formatCurrency(d.value)}</p>
-                  <p className="text-xs text-slate-500 dark:text-slate-400">Monthly</p>
-                </div>
-              </div>
-            );
-          })}
-        </div>
-      </div>
 
-      <div className="border-t px-6 py-4 bg-gradient-to-r from-slate-50 to-slate-100 dark:from-slate-800 dark:to-slate-900 rounded-b-lg">
-        <div className="flex justify-between items-center">
-          <span className="text-sm font-medium text-slate-600 dark:text-slate-300">Monthly Total</span>
-          <div className="flex items-center gap-2">
-            <span className="text-xl font-bold text-slate-800 dark:text-slate-100">{formatCurrency(totalExpenses)}</span>
-            <div className="flex items-center gap-1 text-xs text-slate-500 dark:text-slate-400">
-              <TrendingUp className="h-3 w-3 text-emerald-500" />
-              <span>{((totalExpenses / totalIncome) * 100).toFixed(0)}% of income</span>
-            </div>
-          </div>
-        </div>
-      </div>
-    </CardContent>
-  </Card>
-)}
+                <div className="border-t px-6 py-4 bg-gradient-to-r from-slate-50 to-slate-100 dark:from-slate-800 dark:to-slate-900 rounded-b-lg">
+                  <div className="flex justify-between items-center">
+                    <span className="text-sm font-medium text-slate-600 dark:text-slate-300">Monthly Total</span>
+                    <div className="flex items-center gap-2">
+                      <span className="text-xl font-bold text-slate-800 dark:text-slate-100">
+                        {formatCurrency(totalExpenses)}
+                      </span>
+                      <div className="flex items-center gap-1 text-xs text-slate-500 dark:text-slate-400">
+                        <TrendingUp className="h-3 w-3 text-emerald-500" />
+                        <span>{((totalExpenses / totalIncome) * 100).toFixed(0)}% of income</span>
+                      </div>
+                    </div>
+                  </div>
+                </div>
+              </CardContent>
+            </Card>
+          )}
           {/* CALENDARIO */}
           <Card>
             <CardHeader>
