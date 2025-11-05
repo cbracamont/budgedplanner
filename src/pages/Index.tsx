@@ -261,6 +261,8 @@ const Index = () => {
   }>({ current_amount: 0, target_amount: 0 });
   const [showAddEmergencyFund, setShowAddEmergencyFund] = useState(false);
   const [emergencyFundAmount, setEmergencyFundAmount] = useState(0);
+  const [showEditEmergencyFund, setShowEditEmergencyFund] = useState(false);
+  const [editEmergencyFundAmount, setEditEmergencyFundAmount] = useState(0);
   const [newEvent, setNewEvent] = useState<{
     name: string;
     amount: number;
@@ -632,6 +634,43 @@ const Index = () => {
       toast({
         title: "Error",
         description: "Failed to add to emergency fund",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleEditEmergencyFund = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user || editEmergencyFundAmount < 0) return;
+
+    try {
+      const { error } = await supabase
+        .from("savings")
+        .upsert({
+          id: savings?.id,
+          user_id: user.id,
+          profile_id: 'id' in activeProfile ? activeProfile.id : null,
+          emergency_fund: editEmergencyFundAmount,
+          monthly_goal: savings?.monthly_goal || 0,
+          total_accumulated: savings?.total_accumulated || 0,
+        });
+
+      if (error) throw error;
+
+      await queryClient.invalidateQueries({ queryKey: ["savings"] });
+
+      toast({
+        title: "Success",
+        description: `Emergency fund updated to ${formatCurrency(editEmergencyFundAmount)}`,
+      });
+
+      setShowEditEmergencyFund(false);
+      setEditEmergencyFundAmount(0);
+    } catch (error) {
+      console.error("Error updating emergency fund:", error);
+      toast({
+        title: "Error",
+        description: "Failed to update emergency fund",
         variant: "destructive",
       });
     }
@@ -1283,6 +1322,42 @@ const Index = () => {
             </AlertDialogContent>
           </AlertDialog>
 
+          {/* EDIT EMERGENCY FUND DIALOG */}
+          <AlertDialog open={showEditEmergencyFund} onOpenChange={setShowEditEmergencyFund}>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Edit Emergency Fund</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Update the current amount in your emergency fund
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <div className="space-y-4 py-4">
+                <div className="space-y-2">
+                  <Label htmlFor="edit-emergency-amount">Current Amount (£)</Label>
+                  <Input
+                    id="edit-emergency-amount"
+                    type="number"
+                    step="0.01"
+                    value={editEmergencyFundAmount || ""}
+                    onChange={(e) => setEditEmergencyFundAmount(parseFloat(e.target.value) || 0)}
+                    placeholder="0.00"
+                  />
+                </div>
+                <div className="bg-muted p-3 rounded-lg">
+                  <p className="text-sm text-muted-foreground">
+                    Goal (3-6 months): {formatCurrency((totalFixed + totalVariable) * 3)} - {formatCurrency((totalFixed + totalVariable) * 6)}
+                  </p>
+                </div>
+              </div>
+              <AlertDialogFooter>
+                <AlertDialogCancel onClick={() => setEditEmergencyFundAmount(0)}>Cancel</AlertDialogCancel>
+                <AlertDialogAction onClick={handleEditEmergencyFund}>
+                  Update
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+
           {/* TABS */}
           <Tabs defaultValue="overview" className="no-print">
             <TabsList className="grid w-full grid-cols-5 mb-6">
@@ -1452,14 +1527,27 @@ const Index = () => {
                         </CardTitle>
                         <CardDescription>Build your safety net</CardDescription>
                       </div>
-                      <Button
-                        size="sm"
-                        variant="ghost"
-                        onClick={() => setShowAddEmergencyFund(true)}
-                        title="Add money to emergency fund"
-                      >
-                        <Wallet className="h-4 w-4" />
-                      </Button>
+                      <div className="flex gap-1">
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => {
+                            setEditEmergencyFundAmount(savings?.emergency_fund || 0);
+                            setShowEditEmergencyFund(true);
+                          }}
+                          title="Edit emergency fund amount"
+                        >
+                          <Edit2 className="h-4 w-4" />
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => setShowAddEmergencyFund(true)}
+                          title="Add money to emergency fund"
+                        >
+                          <Wallet className="h-4 w-4" />
+                        </Button>
+                      </div>
                     </div>
                   </CardHeader>
                   <CardContent className="space-y-4">
