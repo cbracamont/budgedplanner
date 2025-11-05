@@ -575,67 +575,141 @@ const Index = () => {
                   <div className="relative flex items-center justify-center">
                     <div className="relative w-56 h-56 md:w-64 md:h-64">
                       <div className="absolute inset-0 rounded-full bg-gradient-to-br from-slate-100 to-slate-50 dark:from-slate-800 dark:to-slate-900 shadow-inner"></div>
-                      <svg viewBox="0 0 36 36" className="w-full h-full transform -rotate-90">
-                        <defs>
-                          <filter id="shadow">
-                            <feDropShadow dx="0" dy="2" stdDeviation="3" floodOpacity="0.15" />
-                          </filter>
-                          <linearGradient id="textGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-                            <stop offset="0%" stopColor="#3b82f6" />
-                            <stop offset="100%" stopColor="#1d4ed8" />
-                          </linearGradient>
-                        </defs>
+                      {/* Main Status - Multi-Stage Enhanced */}
+                      <div className="text-center py-8 rounded-2xl bg-gradient-to-br from-white to-slate-50 dark:from-slate-900 dark:to-slate-800 border border-slate-200 dark:border-slate-700 shadow-lg p-6">
                         {(() => {
-                          const total = pieData.reduce((s, d) => s + d.value, 0);
-                          let cum = 0;
-                          return pieData.map((d, i) => {
-                            const percent = (d.value / total) * 100;
-                            const start = (cum / total) * 360;
-                            cum += d.value;
-                            const end = (cum / total) * 100;
-                            const large = percent > 50 ? 1 : 0;
-                            const sr = (start * Math.PI) / 180;
-                            const er = (end * Math.PI) / 180;
-                            const x1 = 18 + 14 * Math.cos(sr);
-                            const y1 = 18 + 14 * Math.sin(sr);
-                            const x2 = 18 + 14 * Math.cos(er);
-                            const y2 = 18 + 14 * Math.sin(er);
-                            const pathData = `M18,18 L${x1},${y1} A14,14 0 ${large},1 ${x2},${y2} Z`;
-                            return (
-                              <g key={i}>
-                                <path
-                                  d={pathData}
-                                  fill={d.color}
-                                  stroke="white"
-                                  strokeWidth="0.5"
-                                  className="transition-all duration-500 ease-in-out cursor-pointer hover:scale-105"
-                                  filter="url(#shadow)"
-                                  onMouseEnter={(e) => (e.currentTarget.style.strokeWidth = "2")}
-                                  onMouseLeave={(e) => (e.currentTarget.style.strokeWidth = "0.5")}
-                                />
-                                <animate
-                                  attributeName="opacity"
-                                  from="0"
-                                  to="1"
-                                  dur="0.8s"
-                                  begin={`${i * 0.2}s`}
-                                  fill="freeze"
-                                />
-                                <text
-                                  x={(x1 + x2) / 2}
-                                  y={(y1 + y2) / 2}
-                                  textAnchor="middle"
-                                  dominantBaseline="middle"
-                                  className="text-[8px] font-bold fill-white drop-shadow-sm"
+                          // Sophisticated status calculation with more stages and data
+                          const expenseRatio = totalExpenses / totalIncome || 0;
+                          const savingsRate = savingsTotal / totalIncome || 0;
+                          const debtRatio = totalDebtPayment / totalIncome || 0;
+                          const overallScore = Math.round(
+                            (cashFlow > 0 ? 100 : 0) +
+                              savingsRate * 50 +
+                              (debtRatio < 0.1 ? 30 : debtRatio < 0.2 ? 15 : 0) -
+                              (expenseRatio > 0.8 ? 20 : 0),
+                          );
+
+                          const status = (() => {
+                            if (overallScore >= 90)
+                              return {
+                                emoji: "🚀",
+                                label: "Excellent",
+                                color: "text-emerald-600",
+                                progress: 95,
+                                icon: <TrendingUp className="h-6 w-6 inline" />,
+                                message: `Outstanding! Cash flow +${formatCurrency(cashFlow)}/month, savings rate ${Math.round(savingsRate * 100)}%, debt  ${Math.round(debtRatio * 100)}%. You're crushing it! 💪`,
+                              };
+                            if (overallScore >= 75)
+                              return {
+                                emoji: "💪",
+                                label: "Strong",
+                                color: "text-green-600",
+                                progress: 80,
+                                icon: <Zap className="h-6 w-6 inline" />,
+                                message: `Great work! Cash flow +${formatCurrency(cashFlow)}/month, savings ${Math.round(savingsRate * 100)}%, expenses ${Math.round(expenseRatio * 100)}% of income. Keep the momentum!`,
+                              };
+                            if (overallScore >= 60)
+                              return {
+                                emoji: "✅",
+                                label: "Healthy",
+                                color: "text-blue-600",
+                                progress: 65,
+                                icon: <DollarSign className="h-6 w-6 inline" />,
+                                message: `Solid! Cash flow +${formatCurrency(cashFlow)}/month, savings ${Math.round(savingsRate * 100)}%. Debt at ${Math.round(debtRatio * 100)}% — room for optimization. 🎯`,
+                              };
+                            if (overallScore >= 40)
+                              return {
+                                emoji: "⚠️",
+                                label: "Review",
+                                color: "text-orange-600",
+                                progress: 40,
+                                icon: <Snowflake className="h-6 w-6 inline" />,
+                                message: `Watch closely: Cash flow ${formatCurrency(cashFlow)}/month, expenses ${Math.round(expenseRatio * 100)}% of income. Debt ${Math.round(debtRatio * 100)}% — small adjustments needed. 🔧`,
+                              };
+                            return {
+                              emoji: "🔴",
+                              label: "Critical",
+                              color: "text-red-600",
+                              progress: 20,
+                              icon: <AlertCircle className="h-6 w-6 inline" />,
+                              message: `Urgent! Cash flow ${formatCurrency(cashFlow)}/month, expenses ${Math.round(expenseRatio * 100)}% of income, debt ${Math.round(debtRatio * 100)}%. Cut expenses immediately to avoid debt trap. 🚨`,
+                            };
+                          })();
+
+                          return (
+                            <div className="space-y-6">
+                              {/* Header with icon and emoji */}
+                              <div className="flex items-center justify-center gap-4">
+                                <div
+                                  className={`p-3 rounded-full bg-white/20 backdrop-blur-sm shadow-lg ${status.color}`}
                                 >
-                                  {percent.toFixed(0)}%
-                                </text>
-                              </g>
-                            );
-                          });
+                                  {status.icon}
+                                </div>
+                                <div className={`text-6xl font-black ${status.color}`}>{status.emoji}</div>
+                                <div className="text-2xl font-bold ${status.color}">{status.label}</div>
+                              </div>
+
+                              {/* Progress bar with animated fill */}
+                              <div className="flex items-center gap-4">
+                                <div className="w-full bg-slate-200 rounded-full h-3 dark:bg-slate-700">
+                                  <div
+                                    className={`h-3 rounded-full transition-all duration-1000 ease-out ${status.color} bg-gradient-to-r from-${status.color.replace("text-", "")} to-${status.color.replace("text-", "")} bg-opacity-20`}
+                                    style={{ width: `${status.progress}%` }}
+                                  />
+                                </div>
+                                <span className="text-sm font-medium text-slate-600 dark:text-slate-400">
+                                  {status.progress}%
+                                </span>
+                              </div>
+
+                              {/* Sophisticated data cards */}
+                              <div className="grid grid-cols-2 gap-4">
+                                <Card className="border-l-4 border-emerald-500">
+                                  <CardContent className="p-4">
+                                    <p className="text-xs text-slate-500 dark:text-slate-400">Cash Flow</p>
+                                    <p className="text-lg font-bold text-emerald-600">{formatCurrency(cashFlow)}</p>
+                                  </CardContent>
+                                </Card>
+                                <Card className="border-l-4 border-blue-500">
+                                  <CardContent className="p-4">
+                                    <p className="text-xs text-slate-500 dark:text-slate-400">Savings Rate</p>
+                                    <p className="text-lg font-bold text-blue-600">
+                                      {Math.round((savingsTotal / totalIncome || 0) * 100)}%
+                                    </p>
+                                  </CardContent>
+                                </Card>
+                                <Card className="border-l-4 border-orange-500">
+                                  <CardContent className="p-4">
+                                    <p className="text-xs text-slate-500 dark:text-slate-400">Debt Ratio</p>
+                                    <p className="text-lg font-bold text-orange-600">
+                                      {Math.round((totalDebtPayment / totalIncome || 0) * 100)}%
+                                    </p>
+                                  </CardContent>
+                                </Card>
+                                <Card className="border-l-4 border-purple-500">
+                                  <CardContent className="p-4">
+                                    <p className="text-xs text-slate-500 dark:text-slate-400">Overview Score</p>
+                                    <p className="text-lg font-bold text-purple-600">{overallScore}%</p>
+                                  </CardContent>
+                                </Card>
+                              </div>
+
+                              {/* Actionable message with buttons */}
+                              <div className="space-y-4">
+                                <p className="text-muted-foreground font-medium">{status.message}</p>
+                                <div className="flex flex-col sm:flex-row gap-2 justify-center">
+                                  <Button variant="outline" size="sm" className="w-full sm:w-auto">
+                                    <Zap className="mr-2 h-4 w-4" /> Quick Tip
+                                  </Button>
+                                  <Button variant="ghost" size="sm" className="w-full sm:w-auto">
+                                    <Edit2 className="mr-2 h-4 w-4" /> Adjust Budget
+                                  </Button>
+                                </div>
+                              </div>
+                            </div>
+                          );
                         })()}
-                        <circle cx="18" cy="18" r="10" fill="white" className="dark:fill-slate-900 shadow-inner" />
-                      </svg>
+                      </div>
                       <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
                         <div className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-slate-800 to-slate-600 bg-clip-text text-transparent dark:from-slate-100 dark:to-slate-300">
                           {formatCurrency(totalExpenses)}
