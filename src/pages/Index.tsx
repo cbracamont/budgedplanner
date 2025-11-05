@@ -294,6 +294,7 @@ const Index = () => {
       remaining = Math.max(0, remaining + interest - monthlyPay);
       months++;
     }
+    const monthsToDebtFree = months;
     const debtFreeDate = addMonths(new Date(), months);
 
     const pieData = [
@@ -385,7 +386,7 @@ const Index = () => {
       debtFreeDate,
       monthsToDebtFree,
       pieData,
-      calendarEvents,
+      calendarEvents: allEvents,
       monthStart,
       monthEnd,
       monthDays,
