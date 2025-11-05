@@ -702,7 +702,8 @@ const Index = () => {
           </div>
         </div>
       </div>
-    </Card>
+    </CardContent>
+  </Card>
 )}
           {/* CALENDARIO */}
           <Card>
