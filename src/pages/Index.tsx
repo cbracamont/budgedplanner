@@ -263,6 +263,7 @@ const Index = () => {
     totalExpenses,
     cashFlow,
     savingsTotal,
+    availableToSave,
     debtFreeDate,
     monthsToDebtFree,
     pieData,
@@ -277,8 +278,10 @@ const Index = () => {
     const totalFixed = fixedExpensesData.reduce((s, e) => s + e.amount, 0);
     const totalVariable = variableExpensesData.reduce((s, e) => s + e.amount, 0);
     const totalDebtPayment = debtData.reduce((s, d) => s + d.minimum_payment, 0);
+    const monthlySavingsGoal = savings?.monthly_goal || 0;
     const totalExpenses = totalFixed + totalVariable + totalDebtPayment;
     const cashFlow = totalIncome - totalExpenses;
+    const availableToSave = cashFlow - monthlySavingsGoal;
     const savingsTotal = (savings?.emergency_fund || 0) + savingsGoalsData.reduce((s, g) => s + (g.current_amount || 0), 0);
     let remaining = debtData.reduce((s, d) => s + d.balance, 0);
     let months = 0;
@@ -384,6 +387,7 @@ const Index = () => {
       totalExpenses,
       cashFlow,
       savingsTotal,
+      availableToSave,
       debtFreeDate,
       monthsToDebtFree: months,
       pieData,
@@ -985,9 +989,8 @@ const Index = () => {
             </TabsContent>
 
             <TabsContent value="savings" className="space-y-6">
-              <SavingsGoalsManager language={language} availableForSavings={cashFlow} availableBudget={cashFlow} />
-              
-              
+              <SavingsManager language={language} availableToSave={availableToSave} />
+              <SavingsGoalsManager language={language} availableForSavings={availableToSave} availableBudget={availableToSave} />
             </TabsContent>
           </Tabs>
 
@@ -1032,14 +1035,17 @@ const DebtPlanner = ({
     totalDebtPayment,
     totalExpenses,
     cashFlow,
-    savingsTotal
+    savingsTotal,
+    availableToSave
   } = useMemo(() => {
     const totalIncome = incomeData.reduce((s, i) => s + i.amount, 0);
     const totalFixed = fixedExpensesData.reduce((s, e) => s + e.amount, 0);
     const totalVariable = variableExpensesData.reduce((s, e) => s + e.amount, 0);
     const totalDebtPayment = debtData.reduce((s, d) => s + d.minimum_payment, 0);
+    const monthlySavingsGoal = savings?.monthly_goal || 0;
     const totalExpenses = totalFixed + totalVariable + totalDebtPayment;
     const cashFlow = totalIncome - totalExpenses;
+    const availableToSave = cashFlow - monthlySavingsGoal;
     const savingsTotal = savings?.emergency_fund || 0;
     return {
       totalIncome,
@@ -1048,7 +1054,8 @@ const DebtPlanner = ({
       totalDebtPayment,
       totalExpenses,
       cashFlow,
-      savingsTotal
+      savingsTotal,
+      availableToSave
     };
   }, [incomeData, debtData, fixedExpensesData, variableExpensesData, savings]);
 
