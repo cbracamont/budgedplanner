@@ -424,6 +424,7 @@ export type Database = {
           invited_by: string | null
           joined_at: string
           role: string
+          status: string
           updated_at: string
           user_id: string
         }
@@ -435,6 +436,7 @@ export type Database = {
           invited_by?: string | null
           joined_at?: string
           role?: string
+          status?: string
           updated_at?: string
           user_id: string
         }
@@ -446,6 +448,7 @@ export type Database = {
           invited_by?: string | null
           joined_at?: string
           role?: string
+          status?: string
           updated_at?: string
           user_id?: string
         }
@@ -455,7 +458,9 @@ export type Database = {
         Row: {
           amount: number
           created_at: string
+          frequency: string | null
           id: string
+          income_type: string | null
           name: string
           payment_day: number
           profile_id: string | null
@@ -465,7 +470,9 @@ export type Database = {
         Insert: {
           amount: number
           created_at?: string
+          frequency?: string | null
           id?: string
+          income_type?: string | null
           name: string
           payment_day: number
           profile_id?: string | null
@@ -475,7 +482,9 @@ export type Database = {
         Update: {
           amount?: number
           created_at?: string
+          frequency?: string | null
           id?: string
+          income_type?: string | null
           name?: string
           payment_day?: number
           profile_id?: string | null

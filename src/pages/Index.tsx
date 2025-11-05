@@ -49,6 +49,7 @@ import { IncomeManager } from "@/components/IncomeManager";
 import { DebtsManager } from "@/components/DebtsManager";
 import { FixedExpensesManager } from "@/components/FixedExpensesManager";
 import { VariableExpensesManager } from "@/components/VariableExpensesManager";
+import { VariableIncomeManager } from "@/components/VariableIncomeManager";
 import { SavingsManager } from "@/components/SavingsManager";
 import { SavingsGoalsManager } from "@/components/SavingsGoalsManager";
 import { LanguageToggle } from "@/components/LanguageToggle";
@@ -1650,20 +1651,7 @@ const Index = () => {
                 </TabsContent>
 
                 <TabsContent value="variable">
-                  <Card className="shadow-medium border-warning/20">
-                    <CardHeader className="bg-muted/50 border-b">
-                      <div className="flex items-center gap-2">
-                        <Plus className="h-5 w-5 text-primary" />
-                        <CardTitle>Variable Income</CardTitle>
-                      </div>
-                      <CardDescription>Extra income like bonuses, gifts, side hustles</CardDescription>
-                    </CardHeader>
-                    <CardContent className="pt-6">
-                      <p className="text-center text-muted-foreground py-6">
-                        Variable income has been moved to the Income Manager
-                      </p>
-                    </CardContent>
-                  </Card>
+                  <VariableIncomeManager language={language} />
                 </TabsContent>
               </Tabs>
             </TabsContent>
