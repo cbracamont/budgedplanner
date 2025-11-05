@@ -22,6 +22,7 @@ import {
   X,
   Zap,
   Snowflake,
+  AlertCircle,
 } from "lucide-react";
 import {
   useIncomeSources,
