@@ -1,6 +1,7 @@
 "use client";
 
 import { useState, useEffect, useMemo, useCallback } from "react";
+import { useQueryClient } from "@tanstack/react-query";
 import { format, addMonths, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, add, sub } from "date-fns";
 import { formatCurrency } from "@/lib/i18n";
 import { TrendingUp, Download, LogOut, Bot, Calendar, DollarSign, PiggyBank, Home, Edit2, Trash2, Plus, ChevronLeft, ChevronRight, Send, X, Zap, Snowflake, Moon, Sun, PoundSterling, Shield, AlertCircle, Wallet } from "lucide-react";
@@ -188,6 +189,7 @@ const useVariableIncome = () => {
 };
 const Index = () => {
   useTheme();
+  const queryClient = useQueryClient();
   const {
     theme,
     setTheme
@@ -215,6 +217,11 @@ const Index = () => {
   const [addMoneyGoalId, setAddMoneyGoalId] = useState<string | null>(null);
   const [addMoneyAmount, setAddMoneyAmount] = useState(0);
   const [deleteGoalId, setDeleteGoalId] = useState<string | null>(null);
+  const [editingGoalId, setEditingGoalId] = useState<string | null>(null);
+  const [editGoalData, setEditGoalData] = useState<{
+    current_amount: number;
+    target_amount: number;
+  }>({ current_amount: 0, target_amount: 0 });
   const [newEvent, setNewEvent] = useState<{
     name: string;
     amount: number;
@@ -460,6 +467,9 @@ const Index = () => {
 
       if (error) throw error;
 
+      // Invalidate and refetch savings goals
+      await queryClient.invalidateQueries({ queryKey: ['savings_goals'] });
+
       toast({
         title: "Success",
         description: "Savings goal deleted successfully",
@@ -491,6 +501,9 @@ const Index = () => {
 
       if (error) throw error;
 
+      // Invalidate and refetch savings goals
+      await queryClient.invalidateQueries({ queryKey: ['savings_goals'] });
+
       toast({
         title: "Success",
         description: `Added ${formatCurrency(addMoneyAmount)} to ${goal.goal_name}`,
@@ -502,6 +515,38 @@ const Index = () => {
       toast({
         title: "Error",
         description: "Failed to add money to savings goal",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleEditGoal = async () => {
+    if (!editingGoalId) return;
+
+    try {
+      const { error } = await supabase
+        .from('savings_goals')
+        .update({
+          current_amount: editGoalData.current_amount,
+          target_amount: editGoalData.target_amount
+        })
+        .eq('id', editingGoalId);
+
+      if (error) throw error;
+
+      // Invalidate and refetch savings goals
+      await queryClient.invalidateQueries({ queryKey: ['savings_goals'] });
+
+      toast({
+        title: "Success",
+        description: "Savings goal updated successfully",
+      });
+      setEditingGoalId(null);
+    } catch (error) {
+      console.error('Error updating goal:', error);
+      toast({
+        title: "Error",
+        description: "Failed to update savings goal",
         variant: "destructive",
       });
     }
@@ -921,13 +966,65 @@ const Index = () => {
                     type="number" 
                     value={addMoneyAmount || ""} 
                     onChange={e => setAddMoneyAmount(parseFloat(e.target.value) || 0)} 
-                    placeholder="0" 
+                    placeholder="0"
+                    min="0"
+                    step="0.01"
                   />
                 </div>
               </div>
               <AlertDialogFooter>
                 <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction onClick={handleAddMoney}>Add Money</AlertDialogAction>
+                <AlertDialogAction onClick={handleAddMoney} disabled={addMoneyAmount <= 0}>
+                  Add Money
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+
+          {/* EDIT GOAL AMOUNTS MODAL */}
+          <AlertDialog open={!!editingGoalId} onOpenChange={() => setEditingGoalId(null)}>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Edit Savings Goal</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Update the saved and target amounts for this goal
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <div className="space-y-4">
+                <div>
+                  <Label>Current Amount Saved (£)</Label>
+                  <Input 
+                    type="number" 
+                    value={editGoalData.current_amount || ""} 
+                    onChange={e => setEditGoalData({
+                      ...editGoalData,
+                      current_amount: parseFloat(e.target.value) || 0
+                    })} 
+                    placeholder="0"
+                    min="0"
+                    step="0.01"
+                  />
+                </div>
+                <div>
+                  <Label>Target Amount (£)</Label>
+                  <Input 
+                    type="number" 
+                    value={editGoalData.target_amount || ""} 
+                    onChange={e => setEditGoalData({
+                      ...editGoalData,
+                      target_amount: parseFloat(e.target.value) || 0
+                    })} 
+                    placeholder="0"
+                    min="0"
+                    step="0.01"
+                  />
+                </div>
+              </div>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction onClick={handleEditGoal}>
+                  Update
+                </AlertDialogAction>
               </AlertDialogFooter>
             </AlertDialogContent>
           </AlertDialog>
@@ -1137,9 +1234,24 @@ const Index = () => {
                                     size="sm"
                                     variant="ghost"
                                     onClick={() => {
+                                      setEditingGoalId(goal.id);
+                                      setEditGoalData({
+                                        current_amount: goal.current_amount,
+                                        target_amount: goal.target_amount
+                                      });
+                                    }}
+                                    title="Edit amounts"
+                                  >
+                                    <Edit2 className="h-4 w-4" />
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    onClick={() => {
                                       setAddMoneyGoalId(goal.id);
                                       setAddMoneyAmount(0);
                                     }}
+                                    title="Add money"
                                   >
                                     <Wallet className="h-4 w-4" />
                                   </Button>
@@ -1147,6 +1259,7 @@ const Index = () => {
                                     size="sm"
                                     variant="ghost"
                                     onClick={() => setDeleteGoalId(goal.id)}
+                                    title="Delete goal"
                                   >
                                     <Trash2 className="h-4 w-4" />
                                   </Button>
