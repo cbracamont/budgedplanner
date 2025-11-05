@@ -1,7 +1,6 @@
-// src/pages/Index.tsx
 "use client";
 
-import React, { useState, useEffect, useMemo, useCallback } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { format, addMonths, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, add, sub } from "date-fns";
 import { formatCurrency } from "@/lib/i18n";
 import {
@@ -22,6 +21,9 @@ import {
   X,
   Zap,
   Snowflake,
+  Moon,
+  Sun,
+  PoundSterling,
 } from "lucide-react";
 import {
   useIncomeSources,
@@ -33,6 +35,12 @@ import {
 } from "@/hooks/useFinancialData";
 import { useFinancialProfiles } from "@/hooks/useFinancialProfiles";
 import { Auth } from "@/components/Auth";
+import { IncomeManager } from "@/components/IncomeManager";
+import { DebtsManager } from "@/components/DebtsManager";
+import { FixedExpensesManager } from "@/components/FixedExpensesManager";
+import { VariableExpensesManager } from "@/components/VariableExpensesManager";
+import { SavingsManager } from "@/components/SavingsManager";
+import { SavingsGoalsManager } from "@/components/SavingsGoalsManager";
 import { LanguageToggle } from "@/components/LanguageToggle";
 import { ProfileSelector } from "@/components/ProfileSelector";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -42,6 +50,7 @@ import { Progress } from "@/components/ui/progress";
 import { Slider } from "@/components/ui/slider";
 import { supabase } from "@/integrations/supabase/client";
 import { useTheme } from "@/hooks/useTheme";
+import { useNextTheme } from "next-themes";
 import { Skeleton } from "@/components/ui/skeleton";
 import {
   AlertDialog,
@@ -225,7 +234,7 @@ const Index = () => {
   const [aiInput, setAiInput] = useState("");
   const [aiResponse, setAiResponse] = useState("");
   const [aiLoading, setAiLoading] = useState(false);
-  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+  const [selectedDate, setSelectedDate];
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [showEventDialog, setShowEventDialog] = useState(false);
   const [editingEvent, setEditingEvent] = useState<Event | null>(null);
