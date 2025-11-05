@@ -3,8 +3,9 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { format, addMonths, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, add, sub } from "date-fns";
 import { formatCurrency } from "@/lib/i18n";
-import { TrendingUp, Download, LogOut, Bot, Calendar, DollarSign, PiggyBank, Home, Edit2, Trash2, Plus, ChevronLeft, ChevronRight, Send, X, Zap, Snowflake, Moon, Sun, PoundSterling, Shield, AlertCircle } from "lucide-react";
+import { TrendingUp, Download, LogOut, Bot, Calendar, DollarSign, PiggyBank, Home, Edit2, Trash2, Plus, ChevronLeft, ChevronRight, Send, X, Zap, Snowflake, Moon, Sun, PoundSterling, Shield, AlertCircle, Wallet } from "lucide-react";
 import { useIncomeSources, useDebts, useFixedExpenses, useVariableExpenses, useSavingsGoals, useSavings } from "@/hooks/useFinancialData";
+import { toast } from "@/hooks/use-toast";
 import { useFinancialProfiles } from "@/hooks/useFinancialProfiles";
 import { Auth } from "@/components/Auth";
 import { IncomeManager } from "@/components/IncomeManager";
@@ -211,6 +212,9 @@ const Index = () => {
   const [monthlySavings, setMonthlySavings] = useState(0);
   const [debtMethod, setDebtMethod] = useState<DebtMethod>("avalanche");
   const [events, setEvents] = useState<Event[]>([]);
+  const [addMoneyGoalId, setAddMoneyGoalId] = useState<string | null>(null);
+  const [addMoneyAmount, setAddMoneyAmount] = useState(0);
+  const [deleteGoalId, setDeleteGoalId] = useState<string | null>(null);
   const [newEvent, setNewEvent] = useState<{
     name: string;
     amount: number;
@@ -445,6 +449,62 @@ const Index = () => {
   const deleteEvent = (id: string) => {
     setEvents(events.filter(e => e.id !== id));
     setDeleteId(null);
+  };
+
+  const handleDeleteGoal = async (goalId: string) => {
+    try {
+      const { error } = await supabase
+        .from('savings_goals')
+        .delete()
+        .eq('id', goalId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: "Savings goal deleted successfully",
+      });
+      setDeleteGoalId(null);
+    } catch (error) {
+      console.error('Error deleting goal:', error);
+      toast({
+        title: "Error",
+        description: "Failed to delete savings goal",
+        variant: "destructive",
+      });
+    }
+  };
+
+  const handleAddMoney = async () => {
+    if (!addMoneyGoalId || addMoneyAmount <= 0) return;
+
+    try {
+      const goal = savingsGoalsData.find(g => g.id === addMoneyGoalId);
+      if (!goal) return;
+
+      const newAmount = goal.current_amount + addMoneyAmount;
+
+      const { error } = await supabase
+        .from('savings_goals')
+        .update({ current_amount: newAmount })
+        .eq('id', addMoneyGoalId);
+
+      if (error) throw error;
+
+      toast({
+        title: "Success",
+        description: `Added ${formatCurrency(addMoneyAmount)} to ${goal.goal_name}`,
+      });
+      setAddMoneyGoalId(null);
+      setAddMoneyAmount(0);
+    } catch (error) {
+      console.error('Error adding money:', error);
+      toast({
+        title: "Error",
+        description: "Failed to add money to savings goal",
+        variant: "destructive",
+      });
+    }
   };
   const sendToAI = () => {
     if (!aiInput.trim()) return;
@@ -842,6 +902,54 @@ const Index = () => {
             </AlertDialogContent>
           </AlertDialog>
 
+          {/* ADD MONEY TO GOAL MODAL */}
+          <AlertDialog open={!!addMoneyGoalId} onOpenChange={() => {
+            setAddMoneyGoalId(null);
+            setAddMoneyAmount(0);
+          }}>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Add Money to Goal</AlertDialogTitle>
+                <AlertDialogDescription>
+                  How much would you like to add to this savings goal?
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <div className="space-y-4">
+                <div>
+                  <Label>Amount (£)</Label>
+                  <Input 
+                    type="number" 
+                    value={addMoneyAmount || ""} 
+                    onChange={e => setAddMoneyAmount(parseFloat(e.target.value) || 0)} 
+                    placeholder="0" 
+                  />
+                </div>
+              </div>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction onClick={handleAddMoney}>Add Money</AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+
+          {/* DELETE GOAL CONFIRMATION */}
+          <AlertDialog open={!!deleteGoalId} onOpenChange={() => setDeleteGoalId(null)}>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Delete Savings Goal?</AlertDialogTitle>
+                <AlertDialogDescription>
+                  This will permanently delete this savings goal. This action cannot be undone.
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <AlertDialogFooter>
+                <AlertDialogCancel>Cancel</AlertDialogCancel>
+                <AlertDialogAction onClick={() => deleteGoalId && handleDeleteGoal(deleteGoalId)}>
+                  Delete
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+
           {/* TABS */}
           <Tabs defaultValue="overview" className="no-print">
             <TabsList className="grid w-full grid-cols-5 mb-6">
@@ -1019,8 +1127,31 @@ const Index = () => {
                         width: `${Math.min(100, progress)}%`
                       }} />
                             <CardHeader className="pb-3">
-                              <CardTitle className="text-lg">{goal.goal_name}</CardTitle>
-                              {goal.goal_description && <CardDescription className="text-sm">{goal.goal_description}</CardDescription>}
+                              <div className="flex justify-between items-start">
+                                <div>
+                                  <CardTitle className="text-lg">{goal.goal_name}</CardTitle>
+                                  {goal.goal_description && <CardDescription className="text-sm">{goal.goal_description}</CardDescription>}
+                                </div>
+                                <div className="flex gap-1">
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    onClick={() => {
+                                      setAddMoneyGoalId(goal.id);
+                                      setAddMoneyAmount(0);
+                                    }}
+                                  >
+                                    <Wallet className="h-4 w-4" />
+                                  </Button>
+                                  <Button
+                                    size="sm"
+                                    variant="ghost"
+                                    onClick={() => setDeleteGoalId(goal.id)}
+                                  >
+                                    <Trash2 className="h-4 w-4" />
+                                  </Button>
+                                </div>
+                              </div>
                             </CardHeader>
                             <CardContent className="space-y-4">
                               <div>
