@@ -156,7 +156,7 @@ export const SavingsGoalsManager = ({
 
   return (
     <Card className="shadow-medium">
-      <CardHeader className="bg-gradient-primary text-primary-foreground">
+      <CardHeader>
         <div className="flex items-center justify-between">
           <div className="flex items-center gap-2">
             <Target className="h-5 w-5" />
@@ -241,7 +241,7 @@ export const SavingsGoalsManager = ({
             </DialogContent>
           </Dialog>
         </div>
-        <CardDescription className="text-primary-foreground/80">
+        <CardDescription>
           {language === "en"
             ? "Create and track individual savings goals"
             : "Crea y monitorea metas de ahorro individuales"}
