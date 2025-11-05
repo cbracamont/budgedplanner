@@ -211,10 +211,12 @@ const Index = () => {
     name: string;
     amount: number;
     type: "income" | "debt" | "fixed" | "variable";
+    recurring: boolean;
   }>({
     name: "",
     amount: 0,
-    type: "income"
+    type: "income",
+    recurring: false
   });
   const {
     data: profiles = []
@@ -412,7 +414,8 @@ const Index = () => {
       setNewEvent({
         name: "",
         amount: 0,
-        type: "income"
+        type: "income",
+        recurring: false
       });
     }
   };
@@ -422,14 +425,16 @@ const Index = () => {
         ...e,
         name: newEvent.name,
         amount: newEvent.amount,
-        type: newEvent.type
+        type: newEvent.type,
+        recurring: newEvent.recurring
       } : e));
       setEditingEvent(null);
       setShowEventDialog(false);
       setNewEvent({
         name: "",
         amount: 0,
-        type: "income"
+        type: "income",
+        recurring: false
       });
     }
   };
@@ -622,9 +627,6 @@ const Index = () => {
                 }))}>
                     <ChevronRight className="h-4 w-4" />
                   </Button>
-                  <Button size="sm" onClick={() => setShowEventDialog(true)}>
-                    <Plus className="h-4 w-4 mr-1" /> Add
-                  </Button>
                 </div>
               </CardTitle>
             </CardHeader>
@@ -697,7 +699,8 @@ const Index = () => {
                       setNewEvent({
                         name: e.name,
                         amount: e.amount,
-                        type: e.type
+                        type: e.type,
+                        recurring: e.recurring || false
                       });
                       setShowEventDialog(true);
                     }}>
@@ -711,6 +714,18 @@ const Index = () => {
                       </div>)}
                 </AlertDialogDescription>
                 <AlertDialogFooter>
+                  <Button variant="default" onClick={() => {
+                    setEditingEvent(null);
+                    setNewEvent({
+                      name: "",
+                      amount: 0,
+                      type: "income",
+                      recurring: false
+                    });
+                    setShowEventDialog(true);
+                  }}>
+                    <Plus className="h-4 w-4 mr-1" /> Add Event
+                  </Button>
                   <AlertDialogCancel>Close</AlertDialogCancel>
                 </AlertDialogFooter>
               </AlertDialogContent>
@@ -753,6 +768,21 @@ const Index = () => {
                       <SelectItem value="debt">Debt Payment</SelectItem>
                     </SelectContent>
                   </Select>
+                </div>
+                <div className="flex items-center space-x-2 p-3 bg-muted rounded-lg">
+                  <input
+                    type="checkbox"
+                    id="recurring"
+                    checked={newEvent.recurring}
+                    onChange={(e) => setNewEvent({
+                      ...newEvent,
+                      recurring: e.target.checked
+                    })}
+                    className="h-4 w-4 rounded border-gray-300"
+                  />
+                  <Label htmlFor="recurring" className="cursor-pointer">
+                    Repeat monthly for following months
+                  </Label>
                 </div>
               </div>
               <AlertDialogFooter>
