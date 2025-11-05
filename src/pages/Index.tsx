@@ -259,6 +259,8 @@ const Index = () => {
     current_amount: number;
     target_amount: number;
   }>({ current_amount: 0, target_amount: 0 });
+  const [showAddEmergencyFund, setShowAddEmergencyFund] = useState(false);
+  const [emergencyFundAmount, setEmergencyFundAmount] = useState(0);
   const [newEvent, setNewEvent] = useState<{
     name: string;
     amount: number;
@@ -577,23 +579,64 @@ const Index = () => {
 
       if (error) throw error;
 
-      // Invalidate and refetch savings goals
       await queryClient.invalidateQueries({ queryKey: ["savings_goals"] });
 
       toast({
         title: "Success",
-        description: "Savings goal updated successfully",
+        description: "Goal amounts updated successfully",
       });
+
       setEditingGoalId(null);
     } catch (error) {
       console.error("Error updating goal:", error);
       toast({
         title: "Error",
-        description: "Failed to update savings goal",
+        description: "Failed to update goal amounts",
         variant: "destructive",
       });
     }
   };
+
+  const handleAddEmergencyFund = async () => {
+    const { data: { user } } = await supabase.auth.getUser();
+    if (!user || emergencyFundAmount <= 0) return;
+
+    try {
+      const currentEmergencyFund = savings?.emergency_fund || 0;
+      const newTotal = currentEmergencyFund + emergencyFundAmount;
+
+      const { error } = await supabase
+        .from("savings")
+        .upsert({
+          id: savings?.id,
+          user_id: user.id,
+          profile_id: 'id' in activeProfile ? activeProfile.id : null,
+          emergency_fund: newTotal,
+          monthly_goal: savings?.monthly_goal || 0,
+          total_accumulated: savings?.total_accumulated || 0,
+        });
+
+      if (error) throw error;
+
+      await queryClient.invalidateQueries({ queryKey: ["savings"] });
+
+      toast({
+        title: "Success",
+        description: `Added ${formatCurrency(emergencyFundAmount)} to emergency fund`,
+      });
+
+      setShowAddEmergencyFund(false);
+      setEmergencyFundAmount(0);
+    } catch (error) {
+      console.error("Error adding to emergency fund:", error);
+      toast({
+        title: "Error",
+        description: "Failed to add to emergency fund",
+        variant: "destructive",
+      });
+    }
+  };
+
   const sendToAI = () => {
     if (!aiInput.trim()) return;
     setAiLoading(true);
@@ -1204,6 +1247,42 @@ const Index = () => {
             </AlertDialogContent>
           </AlertDialog>
 
+          {/* ADD TO EMERGENCY FUND DIALOG */}
+          <AlertDialog open={showAddEmergencyFund} onOpenChange={setShowAddEmergencyFund}>
+            <AlertDialogContent>
+              <AlertDialogHeader>
+                <AlertDialogTitle>Add to Emergency Fund</AlertDialogTitle>
+                <AlertDialogDescription>
+                  Current emergency fund: {formatCurrency(savings?.emergency_fund || 0)}
+                </AlertDialogDescription>
+              </AlertDialogHeader>
+              <div className="space-y-4 py-4">
+                <div className="space-y-2">
+                  <Label htmlFor="emergency-amount">Amount to Add (£)</Label>
+                  <Input
+                    id="emergency-amount"
+                    type="number"
+                    step="0.01"
+                    value={emergencyFundAmount || ""}
+                    onChange={(e) => setEmergencyFundAmount(parseFloat(e.target.value) || 0)}
+                    placeholder="0.00"
+                  />
+                </div>
+                <div className="bg-muted p-3 rounded-lg">
+                  <p className="text-sm text-muted-foreground">
+                    New total: {formatCurrency((savings?.emergency_fund || 0) + emergencyFundAmount)}
+                  </p>
+                </div>
+              </div>
+              <AlertDialogFooter>
+                <AlertDialogCancel onClick={() => setEmergencyFundAmount(0)}>Cancel</AlertDialogCancel>
+                <AlertDialogAction onClick={handleAddEmergencyFund} disabled={emergencyFundAmount <= 0}>
+                  Add Funds
+                </AlertDialogAction>
+              </AlertDialogFooter>
+            </AlertDialogContent>
+          </AlertDialog>
+
           {/* TABS */}
           <Tabs defaultValue="overview" className="no-print">
             <TabsList className="grid w-full grid-cols-5 mb-6">
@@ -1362,8 +1441,53 @@ const Index = () => {
                   </CardContent>
                 </Card>
 
-                {/* Emergency Fund Manager */}
-                <Card></Card>
+                {/* Emergency Fund Card */}
+                <Card>
+                  <CardHeader className="pb-3">
+                    <div className="flex justify-between items-start">
+                      <div>
+                        <CardTitle className="text-lg flex items-center gap-2">
+                          <Shield className="h-5 w-5 text-orange-500" />
+                          Emergency Fund
+                        </CardTitle>
+                        <CardDescription>Build your safety net</CardDescription>
+                      </div>
+                      <Button
+                        size="sm"
+                        variant="ghost"
+                        onClick={() => setShowAddEmergencyFund(true)}
+                        title="Add money to emergency fund"
+                      >
+                        <Wallet className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </CardHeader>
+                  <CardContent className="space-y-4">
+                    <div className="space-y-2">
+                      <div className="flex justify-between text-sm">
+                        <span className="text-muted-foreground">Current</span>
+                        <span className="font-bold">{formatCurrency(savings?.emergency_fund || 0)}</span>
+                      </div>
+                      <div className="flex justify-between text-sm">
+                        <span className="text-muted-foreground">Goal (3-6 months expenses)</span>
+                        <span className="font-bold text-orange-600">
+                          {formatCurrency((totalFixed + totalVariable) * 3)} - {formatCurrency((totalFixed + totalVariable) * 6)}
+                        </span>
+                      </div>
+                      <Progress
+                        value={Math.min(100, ((savings?.emergency_fund || 0) / ((totalFixed + totalVariable) * 3)) * 100)}
+                        className="h-3"
+                      />
+                    </div>
+                    <div className="bg-orange-50 dark:bg-orange-950 border border-orange-200 dark:border-orange-800 rounded-lg p-3">
+                      <p className="text-xs text-orange-700 dark:text-orange-300">
+                        {(savings?.emergency_fund || 0) >= (totalFixed + totalVariable) * 3
+                          ? "✅ Emergency fund is healthy!"
+                          : `💡 Save ${formatCurrency((totalFixed + totalVariable) * 3 - (savings?.emergency_fund || 0))} more to reach minimum goal`}
+                      </p>
+                    </div>
+                  </CardContent>
+                </Card>
 
                 {/* Savings Goals Manager */}
                 <div className="mb-6">
