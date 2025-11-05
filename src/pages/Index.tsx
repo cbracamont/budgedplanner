@@ -3,36 +3,8 @@
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { format, addMonths, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, add, sub } from "date-fns";
 import { formatCurrency } from "@/lib/i18n";
-import {
-  TrendingUp,
-  Download,
-  LogOut,
-  Bot,
-  Calendar,
-  DollarSign,
-  PiggyBank,
-  Home,
-  Edit2,
-  Trash2,
-  Plus,
-  ChevronLeft,
-  ChevronRight,
-  Send,
-  X,
-  Zap,
-  Snowflake,
-  Moon,
-  Sun,
-  PoundSterling,
-} from "lucide-react";
-import {
-  useIncomeSources,
-  useDebts,
-  useFixedExpenses,
-  useVariableExpenses,
-  useSavingsGoals,
-  useSavings,
-} from "@/hooks/useFinancialData";
+import { TrendingUp, Download, LogOut, Bot, Calendar, DollarSign, PiggyBank, Home, Edit2, Trash2, Plus, ChevronLeft, ChevronRight, Send, X, Zap, Snowflake, Moon, Sun, PoundSterling } from "lucide-react";
+import { useIncomeSources, useDebts, useFixedExpenses, useVariableExpenses, useSavingsGoals, useSavings } from "@/hooks/useFinancialData";
 import { useFinancialProfiles } from "@/hooks/useFinancialProfiles";
 import { Auth } from "@/components/Auth";
 import { IncomeManager } from "@/components/IncomeManager";
@@ -52,22 +24,12 @@ import { supabase } from "@/integrations/supabase/client";
 import { useTheme } from "@/hooks/useTheme";
 import { useTheme as useNextTheme } from "next-themes";
 import { Skeleton } from "@/components/ui/skeleton";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
-
 import type { Language } from "@/lib/i18n";
 type DebtMethod = "avalanche" | "snowball" | "hybrid";
 type Event = {
@@ -78,7 +40,6 @@ type Event = {
   amount: number;
   recurring?: boolean;
 };
-
 const translations = {
   en: {
     overview: "Overview",
@@ -114,7 +75,7 @@ const translations = {
     cashFlowAfterSavings: "Cash Flow After Savings",
     debtPayment: "Available for Debt Payment",
     monthsToEmergency: "Months to Emergency Fund Goal",
-    monthlyDebtAllocation: "Monthly Debt Allocation",
+    monthlyDebtAllocation: "Monthly Debt Allocation"
   },
   es: {
     overview: "Resumen",
@@ -150,7 +111,7 @@ const translations = {
     cashFlowAfterSavings: "Flujo de Caja Después de Ahorros",
     debtPayment: "Disponible para Pago de Deuda",
     monthsToEmergency: "Meses para Meta de Fondo de Emergencia",
-    monthlyDebtAllocation: "Asignación Mensual de Deuda",
+    monthlyDebtAllocation: "Asignación Mensual de Deuda"
   },
   pl: {
     overview: "Przegląd",
@@ -186,45 +147,44 @@ const translations = {
     cashFlowAfterSavings: "Przepływ Gotówki Po Oszczędnościach",
     debtPayment: "Dostępne na Płatność Długu",
     monthsToEmergency: "Miesiące do Celu Funduszu Awaryjnego",
-    monthlyDebtAllocation: "Miesięczna Alokacja Długu",
-  },
+    monthlyDebtAllocation: "Miesięczna Alokacja Długu"
+  }
 };
-
 const useVariableIncome = () => {
   const [data, setData] = useState<any[]>([]);
   const [loading, setLoading] = useState(true);
-
   useEffect(() => {
     const saved = localStorage.getItem("variable_income");
     if (saved) setData(JSON.parse(saved));
     setLoading(false);
   }, []);
-
   const addIncome = useCallback((amount: number, description: string) => {
     const newEntry = {
       id: Date.now().toString(),
       amount,
       description: description || "Extra income",
-      date: new Date().toISOString(),
+      date: new Date().toISOString()
     };
-    setData((prev) => {
+    setData(prev => {
       const updated = [newEntry, ...prev];
       localStorage.setItem("variable_income", JSON.stringify(updated));
       return updated;
     });
   }, []);
-
   const deleteIncome = useCallback((id: string) => {
-    setData((prev) => {
-      const updated = prev.filter((i) => i.id !== id);
+    setData(prev => {
+      const updated = prev.filter(i => i.id !== id);
       localStorage.setItem("variable_income", JSON.stringify(updated));
       return updated;
     });
   }, []);
-
-  return { data, loading, addIncome, deleteIncome };
+  return {
+    data,
+    loading,
+    addIncome,
+    deleteIncome
+  };
 };
-
 const Index = () => {
   useTheme();
   const [language, setLanguage] = useState<Language>("en");
@@ -240,30 +200,52 @@ const Index = () => {
   const [editingEvent, setEditingEvent] = useState<Event | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [showIncomeModal, setShowIncomeModal] = useState(false);
-  const [newIncome, setNewIncome] = useState({ description: "", amount: 0 });
+  const [newIncome, setNewIncome] = useState({
+    description: "",
+    amount: 0
+  });
   const [monthlySavings, setMonthlySavings] = useState(0);
   const [debtMethod, setDebtMethod] = useState<DebtMethod>("avalanche");
   const [events, setEvents] = useState<Event[]>([]);
-
   const [newEvent, setNewEvent] = useState<{
     name: string;
     amount: number;
     type: "income" | "debt" | "fixed" | "variable";
-  }>({ name: "", amount: 0, type: "income" });
-
-  const { data: profiles = [] } = useFinancialProfiles();
-  const activeProfile = useMemo(() => profiles.find((p) => p.is_active) || { name: "Family" }, [profiles]);
-
-  const { data: incomeData = [] } = useIncomeSources();
-  const { data: debtData = [] } = useDebts();
-  const { data: fixedExpensesData = [] } = useFixedExpenses();
-  const { data: variableExpensesData = [] } = useVariableExpenses();
-  const { data: savingsGoalsData = [] } = useSavingsGoals();
-  const { data: savings } = useSavings();
-  const { data: variableIncome = [], addIncome, deleteIncome } = useVariableIncome();
-
+  }>({
+    name: "",
+    amount: 0,
+    type: "income"
+  });
+  const {
+    data: profiles = []
+  } = useFinancialProfiles();
+  const activeProfile = useMemo(() => profiles.find(p => p.is_active) || {
+    name: "Family"
+  }, [profiles]);
+  const {
+    data: incomeData = []
+  } = useIncomeSources();
+  const {
+    data: debtData = []
+  } = useDebts();
+  const {
+    data: fixedExpensesData = []
+  } = useFixedExpenses();
+  const {
+    data: variableExpensesData = []
+  } = useVariableExpenses();
+  const {
+    data: savingsGoalsData = []
+  } = useSavingsGoals();
+  const {
+    data: savings
+  } = useSavings();
+  const {
+    data: variableIncome = [],
+    addIncome,
+    deleteIncome
+  } = useVariableIncome();
   const t = translations[language];
-
   const {
     totalIncome,
     totalFixed,
@@ -280,7 +262,7 @@ const Index = () => {
     monthEnd,
     monthDays,
     firstDayOfWeek,
-    blankDays,
+    blankDays
   } = useMemo(() => {
     const totalIncome = incomeData.reduce((s, i) => s + i.amount, 0) + variableIncome.reduce((s, i) => s + i.amount, 0);
     const totalFixed = fixedExpensesData.reduce((s, e) => s + e.amount, 0);
@@ -288,9 +270,7 @@ const Index = () => {
     const totalDebtPayment = debtData.reduce((s, d) => s + d.minimum_payment, 0);
     const totalExpenses = totalFixed + totalVariable + totalDebtPayment;
     const cashFlow = totalIncome - totalExpenses;
-    const savingsTotal =
-      (savings?.emergency_fund || 0) + savingsGoalsData.reduce((s, g) => s + (g.current_amount || 0), 0);
-
+    const savingsTotal = (savings?.emergency_fund || 0) + savingsGoalsData.reduce((s, g) => s + (g.current_amount || 0), 0);
     let remaining = debtData.reduce((s, d) => s + d.balance, 0);
     let months = 0;
     const extra = Math.max(0, (cashFlow - monthlySavings) * 0.3);
@@ -302,25 +282,31 @@ const Index = () => {
     }
     const monthsToDebtFree = months;
     const debtFreeDate = addMonths(new Date(), months);
-
-    const pieData = [
-      { name: "Fixed", value: totalFixed, color: "#3b82f6" },
-      { name: "Variable", value: totalVariable, color: "#10b981" },
-      { name: "Debt", value: totalDebtPayment, color: "#ef4444" },
-    ].filter((d) => d.value > 0);
+    const pieData = [{
+      name: "Fixed",
+      value: totalFixed,
+      color: "#3b82f6"
+    }, {
+      name: "Variable",
+      value: totalVariable,
+      color: "#10b981"
+    }, {
+      name: "Debt",
+      value: totalDebtPayment,
+      color: "#ef4444"
+    }].filter(d => d.value > 0);
 
     // CALENDARIO CON EVENTOS EN TODOS LOS MESES
     const allEvents: Event[] = [];
     const startYear = currentMonth.getFullYear() - 1;
     const endYear = currentMonth.getFullYear() + 1;
-
     for (let year = startYear; year <= endYear; year++) {
       for (let month = 0; month < 12; month++) {
         const currentDate = new Date(year, month, 1);
         if (currentDate > new Date(endYear, 11, 31)) break;
 
         // INGRESOS FIJOS - Día 1
-        incomeData.forEach((inc) => {
+        incomeData.forEach(inc => {
           const date = new Date(year, month, 1);
           allEvents.push({
             id: `inc-${inc.id}-${year}-${month}`,
@@ -328,12 +314,12 @@ const Index = () => {
             type: "income",
             name: inc.name,
             amount: inc.amount,
-            recurring: true,
+            recurring: true
           });
         });
 
         // GASTOS FIJOS - Día de pago
-        fixedExpensesData.forEach((exp) => {
+        fixedExpensesData.forEach(exp => {
           const day = exp.payment_day || 1;
           const lastDayOfMonth = new Date(year, month + 1, 0).getDate();
           const date = new Date(year, month, Math.min(day, lastDayOfMonth));
@@ -343,12 +329,12 @@ const Index = () => {
             type: "fixed",
             name: exp.name,
             amount: exp.amount,
-            recurring: true,
+            recurring: true
           });
         });
 
         // DEUDAS - Día 15
-        debtData.forEach((debt) => {
+        debtData.forEach(debt => {
           const date = new Date(year, month, 15);
           allEvents.push({
             id: `debt-${debt.id}-${year}-${month}`,
@@ -356,12 +342,12 @@ const Index = () => {
             type: "debt",
             name: `${debt.name} (min)`,
             amount: debt.minimum_payment,
-            recurring: true,
+            recurring: true
           });
         });
 
         // GASTOS VARIABLES - Día 10
-        variableExpensesData.forEach((exp) => {
+        variableExpensesData.forEach(exp => {
           const date = new Date(year, month, 10);
           allEvents.push({
             id: `var-${exp.id}-${year}-${month}`,
@@ -369,18 +355,19 @@ const Index = () => {
             type: "variable",
             name: exp.name,
             amount: exp.amount,
-            recurring: true,
+            recurring: true
           });
         });
       }
     }
-
     const monthStart = startOfMonth(currentMonth);
     const monthEnd = endOfMonth(currentMonth);
-    const monthDays = eachDayOfInterval({ start: monthStart, end: monthEnd });
+    const monthDays = eachDayOfInterval({
+      start: monthStart,
+      end: monthEnd
+    });
     const firstDayOfWeek = monthStart.getDay();
     const blankDays = Array(firstDayOfWeek).fill(null);
-
     return {
       totalIncome,
       totalFixed,
@@ -397,37 +384,24 @@ const Index = () => {
       monthEnd,
       monthDays,
       firstDayOfWeek,
-      blankDays,
+      blankDays
     };
-  }, [
-    incomeData,
-    variableIncome,
-    fixedExpensesData,
-    variableExpensesData,
-    debtData,
-    savings,
-    savingsGoalsData,
-    currentMonth,
-    monthlySavings,
-  ]);
-
+  }, [incomeData, variableIncome, fixedExpensesData, variableExpensesData, debtData, savings, savingsGoalsData, currentMonth, monthlySavings]);
   useEffect(() => {
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.getSession().then(({
+      data: {
+        session
+      }
+    }) => {
       setUser(session?.user ?? null);
       setAuthLoading(false);
     });
   }, []);
-
-  if (authLoading)
-    return (
-      <div className="p-8">
+  if (authLoading) return <div className="p-8">
         <Skeleton className="h-64 w-full" />
-      </div>
-    );
+      </div>;
   if (!user) return <Auth />;
-
-  const getEventsForDay = (date: Date) => calendarEvents.filter((e) => isSameDay(new Date(e.date), date));
-
+  const getEventsForDay = (date: Date) => calendarEvents.filter(e => isSameDay(new Date(e.date), date));
   const addEvent = () => {
     if (selectedDate && newEvent.name && newEvent.amount > 0) {
       const event: Event = {
@@ -436,48 +410,50 @@ const Index = () => {
         type: newEvent.type,
         name: newEvent.name,
         amount: newEvent.amount,
-        recurring: false,
+        recurring: false
       };
       setEvents([...events, event]);
       setShowEventDialog(false);
-      setNewEvent({ name: "", amount: 0, type: "income" });
+      setNewEvent({
+        name: "",
+        amount: 0,
+        type: "income"
+      });
     }
   };
-
   const updateEvent = () => {
     if (editingEvent && newEvent.name && newEvent.amount > 0) {
-      setEvents(
-        events.map((e) =>
-          e.id === editingEvent.id ? { ...e, name: newEvent.name, amount: newEvent.amount, type: newEvent.type } : e,
-        ),
-      );
+      setEvents(events.map(e => e.id === editingEvent.id ? {
+        ...e,
+        name: newEvent.name,
+        amount: newEvent.amount,
+        type: newEvent.type
+      } : e));
       setEditingEvent(null);
       setShowEventDialog(false);
-      setNewEvent({ name: "", amount: 0, type: "income" });
+      setNewEvent({
+        name: "",
+        amount: 0,
+        type: "income"
+      });
     }
   };
-
   const deleteEvent = (id: string) => {
-    setEvents(events.filter((e) => e.id !== id));
+    setEvents(events.filter(e => e.id !== id));
     setDeleteId(null);
   };
-
   const sendToAI = () => {
     if (!aiInput.trim()) return;
     setAiLoading(true);
     setTimeout(() => {
       const lower = aiInput.toLowerCase();
       let response = "";
-      if (lower.includes("save")) response = `Cut £50-100 from variable expenses (£${totalVariable}).`;
-      else if (lower.includes("debt")) response = `Pay highest APR first. Debt-free in ${monthsToDebtFree} months.`;
-      else response = `Track every expense for 30 days.`;
+      if (lower.includes("save")) response = `Cut £50-100 from variable expenses (£${totalVariable}).`;else if (lower.includes("debt")) response = `Pay highest APR first. Debt-free in ${monthsToDebtFree} months.`;else response = `Track every expense for 30 days.`;
       setAiResponse(response);
       setAiLoading(false);
     }, 800);
   };
-
-  return (
-    <>
+  return <>
       <style>{`@media print { .no-print { display: none !important; } }`}</style>
 
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-slate-900 dark:to-slate-800">
@@ -548,8 +524,7 @@ const Index = () => {
           </div>
 
           {/* DEBT FREE */}
-          {debtData.length > 0 && (
-            <Card className="border-2 border-orange-200">
+          {debtData.length > 0 && <Card className="border-2 border-orange-200">
               <CardHeader>
                 <CardTitle className="flex items-center gap-2 text-orange-600">
                   <TrendingUp className="h-6 w-6" /> Debt Free Date
@@ -562,12 +537,10 @@ const Index = () => {
                 </div>
                 <Progress value={80} className="h-4 mt-3" />
               </CardContent>
-            </Card>
-          )}
+            </Card>}
 
           {/* GASTOS PASTEL - VERSIÓN CORREGIDA Y SOPHISTICADA */}
-          {pieData.length > 0 && (
-            <Card className="overflow-hidden">
+          {pieData.length > 0 && <Card className="overflow-hidden">
               <CardHeader className="pb-3">
                 <CardTitle className="text-lg font-semibold flex items-center gap-2">
                   <Zap className="h-5 w-5 text-blue-600" />
@@ -584,83 +557,7 @@ const Index = () => {
                       <div className="absolute inset-0 rounded-full bg-gradient-to-br from-slate-100 to-slate-50 dark:from-slate-800 dark:to-slate-900 shadow-inner"></div>
 
                       {/* SVG del donut chart - CORREGIDO */}
-                      <svg viewBox="0 0 32 32" className="w-full h-full">
-                        <defs>
-                          <filter id="shadow">
-                            <feDropShadow dx="0" dy="2" stdDeviation="3" floodOpacity="0.15" />
-                          </filter>
-                          <linearGradient id="textGrad" x1="0%" y1="0%" x2="100%" y2="0%">
-                            <stop offset="0%" stopColor="#3b82f6" />
-                            <stop offset="100%" stopColor="#1d4ed8" />
-                          </linearGradient>
-                        </defs>
-
-                        {(() => {
-                          const total = pieData.reduce((s, d) => s + d.value, 0);
-                          let cum = 0;
-                          return pieData.map((d, i) => {
-                            const percent = (d.value / total) * 100;
-                            const start = (cum / total) * 360;
-                            cum += d.value;
-                            const end = (cum / total) * 360;
-                            const large = end - start <= 180 ? 0 : 1;
-
-                            // CORRECCIÓN: Cálculo correcto del arco
-                            const startRad = (start * Math.PI) / 180;
-                            const endRad = (end * Math.PI) / 180;
-                            const x1 = 16 + 16 * Math.cos(startRad);
-                            const y1 = 16 + 16 * Math.sin(startRad);
-                            const x2 = 16 + 16 * Math.cos(endRad);
-                            const y2 = 16 + 16 * Math.sin(endRad);
-                            const largeArcFlag = end - start > 180 ? 1 : 0;
-                            const sweepFlag = 1;
-
-                            const pathData = `M16,16 L${x1},${y1} A16,16 0 ${largeArcFlag},${sweepFlag} ${x2},${y2} Z`;
-
-                            return (
-                              <g key={i}>
-                                <path
-                                  d={pathData}
-                                  fill={d.color}
-                                  stroke="white"
-                                  strokeWidth="1"
-                                  className="transition-all duration-500 ease-in-out cursor-pointer hover:scale-105"
-                                  filter="url(#shadow)"
-                                  onMouseEnter={(e) => {
-                                    e.currentTarget.style.strokeWidth = "2";
-                                    e.currentTarget.style.transform = "scale(1.05)";
-                                  }}
-                                  onMouseLeave={(e) => {
-                                    e.currentTarget.style.strokeWidth = "1";
-                                    e.currentTarget.style.transform = "scale(1)";
-                                  }}
-                                />
-                                <animate
-                                  attributeName="opacity"
-                                  from="0"
-                                  to="1"
-                                  dur="0.8s"
-                                  begin={`${i * 0.2}s`}
-                                  fill="freeze"
-                                />
-                                {/* Etiqueta de porcentaje */}
-                                <text
-                                  x={(x1 + x2) / 2}
-                                  y={(y1 + y2) / 2}
-                                  textAnchor="middle"
-                                  dominantBaseline="middle"
-                                  className="text-[8px] font-bold fill-white drop-shadow-sm"
-                                >
-                                  {percent.toFixed(0)}%
-                                </text>
-                              </g>
-                            );
-                          });
-                        })()}
-
-                        {/* Círculo central */}
-                        <circle cx="16" cy="16" r="10" fill="white" className="dark:fill-slate-900 shadow-inner" />
-                      </svg>
+                      
 
                       <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
                         <div className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-slate-800 to-slate-600 bg-clip-text text-transparent dark:from-slate-100 dark:to-slate-300">
@@ -673,16 +570,13 @@ const Index = () => {
 
                   <div className="flex flex-col justify-center space-y-4">
                     {pieData.map((d, i) => {
-                      const percent = ((d.value / totalExpenses) * 100).toFixed(1);
-                      const trend =
-                        d.value > totalExpenses * 0.2 ? "High" : d.value > totalExpenses * 0.1 ? "Medium" : "Low";
-                      return (
-                        <div
-                          key={i}
-                          className="flex items-center justify-between p-3 rounded-lg bg-slate-50 dark:bg-slate-800/50 hover:bg-slate-100 dark:hover:bg-slate-700/50 transition-all"
-                        >
+                  const percent = (d.value / totalExpenses * 100).toFixed(1);
+                  const trend = d.value > totalExpenses * 0.2 ? "High" : d.value > totalExpenses * 0.1 ? "Medium" : "Low";
+                  return <div key={i} className="flex items-center justify-between p-3 rounded-lg bg-slate-50 dark:bg-slate-800/50 hover:bg-slate-100 dark:hover:bg-slate-700/50 transition-all">
                           <div className="flex items-center gap-3">
-                            <div className="w-4 h-4 rounded-full shadow-md" style={{ backgroundColor: d.color }} />
+                            <div className="w-4 h-4 rounded-full shadow-md" style={{
+                        backgroundColor: d.color
+                      }} />
                             <div>
                               <p className="font-medium text-sm">{d.name}</p>
                               <p className="text-xs text-slate-500 dark:text-slate-400">{percent}%</p>
@@ -693,9 +587,8 @@ const Index = () => {
                             <p className="font-bold text-sm">{formatCurrency(d.value)}</p>
                             <p className="text-xs text-slate-500 dark:text-slate-400">Monthly</p>
                           </div>
-                        </div>
-                      );
-                    })}
+                        </div>;
+                })}
                   </div>
                 </div>
 
@@ -708,14 +601,13 @@ const Index = () => {
                       </span>
                       <div className="flex items-center gap-1 text-xs text-slate-500 dark:text-slate-400">
                         <TrendingUp className="h-3 w-3 text-emerald-500" />
-                        <span>{((totalExpenses / totalIncome) * 100).toFixed(0)}% of income</span>
+                        <span>{(totalExpenses / totalIncome * 100).toFixed(0)}% of income</span>
                       </div>
                     </div>
                   </div>
                 </div>
               </CardContent>
-            </Card>
-          )}
+            </Card>}
           {/* CALENDARIO */}
           <Card>
             <CardHeader>
@@ -725,10 +617,14 @@ const Index = () => {
                   {format(currentMonth, "MMMM yyyy")}
                 </span>
                 <div className="flex gap-2">
-                  <Button size="sm" variant="outline" onClick={() => setCurrentMonth(sub(currentMonth, { months: 1 }))}>
+                  <Button size="sm" variant="outline" onClick={() => setCurrentMonth(sub(currentMonth, {
+                  months: 1
+                }))}>
                     <ChevronLeft className="h-4 w-4" />
                   </Button>
-                  <Button size="sm" variant="outline" onClick={() => setCurrentMonth(add(currentMonth, { months: 1 }))}>
+                  <Button size="sm" variant="outline" onClick={() => setCurrentMonth(add(currentMonth, {
+                  months: 1
+                }))}>
                     <ChevronRight className="h-4 w-4" />
                   </Button>
                   <Button size="sm" onClick={() => setShowEventDialog(true)}>
@@ -739,47 +635,22 @@ const Index = () => {
             </CardHeader>
             <CardContent>
               <div className="grid grid-cols-7 gap-1 text-center text-sm font-medium">
-                {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((d) => (
-                  <div key={d} className="p-2">
+                {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map(d => <div key={d} className="p-2">
                     {d}
-                  </div>
-                ))}
+                  </div>)}
               </div>
               <div className="grid grid-cols-7 gap-1 mt-2">
-                {blankDays.map((_, i) => (
-                  <div key={`blank-${i}`} className="h-16 border rounded" />
-                ))}
-                {monthDays.map((day) => {
-                  const dayEvents = getEventsForDay(day);
-                  return (
-                    <div
-                      key={day.toISOString()}
-                      className={`h-16 border rounded p-1 text-xs cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 transition ${
-                        isSameDay(day, new Date()) ? "bg-blue-50 dark:bg-blue-900" : ""
-                      }`}
-                      onClick={() => setSelectedDate(day)}
-                    >
+                {blankDays.map((_, i) => <div key={`blank-${i}`} className="h-16 border rounded" />)}
+                {monthDays.map(day => {
+                const dayEvents = getEventsForDay(day);
+                return <div key={day.toISOString()} className={`h-16 border rounded p-1 text-xs cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 transition ${isSameDay(day, new Date()) ? "bg-blue-50 dark:bg-blue-900" : ""}`} onClick={() => setSelectedDate(day)}>
                       <div className="font-medium">{format(day, "d")}</div>
-                      {dayEvents.slice(0, 2).map((e, i) => (
-                        <div
-                          key={i}
-                          className={`text-[9px] truncate ${
-                            e.type === "income"
-                              ? "text-green-600"
-                              : e.type === "debt"
-                                ? "text-red-600"
-                                : "text-blue-600"
-                          }`}
-                        >
+                      {dayEvents.slice(0, 2).map((e, i) => <div key={i} className={`text-[9px] truncate ${e.type === "income" ? "text-green-600" : e.type === "debt" ? "text-red-600" : "text-blue-600"}`}>
                           {e.name}
-                        </div>
-                      ))}
-                      {dayEvents.length > 2 && (
-                        <div className="text-[9px] text-muted-foreground">+{dayEvents.length - 2}</div>
-                      )}
-                    </div>
-                  );
-                })}
+                        </div>)}
+                      {dayEvents.length > 2 && <div className="text-[9px] text-muted-foreground">+{dayEvents.length - 2}</div>}
+                    </div>;
+              })}
               </div>
             </CardContent>
           </Card>
@@ -793,26 +664,15 @@ const Index = () => {
                 </AlertDialogTitle>
               </AlertDialogHeader>
               <div className="space-y-4">
-                <Textarea
-                  placeholder="Ask anything: 'How can I save £200/month?' or 'Should I pay off debt first?'"
-                  value={aiInput}
-                  onChange={(e) => setAiInput(e.target.value)}
-                  className="min-h-24"
-                />
+                <Textarea placeholder="Ask anything: 'How can I save £200/month?' or 'Should I pay off debt first?'" value={aiInput} onChange={e => setAiInput(e.target.value)} className="min-h-24" />
                 <Button onClick={sendToAI} disabled={aiLoading} className="w-full">
-                  {aiLoading ? (
-                    "Thinking..."
-                  ) : (
-                    <>
+                  {aiLoading ? "Thinking..." : <>
                       <Send className="h-4 w-4 mr-2" /> Send
-                    </>
-                  )}
+                    </>}
                 </Button>
-                {aiResponse && (
-                  <Card>
+                {aiResponse && <Card>
                     <CardContent className="pt-4 space-y-4 whitespace-pre-wrap text-sm">{aiResponse}</CardContent>
-                  </Card>
-                )}
+                  </Card>}
               </div>
               <AlertDialogFooter>
                 <AlertDialogCancel>Close</AlertDialogCancel>
@@ -821,18 +681,13 @@ const Index = () => {
           </AlertDialog>
 
           {/* DETALLE DEL DÍA */}
-          {selectedDate && (
-            <AlertDialog open={!!selectedDate} onOpenChange={() => setSelectedDate(null)}>
+          {selectedDate && <AlertDialog open={!!selectedDate} onOpenChange={() => setSelectedDate(null)}>
               <AlertDialogContent>
                 <AlertDialogHeader>
                   <AlertDialogTitle>{format(selectedDate, "PPP")}</AlertDialogTitle>
                 </AlertDialogHeader>
                 <AlertDialogDescription className="space-y-3">
-                  {getEventsForDay(selectedDate).length === 0 ? (
-                    <p className="text-center py-4">No events</p>
-                  ) : (
-                    getEventsForDay(selectedDate).map((e) => (
-                      <div key={e.id} className="flex justify-between items-center p-3 bg-muted rounded-lg">
+                  {getEventsForDay(selectedDate).length === 0 ? <p className="text-center py-4">No events</p> : getEventsForDay(selectedDate).map(e => <div key={e.id} className="flex justify-between items-center p-3 bg-muted rounded-lg">
                         <div>
                           <p className="font-medium">{e.name}</p>
                           <p className="text-xs text-muted-foreground">{e.type}</p>
@@ -842,19 +697,15 @@ const Index = () => {
                             {formatCurrency(e.amount)}
                           </span>
                           <div className="flex gap-1">
-                            <Button
-                              size="sm"
-                              variant="ghost"
-                              onClick={() => {
-                                setEditingEvent(e);
-                                setNewEvent({
-                                  name: e.name,
-                                  amount: e.amount,
-                                  type: e.type,
-                                });
-                                setShowEventDialog(true);
-                              }}
-                            >
+                            <Button size="sm" variant="ghost" onClick={() => {
+                      setEditingEvent(e);
+                      setNewEvent({
+                        name: e.name,
+                        amount: e.amount,
+                        type: e.type
+                      });
+                      setShowEventDialog(true);
+                    }}>
                               <Edit2 className="h-4 w-4" />
                             </Button>
                             <Button size="sm" variant="ghost" onClick={() => setDeleteId(e.id)}>
@@ -862,16 +713,13 @@ const Index = () => {
                             </Button>
                           </div>
                         </div>
-                      </div>
-                    ))
-                  )}
+                      </div>)}
                 </AlertDialogDescription>
                 <AlertDialogFooter>
                   <AlertDialogCancel>Close</AlertDialogCancel>
                 </AlertDialogFooter>
               </AlertDialogContent>
-            </AlertDialog>
-          )}
+            </AlertDialog>}
 
           {/* AGREGAR/EDITAR EVENTO */}
           <AlertDialog open={showEventDialog} onOpenChange={setShowEventDialog}>
@@ -882,22 +730,24 @@ const Index = () => {
               <div className="space-y-4">
                 <div>
                   <Label>Name</Label>
-                  <Input value={newEvent.name} onChange={(e) => setNewEvent({ ...newEvent, name: e.target.value })} />
+                  <Input value={newEvent.name} onChange={e => setNewEvent({
+                  ...newEvent,
+                  name: e.target.value
+                })} />
                 </div>
                 <div>
                   <Label>Amount</Label>
-                  <Input
-                    type="number"
-                    value={newEvent.amount || ""}
-                    onChange={(e) => setNewEvent({ ...newEvent, amount: parseFloat(e.target.value) || 0 })}
-                  />
+                  <Input type="number" value={newEvent.amount || ""} onChange={e => setNewEvent({
+                  ...newEvent,
+                  amount: parseFloat(e.target.value) || 0
+                })} />
                 </div>
                 <div>
                   <Label>Type</Label>
-                  <Select
-                    value={newEvent.type}
-                    onValueChange={(v: Event["type"]) => setNewEvent({ ...newEvent, type: v })}
-                  >
+                  <Select value={newEvent.type} onValueChange={(v: Event["type"]) => setNewEvent({
+                  ...newEvent,
+                  type: v
+                })}>
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
@@ -942,33 +792,31 @@ const Index = () => {
               <div className="space-y-4">
                 <div>
                   <Label>Description</Label>
-                  <Input
-                    value={newIncome.description}
-                    onChange={(e) => setNewIncome({ ...newIncome, description: e.target.value })}
-                    placeholder="e.g. Freelance work, Bonus, Gift"
-                  />
+                  <Input value={newIncome.description} onChange={e => setNewIncome({
+                  ...newIncome,
+                  description: e.target.value
+                })} placeholder="e.g. Freelance work, Bonus, Gift" />
                 </div>
                 <div>
                   <Label>Amount (£)</Label>
-                  <Input
-                    type="number"
-                    value={newIncome.amount || ""}
-                    onChange={(e) => setNewIncome({ ...newIncome, amount: parseFloat(e.target.value) || 0 })}
-                    placeholder="0"
-                  />
+                  <Input type="number" value={newIncome.amount || ""} onChange={e => setNewIncome({
+                  ...newIncome,
+                  amount: parseFloat(e.target.value) || 0
+                })} placeholder="0" />
                 </div>
               </div>
               <AlertDialogFooter>
                 <AlertDialogCancel>Cancel</AlertDialogCancel>
-                <AlertDialogAction
-                  onClick={() => {
-                    if (newIncome.description && newIncome.amount > 0) {
-                      addIncome(newIncome.amount, newIncome.description);
-                      setNewIncome({ description: "", amount: 0 });
-                      setShowIncomeModal(false);
-                    }
-                  }}
-                >
+                <AlertDialogAction onClick={() => {
+                if (newIncome.description && newIncome.amount > 0) {
+                  addIncome(newIncome.amount, newIncome.description);
+                  setNewIncome({
+                    description: "",
+                    amount: 0
+                  });
+                  setShowIncomeModal(false);
+                }
+              }}>
                   Add Income
                 </AlertDialogAction>
               </AlertDialogFooter>
@@ -989,58 +837,51 @@ const Index = () => {
               <div className="text-center py-8">
                 {/* Determine status based on cashFlow relative to totalExpenses */}
                 {(() => {
-                  const status = (() => {
-                    if (cashFlow > totalExpenses * 0.3)
-                      return {
-                        emoji: "🚀",
-                        label: "Excellent",
-                        color: "text-emerald-600",
-                        progress: 95,
-                        message: `Amazing! You're saving ${formatCurrency(cashFlow)} per month — 30%+ of expenses. Keep going!`,
-                      };
-                    if (cashFlow > totalExpenses * 0.1)
-                      return {
-                        emoji: "💪",
-                        label: "Strong",
-                        color: "text-green-600",
-                        progress: 80,
-                        message: `Great job! You're saving ${formatCurrency(cashFlow)} per month — 10-30% of expenses. Solid foundation.`,
-                      };
-                    if (cashFlow > 0)
-                      return {
-                        emoji: "✅",
-                        label: "Healthy",
-                        color: "text-blue-600",
-                        progress: 65,
-                        message: `You're in the green! Saving ${formatCurrency(cashFlow)} per month. Small wins add up.`,
-                      };
-                    if (cashFlow > -totalExpenses * 0.1)
-                      return {
-                        emoji: "⚠️",
-                        label: "Review",
-                        color: "text-orange-600",
-                        progress: 40,
-                        message: `Close call! You're overspending by ${formatCurrency(Math.abs(cashFlow))} — less than 10% of expenses. Trim a little.`,
-                      };
-                    return {
-                      emoji: "🔴",
-                      label: "Critical",
-                      color: "text-red-600",
-                      progress: 20,
-                      message: `Alert! Overspending by ${formatCurrency(Math.abs(cashFlow))} — over 10% of expenses. Cut now to avoid debt.`,
-                    };
-                  })();
-
-                  return (
-                    <div>
+                const status = (() => {
+                  if (cashFlow > totalExpenses * 0.3) return {
+                    emoji: "🚀",
+                    label: "Excellent",
+                    color: "text-emerald-600",
+                    progress: 95,
+                    message: `Amazing! You're saving ${formatCurrency(cashFlow)} per month — 30%+ of expenses. Keep going!`
+                  };
+                  if (cashFlow > totalExpenses * 0.1) return {
+                    emoji: "💪",
+                    label: "Strong",
+                    color: "text-green-600",
+                    progress: 80,
+                    message: `Great job! You're saving ${formatCurrency(cashFlow)} per month — 10-30% of expenses. Solid foundation.`
+                  };
+                  if (cashFlow > 0) return {
+                    emoji: "✅",
+                    label: "Healthy",
+                    color: "text-blue-600",
+                    progress: 65,
+                    message: `You're in the green! Saving ${formatCurrency(cashFlow)} per month. Small wins add up.`
+                  };
+                  if (cashFlow > -totalExpenses * 0.1) return {
+                    emoji: "⚠️",
+                    label: "Review",
+                    color: "text-orange-600",
+                    progress: 40,
+                    message: `Close call! You're overspending by ${formatCurrency(Math.abs(cashFlow))} — less than 10% of expenses. Trim a little.`
+                  };
+                  return {
+                    emoji: "🔴",
+                    label: "Critical",
+                    color: "text-red-600",
+                    progress: 20,
+                    message: `Alert! Overspending by ${formatCurrency(Math.abs(cashFlow))} — over 10% of expenses. Cut now to avoid debt.`
+                  };
+                })();
+                return <div>
                       <div className={`text-7xl font-bold ${status.color} animate-scale-in`}>
                         {status.emoji} {status.label}
                       </div>
                       <Progress value={status.progress} className="mt-6 h-3" />
                       <p className="mt-4 text-muted-foreground">{status.message}</p>
-                    </div>
-                  );
-                })()}
+                    </div>;
+              })()}
               </div>
             </TabsContent>
 
@@ -1067,12 +908,8 @@ const Index = () => {
                       <CardDescription>Extra income like bonuses, gifts, side hustles</CardDescription>
                     </CardHeader>
                     <CardContent>
-                      {variableIncome.length === 0 ? (
-                        <p className="text-center text-muted-foreground py-6">No variable income yet</p>
-                      ) : (
-                        <div className="space-y-2">
-                          {variableIncome.map((inc) => (
-                            <div key={inc.id} className="flex justify-between items-center p-3 bg-muted rounded-lg">
+                      {variableIncome.length === 0 ? <p className="text-center text-muted-foreground py-6">No variable income yet</p> : <div className="space-y-2">
+                          {variableIncome.map(inc => <div key={inc.id} className="flex justify-between items-center p-3 bg-muted rounded-lg">
                               <div>
                                 <p className="font-medium">{inc.description}</p>
                                 <p className="text-xs text-muted-foreground">
@@ -1085,10 +922,8 @@ const Index = () => {
                                   <Trash2 className="h-4 w-4" />
                                 </Button>
                               </div>
-                            </div>
-                          ))}
-                        </div>
-                      )}
+                            </div>)}
+                        </div>}
                     </CardContent>
                   </Card>
                 </TabsContent>
@@ -1112,13 +947,7 @@ const Index = () => {
 
             <TabsContent value="debts">
               <DebtsManager language={language} />
-              <DebtPlanner
-                language={language}
-                monthlySavings={monthlySavings}
-                setMonthlySavings={setMonthlySavings}
-                debtMethod={debtMethod}
-                setDebtMethod={setDebtMethod}
-              />
+              <DebtPlanner language={language} monthlySavings={monthlySavings} setMonthlySavings={setMonthlySavings} debtMethod={debtMethod} setDebtMethod={setDebtMethod} />
             </TabsContent>
           </Tabs>
 
@@ -1129,16 +958,14 @@ const Index = () => {
           </footer>
         </div>
       </div>
-    </>
-  );
+    </>;
 };
-
 const DebtPlanner = ({
   language,
   monthlySavings,
   setMonthlySavings,
   debtMethod,
-  setDebtMethod,
+  setDebtMethod
 }: {
   language: Language;
   monthlySavings: number;
@@ -1147,44 +974,65 @@ const DebtPlanner = ({
   setDebtMethod: (v: DebtMethod) => void;
 }) => {
   const t = translations[language];
-  const { data: debtData = [] } = useDebts();
-  const { data: incomeData = [] } = useIncomeSources();
-  const { data: fixedExpensesData = [] } = useFixedExpenses();
-  const { data: variableExpensesData = [] } = useVariableExpenses();
-  const { data: savings } = useSavings();
-
-  const { totalIncome, totalFixed, totalVariable, totalDebtPayment, totalExpenses, cashFlow, savingsTotal } =
-    useMemo(() => {
-      const totalIncome = incomeData.reduce((s, i) => s + i.amount, 0);
-      const totalFixed = fixedExpensesData.reduce((s, e) => s + e.amount, 0);
-      const totalVariable = variableExpensesData.reduce((s, e) => s + e.amount, 0);
-      const totalDebtPayment = debtData.reduce((s, d) => s + d.minimum_payment, 0);
-      const totalExpenses = totalFixed + totalVariable + totalDebtPayment;
-      const cashFlow = totalIncome - totalExpenses;
-      const savingsTotal = savings?.emergency_fund || 0;
-      return { totalIncome, totalFixed, totalVariable, totalDebtPayment, totalExpenses, cashFlow, savingsTotal };
-    }, [incomeData, debtData, fixedExpensesData, variableExpensesData, savings]);
-
+  const {
+    data: debtData = []
+  } = useDebts();
+  const {
+    data: incomeData = []
+  } = useIncomeSources();
+  const {
+    data: fixedExpensesData = []
+  } = useFixedExpenses();
+  const {
+    data: variableExpensesData = []
+  } = useVariableExpenses();
+  const {
+    data: savings
+  } = useSavings();
+  const {
+    totalIncome,
+    totalFixed,
+    totalVariable,
+    totalDebtPayment,
+    totalExpenses,
+    cashFlow,
+    savingsTotal
+  } = useMemo(() => {
+    const totalIncome = incomeData.reduce((s, i) => s + i.amount, 0);
+    const totalFixed = fixedExpensesData.reduce((s, e) => s + e.amount, 0);
+    const totalVariable = variableExpensesData.reduce((s, e) => s + e.amount, 0);
+    const totalDebtPayment = debtData.reduce((s, d) => s + d.minimum_payment, 0);
+    const totalExpenses = totalFixed + totalVariable + totalDebtPayment;
+    const cashFlow = totalIncome - totalExpenses;
+    const savingsTotal = savings?.emergency_fund || 0;
+    return {
+      totalIncome,
+      totalFixed,
+      totalVariable,
+      totalDebtPayment,
+      totalExpenses,
+      cashFlow,
+      savingsTotal
+    };
+  }, [incomeData, debtData, fixedExpensesData, variableExpensesData, savings]);
   const debtStrategy = useMemo(() => {
     if (debtData.length === 0) return null;
     const extraForDebt = Math.max(0, cashFlow - monthlySavings);
-    const sortFn =
-      debtMethod === "avalanche"
-        ? (a, b) => b.apr - a.apr
-        : debtMethod === "snowball"
-          ? (a, b) => a.balance - b.balance
-          : (a, b) => b.apr * 0.6 + (b.balance / 1000) * 0.4 - (a.apr * 0.6 + (a.balance / 1000) * 0.4);
+    const sortFn = debtMethod === "avalanche" ? (a, b) => b.apr - a.apr : debtMethod === "snowball" ? (a, b) => a.balance - b.balance : (a, b) => b.apr * 0.6 + b.balance / 1000 * 0.4 - (a.apr * 0.6 + a.balance / 1000 * 0.4);
     const sortedDebts = [...debtData].sort(sortFn);
-    let remainingBalances = sortedDebts.map((d) => ({ ...d, balance: d.balance }));
+    let remainingBalances = sortedDebts.map(d => ({
+      ...d,
+      balance: d.balance
+    }));
     let months = 0;
     let totalInterest = 0;
-    let allocation = sortedDebts.map((d) => ({
+    let allocation = sortedDebts.map(d => ({
       name: d.name,
       minPayment: d.minimum_payment,
       extra: 0,
-      totalPayment: d.minimum_payment,
+      totalPayment: d.minimum_payment
     }));
-    while (remainingBalances.some((d) => d.balance > 0) && months < 120) {
+    while (remainingBalances.some(d => d.balance > 0) && months < 120) {
       let monthlyInterest = 0;
       remainingBalances.forEach((debt, index) => {
         if (debt.balance <= 0) return;
@@ -1199,44 +1047,31 @@ const DebtPlanner = ({
       totalInterest += monthlyInterest;
       months++;
     }
-    const monthsToEmergency =
-      monthlySavings > 0 ? ((totalExpenses * 3 - savingsTotal) / monthlySavings).toFixed(1) : "N/A";
+    const monthsToEmergency = monthlySavings > 0 ? ((totalExpenses * 3 - savingsTotal) / monthlySavings).toFixed(1) : "N/A";
     return {
       sortedDebts,
       allocation,
       months,
       totalInterest: Math.round(totalInterest),
       monthsToEmergency,
-      extraForDebt,
+      extraForDebt
     };
   }, [debtData, cashFlow, monthlySavings, debtMethod, totalExpenses, savingsTotal]);
-
-  if (!debtStrategy)
-    return (
-      <Card>
+  if (!debtStrategy) return <Card>
         <CardHeader>
           <CardTitle>{t.debtPlanner}</CardTitle>
         </CardHeader>
         <CardContent>
           <p className="text-center text-muted-foreground py-6">No debts to plan</p>
         </CardContent>
-      </Card>
-    );
-
-  return (
-    <div className="space-y-6">
+      </Card>;
+  return <div className="space-y-6">
       <Card>
         <CardHeader>
           <CardTitle>{t.monthlySavings}</CardTitle>
         </CardHeader>
         <CardContent>
-          <Slider
-            value={[monthlySavings]}
-            onValueChange={(value) => setMonthlySavings(value[0])}
-            max={Math.max(cashFlow, 0)}
-            step={50}
-            className="w-full"
-          />
+          <Slider value={[monthlySavings]} onValueChange={value => setMonthlySavings(value[0])} max={Math.max(cashFlow, 0)} step={50} className="w-full" />
           <div className="flex justify-between text-sm text-muted-foreground mt-2">
             <span>£0</span>
             <span className="font-medium">{formatCurrency(monthlySavings)}</span>
@@ -1262,7 +1097,7 @@ const DebtPlanner = ({
               <span className="text-sm text-muted-foreground">Current:</span>
               <span className="font-bold text-green-600">{formatCurrency(savingsTotal)}</span>
             </div>
-            <Progress value={(savingsTotal / (totalExpenses * 3)) * 100} />
+            <Progress value={savingsTotal / (totalExpenses * 3) * 100} />
             <p className="text-sm text-muted-foreground">
               {t.monthsToEmergency}: {debtStrategy.monthsToEmergency}
             </p>
@@ -1274,7 +1109,7 @@ const DebtPlanner = ({
         <CardHeader>
           <CardTitle className="flex items-center justify-between">
             <span>{t.priority}</span>
-            <Select value={debtMethod} onValueChange={(value) => setDebtMethod(value as DebtMethod)}>
+            <Select value={debtMethod} onValueChange={value => setDebtMethod(value as DebtMethod)}>
               <SelectTrigger className="w-[180px]">
                 <SelectValue />
               </SelectTrigger>
@@ -1294,8 +1129,7 @@ const DebtPlanner = ({
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
-            {debtStrategy.sortedDebts.map((debt, index) => (
-              <div key={debt.id} className="flex items-center justify-between p-3 bg-muted rounded-lg">
+            {debtStrategy.sortedDebts.map((debt, index) => <div key={debt.id} className="flex items-center justify-between p-3 bg-muted rounded-lg">
                 <div className="flex items-center gap-3">
                   <Badge variant="secondary" className="w-8 h-8 flex items-center justify-center">
                     {index + 1}
@@ -1317,8 +1151,7 @@ const DebtPlanner = ({
                     Total: {formatCurrency(debtStrategy.allocation[index].totalPayment)}
                   </p>
                 </div>
-              </div>
-            ))}
+              </div>)}
           </div>
           <div className="mt-4 p-3 bg-muted rounded-lg">
             <p className="text-sm text-muted-foreground">
@@ -1329,8 +1162,6 @@ const DebtPlanner = ({
           </div>
         </CardContent>
       </Card>
-    </div>
-  );
+    </div>;
 };
-
 export default Index;
