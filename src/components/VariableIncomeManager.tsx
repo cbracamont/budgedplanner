@@ -17,6 +17,7 @@ interface VariableIncome {
   amount: number;
   payment_day: number;
   frequency: string;
+  day_of_week?: number;
 }
 
 interface VariableIncomeManagerProps {
@@ -31,6 +32,7 @@ export const VariableIncomeManager = ({ onIncomeChange, language }: VariableInco
   const [name, setName] = useState("");
   const [amount, setAmount] = useState("");
   const [paymentDay, setPaymentDay] = useState("1");
+  const [dayOfWeek, setDayOfWeek] = useState("1"); // Monday by default
   const [frequency, setFrequency] = useState("monthly");
   const [editingIncome, setEditingIncome] = useState<VariableIncome | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
@@ -54,7 +56,7 @@ export const VariableIncomeManager = ({ onIncomeChange, language }: VariableInco
   });
 
   const addIncomeMutation = useMutation({
-    mutationFn: async (income: { name: string; amount: number; payment_day: number; frequency: string }) => {
+    mutationFn: async (income: { name: string; amount: number; payment_day: number; frequency: string; day_of_week?: number }) => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
 
@@ -66,7 +68,8 @@ export const VariableIncomeManager = ({ onIncomeChange, language }: VariableInco
           amount: income.amount,
           payment_day: income.payment_day,
           frequency: income.frequency,
-          income_type: 'variable'
+          income_type: 'variable',
+          day_of_week: income.day_of_week
         });
       
       if (error) throw error;
@@ -86,7 +89,8 @@ export const VariableIncomeManager = ({ onIncomeChange, language }: VariableInco
           name: income.name,
           amount: income.amount,
           payment_day: income.payment_day,
-          frequency: income.frequency
+          frequency: income.frequency,
+          day_of_week: income.day_of_week
         })
         .eq('id', income.id);
       
@@ -127,12 +131,14 @@ export const VariableIncomeManager = ({ onIncomeChange, language }: VariableInco
       name: name.trim(),
       amount: parseFloat(parseFloat(amount).toFixed(2)),
       payment_day: parseInt(paymentDay),
-      frequency
+      frequency,
+      day_of_week: frequency === 'weekly' ? parseInt(dayOfWeek) : undefined
     }, {
       onSuccess: () => {
         setName("");
         setAmount("");
         setPaymentDay("1");
+        setDayOfWeek("1");
         setFrequency("monthly");
       }
     });
@@ -162,6 +168,14 @@ export const VariableIncomeManager = ({ onIncomeChange, language }: VariableInco
       annually: language === 'en' ? 'Annually' : 'Anual'
     };
     return labels[freq as keyof typeof labels] || freq;
+  };
+
+  const getDayOfWeekLabel = (day: number) => {
+    const days = {
+      en: ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'],
+      es: ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado']
+    };
+    return days[language][day] || '';
   };
 
   return (
@@ -209,8 +223,28 @@ export const VariableIncomeManager = ({ onIncomeChange, language }: VariableInco
                 value={paymentDay}
                 onChange={(e) => setPaymentDay(e.target.value)}
                 placeholder="1"
+                disabled={frequency === 'weekly'}
               />
             </div>
+            {frequency === 'weekly' && (
+              <div>
+                <Label>{language === 'en' ? 'Day of Week' : 'Día de la Semana'}</Label>
+                <Select value={dayOfWeek} onValueChange={setDayOfWeek}>
+                  <SelectTrigger>
+                    <SelectValue />
+                  </SelectTrigger>
+                  <SelectContent>
+                    <SelectItem value="0">{language === 'en' ? 'Sunday' : 'Domingo'}</SelectItem>
+                    <SelectItem value="1">{language === 'en' ? 'Monday' : 'Lunes'}</SelectItem>
+                    <SelectItem value="2">{language === 'en' ? 'Tuesday' : 'Martes'}</SelectItem>
+                    <SelectItem value="3">{language === 'en' ? 'Wednesday' : 'Miércoles'}</SelectItem>
+                    <SelectItem value="4">{language === 'en' ? 'Thursday' : 'Jueves'}</SelectItem>
+                    <SelectItem value="5">{language === 'en' ? 'Friday' : 'Viernes'}</SelectItem>
+                    <SelectItem value="6">{language === 'en' ? 'Saturday' : 'Sábado'}</SelectItem>
+                  </SelectContent>
+                </Select>
+              </div>
+            )}
             <div>
               <Label>{language === 'en' ? 'Frequency' : 'Frecuencia'}</Label>
               <Select value={frequency} onValueChange={setFrequency}>
@@ -245,7 +279,11 @@ export const VariableIncomeManager = ({ onIncomeChange, language }: VariableInco
                     <p className="font-medium">{income.name}</p>
                     <p className="text-lg font-bold text-primary">£{income.amount.toFixed(2)}</p>
                     <p className="text-sm text-muted-foreground">
-                      {getFrequencyLabel(income.frequency)} - {language === 'en' ? 'Day' : 'Día'} {income.payment_day}
+                      {getFrequencyLabel(income.frequency)}
+                      {income.frequency === 'weekly' && income.day_of_week !== undefined
+                        ? ` - ${getDayOfWeekLabel(income.day_of_week)}`
+                        : ` - ${language === 'en' ? 'Day' : 'Día'} ${income.payment_day}`
+                      }
                     </p>
                   </div>
                   <div className="flex gap-1">
@@ -305,8 +343,31 @@ export const VariableIncomeManager = ({ onIncomeChange, language }: VariableInco
                     max="31"
                     value={editingIncome.payment_day}
                     onChange={(e) => setEditingIncome({ ...editingIncome, payment_day: parseInt(e.target.value) || 1 })}
+                    disabled={editingIncome.frequency === 'weekly'}
                   />
                 </div>
+                {editingIncome.frequency === 'weekly' && (
+                  <div>
+                    <Label>{language === 'en' ? 'Day of Week' : 'Día de la Semana'}</Label>
+                    <Select 
+                      value={editingIncome.day_of_week?.toString() || '1'} 
+                      onValueChange={(value) => setEditingIncome({ ...editingIncome, day_of_week: parseInt(value) })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue />
+                      </SelectTrigger>
+                      <SelectContent>
+                        <SelectItem value="0">{language === 'en' ? 'Sunday' : 'Domingo'}</SelectItem>
+                        <SelectItem value="1">{language === 'en' ? 'Monday' : 'Lunes'}</SelectItem>
+                        <SelectItem value="2">{language === 'en' ? 'Tuesday' : 'Martes'}</SelectItem>
+                        <SelectItem value="3">{language === 'en' ? 'Wednesday' : 'Miércoles'}</SelectItem>
+                        <SelectItem value="4">{language === 'en' ? 'Thursday' : 'Jueves'}</SelectItem>
+                        <SelectItem value="5">{language === 'en' ? 'Friday' : 'Viernes'}</SelectItem>
+                        <SelectItem value="6">{language === 'en' ? 'Saturday' : 'Sábado'}</SelectItem>
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
                 <div>
                   <Label>{language === 'en' ? 'Frequency' : 'Frecuencia'}</Label>
                   <Select 

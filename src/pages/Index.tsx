@@ -350,7 +350,28 @@ const Index = () => {
     blankDays,
   } = useMemo(() => {
     const totalIncome = incomeData.reduce((s, i) => s + i.amount, 0);
-    const totalVariableIncome = variableIncomeData.reduce((s, i) => s + i.amount, 0);
+    
+    // Calculate total variable income based on frequency
+    const currentDate = new Date();
+    const currentYear = currentDate.getFullYear();
+    const currentMonthNum = currentDate.getMonth();
+    
+    const totalVariableIncome = variableIncomeData.reduce((sum, inc) => {
+      if (inc.frequency === 'weekly') {
+        // Count how many times this day of week occurs in current month
+        const daysInMonth = new Date(currentYear, currentMonthNum + 1, 0).getDate();
+        let count = 0;
+        for (let day = 1; day <= daysInMonth; day++) {
+          const date = new Date(currentYear, currentMonthNum, day);
+          if (date.getDay() === inc.day_of_week) {
+            count++;
+          }
+        }
+        return sum + (inc.amount * count);
+      }
+      return sum + inc.amount;
+    }, 0);
+    
     const totalFixed = fixedExpensesData.reduce((s, e) => s + e.amount, 0);
     const totalVariable = variableExpensesData.reduce((s, e) => s + e.amount, 0);
     const totalDebtPayment = debtData.reduce((s, d) => s + d.minimum_payment, 0);
@@ -424,41 +445,54 @@ const Index = () => {
           });
         });
         
-        // VARIABLE INCOME - Based on frequency and payment_day
+        // VARIABLE INCOME - Based on frequency and payment_day/day_of_week
         variableIncomeData.forEach((inc) => {
-          const shouldInclude = (() => {
-            switch (inc.frequency) {
-              case 'weekly':
-                // Show every week (approximately 4 times per month)
-                return true;
-              case 'monthly':
-                return true;
-              case 'quarterly':
-                // Every 3 months
-                return month % 3 === 0;
-              case 'semi-annually':
-                // Every 6 months
-                return month % 6 === 0;
-              case 'annually':
-                // Once per year (January)
-                return month === 0;
-              default:
-                return true;
+          if (inc.frequency === 'weekly' && inc.day_of_week !== undefined) {
+            // For weekly, add event for each occurrence of the day in the month
+            const daysInMonth = new Date(year, month + 1, 0).getDate();
+            for (let day = 1; day <= daysInMonth; day++) {
+              const date = new Date(year, month, day);
+              if (date.getDay() === inc.day_of_week) {
+                allEvents.push({
+                  id: `var-inc-${inc.id}-${year}-${month}-${day}`,
+                  date: format(date, "yyyy-MM-dd"),
+                  type: "income",
+                  name: `${inc.name} (weekly)`,
+                  amount: inc.amount,
+                  recurring: true,
+                });
+              }
             }
-          })();
-          
-          if (shouldInclude) {
-            const day = inc.payment_day || 1;
-            const lastDayOfMonth = new Date(year, month + 1, 0).getDate();
-            const date = new Date(year, month, Math.min(day, lastDayOfMonth));
-            allEvents.push({
-              id: `var-inc-${inc.id}-${year}-${month}`,
-              date: format(date, "yyyy-MM-dd"),
-              type: "income",
-              name: `${inc.name} (${inc.frequency})`,
-              amount: inc.amount,
-              recurring: true,
-            });
+          } else {
+            // For other frequencies, check if should be included in this month
+            const shouldInclude = (() => {
+              switch (inc.frequency) {
+                case 'monthly':
+                  return true;
+                case 'quarterly':
+                  return month % 3 === 0;
+                case 'semi-annually':
+                  return month % 6 === 0;
+                case 'annually':
+                  return month === 0;
+                default:
+                  return true;
+              }
+            })();
+            
+            if (shouldInclude) {
+              const day = inc.payment_day || 1;
+              const lastDayOfMonth = new Date(year, month + 1, 0).getDate();
+              const date = new Date(year, month, Math.min(day, lastDayOfMonth));
+              allEvents.push({
+                id: `var-inc-${inc.id}-${year}-${month}`,
+                date: format(date, "yyyy-MM-dd"),
+                type: "income",
+                name: `${inc.name} (${inc.frequency})`,
+                amount: inc.amount,
+                recurring: true,
+              });
+            }
           }
         });
 
