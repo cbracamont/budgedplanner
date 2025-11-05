@@ -639,7 +639,7 @@ const Index = () => {
               </CardContent>
             </Card>}
 
-{/* GASTOS PASTEL MEJORADO - Sophisticated Donut Chart */}
+{/* GASTOS PASTEL - VERSIÓN SOPHISTICADA */}
 {pieData.length > 0 && (
   <Card className="overflow-hidden">
     <CardHeader className="pb-3">
@@ -651,25 +651,24 @@ const Index = () => {
     </CardHeader>
     <CardContent className="p-6">
       <div className="grid md:grid-cols-2 gap-6">
-        {/* Gráfico Donut - Mejorado con sombras, labels, y hover */}
-        <div className="relative">
-          <div className="relative w-64 h-64 mx-auto">
-            {/* Fondo del donut */}
-            <svg viewBox="0 0 32 32" className="w-full h-full">
+        {/* Gráfico SVG mejorado */}
+        <div className="relative flex items-center justify-center">
+          <div className="relative w-56 h-56 md:w-64 md:h-64">
+            {/* Fondo circular sutil */}
+            <div className="absolute inset-0 rounded-full bg-gradient-to-br from-slate-100 to-slate-50 dark:from-slate-800 dark:to-slate-900 shadow-inner"></div>
+
+            {/* SVG del donut chart con animación */}
+            <svg viewBox="0 0 36 36" className="w-full h-full transform -rotate-90">
               <defs>
-                <linearGradient id="shadowGrad" x1="0%" y1="0%" x2="0%" y2="100%">
-                  <stop offset="0%" stopColor="#f8fafc" stopOpacity="0.8" />
-                  <stop offset="100%" stopColor="#e2e8f0" stopOpacity="0.6" />
-                </linearGradient>
-                <filter id="shadow" x="-50%" y="-50%" width="200%" height="200%">
-                  <feDropShadow dx="0" dy="1" stdDeviation="1" floodColor="#000" floodOpacity="0.2" />
+                <filter id="shadow">
+                  <feDropShadow dx="0" dy="2" stdDeviation="3" floodOpacity="0.15"/>
                 </filter>
+                <linearGradient id="textGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                  <stop offset="0%" stopColor="#3b82f6" stopOpacity="1" />
+                  <stop offset="100%" stopColor="#1d4ed8" stopOpacity="1" />
+                </linearGradient>
               </defs>
 
-              {/* Círculo exterior (donut hole) */}
-              <circle cx="16" cy="16" r="16" fill="url(#shadowGrad)" filter="url(#shadow)" className="dark:fill-slate-800" />
-
-              {/* Segmentos del donut */}
               {(() => {
                 const total = pieData.reduce((s, d) => s + d.value, 0);
                 let cum = 0;
@@ -681,12 +680,11 @@ const Index = () => {
                   const large = percent > 50 ? 1 : 0;
                   const sr = (start * Math.PI) / 180;
                   const er = (end * Math.PI) / 180;
-                  const x1 = 16 + 16 * Math.cos(sr);
-                  const y1 = 16 + 16 * Math.sin(sr);
-                  const x2 = 16 + 16 * Math.cos(er);
-                  const y2 = 16 + 16 * Math.sin(er);
-
-                  const pathData = `M16,16 L${x1},${y1} A16,16 0 ${large},1 ${x2},${y2} Z`;
+                  const x1 = 18 + 14 * Math.cos(sr);
+                  const y1 = 18 + 14 * Math.sin(sr);
+                  const x2 = 18 + 14 * Math.cos(er);
+                  const y2 = 18 + 14 * Math.sin(er);
+                  const pathData = `M18,18 L${x1},${y1} A14,14 0 ${large},1 ${x2},${y2} Z`;
 
                   return (
                     <g key={i}>
@@ -694,17 +692,19 @@ const Index = () => {
                         d={pathData}
                         fill={d.color}
                         stroke="white"
-                        strokeWidth="0.5"
-                        className="transition-all duration-500 ease-in-out hover:scale-105 hover:shadow-lg"
+                        strokeWidth="1"
+                        className="transition-all duration-500 ease-in-out cursor-pointer hover:scale-105"
                         filter="url(#shadow)"
                         onMouseEnter={(e) => {
+                          e.currentTarget.style.strokeWidth = '2';
                           e.currentTarget.style.transform = 'scale(1.05)';
-                          e.currentTarget.style.cursor = 'pointer';
                         }}
                         onMouseLeave={(e) => {
+                          e.currentTarget.style.strokeWidth = '1';
                           e.currentTarget.style.transform = 'scale(1)';
                         }}
                       />
+                      {/* Animación de entrada */}
                       <animate
                         attributeName="opacity"
                         from="0"
@@ -713,14 +713,13 @@ const Index = () => {
                         begin={`${i * 0.2}s`}
                         fill="freeze"
                       />
-                      {/* Etiqueta de porcentaje en el segmento */}
+                      {/* Etiqueta de porcentaje */}
                       <text
                         x={(x1 + x2) / 2}
                         y={(y1 + y2) / 2}
                         textAnchor="middle"
                         dominantBaseline="middle"
-                        className="text-[6px] font-bold fill-white"
-                        style={{ pointerEvents: 'none' }}
+                        className="text-[8px] font-bold fill-white drop-shadow-sm"
                       >
                         {percent.toFixed(0)}%
                       </text>
@@ -730,41 +729,45 @@ const Index = () => {
               })()}
 
               {/* Círculo central */}
-              <circle cx="16" cy="16" r="10" fill="white" className="dark:fill-slate-900 shadow-inner" />
+              <circle cx="18" cy="18" r="10" fill="white" className="dark:fill-slate-900 shadow-inner" />
             </svg>
 
-            {/* Total en el centro - Mejorado */}
+            {/* Total central - con gradiente */}
             <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-              <div className="text-2xl md:text-3xl font-bold text-slate-800 dark:text-slate-100 text-center">
+              <div className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-slate-800 to-slate-600 bg-clip-text text-transparent dark:from-slate-100 dark:to-slate-300">
                 {formatCurrency(totalExpenses)}
               </div>
-              <div className="text-xs text-slate-500 dark:text-slate-400 mt-1">Monthly Total</div>
+              <div className="text-xs text-slate-500 dark:text-slate-400 mt-1 font-medium">
+                Monthly Total
+              </div>
             </div>
           </div>
 
-          {/* Tooltip global (hover en todo el gráfico) */}
+          {/* Tooltip global */}
           <div className="absolute top-0 left-0 w-full h-full rounded-lg" 
                onMouseMove={(e) => {
-                 // Lógica para tooltip dinámico si quieres
+                 // Hover logic for tooltips if needed
                }}
           />
         </div>
 
-        {/* Leyenda mejorada con porcentajes */}
-        <div className="flex flex-col justify-center space-y-3">
+        {/* Leyenda con datos sofisticados */}
+        <div className="flex flex-col justify-center space-y-4">
           {pieData.map((d, i) => {
             const percent = ((d.value / totalExpenses) * 100).toFixed(1);
+            const trend = (d.value > totalExpenses * 0.2) ? 'High' : d.value > totalExpenses * 0.1 ? 'Medium' : 'Low'; // Sophisticated data
             return (
-              <div key={i} className="flex items-center justify-between p-3 rounded-lg bg-slate-50 dark:bg-slate-800/50 hover:bg-slate-100 dark:hover:bg-slate-700/50 transition-all">
+              <div key={i} className="flex items-center justify-between p-3 rounded-lg bg-gradient-to-r from-slate-50 to-slate-100 dark:from-slate-800/50 dark:to-slate-700/50 transition-all hover:shadow-md cursor-default">
                 <div className="flex items-center gap-3">
-                  <div className="w-4 h-4 rounded-full shadow-sm" style={{ backgroundColor: d.color }} />
+                  <div className="w-4 h-4 rounded-full shadow-md" style={{ backgroundColor: d.color }} />
                   <div>
                     <p className="font-medium text-sm">{d.name}</p>
                     <p className="text-xs text-slate-500 dark:text-slate-400">{percent}%</p>
+                    <p className="text-xs text-slate-400 dark:text-slate-500">{trend} impact</p> {/* Sophisticated data */}
                   </div>
                 </div>
                 <div className="text-right">
-                  <p className="font-semibold text-sm">{formatCurrency(d.value)}</p>
+                  <p className="font-bold text-sm">{formatCurrency(d.value)}</p>
                   <p className="text-xs text-slate-500 dark:text-slate-400">Monthly</p>
                 </div>
               </div>
@@ -773,11 +776,17 @@ const Index = () => {
         </div>
       </div>
 
-      {/* Barra de total inferior */}
+      {/* Barra inferior con tendencia */}
       <div className="border-t px-6 py-4 bg-gradient-to-r from-slate-50 to-slate-100 dark:from-slate-800 dark:to-slate-900 rounded-b-lg">
         <div className="flex justify-between items-center">
           <span className="text-sm font-medium text-slate-600 dark:text-slate-300">Monthly Total</span>
-          <span className="text-xl font-bold text-slate-800 dark:text-slate-100">{formatCurrency(totalExpenses)}</span>
+          <div className="flex items-center gap-2">
+            <span className="text-xl font-bold text-slate-800 dark:text-slate-100">{formatCurrency(totalExpenses)}</span>
+            <div className="flex items-center gap-1 text-xs text-slate-500 dark:text-slate-400">
+              <TrendingUp className="h-3 w-3 text-emerald-500" />
+              <span>{((totalExpenses / totalIncome) * 100).toFixed(0)}% of income</span>
+            </div>
+          </div>
         </div>
       </div>
     </Card>
