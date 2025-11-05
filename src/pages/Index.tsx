@@ -1,18 +1,19 @@
+// src/pages/Index.tsx
 "use client";
 
-import { useState, useEffect, useMemo, useCallback } from "react";
+import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { format, addMonths, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, add, sub } from "date-fns";
 import { formatCurrency } from "@/lib/i18n";
-import { TrendingUp, Download, LogOut, Bot, Calendar, DollarSign, PiggyBank, Home, Edit2, Trash2, Plus, ChevronLeft, ChevronRight, Send, X, Zap, Snowflake, Moon, Sun, PoundSterling } from "lucide-react";
-import { useIncomeSources, useDebts, useFixedExpenses, useVariableExpenses, useSavingsGoals, useSavings } from "@/hooks/useFinancialData";
+import {
+  TrendingUp, Download, LogOut, Bot, Calendar, DollarSign, PiggyBank, Home,
+  Edit2, Trash2, Plus, ChevronLeft, ChevronRight, Send, X, Zap, Snowflake
+} from "lucide-react";
+import {
+  useIncomeSources, useDebts, useFixedExpenses, useVariableExpenses,
+  useSavingsGoals, useSavings
+} from "@/hooks/useFinancialData";
 import { useFinancialProfiles } from "@/hooks/useFinancialProfiles";
 import { Auth } from "@/components/Auth";
-import { IncomeManager } from "@/components/IncomeManager";
-import { DebtsManager } from "@/components/DebtsManager";
-import { FixedExpensesManager } from "@/components/FixedExpensesManager";
-import { VariableExpensesManager } from "@/components/VariableExpensesManager";
-import { SavingsManager } from "@/components/SavingsManager";
-import { SavingsGoalsManager } from "@/components/SavingsGoalsManager";
 import { LanguageToggle } from "@/components/LanguageToggle";
 import { ProfileSelector } from "@/components/ProfileSelector";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -22,14 +23,23 @@ import { Progress } from "@/components/ui/progress";
 import { Slider } from "@/components/ui/slider";
 import { supabase } from "@/integrations/supabase/client";
 import { useTheme } from "@/hooks/useTheme";
-import { useTheme as useNextTheme } from "next-themes";
 import { Skeleton } from "@/components/ui/skeleton";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
+import {
+  AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent,
+  AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle
+} from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
+
+// Lazy load
+const IncomeManager = React.lazy(() => import("@/components/IncomeManager"));
+const DebtsManager = React.lazy(() => import("@/components/DebtsManager"));
+const FixedExpensesManager = React.lazy(() => import("@/components/FixedExpensesManager"));
+const VariableExpensesManager = React.lazy(() => import("@/components/VariableExpensesManager"));
+
 type Language = "en" | "es" | "pl";
 type DebtMethod = "avalanche" | "snowball" | "hybrid";
 type Event = {
@@ -38,8 +48,9 @@ type Event = {
   type: "income" | "debt" | "fixed" | "variable";
   name: string;
   amount: number;
-  recurring?: boolean;
+  recurring: boolean;
 };
+
 const translations = {
   en: {
     overview: "Overview",
@@ -75,7 +86,7 @@ const translations = {
     cashFlowAfterSavings: "Cash Flow After Savings",
     debtPayment: "Available for Debt Payment",
     monthsToEmergency: "Months to Emergency Fund Goal",
-    monthlyDebtAllocation: "Monthly Debt Allocation"
+    monthlyDebtAllocation: "Monthly Debt Allocation",
   },
   es: {
     overview: "Resumen",
@@ -111,7 +122,7 @@ const translations = {
     cashFlowAfterSavings: "Flujo de Caja Después de Ahorros",
     debtPayment: "Disponible para Pago de Deuda",
     monthsToEmergency: "Meses para Meta de Fondo de Emergencia",
-    monthlyDebtAllocation: "Asignación Mensual de Deuda"
+    monthlyDebtAllocation: "Asignación Mensual de Deuda",
   },
   pl: {
     overview: "Przegląd",
@@ -147,46 +158,47 @@ const translations = {
     cashFlowAfterSavings: "Przepływ Gotówki Po Oszczędnościach",
     debtPayment: "Dostępne na Płatność Długu",
     monthsToEmergency: "Miesiące do Celu Funduszu Awaryjnego",
-    monthlyDebtAllocation: "Miesięczna Alokacja Długu"
-  }
+    monthlyDebtAllocation: "Miesięczna Alokacja Długu",
+  },
 };
+
 const useVariableIncome = () => {
   const [data, setData] = useState<any[]>([]);
-  const [loading, setLoading] = useState(false);
+  const [loading, setLoading] = useState(true);
+
   useEffect(() => {
     const saved = localStorage.getItem("variable_income");
     if (saved) setData(JSON.parse(saved));
     setLoading(false);
   }, []);
-  const addIncome = (amount: number, description: string) => {
+
+  const addIncome = useCallback((amount: number, description: string) => {
     const newEntry = {
       id: Date.now().toString(),
       amount,
       description: description || "Extra income",
-      date: new Date().toISOString()
+      date: new Date().toISOString(),
     };
-    const updated = [newEntry, ...data];
-    setData(updated);
-    localStorage.setItem("variable_income", JSON.stringify(updated));
-  };
-  const deleteIncome = (id: string) => {
-    const updated = data.filter(i => i.id !== id);
-    setData(updated);
-    localStorage.setItem("variable_income", JSON.stringify(updated));
-  };
-  return {
-    data,
-    loading,
-    addIncome,
-    deleteIncome
-  };
+    setData((prev) => {
+      const updated = [newEntry, ...prev];
+      localStorage.setItem("variable_income", JSON.stringify(updated));
+      return updated;
+    });
+  }, []);
+
+  const deleteIncome = useCallback((id: string) => {
+    setData((prev) => {
+      const updated = prev.filter((i) => i.id !== id);
+      localStorage.setItem("variable_income", JSON.stringify(updated));
+      return updated;
+    });
+  }, []);
+
+  return { data, loading, addIncome, deleteIncome };
 };
+
 const Index = () => {
   useTheme();
-  const {
-    theme,
-    setTheme
-  } = useNextTheme();
   const [language, setLanguage] = useState<Language>("en");
   const [user, setUser] = useState<any>(null);
   const [authLoading, setAuthLoading] = useState(true);
@@ -196,11 +208,13 @@ const Index = () => {
   const [aiLoading, setAiLoading] = useState(false);
   const [selectedDate, setSelectedDate] = useState<Date | null>(null);
   const [currentMonth, setCurrentMonth] = useState(new Date());
-  const [events, setEvents] = useState<Event[]>([]);
   const [showEventDialog, setShowEventDialog] = useState(false);
   const [editingEvent, setEditingEvent] = useState<Event | null>(null);
   const [deleteId, setDeleteId] = useState<string | null>(null);
-
+  const [showIncomeModal, setShowIncomeModal] = useState(false);
+  const [newIncome, setNewIncome] = useState({ description: "", amount: 0 });
+  const [monthlySavings, setMonthlySavings] = useState(0);
+  const [debtMethod, setDebtMethod]
   // MODAL PARA VARIABLE INCOME
   const [showIncomeModal, setShowIncomeModal] = useState(false);
   const [newIncome, setNewIncome] = useState({
