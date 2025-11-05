@@ -1650,17 +1650,15 @@ const Index = () => {
                 </TabsContent>
 
                 <TabsContent value="variable">
-                  <Card>
-                    <CardHeader>
-                      <CardTitle className="text-lg font-semibold flex items-center justify-between">
-                        Variable Income
-                        <Button size="sm" onClick={() => setShowIncomeModal(true)}>
-                          <Plus className="h-4 w-4 mr-1" /> Add
-                        </Button>
-                      </CardTitle>
+                  <Card className="shadow-medium border-warning/20">
+                    <CardHeader className="bg-muted/50 border-b">
+                      <div className="flex items-center gap-2">
+                        <Plus className="h-5 w-5 text-primary" />
+                        <CardTitle>Variable Income</CardTitle>
+                      </div>
                       <CardDescription>Extra income like bonuses, gifts, side hustles</CardDescription>
                     </CardHeader>
-                    <CardContent>
+                    <CardContent className="pt-6">
                       <p className="text-center text-muted-foreground py-6">
                         Variable income has been moved to the Income Manager
                       </p>
