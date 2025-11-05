@@ -240,11 +240,6 @@ const Index = () => {
   const {
     data: savings
   } = useSavings();
-  const {
-    data: variableIncome = [],
-    addIncome,
-    deleteIncome
-  } = useVariableIncome();
   const t = translations[language];
   const {
     totalIncome,
@@ -264,7 +259,7 @@ const Index = () => {
     firstDayOfWeek,
     blankDays
   } = useMemo(() => {
-    const totalIncome = incomeData.reduce((s, i) => s + i.amount, 0) + variableIncome.reduce((s, i) => s + i.amount, 0);
+    const totalIncome = incomeData.reduce((s, i) => s + i.amount, 0);
     const totalFixed = fixedExpensesData.reduce((s, e) => s + e.amount, 0);
     const totalVariable = variableExpensesData.reduce((s, e) => s + e.amount, 0);
     const totalDebtPayment = debtData.reduce((s, d) => s + d.minimum_payment, 0);
@@ -386,7 +381,7 @@ const Index = () => {
       firstDayOfWeek,
       blankDays
     };
-  }, [incomeData, variableIncome, fixedExpensesData, variableExpensesData, debtData, savings, savingsGoalsData, currentMonth, monthlySavings]);
+  }, [incomeData, fixedExpensesData, variableExpensesData, debtData, savings, savingsGoalsData, currentMonth, monthlySavings]);
   useEffect(() => {
     supabase.auth.getSession().then(({
       data: {
@@ -808,16 +803,9 @@ const Index = () => {
               <AlertDialogFooter>
                 <AlertDialogCancel>Cancel</AlertDialogCancel>
                 <AlertDialogAction onClick={() => {
-                if (newIncome.description && newIncome.amount > 0) {
-                  addIncome(newIncome.amount, newIncome.description);
-                  setNewIncome({
-                    description: "",
-                    amount: 0
-                  });
                   setShowIncomeModal(false);
-                }
               }}>
-                  Add Income
+                  Close
                 </AlertDialogAction>
               </AlertDialogFooter>
             </AlertDialogContent>
@@ -908,22 +896,7 @@ const Index = () => {
                       <CardDescription>Extra income like bonuses, gifts, side hustles</CardDescription>
                     </CardHeader>
                     <CardContent>
-                      {variableIncome.length === 0 ? <p className="text-center text-muted-foreground py-6">No variable income yet</p> : <div className="space-y-2">
-                          {variableIncome.map(inc => <div key={inc.id} className="flex justify-between items-center p-3 bg-muted rounded-lg">
-                              <div>
-                                <p className="font-medium">{inc.description}</p>
-                                <p className="text-xs text-muted-foreground">
-                                  {format(new Date(inc.date), "d MMM yyyy")}
-                                </p>
-                              </div>
-                              <div className="flex items-center gap-2">
-                                <span className="font-bold text-green-600">{formatCurrency(inc.amount)}</span>
-                                <Button size="sm" variant="ghost" onClick={() => deleteIncome(inc.id)}>
-                                  <Trash2 className="h-4 w-4" />
-                                </Button>
-                              </div>
-                            </div>)}
-                        </div>}
+                      <p className="text-center text-muted-foreground py-6">Variable income has been moved to the Income Manager</p>
                     </CardContent>
                   </Card>
                 </TabsContent>
