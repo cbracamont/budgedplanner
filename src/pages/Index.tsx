@@ -625,50 +625,149 @@ const Index = () => {
               </CardContent>
             </Card>}
 
-          {/* GASTOS PASTEL */}
-          {pieData.length > 0 && <Card>
-              <CardHeader>
-                <CardTitle>Expense Breakdown</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="relative w-64 h-64 mx-auto">
-                  <svg viewBox="0 0 32 32" className="w-full h-full">
-                    {(() => {
-                  const total = pieData.reduce((s, d) => s + d.value, 0);
-                  let cum = 0;
-                  return pieData.map((d, i) => {
-                    const percent = d.value / total * 100;
-                    const start = cum / total * 360;
-                    cum += d.value;
-                    const end = cum / total * 360;
-                    const large = percent > 50 ? 1 : 0;
-                    const sr = start * Math.PI / 180;
-                    const er = end * Math.PI / 180;
-                    const x1 = 16 + 16 * Math.cos(sr);
-                    const y1 = 16 + 16 * Math.sin(sr);
-                    const x2 = 16 + 16 * Math.cos(er);
-                    const y2 = 16 + 16 * Math.sin(er);
-                    return <path key={i} d={`M16,16 L${x1},${y1} A16,16 0 ${large},1 ${x2},${y2} Z`} fill={d.color} />;
-                  });
-                })()}
-                  </svg>
-                  <div className="absolute inset-0 flex items-center justify-center text-2xl font-bold">
-                    {formatCurrency(totalExpenses)}
+{/* GASTOS PASTEL MEJORADO - Sophisticated Donut Chart */}
+{pieData.length > 0 && (
+  <Card className="overflow-hidden">
+    <CardHeader className="pb-3">
+      <CardTitle className="text-lg font-semibold flex items-center gap-2">
+        <Zap className="h-5 w-5 text-blue-600" />
+        Expense Breakdown
+      </CardTitle>
+      <CardDescription className="text-sm">Monthly spending distribution with trends</CardDescription>
+    </CardHeader>
+    <CardContent className="p-6">
+      <div className="grid md:grid-cols-2 gap-6">
+        {/* Gráfico Donut - Mejorado con sombras, labels, y hover */}
+        <div className="relative">
+          <div className="relative w-64 h-64 mx-auto">
+            {/* Fondo del donut */}
+            <svg viewBox="0 0 32 32" className="w-full h-full">
+              <defs>
+                <linearGradient id="shadowGrad" x1="0%" y1="0%" x2="0%" y2="100%">
+                  <stop offset="0%" stopColor="#f8fafc" stopOpacity="0.8" />
+                  <stop offset="100%" stopColor="#e2e8f0" stopOpacity="0.6" />
+                </linearGradient>
+                <filter id="shadow" x="-50%" y="-50%" width="200%" height="200%">
+                  <feDropShadow dx="0" dy="1" stdDeviation="1" floodColor="#000" floodOpacity="0.2" />
+                </filter>
+              </defs>
+
+              {/* Círculo exterior (donut hole) */}
+              <circle cx="16" cy="16" r="16" fill="url(#shadowGrad)" filter="url(#shadow)" className="dark:fill-slate-800" />
+
+              {/* Segmentos del donut */}
+              {(() => {
+                const total = pieData.reduce((s, d) => s + d.value, 0);
+                let cum = 0;
+                return pieData.map((d, i) => {
+                  const percent = (d.value / total) * 100;
+                  const start = (cum / total) * 360;
+                  cum += d.value;
+                  const end = (cum / total) * 360;
+                  const large = percent > 50 ? 1 : 0;
+                  const sr = (start * Math.PI) / 180;
+                  const er = (end * Math.PI) / 180;
+                  const x1 = 16 + 16 * Math.cos(sr);
+                  const y1 = 16 + 16 * Math.sin(sr);
+                  const x2 = 16 + 16 * Math.cos(er);
+                  const y2 = 16 + 16 * Math.sin(er);
+
+                  const pathData = `M16,16 L${x1},${y1} A16,16 0 ${large},1 ${x2},${y2} Z`;
+
+                  return (
+                    <g key={i}>
+                      <path
+                        d={pathData}
+                        fill={d.color}
+                        stroke="white"
+                        strokeWidth="0.5"
+                        className="transition-all duration-500 ease-in-out hover:scale-105 hover:shadow-lg"
+                        filter="url(#shadow)"
+                        onMouseEnter={(e) => {
+                          e.currentTarget.style.transform = 'scale(1.05)';
+                          e.currentTarget.style.cursor = 'pointer';
+                        }}
+                        onMouseLeave={(e) => {
+                          e.currentTarget.style.transform = 'scale(1)';
+                        }}
+                      />
+                      <animate
+                        attributeName="opacity"
+                        from="0"
+                        to="1"
+                        dur="0.8s"
+                        begin={`${i * 0.2}s`}
+                        fill="freeze"
+                      />
+                      {/* Etiqueta de porcentaje en el segmento */}
+                      <text
+                        x={(x1 + x2) / 2}
+                        y={(y1 + y2) / 2}
+                        textAnchor="middle"
+                        dominantBaseline="middle"
+                        className="text-[6px] font-bold fill-white"
+                        style={{ pointerEvents: 'none' }}
+                      >
+                        {percent.toFixed(0)}%
+                      </text>
+                    </g>
+                  );
+                });
+              })()}
+
+              {/* Círculo central */}
+              <circle cx="16" cy="16" r="10" fill="white" className="dark:fill-slate-900 shadow-inner" />
+            </svg>
+
+            {/* Total en el centro - Mejorado */}
+            <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+              <div className="text-2xl md:text-3xl font-bold text-slate-800 dark:text-slate-100 text-center">
+                {formatCurrency(totalExpenses)}
+              </div>
+              <div className="text-xs text-slate-500 dark:text-slate-400 mt-1">Monthly Total</div>
+            </div>
+          </div>
+
+          {/* Tooltip global (hover en todo el gráfico) */}
+          <div className="absolute top-0 left-0 w-full h-full rounded-lg" 
+               onMouseMove={(e) => {
+                 // Lógica para tooltip dinámico si quieres
+               }}
+          />
+        </div>
+
+        {/* Leyenda mejorada con porcentajes */}
+        <div className="flex flex-col justify-center space-y-3">
+          {pieData.map((d, i) => {
+            const percent = ((d.value / totalExpenses) * 100).toFixed(1);
+            return (
+              <div key={i} className="flex items-center justify-between p-3 rounded-lg bg-slate-50 dark:bg-slate-800/50 hover:bg-slate-100 dark:hover:bg-slate-700/50 transition-all">
+                <div className="flex items-center gap-3">
+                  <div className="w-4 h-4 rounded-full shadow-sm" style={{ backgroundColor: d.color }} />
+                  <div>
+                    <p className="font-medium text-sm">{d.name}</p>
+                    <p className="text-xs text-slate-500 dark:text-slate-400">{percent}%</p>
                   </div>
                 </div>
-                <div className="mt-4 space-y-2">
-                  {pieData.map((d, i) => <div key={i} className="flex justify-between text-sm">
-                      <span className="flex items-center gap-2">
-                        <div className="w-3 h-3 rounded" style={{
-                    backgroundColor: d.color
-                  }} />
-                        {d.name}
-                      </span>
-                      <span>{formatCurrency(d.value)}</span>
-                    </div>)}
+                <div className="text-right">
+                  <p className="font-semibold text-sm">{formatCurrency(d.value)}</p>
+                  <p className="text-xs text-slate-500 dark:text-slate-400">Monthly</p>
                 </div>
-              </CardContent>
-            </Card>}
+              </div>
+            );
+          })}
+        </div>
+      </div>
+
+      {/* Barra de total inferior */}
+      <div className="border-t px-6 py-4 bg-gradient-to-r from-slate-50 to-slate-100 dark:from-slate-800 dark:to-slate-900 rounded-b-lg">
+        <div className="flex justify-between items-center">
+          <span className="text-sm font-medium text-slate-600 dark:text-slate-300">Monthly Total</span>
+          <span className="text-xl font-bold text-slate-800 dark:text-slate-100">{formatCurrency(totalExpenses)}</span>
+        </div>
+      </div>
+    </Card>
+)}
 
           {/* CALENDARIO */}
           <Card>
