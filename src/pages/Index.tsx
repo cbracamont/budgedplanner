@@ -1234,7 +1234,7 @@ const Index = () => {
                         label: "Strong",
                         color: "text-green-600",
                         progress: 80,
-                        message: `Great job! You have disposable money ${formatCurrency(cashFlow)} per month — 10-30% of expenses. Solid foundation.`,
+                        message: `Great job! You have ${formatCurrency(cashFlow)} per month in disposable income — 10-30% of expenses. Solid foundation.`,
                       };
                     if (cashFlow > 0)
                       return {
