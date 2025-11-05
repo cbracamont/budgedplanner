@@ -187,6 +187,7 @@ const useVariableIncome = () => {
 };
 const Index = () => {
   useTheme();
+  const { theme, setTheme } = useNextTheme();
   const [language, setLanguage] = useState<Language>("en");
   const [user, setUser] = useState<any>(null);
   const [authLoading, setAuthLoading] = useState(true);
@@ -469,6 +470,9 @@ const Index = () => {
             <div className="flex items-center gap-3">
               <LanguageToggle language={language} onLanguageChange={setLanguage} />
               <ProfileSelector language={language} />
+              <Button variant="outline" size="icon" onClick={() => setTheme(theme === 'dark' ? 'light' : 'dark')}>
+                {theme === 'dark' ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
+              </Button>
               <Button variant="outline" size="icon" onClick={() => window.print()}>
                 <Download className="h-4 w-4" />
               </Button>
