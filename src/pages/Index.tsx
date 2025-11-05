@@ -3,7 +3,7 @@
 
 import React, { useState, useEffect, useMemo, useCallback } from "react";
 import { format, addMonths, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, add, sub } from "date-fns";
-import { formatCurrency } from "@/lib/i18n";
+import { formatCurrency, Language } from "@/lib/i18n";
 import {
   TrendingUp,
   Download,
@@ -35,6 +35,10 @@ import { useFinancialProfiles } from "@/hooks/useFinancialProfiles";
 import { Auth } from "@/components/Auth";
 import { LanguageToggle } from "@/components/LanguageToggle";
 import { ProfileSelector } from "@/components/ProfileSelector";
+import { IncomeManager } from "@/components/IncomeManager";
+import { FixedExpensesManager } from "@/components/FixedExpensesManager";
+import { VariableExpensesManager } from "@/components/VariableExpensesManager";
+import { DebtsManager } from "@/components/DebtsManager";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -59,7 +63,6 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 
-type Language = "en" | "es" | "pl";
 type DebtMethod = "avalanche" | "snowball" | "hybrid";
 type Event = {
   id: string;
@@ -234,6 +237,7 @@ const Index = () => {
   const [newIncome, setNewIncome] = useState({ description: "", amount: 0 });
   const [monthlySavings, setMonthlySavings] = useState(0);
   const [debtMethod, setDebtMethod] = useState<DebtMethod>("avalanche");
+  const [events, setEvents] = useState<Event[]>([]);
 
   const [newEvent, setNewEvent] = useState<{
     name: string;
@@ -427,9 +431,24 @@ const Index = () => {
         amount: newEvent.amount,
         recurring: false,
       };
+      setEvents([...events, event]);
       setShowEventDialog(false);
       setNewEvent({ name: "", amount: 0, type: "income" });
     }
+  };
+
+  const updateEvent = () => {
+    if (editingEvent && newEvent.name && newEvent.amount > 0) {
+      setEvents(events.map(e => e.id === editingEvent.id ? { ...e, name: newEvent.name, amount: newEvent.amount, type: newEvent.type } : e));
+      setEditingEvent(null);
+      setShowEventDialog(false);
+      setNewEvent({ name: "", amount: 0, type: "income" });
+    }
+  };
+
+  const deleteEvent = (id: string) => {
+    setEvents(events.filter(e => e.id !== id));
+    setDeleteId(null);
   };
 
   const sendToAI = () => {
@@ -461,7 +480,7 @@ const Index = () => {
               <p className="text-muted-foreground">Hi, {activeProfile.name}!</p>
             </div>
             <div className="flex items-center gap-3">
-              <LanguageToggle language={language} onLanguageChange={setLanguage} />
+              <LanguageToggle language={language} onLanguageChange={(lang) => setLanguage(lang)} />
               <ProfileSelector language={language} />
               <Button variant="outline" size="icon" onClick={() => window.print()}>
                 <Download className="h-4 w-4" />
