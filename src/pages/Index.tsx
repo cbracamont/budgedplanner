@@ -907,222 +907,275 @@ const Index = () => {
               <TabsTrigger value="savings">Savings</TabsTrigger>
             </TabsList>
 
-          {/* RESUMEN */}
-          <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-            <Card className="border-green-200">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm text-green-600">Total Income</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-3xl font-bold text-green-600">{formatCurrency(totalIncome)}</div>
-              </CardContent>
-            </Card>
-            <Card className="border-red-200">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm text-red-600">Total Expenses</CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-3xl font-bold text-red-600">{formatCurrency(totalExpenses)}</div>
-              </CardContent>
-            </Card>
-            <Card className={`${cashFlow >= 0 ? "border-emerald-200" : "border-orange-200"}`}>
-              <CardHeader className="pb-2">
-                <CardTitle className={`text-sm ${cashFlow >= 0 ? "text-emerald-600" : "text-orange-600"}`}>
-                  Cash Flow
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className={`text-3xl font-bold ${cashFlow >= 0 ? "text-emerald-600" : "text-orange-600"}`}>
-                  {formatCurrency(cashFlow)}
-                </div>
-              </CardContent>
-            </Card>
-            <Card className="border-purple-200">
-              <CardHeader className="pb-2">
-                <CardTitle className="text-sm text-purple-600 flex items-center gap-1">
-                  <PiggyBank className="h-4 w-4" /> Total Savings
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-3xl font-bold text-purple-600">{formatCurrency(savingsTotal)}</div>
-              </CardContent>
-            </Card>
-          </div>
+            <TabsContent value="overview">
+              {/* RESUMEN */}
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
+                <Card className="border-green-200">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm text-green-600">Total Income</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-3xl font-bold text-green-600">{formatCurrency(totalIncome)}</div>
+                  </CardContent>
+                </Card>
+                <Card className="border-red-200">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm text-red-600">Total Expenses</CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-3xl font-bold text-red-600">{formatCurrency(totalExpenses)}</div>
+                  </CardContent>
+                </Card>
+                <Card className={`${cashFlow >= 0 ? "border-emerald-200" : "border-orange-200"}`}>
+                  <CardHeader className="pb-2">
+                    <CardTitle className={`text-sm ${cashFlow >= 0 ? "text-emerald-600" : "text-orange-600"}`}>
+                      Cash Flow
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className={`text-3xl font-bold ${cashFlow >= 0 ? "text-emerald-600" : "text-orange-600"}`}>
+                      {formatCurrency(cashFlow)}
+                    </div>
+                  </CardContent>
+                </Card>
+                <Card className="border-purple-200">
+                  <CardHeader className="pb-2">
+                    <CardTitle className="text-sm text-purple-600 flex items-center gap-1">
+                      <PiggyBank className="h-4 w-4" /> Total Savings
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-3xl font-bold text-purple-600">{formatCurrency(savingsTotal)}</div>
+                  </CardContent>
+                </Card>
+              </div>
 
-          {/* GASTOS PASTEL - VERSIÓN CORREGIDA Y SOPHISTICADA */}
-          {pieData.length > 0 && (
-            <Card className="overflow-hidden">
-              <CardHeader className="pb-3">
-                <CardTitle className="text-lg font-semibold flex items-center gap-2">
-                  <Zap className="h-5 w-5 text-blue-600" />
-                  Expense Breakdown
-                </CardTitle>
-                <CardDescription className="text-sm">Monthly spending distribution with trends</CardDescription>
-              </CardHeader>
-              <CardContent className="p-6">
-                <div className="grid md:grid-cols-2 gap-6">
-                  {/* Gráfico SVG corregido - Sin superposiciones */}
-                  <div className="relative flex items-center justify-center">
-                    <div className="relative w-56 h-56 md:w-64 md:h-64">
-                      {/* Fondo circular */}
-                      <div className="absolute inset-0 rounded-full bg-gradient-to-br from-slate-100 to-slate-50 dark:from-slate-800 dark:to-slate-900 shadow-inner"></div>
+              {/* Main Status - Multi-Stage */}
+              <div className="text-center py-8">
+                {(() => {
+                  const status = (() => {
+                    if (cashFlow > totalExpenses * 0.3)
+                      return {
+                        emoji: "🚀",
+                        label: "Excellent",
+                        color: "text-emerald-600",
+                        progress: 95,
+                        message: `Amazing! You're saving ${formatCurrency(cashFlow)} per month — 30%+ of expenses. Keep going!`,
+                      };
+                    if (cashFlow > totalExpenses * 0.1)
+                      return {
+                        emoji: "💪",
+                        label: "Strong",
+                        color: "text-green-600",
+                        progress: 80,
+                        message: `Great job! You have ${formatCurrency(cashFlow)} per month in disposable income — 10-30% of expenses. Solid foundation.`,
+                      };
+                    if (cashFlow > 0)
+                      return {
+                        emoji: "✅",
+                        label: "Healthy",
+                        color: "text-blue-600",
+                        progress: 65,
+                        message: `You're in the green! Saving ${formatCurrency(cashFlow)} per month. Small wins add up.`,
+                      };
+                    if (cashFlow > -totalExpenses * 0.1)
+                      return {
+                        emoji: "⚠️",
+                        label: "Review",
+                        color: "text-orange-600",
+                        progress: 40,
+                        message: `Close call! You're overspending by ${formatCurrency(Math.abs(cashFlow))} — less than 10% of expenses. Trim a little.`,
+                      };
+                    return {
+                      emoji: "🔴",
+                      label: "Critical",
+                      color: "text-red-600",
+                      progress: 20,
+                      message: `Alert! Overspending by ${formatCurrency(Math.abs(cashFlow))} — over 10% of expenses. Cut now to avoid debt.`,
+                    };
+                  })();
+                  return (
+                    <div>
+                      <div className={`text-7xl font-bold ${status.color} animate-scale-in`}>
+                        {status.emoji} {status.label}
+                      </div>
+                      <Progress value={status.progress} className="mt-6 h-3" />
+                      <p className="mt-4 text-muted-foreground">{status.message}</p>
+                    </div>
+                  );
+                })()}
+              </div>
 
-                      {/* SVG del donut chart - CORREGIDO */}
-
-                      <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                        <div className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-slate-800 to-slate-600 bg-clip-text text-transparent dark:from-slate-100 dark:to-slate-300">
-                          {formatCurrency(totalExpenses)}
+              {/* GASTOS PASTEL */}
+              {pieData.length > 0 && (
+                <Card className="overflow-hidden">
+                  <CardHeader className="pb-3">
+                    <CardTitle className="text-lg font-semibold flex items-center gap-2">
+                      <Zap className="h-5 w-5 text-blue-600" />
+                      Expense Breakdown
+                    </CardTitle>
+                    <CardDescription className="text-sm">Monthly spending distribution with trends</CardDescription>
+                  </CardHeader>
+                  <CardContent className="p-6">
+                    <div className="grid md:grid-cols-2 gap-6">
+                      <div className="relative flex items-center justify-center">
+                        <div className="relative w-56 h-56 md:w-64 md:h-64">
+                          <div className="absolute inset-0 rounded-full bg-gradient-to-br from-slate-100 to-slate-50 dark:from-slate-800 dark:to-slate-900 shadow-inner"></div>
+                          <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                            <div className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-slate-800 to-slate-600 bg-clip-text text-transparent dark:from-slate-100 dark:to-slate-300">
+                              {formatCurrency(totalExpenses)}
+                            </div>
+                            <div className="text-xs text-slate-500 dark:text-slate-400 mt-1">Monthly Total</div>
+                          </div>
                         </div>
-                        <div className="text-xs text-slate-500 dark:text-slate-400 mt-1">Monthly Total</div>
+                      </div>
+
+                      <div className="flex flex-col justify-center space-y-4">
+                        {pieData.map((d, i) => {
+                          const percent = ((d.value / totalExpenses) * 100).toFixed(1);
+                          const trend =
+                            d.value > totalExpenses * 0.2 ? "High" : d.value > totalExpenses * 0.1 ? "Medium" : "Low";
+                          return (
+                            <div
+                              key={i}
+                              className="flex items-center justify-between p-3 rounded-lg bg-slate-50 dark:bg-slate-800/50 hover:bg-slate-100 dark:hover:bg-slate-700/50 transition-all"
+                            >
+                              <div className="flex items-center gap-3">
+                                <div
+                                  className="w-4 h-4 rounded-full shadow-md"
+                                  style={{
+                                    backgroundColor: d.color,
+                                  }}
+                                />
+                                <div>
+                                  <p className="font-medium text-sm">{d.name}</p>
+                                  <p className="text-xs text-slate-500 dark:text-slate-400">{percent}%</p>
+                                  <p className="text-xs text-slate-400 dark:text-slate-500">{trend} impact</p>
+                                </div>
+                              </div>
+                              <div className="text-right">
+                                <p className="font-bold text-sm">{formatCurrency(d.value)}</p>
+                                <p className="text-xs text-slate-500 dark:text-slate-400">Monthly</p>
+                              </div>
+                            </div>
+                          );
+                        })}
                       </div>
                     </div>
-                  </div>
 
-                  <div className="flex flex-col justify-center space-y-4">
-                    {pieData.map((d, i) => {
-                      const percent = ((d.value / totalExpenses) * 100).toFixed(1);
-                      const trend =
-                        d.value > totalExpenses * 0.2 ? "High" : d.value > totalExpenses * 0.1 ? "Medium" : "Low";
+                    <div className="border-t px-6 py-4 bg-gradient-to-r from-slate-50 to-slate-100 dark:from-slate-800 dark:to-slate-900 rounded-b-lg">
+                      <div className="flex justify-between items-center">
+                        <span className="text-sm font-medium text-slate-600 dark:text-slate-300">Monthly Total</span>
+                        <div className="flex items-center gap-2">
+                          <span className="text-xl font-bold text-slate-800 dark:text-slate-100">
+                            {formatCurrency(totalExpenses)}
+                          </span>
+                          <div className="flex items-center gap-1 text-xs text-slate-500 dark:text-slate-400">
+                            <TrendingUp className="h-3 w-3 text-emerald-500" />
+                            <span>{((totalExpenses / totalIncome) * 100).toFixed(0)}% of income</span>
+                          </div>
+                        </div>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              )}
+              
+              {/* DEBT FREE */}
+              {debtData.length > 0 && (
+                <Card className="border-2 border-orange-200">
+                  <CardHeader>
+                    <CardTitle className="flex items-center gap-2 text-orange-600">
+                      <TrendingUp className="h-6 w-6" /> Debt Free Date
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="text-center">
+                      <p className="text-4xl font-bold">{format(debtFreeDate, "d MMM yyyy")}</p>
+                      <p className="text-lg text-muted-foreground">{monthsToDebtFree} months away</p>
+                    </div>
+                    <Progress value={80} className="h-4 mt-3" />
+                  </CardContent>
+                </Card>
+              )}
+
+              {/* CALENDARIO */}
+              <Card>
+                <CardHeader>
+                  <CardTitle className="flex items-center justify-between">
+                    <span className="flex items-center gap-2">
+                      <Calendar className="h-5 w-5" />
+                      {format(currentMonth, "MMMM yyyy")}
+                    </span>
+                    <div className="flex gap-2">
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() =>
+                          setCurrentMonth(
+                            sub(currentMonth, {
+                              months: 1,
+                            }),
+                          )
+                        }
+                      >
+                        <ChevronLeft className="h-4 w-4" />
+                      </Button>
+                      <Button
+                        size="sm"
+                        variant="outline"
+                        onClick={() =>
+                          setCurrentMonth(
+                            add(currentMonth, {
+                              months: 1,
+                            }),
+                          )
+                        }
+                      >
+                        <ChevronRight className="h-4 w-4" />
+                      </Button>
+                    </div>
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="grid grid-cols-7 gap-1 text-center text-sm font-medium">
+                    {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((d) => (
+                      <div key={d} className="p-2">
+                        {d}
+                      </div>
+                    ))}
+                  </div>
+                  <div className="grid grid-cols-7 gap-1 mt-2">
+                    {blankDays.map((_, i) => (
+                      <div key={`blank-${i}`} className="h-16 border rounded" />
+                    ))}
+                    {monthDays.map((day) => {
+                      const dayEvents = getEventsForDay(day);
                       return (
                         <div
-                          key={i}
-                          className="flex items-center justify-between p-3 rounded-lg bg-slate-50 dark:bg-slate-800/50 hover:bg-slate-100 dark:hover:bg-slate-700/50 transition-all"
+                          key={day.toISOString()}
+                          className={`h-16 border rounded p-1 text-xs cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 transition ${isSameDay(day, new Date()) ? "bg-blue-50 dark:bg-blue-900" : ""}`}
+                          onClick={() => setSelectedDate(day)}
                         >
-                          <div className="flex items-center gap-3">
+                          <div className="font-medium">{format(day, "d")}</div>
+                          {dayEvents.slice(0, 2).map((e, i) => (
                             <div
-                              className="w-4 h-4 rounded-full shadow-md"
-                              style={{
-                                backgroundColor: d.color,
-                              }}
-                            />
-                            <div>
-                              <p className="font-medium text-sm">{d.name}</p>
-                              <p className="text-xs text-slate-500 dark:text-slate-400">{percent}%</p>
-                              <p className="text-xs text-slate-400 dark:text-slate-500">{trend} impact</p>
+                              key={i}
+                              className={`text-[9px] truncate ${e.type === "income" ? "text-green-600" : e.type === "debt" ? "text-red-600" : "text-blue-600"}`}
+                            >
+                              {e.name}
                             </div>
-                          </div>
-                          <div className="text-right">
-                            <p className="font-bold text-sm">{formatCurrency(d.value)}</p>
-                            <p className="text-xs text-slate-500 dark:text-slate-400">Monthly</p>
-                          </div>
+                          ))}
+                          {dayEvents.length > 2 && (
+                            <div className="text-[9px] text-muted-foreground">+{dayEvents.length - 2}</div>
+                          )}
                         </div>
                       );
                     })}
                   </div>
-                </div>
-
-                <div className="border-t px-6 py-4 bg-gradient-to-r from-slate-50 to-slate-100 dark:from-slate-800 dark:to-slate-900 rounded-b-lg">
-                  <div className="flex justify-between items-center">
-                    <span className="text-sm font-medium text-slate-600 dark:text-slate-300">Monthly Total</span>
-                    <div className="flex items-center gap-2">
-                      <span className="text-xl font-bold text-slate-800 dark:text-slate-100">
-                        {formatCurrency(totalExpenses)}
-                      </span>
-                      <div className="flex items-center gap-1 text-xs text-slate-500 dark:text-slate-400">
-                        <TrendingUp className="h-3 w-3 text-emerald-500" />
-                        <span>{((totalExpenses / totalIncome) * 100).toFixed(0)}% of income</span>
-                      </div>
-                    </div>
-                  </div>
-                </div>
-              </CardContent>
-            </Card>
-          )}
-          
-          {/* DEBT FREE */}
-          {debtData.length > 0 && (
-            <Card className="border-2 border-orange-200">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-orange-600">
-                  <TrendingUp className="h-6 w-6" /> Debt Free Date
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-center">
-                  <p className="text-4xl font-bold">{format(debtFreeDate, "d MMM yyyy")}</p>
-                  <p className="text-lg text-muted-foreground">{monthsToDebtFree} months away</p>
-                </div>
-                <Progress value={80} className="h-4 mt-3" />
-              </CardContent>
-            </Card>
-          )}
-
-          {/* CALENDARIO */}
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center justify-between">
-                <span className="flex items-center gap-2">
-                  <Calendar className="h-5 w-5" />
-                  {format(currentMonth, "MMMM yyyy")}
-                </span>
-                <div className="flex gap-2">
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() =>
-                      setCurrentMonth(
-                        sub(currentMonth, {
-                          months: 1,
-                        }),
-                      )
-                    }
-                  >
-                    <ChevronLeft className="h-4 w-4" />
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() =>
-                      setCurrentMonth(
-                        add(currentMonth, {
-                          months: 1,
-                        }),
-                      )
-                    }
-                  >
-                    <ChevronRight className="h-4 w-4" />
-                  </Button>
-                </div>
-              </CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="grid grid-cols-7 gap-1 text-center text-sm font-medium">
-                {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((d) => (
-                  <div key={d} className="p-2">
-                    {d}
-                  </div>
-                ))}
-              </div>
-              <div className="grid grid-cols-7 gap-1 mt-2">
-                {blankDays.map((_, i) => (
-                  <div key={`blank-${i}`} className="h-16 border rounded" />
-                ))}
-                {monthDays.map((day) => {
-                  const dayEvents = getEventsForDay(day);
-                  return (
-                    <div
-                      key={day.toISOString()}
-                      className={`h-16 border rounded p-1 text-xs cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-800 transition ${isSameDay(day, new Date()) ? "bg-blue-50 dark:bg-blue-900" : ""}`}
-                      onClick={() => setSelectedDate(day)}
-                    >
-                      <div className="font-medium">{format(day, "d")}</div>
-                      {dayEvents.slice(0, 2).map((e, i) => (
-                        <div
-                          key={i}
-                          className={`text-[9px] truncate ${e.type === "income" ? "text-green-600" : e.type === "debt" ? "text-red-600" : "text-blue-600"}`}
-                        >
-                          {e.name}
-                        </div>
-                      ))}
-                      {dayEvents.length > 2 && (
-                        <div className="text-[9px] text-muted-foreground">+{dayEvents.length - 2}</div>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            </CardContent>
-          </Card>
+                </CardContent>
+              </Card>
+            </TabsContent>
 
           {/* AI MODAL */}
           <AlertDialog open={showAI} onOpenChange={setShowAI}>
