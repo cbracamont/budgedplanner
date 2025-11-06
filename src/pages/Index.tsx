@@ -1443,55 +1443,7 @@ const Index = () => {
           {/* TABS */}
             <TabsContent value="overview">
               {/* Main Status - Multi-Stage */}
-              <div className="text-center py-8">
-                {/* Determine status based on cashFlow relative to totalExpenses */}
-                {(() => {
-                const status = (() => {
-                  if (cashFlow > totalExpenses * 0.3) return {
-                    emoji: "🚀",
-                    label: "Excellent",
-                    color: "text-emerald-600",
-                    progress: 95,
-                    message: `Amazing! You're saving ${formatCurrency(cashFlow)} per month — 30%+ of expenses. Keep going!`
-                  };
-                  if (cashFlow > totalExpenses * 0.1) return {
-                    emoji: "💪",
-                    label: "Strong",
-                    color: "text-green-600",
-                    progress: 80,
-                    message: `Great job! You have ${formatCurrency(cashFlow)} per month in disposable income — 10-30% of expenses. Solid foundation.`
-                  };
-                  if (cashFlow > 0) return {
-                    emoji: "✅",
-                    label: "Healthy",
-                    color: "text-blue-600",
-                    progress: 65,
-                    message: `You're in the green! Saving ${formatCurrency(cashFlow)} per month. Small wins add up.`
-                  };
-                  if (cashFlow > -totalExpenses * 0.1) return {
-                    emoji: "⚠️",
-                    label: "Review",
-                    color: "text-orange-600",
-                    progress: 40,
-                    message: `Close call! You're overspending by ${formatCurrency(Math.abs(cashFlow))} — less than 10% of expenses. Trim a little.`
-                  };
-                  return {
-                    emoji: "🔴",
-                    label: "Critical",
-                    color: "text-red-600",
-                    progress: 20,
-                    message: `Alert! Overspending by ${formatCurrency(Math.abs(cashFlow))} — over 10% of expenses. Cut now to avoid debt.`
-                  };
-                })();
-                return <div>
-                      <div className={`text-7xl font-bold ${status.color} animate-scale-in`}>
-                        {status.emoji} {status.label}
-                      </div>
-                      <Progress value={status.progress} className="mt-6 h-3" />
-                      <p className="mt-4 text-muted-foreground">{status.message}</p>
-                    </div>;
-              })()}
-              </div>
+              
             </TabsContent>
 
             <TabsContent value="income">
