@@ -38,85 +38,90 @@ export const VariableIncomeManager = ({ onIncomeChange, language }: VariableInco
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
 
   const { data: incomes = [] } = useQuery({
-    queryKey: ['variable-income'],
+    queryKey: ["variable-income"],
     queryFn: async () => {
-      const { data: { user } } = await supabase.auth.getUser();
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
       if (!user) return [];
-      
+
       const { data, error } = await supabase
-        .from('income_sources')
-        .select('*')
-        .eq('user_id', user.id)
-        .eq('income_type', 'variable')
-        .order('created_at', { ascending: false });
-      
+        .from("income_sources")
+        .select("*")
+        .eq("user_id", user.id)
+        .eq("income_type", "variable")
+        .order("created_at", { ascending: false });
+
       if (error) throw error;
       return data as VariableIncome[];
-    }
+    },
   });
 
   const addIncomeMutation = useMutation({
-    mutationFn: async (income: { name: string; amount: number; payment_day: number; frequency: string; day_of_week?: number }) => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error('Not authenticated');
+    mutationFn: async (income: {
+      name: string;
+      amount: number;
+      payment_day: number;
+      frequency: string;
+      day_of_week?: number;
+    }) => {
+      const {
+        data: { user },
+      } = await supabase.auth.getUser();
+      if (!user) throw new Error("Not authenticated");
 
-      const { error } = await supabase
-        .from('income_sources')
-        .insert({
-          user_id: user.id,
-          name: income.name,
-          amount: income.amount,
-          payment_day: income.payment_day,
-          frequency: income.frequency,
-          income_type: 'variable',
-          day_of_week: income.day_of_week
-        });
-      
+      const { error } = await supabase.from("income_sources").insert({
+        user_id: user.id,
+        name: income.name,
+        amount: income.amount,
+        payment_day: income.payment_day,
+        frequency: income.frequency,
+        income_type: "variable",
+        day_of_week: income.day_of_week,
+      });
+
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['variable-income'] });
-      queryClient.invalidateQueries({ queryKey: ['income'] });
-      toast({ title: language === 'en' ? 'Income added' : 'Ingreso añadido' });
-    }
+      queryClient.invalidateQueries({ queryKey: ["variable-income"] });
+      queryClient.invalidateQueries({ queryKey: ["income"] });
+      toast({ title: language === "en" ? "Income added" : "Ingreso añadido" });
+    },
   });
 
   const updateIncomeMutation = useMutation({
     mutationFn: async (income: VariableIncome) => {
       const { error } = await supabase
-        .from('income_sources')
+        .from("income_sources")
         .update({
           name: income.name,
           amount: income.amount,
           payment_day: income.payment_day,
           frequency: income.frequency,
-          day_of_week: income.day_of_week
+          day_of_week: income.day_of_week,
         })
-        .eq('id', income.id);
-      
+        .eq("id", income.id);
+
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['variable-income'] });
-      queryClient.invalidateQueries({ queryKey: ['income'] });
-      toast({ title: language === 'en' ? 'Income updated' : 'Ingreso actualizado' });
-    }
+      queryClient.invalidateQueries({ queryKey: ["variable-income"] });
+      queryClient.invalidateQueries({ queryKey: ["income"] });
+      toast({ title: language === "en" ? "Income updated" : "Ingreso actualizado" });
+    },
   });
 
   const deleteIncomeMutation = useMutation({
     mutationFn: async (id: string) => {
-      const { error } = await supabase
-        .from('income_sources')
-        .delete()
-        .eq('id', id);
-      
+      const { error } = await supabase.from("income_sources").delete().eq("id", id);
+
       if (error) throw error;
     },
     onSuccess: () => {
-      queryClient.invalidateQueries({ queryKey: ['variable-income'] });
-      queryClient.invalidateQueries({ queryKey: ['income'] });
-      toast({ title: language === 'en' ? 'Income deleted' : 'Ingreso eliminado' });
-    }
+      queryClient.invalidateQueries({ queryKey: ["variable-income"] });
+      queryClient.invalidateQueries({ queryKey: ["income"] });
+      toast({ title: language === "en" ? "Income deleted" : "Ingreso eliminado" });
+    },
   });
 
   useEffect(() => {
@@ -127,21 +132,24 @@ export const VariableIncomeManager = ({ onIncomeChange, language }: VariableInco
   const addIncome = async () => {
     if (!name.trim() || !amount) return;
 
-    addIncomeMutation.mutate({
-      name: name.trim(),
-      amount: parseFloat(parseFloat(amount).toFixed(2)),
-      payment_day: parseInt(paymentDay),
-      frequency,
-      day_of_week: frequency === 'weekly' ? parseInt(dayOfWeek) : undefined
-    }, {
-      onSuccess: () => {
-        setName("");
-        setAmount("");
-        setPaymentDay("1");
-        setDayOfWeek("1");
-        setFrequency("monthly");
-      }
-    });
+    addIncomeMutation.mutate(
+      {
+        name: name.trim(),
+        amount: parseFloat(parseFloat(amount).toFixed(2)),
+        payment_day: parseInt(paymentDay),
+        frequency,
+        day_of_week: frequency === "weekly" ? parseInt(dayOfWeek) : undefined,
+      },
+      {
+        onSuccess: () => {
+          setName("");
+          setAmount("");
+          setPaymentDay("1");
+          setDayOfWeek("1");
+          setFrequency("monthly");
+        },
+      },
+    );
   };
 
   const deleteIncome = async (incomeId: string) => {
@@ -155,57 +163,57 @@ export const VariableIncomeManager = ({ onIncomeChange, language }: VariableInco
       onSuccess: () => {
         setIsEditDialogOpen(false);
         setEditingIncome(null);
-      }
+      },
     });
   };
 
   const getFrequencyLabel = (freq: string) => {
     const labels = {
-      weekly: language === 'en' ? 'Weekly' : 'Semanal',
-      monthly: language === 'en' ? 'Monthly' : 'Mensual',
-      quarterly: language === 'en' ? 'Quarterly' : 'Trimestral',
-      'semi-annually': language === 'en' ? 'Semi-annually' : 'Semestral',
-      annually: language === 'en' ? 'Annually' : 'Anual'
+      weekly: language === "en" ? "Weekly" : "Semanal",
+      monthly: language === "en" ? "Monthly" : "Mensual",
+      quarterly: language === "en" ? "Quarterly" : "Trimestral",
+      "semi-annually": language === "en" ? "Semi-annually" : "Semestral",
+      annually: language === "en" ? "Annually" : "Anual",
     };
     return labels[freq as keyof typeof labels] || freq;
   };
 
   const getDayOfWeekLabel = (day: number) => {
     const days = {
-      en: ['Sunday', 'Monday', 'Tuesday', 'Wednesday', 'Thursday', 'Friday', 'Saturday'],
-      es: ['Domingo', 'Lunes', 'Martes', 'Miércoles', 'Jueves', 'Viernes', 'Sábado']
+      en: ["Sunday", "Monday", "Tuesday", "Wednesday", "Thursday", "Friday", "Saturday"],
+      es: ["Domingo", "Lunes", "Martes", "Miércoles", "Jueves", "Viernes", "Sábado"],
     };
-    return days[language][day] || '';
+    return days[language][day] || "";
   };
 
   return (
     <Card className="shadow-medium border-warning/20">
       <CardHeader className="bg-muted/50 border-b">
         <div className="flex items-center gap-2">
-          <DollarSign className="h-5 w-5 text-primary" />
-          <CardTitle>{language === 'en' ? 'Variable Income' : 'Ingresos Variables'}</CardTitle>
+          <PoundSterline className="h-5 w-5 text-primary" />
+          <CardTitle>{language === "en" ? "Variable Income" : "Ingresos Variables"}</CardTitle>
         </div>
         <CardDescription>
-          {language === 'en' ? 'Manage recurring variable income like bonuses, freelance work, etc.' : 'Gestiona ingresos variables recurrentes como bonos, trabajos freelance, etc.'}
+          {language === "en"
+            ? "Manage recurring variable income like bonuses, freelance work, etc."
+            : "Gestiona ingresos variables recurrentes como bonos, trabajos freelance, etc."}
         </CardDescription>
       </CardHeader>
       <CardContent className="pt-6 space-y-6">
         {/* Add Income */}
         <div className="space-y-3">
-          <Label className="text-base font-semibold">
-            {language === 'en' ? 'Add Income' : 'Añadir Ingreso'}
-          </Label>
+          <Label className="text-base font-semibold">{language === "en" ? "Add Income" : "Añadir Ingreso"}</Label>
           <div className="grid gap-3">
             <div>
-              <Label>{language === 'en' ? 'Name' : 'Nombre'}</Label>
+              <Label>{language === "en" ? "Name" : "Nombre"}</Label>
               <Input
                 value={name}
                 onChange={(e) => setName(e.target.value)}
-                placeholder={language === 'en' ? 'Income name' : 'Nombre del ingreso'}
+                placeholder={language === "en" ? "Income name" : "Nombre del ingreso"}
               />
             </div>
             <div>
-              <Label>{language === 'en' ? 'Amount' : 'Monto'}</Label>
+              <Label>{language === "en" ? "Amount" : "Monto"}</Label>
               <Input
                 type="number"
                 step="0.01"
@@ -215,7 +223,7 @@ export const VariableIncomeManager = ({ onIncomeChange, language }: VariableInco
               />
             </div>
             <div>
-              <Label>{language === 'en' ? 'Payment Day' : 'Día de Pago'}</Label>
+              <Label>{language === "en" ? "Payment Day" : "Día de Pago"}</Label>
               <Input
                 type="number"
                 min="1"
@@ -223,46 +231,44 @@ export const VariableIncomeManager = ({ onIncomeChange, language }: VariableInco
                 value={paymentDay}
                 onChange={(e) => setPaymentDay(e.target.value)}
                 placeholder="1"
-                disabled={frequency === 'weekly'}
+                disabled={frequency === "weekly"}
               />
             </div>
-            {frequency === 'weekly' && (
+            {frequency === "weekly" && (
               <div>
-                <Label>{language === 'en' ? 'Day of Week' : 'Día de la Semana'}</Label>
+                <Label>{language === "en" ? "Day of Week" : "Día de la Semana"}</Label>
                 <Select value={dayOfWeek} onValueChange={setDayOfWeek}>
                   <SelectTrigger>
                     <SelectValue />
                   </SelectTrigger>
                   <SelectContent>
-                    <SelectItem value="0">{language === 'en' ? 'Sunday' : 'Domingo'}</SelectItem>
-                    <SelectItem value="1">{language === 'en' ? 'Monday' : 'Lunes'}</SelectItem>
-                    <SelectItem value="2">{language === 'en' ? 'Tuesday' : 'Martes'}</SelectItem>
-                    <SelectItem value="3">{language === 'en' ? 'Wednesday' : 'Miércoles'}</SelectItem>
-                    <SelectItem value="4">{language === 'en' ? 'Thursday' : 'Jueves'}</SelectItem>
-                    <SelectItem value="5">{language === 'en' ? 'Friday' : 'Viernes'}</SelectItem>
-                    <SelectItem value="6">{language === 'en' ? 'Saturday' : 'Sábado'}</SelectItem>
+                    <SelectItem value="0">{language === "en" ? "Sunday" : "Domingo"}</SelectItem>
+                    <SelectItem value="1">{language === "en" ? "Monday" : "Lunes"}</SelectItem>
+                    <SelectItem value="2">{language === "en" ? "Tuesday" : "Martes"}</SelectItem>
+                    <SelectItem value="3">{language === "en" ? "Wednesday" : "Miércoles"}</SelectItem>
+                    <SelectItem value="4">{language === "en" ? "Thursday" : "Jueves"}</SelectItem>
+                    <SelectItem value="5">{language === "en" ? "Friday" : "Viernes"}</SelectItem>
+                    <SelectItem value="6">{language === "en" ? "Saturday" : "Sábado"}</SelectItem>
                   </SelectContent>
                 </Select>
               </div>
             )}
             <div>
-              <Label>{language === 'en' ? 'Frequency' : 'Frecuencia'}</Label>
+              <Label>{language === "en" ? "Frequency" : "Frecuencia"}</Label>
               <Select value={frequency} onValueChange={setFrequency}>
                 <SelectTrigger>
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
-                  <SelectItem value="weekly">{language === 'en' ? 'Weekly' : 'Semanal'}</SelectItem>
-                  <SelectItem value="monthly">{language === 'en' ? 'Monthly' : 'Mensual'}</SelectItem>
-                  <SelectItem value="quarterly">{language === 'en' ? 'Quarterly' : 'Trimestral'}</SelectItem>
-                  <SelectItem value="semi-annually">{language === 'en' ? 'Semi-annually' : 'Semestral'}</SelectItem>
-                  <SelectItem value="annually">{language === 'en' ? 'Annually' : 'Anual'}</SelectItem>
+                  <SelectItem value="weekly">{language === "en" ? "Weekly" : "Semanal"}</SelectItem>
+                  <SelectItem value="monthly">{language === "en" ? "Monthly" : "Mensual"}</SelectItem>
+                  <SelectItem value="quarterly">{language === "en" ? "Quarterly" : "Trimestral"}</SelectItem>
+                  <SelectItem value="semi-annually">{language === "en" ? "Semi-annually" : "Semestral"}</SelectItem>
+                  <SelectItem value="annually">{language === "en" ? "Annually" : "Anual"}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
-            <Button onClick={addIncome}>
-              {language === 'en' ? 'Add Income' : 'Añadir Ingreso'}
-            </Button>
+            <Button onClick={addIncome}>{language === "en" ? "Add Income" : "Añadir Ingreso"}</Button>
           </div>
         </div>
 
@@ -270,20 +276,19 @@ export const VariableIncomeManager = ({ onIncomeChange, language }: VariableInco
         {incomes.length > 0 && (
           <div className="space-y-3 pt-4 border-t">
             <Label className="text-base font-semibold">
-              {language === 'en' ? 'Current Variable Incomes' : 'Ingresos Variables Actuales'}
+              {language === "en" ? "Current Variable Incomes" : "Ingresos Variables Actuales"}
             </Label>
             <div className="grid gap-2">
-              {incomes.map(income => (
+              {incomes.map((income) => (
                 <div key={income.id} className="flex items-center justify-between p-3 bg-card border rounded-lg">
                   <div>
                     <p className="font-medium">{income.name}</p>
                     <p className="text-lg font-bold text-primary">£{income.amount.toFixed(2)}</p>
                     <p className="text-sm text-muted-foreground">
                       {getFrequencyLabel(income.frequency)}
-                      {income.frequency === 'weekly' && income.day_of_week !== undefined
+                      {income.frequency === "weekly" && income.day_of_week !== undefined
                         ? ` - ${getDayOfWeekLabel(income.day_of_week)}`
-                        : ` - ${language === 'en' ? 'Day' : 'Día'} ${income.payment_day}`
-                      }
+                        : ` - ${language === "en" ? "Day" : "Día"} ${income.payment_day}`}
                     </p>
                   </div>
                   <div className="flex gap-1">
@@ -297,11 +302,7 @@ export const VariableIncomeManager = ({ onIncomeChange, language }: VariableInco
                     >
                       <Pencil className="h-4 w-4" />
                     </Button>
-                    <Button
-                      variant="ghost"
-                      size="sm"
-                      onClick={() => deleteIncome(income.id)}
-                    >
+                    <Button variant="ghost" size="sm" onClick={() => deleteIncome(income.id)}>
                       <Trash2 className="h-4 w-4 text-destructive" />
                     </Button>
                   </div>
@@ -315,19 +316,19 @@ export const VariableIncomeManager = ({ onIncomeChange, language }: VariableInco
         <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
           <DialogContent>
             <DialogHeader>
-              <DialogTitle>{language === 'en' ? 'Edit Income' : 'Editar Ingreso'}</DialogTitle>
+              <DialogTitle>{language === "en" ? "Edit Income" : "Editar Ingreso"}</DialogTitle>
             </DialogHeader>
             {editingIncome && (
               <div className="space-y-4">
                 <div>
-                  <Label>{language === 'en' ? 'Name' : 'Nombre'}</Label>
+                  <Label>{language === "en" ? "Name" : "Nombre"}</Label>
                   <Input
                     value={editingIncome.name}
                     onChange={(e) => setEditingIncome({ ...editingIncome, name: e.target.value })}
                   />
                 </div>
                 <div>
-                  <Label>{language === 'en' ? 'Amount' : 'Monto'}</Label>
+                  <Label>{language === "en" ? "Amount" : "Monto"}</Label>
                   <Input
                     type="number"
                     step="0.01"
@@ -336,53 +337,53 @@ export const VariableIncomeManager = ({ onIncomeChange, language }: VariableInco
                   />
                 </div>
                 <div>
-                  <Label>{language === 'en' ? 'Payment Day' : 'Día de Pago'}</Label>
+                  <Label>{language === "en" ? "Payment Day" : "Día de Pago"}</Label>
                   <Input
                     type="number"
                     min="1"
                     max="31"
                     value={editingIncome.payment_day}
                     onChange={(e) => setEditingIncome({ ...editingIncome, payment_day: parseInt(e.target.value) || 1 })}
-                    disabled={editingIncome.frequency === 'weekly'}
+                    disabled={editingIncome.frequency === "weekly"}
                   />
                 </div>
-                {editingIncome.frequency === 'weekly' && (
+                {editingIncome.frequency === "weekly" && (
                   <div>
-                    <Label>{language === 'en' ? 'Day of Week' : 'Día de la Semana'}</Label>
-                    <Select 
-                      value={editingIncome.day_of_week?.toString() || '1'} 
+                    <Label>{language === "en" ? "Day of Week" : "Día de la Semana"}</Label>
+                    <Select
+                      value={editingIncome.day_of_week?.toString() || "1"}
                       onValueChange={(value) => setEditingIncome({ ...editingIncome, day_of_week: parseInt(value) })}
                     >
                       <SelectTrigger>
                         <SelectValue />
                       </SelectTrigger>
                       <SelectContent>
-                        <SelectItem value="0">{language === 'en' ? 'Sunday' : 'Domingo'}</SelectItem>
-                        <SelectItem value="1">{language === 'en' ? 'Monday' : 'Lunes'}</SelectItem>
-                        <SelectItem value="2">{language === 'en' ? 'Tuesday' : 'Martes'}</SelectItem>
-                        <SelectItem value="3">{language === 'en' ? 'Wednesday' : 'Miércoles'}</SelectItem>
-                        <SelectItem value="4">{language === 'en' ? 'Thursday' : 'Jueves'}</SelectItem>
-                        <SelectItem value="5">{language === 'en' ? 'Friday' : 'Viernes'}</SelectItem>
-                        <SelectItem value="6">{language === 'en' ? 'Saturday' : 'Sábado'}</SelectItem>
+                        <SelectItem value="0">{language === "en" ? "Sunday" : "Domingo"}</SelectItem>
+                        <SelectItem value="1">{language === "en" ? "Monday" : "Lunes"}</SelectItem>
+                        <SelectItem value="2">{language === "en" ? "Tuesday" : "Martes"}</SelectItem>
+                        <SelectItem value="3">{language === "en" ? "Wednesday" : "Miércoles"}</SelectItem>
+                        <SelectItem value="4">{language === "en" ? "Thursday" : "Jueves"}</SelectItem>
+                        <SelectItem value="5">{language === "en" ? "Friday" : "Viernes"}</SelectItem>
+                        <SelectItem value="6">{language === "en" ? "Saturday" : "Sábado"}</SelectItem>
                       </SelectContent>
                     </Select>
                   </div>
                 )}
                 <div>
-                  <Label>{language === 'en' ? 'Frequency' : 'Frecuencia'}</Label>
-                  <Select 
-                    value={editingIncome.frequency} 
+                  <Label>{language === "en" ? "Frequency" : "Frecuencia"}</Label>
+                  <Select
+                    value={editingIncome.frequency}
                     onValueChange={(value) => setEditingIncome({ ...editingIncome, frequency: value })}
                   >
                     <SelectTrigger>
                       <SelectValue />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="weekly">{language === 'en' ? 'Weekly' : 'Semanal'}</SelectItem>
-                      <SelectItem value="monthly">{language === 'en' ? 'Monthly' : 'Mensual'}</SelectItem>
-                      <SelectItem value="quarterly">{language === 'en' ? 'Quarterly' : 'Trimestral'}</SelectItem>
-                      <SelectItem value="semi-annually">{language === 'en' ? 'Semi-annually' : 'Semestral'}</SelectItem>
-                      <SelectItem value="annually">{language === 'en' ? 'Annually' : 'Anual'}</SelectItem>
+                      <SelectItem value="weekly">{language === "en" ? "Weekly" : "Semanal"}</SelectItem>
+                      <SelectItem value="monthly">{language === "en" ? "Monthly" : "Mensual"}</SelectItem>
+                      <SelectItem value="quarterly">{language === "en" ? "Quarterly" : "Trimestral"}</SelectItem>
+                      <SelectItem value="semi-annually">{language === "en" ? "Semi-annually" : "Semestral"}</SelectItem>
+                      <SelectItem value="annually">{language === "en" ? "Annually" : "Anual"}</SelectItem>
                     </SelectContent>
                   </Select>
                 </div>
@@ -390,11 +391,9 @@ export const VariableIncomeManager = ({ onIncomeChange, language }: VariableInco
             )}
             <DialogFooter>
               <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
-                {language === 'en' ? 'Cancel' : 'Cancelar'}
+                {language === "en" ? "Cancel" : "Cancelar"}
               </Button>
-              <Button onClick={updateIncome}>
-                {language === 'en' ? 'Save Changes' : 'Guardar Cambios'}
-              </Button>
+              <Button onClick={updateIncome}>{language === "en" ? "Save Changes" : "Guardar Cambios"}</Button>
             </DialogFooter>
           </DialogContent>
         </Dialog>
