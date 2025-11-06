@@ -939,24 +939,6 @@ const Index = () => {
             </Card>
           </div>
 
-          {/* DEBT FREE */}
-          {debtData.length > 0 && (
-            <Card className="border-2 border-orange-200">
-              <CardHeader>
-                <CardTitle className="flex items-center gap-2 text-orange-600">
-                  <TrendingUp className="h-6 w-6" /> Debt Free Date
-                </CardTitle>
-              </CardHeader>
-              <CardContent>
-                <div className="text-center">
-                  <p className="text-4xl font-bold">{format(debtFreeDate, "d MMM yyyy")}</p>
-                  <p className="text-lg text-muted-foreground">{monthsToDebtFree} months away</p>
-                </div>
-                <Progress value={80} className="h-4 mt-3" />
-              </CardContent>
-            </Card>
-          )}
-
           {/* GASTOS PASTEL - VERSIÓN CORREGIDA Y SOPHISTICADA */}
           {pieData.length > 0 && (
             <Card className="overflow-hidden">
@@ -1673,6 +1655,24 @@ const Index = () => {
               <TabsTrigger value="debts">Debts</TabsTrigger>
               <TabsTrigger value="savings">Savings</TabsTrigger>
             </TabsList>
+
+            {/* DEBT FREE */}
+            {debtData.length > 0 && (
+              <Card className="border-2 border-orange-200 mb-6">
+                <CardHeader>
+                  <CardTitle className="flex items-center gap-2 text-orange-600">
+                    <TrendingUp className="h-6 w-6" /> Debt Free Date
+                  </CardTitle>
+                </CardHeader>
+                <CardContent>
+                  <div className="text-center">
+                    <p className="text-4xl font-bold">{format(debtFreeDate, "d MMM yyyy")}</p>
+                    <p className="text-lg text-muted-foreground">{monthsToDebtFree} months away</p>
+                  </div>
+                  <Progress value={80} className="h-4 mt-3" />
+                </CardContent>
+              </Card>
+            )}
 
             <TabsContent value="overview">
               {/* Main Status - Multi-Stage */}
