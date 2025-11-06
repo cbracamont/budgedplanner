@@ -190,7 +190,7 @@ export const VariableIncomeManager = ({ onIncomeChange, language }: VariableInco
     <Card className="shadow-medium border-warning/20">
       <CardHeader className="bg-muted/50 border-b">
         <div className="flex items-center gap-2">
-          <PoundSterline className="h-5 w-5 text-primary" />
+          <DollarSign className="h-5 w-5 text-primary" />
           <CardTitle>{language === "en" ? "Variable Income" : "Ingresos Variables"}</CardTitle>
         </div>
         <CardDescription>
