@@ -897,6 +897,16 @@ const Index = () => {
             </div>
           </div>
 
+          {/* TABS */}
+          <Tabs defaultValue="overview" className="no-print">
+            <TabsList className="grid w-full grid-cols-5 mb-6">
+              <TabsTrigger value="overview">Overview</TabsTrigger>
+              <TabsTrigger value="income">Income</TabsTrigger>
+              <TabsTrigger value="expenses">Expenses</TabsTrigger>
+              <TabsTrigger value="debts">Debts</TabsTrigger>
+              <TabsTrigger value="savings">Savings</TabsTrigger>
+            </TabsList>
+
           {/* RESUMEN */}
           <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
             <Card className="border-green-200">
@@ -1018,6 +1028,25 @@ const Index = () => {
               </CardContent>
             </Card>
           )}
+          
+          {/* DEBT FREE */}
+          {debtData.length > 0 && (
+            <Card className="border-2 border-orange-200">
+              <CardHeader>
+                <CardTitle className="flex items-center gap-2 text-orange-600">
+                  <TrendingUp className="h-6 w-6" /> Debt Free Date
+                </CardTitle>
+              </CardHeader>
+              <CardContent>
+                <div className="text-center">
+                  <p className="text-4xl font-bold">{format(debtFreeDate, "d MMM yyyy")}</p>
+                  <p className="text-lg text-muted-foreground">{monthsToDebtFree} months away</p>
+                </div>
+                <Progress value={80} className="h-4 mt-3" />
+              </CardContent>
+            </Card>
+          )}
+
           {/* CALENDARIO */}
           <Card>
             <CardHeader>
@@ -1647,33 +1676,6 @@ const Index = () => {
           </AlertDialog>
 
           {/* TABS */}
-          <Tabs defaultValue="overview" className="no-print">
-            <TabsList className="grid w-full grid-cols-5 mb-6">
-              <TabsTrigger value="overview">Overview</TabsTrigger>
-              <TabsTrigger value="income">Income</TabsTrigger>
-              <TabsTrigger value="expenses">Expenses</TabsTrigger>
-              <TabsTrigger value="debts">Debts</TabsTrigger>
-              <TabsTrigger value="savings">Savings</TabsTrigger>
-            </TabsList>
-
-            {/* DEBT FREE */}
-            {debtData.length > 0 && (
-              <Card className="border-2 border-orange-200 mb-6">
-                <CardHeader>
-                  <CardTitle className="flex items-center gap-2 text-orange-600">
-                    <TrendingUp className="h-6 w-6" /> Debt Free Date
-                  </CardTitle>
-                </CardHeader>
-                <CardContent>
-                  <div className="text-center">
-                    <p className="text-4xl font-bold">{format(debtFreeDate, "d MMM yyyy")}</p>
-                    <p className="text-lg text-muted-foreground">{monthsToDebtFree} months away</p>
-                  </div>
-                  <Progress value={80} className="h-4 mt-3" />
-                </CardContent>
-              </Card>
-            )}
-
             <TabsContent value="overview">
               {/* Main Status - Multi-Stage */}
               <div className="text-center py-8">
