@@ -110,6 +110,10 @@ export const translations = {
     recommendedStrategy: "Recommended Strategy",
     payoffOrder: "Suggested Payoff Order",
     potentialSavings: "Potential Interest Savings",
+    priority: "Debt Payoff Strategy",
+    avalanche: "Avalanche (Highest APR First)",
+    snowball: "Snowball (Smallest Balance First)",
+    hybrid: "Hybrid (Balanced Approach)",
     
     // Scenario Simulator
     scenarioSimulator: "What If Scenario Simulator",
@@ -263,6 +267,10 @@ export const translations = {
     recommendedStrategy: "Estrategia Recomendada",
     payoffOrder: "Orden de Pago Sugerido",
     potentialSavings: "Ahorro Potencial en Intereses",
+    priority: "Estrategia de Pago de Deudas",
+    avalanche: "Avalancha (Mayor APR Primero)",
+    snowball: "Bola de Nieve (Menor Saldo Primero)",
+    hybrid: "Híbrido (Enfoque Equilibrado)",
     
     // Scenario Simulator
     scenarioSimulator: "Simulador de Escenarios",
@@ -416,6 +424,10 @@ export const translations = {
     recommendedStrategy: "Estratégia Recomendada",
     payoffOrder: "Ordem de Pagamento Sugerida",
     potentialSavings: "Poupança Potencial em Juros",
+    priority: "Estratégia de Pagamento de Dívidas",
+    avalanche: "Avalanche (Maior APR Primeiro)",
+    snowball: "Bola de Neve (Menor Saldo Primeiro)",
+    hybrid: "Híbrido (Abordagem Equilibrada)",
     
     // Scenario Simulator
     scenarioSimulator: "Simulador de Cenários",
@@ -569,6 +581,10 @@ export const translations = {
     recommendedStrategy: "Zalecana Strategia",
     payoffOrder: "Sugerowana Kolejność Spłat",
     potentialSavings: "Potencjalne Oszczędności na Odsetkach",
+    priority: "Strategia Spłaty Długów",
+    avalanche: "Lawina (Najwyższe APR Najpierw)",
+    snowball: "Kula Śnieżna (Najmniejsze Saldo Najpierw)",
+    hybrid: "Hybrydowa (Zrównoważone Podejście)",
     
     // Scenario Simulator
     scenarioSimulator: "Symulator Scenariuszy",
@@ -696,6 +712,10 @@ export const translations = {
     recommendedStrategy: "Strategie Recomandată",
     payoffOrder: "Ordine de Plată Sugerată",
     potentialSavings: "Economii Potențiale la Dobânzi",
+    priority: "Strategia de Plată a Datoriilor",
+    avalanche: "Avalanșă (Cel Mai Mare APR Întâi)",
+    snowball: "Bulgăre de Zăpadă (Cel Mai Mic Sold Întâi)",
+    hybrid: "Hibrid (Abordare Echilibrată)",
     
     // Scenario Simulator
     scenarioSimulator: "Simulator de Scenarii",
