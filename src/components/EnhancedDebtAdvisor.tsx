@@ -26,19 +26,21 @@ interface EnhancedDebtAdvisorProps {
 
 type PayoffMethod = 'avalanche' | 'snowball' | 'hybrid';
 
-export const EnhancedDebtAdvisor = ({ debts, extraPayment, language }: EnhancedDebtAdvisorProps) => {
+export const EnhancedDebtAdvisor = ({ debts: allDebts, extraPayment, language }: EnhancedDebtAdvisorProps) => {
+  // Filter out debts with zero balance
+  const debts = allDebts.filter(d => d.balance > 0);
+  
   const [selectedDebtId, setSelectedDebtId] = useState<string>("");
   const [customExtraPayment, setCustomExtraPayment] = useState(extraPayment.toString());
   const [payoffMethod, setPayoffMethod] = useState<PayoffMethod>('avalanche');
 
   // Calculate total debt-free date for ALL debts
   const calculateTotalDebtFreeDate = () => {
-    const activeDebts = debts.filter(d => d.balance > 0);
-    if (activeDebts.length === 0) return null;
+    if (debts.length === 0) return null;
     
-    let remainingDebts = [...activeDebts].map(d => ({ ...d }));
+    let remainingDebts = [...debts].map(d => ({ ...d }));
     let month = 0;
-    const monthlyPayment = activeDebts.reduce((sum, d) => sum + d.minimumPayment, 0) + (parseFloat(customExtraPayment) || 0);
+    const monthlyPayment = debts.reduce((sum, d) => sum + d.minimumPayment, 0) + (parseFloat(customExtraPayment) || 0);
     
     // Sort debts by APR (Avalanche method)
     remainingDebts.sort((a, b) => b.apr - a.apr);
@@ -89,10 +91,7 @@ export const EnhancedDebtAdvisor = ({ debts, extraPayment, language }: EnhancedD
   const prioritizeDebts = () => {
     const today = new Date();
     
-    // Filter out debts with zero balance
-    return [...debts]
-      .filter(debt => debt.balance > 0)
-      .sort((a, b) => {
+    return [...debts].sort((a, b) => {
       // Calculate effective APR considering promotional periods
       const getEffectiveAPR = (debt: Debt) => {
         if (debt.promotional_apr !== undefined && debt.promotional_apr_end_date) {
@@ -169,8 +168,7 @@ export const EnhancedDebtAdvisor = ({ debts, extraPayment, language }: EnhancedD
     const extraAmount = parseFloat(customExtraPayment) || 0;
     const today = new Date();
 
-    const activeDebts = debts.filter(d => d.balance > 0);
-    if (activeDebts.length === 0) {
+    if (debts.length === 0) {
       return [language === 'en' 
         ? "No debts registered. You're debt-free!" 
         : "No hay deudas registradas. ¡Estás libre de deudas!"];
@@ -224,8 +222,7 @@ export const EnhancedDebtAdvisor = ({ debts, extraPayment, language }: EnhancedD
       );
     }
 
-    const activeDebtsForCheck = debts.filter(d => d.balance > 0);
-    const highAPRDebts = activeDebtsForCheck.filter(d => {
+    const highAPRDebts = debts.filter(d => {
       const effectiveAPR = d.promotional_apr && d.promotional_apr_end_date && new Date(d.promotional_apr_end_date) > today
         ? d.promotional_apr
         : (d.regular_apr || d.apr);
