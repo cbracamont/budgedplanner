@@ -13,7 +13,12 @@ interface Debt {
   balance: number
   minimum_payment: number
   payment_day: number
+  is_installment?: boolean | null
+  start_date?: string | null
+  end_date?: string | null
+  installment_amount?: number | null
 }
+
 
 Deno.serve(async (req) => {
   // Handle CORS preflight requests
@@ -73,6 +78,24 @@ Deno.serve(async (req) => {
       console.log(`Generating payments for month: ${targetMonthStr}`)
 
       for (const debt of debts as Debt[]) {
+        // Respect schedule limits (start_date / end_date) when provided
+        const targetMonthStart = new Date(targetMonth.getFullYear(), targetMonth.getMonth(), 1)
+        const startMonthStart = debt.start_date
+          ? new Date(new Date(debt.start_date).getFullYear(), new Date(debt.start_date).getMonth(), 1)
+          : null
+        const endMonthStart = debt.end_date
+          ? new Date(new Date(debt.end_date).getFullYear(), new Date(debt.end_date).getMonth(), 1)
+          : null
+
+        if (startMonthStart && targetMonthStart < startMonthStart) {
+          console.log(`Skipping ${debt.name} for ${targetMonthStr} (before start_date ${debt.start_date})`)
+          continue
+        }
+        if (endMonthStart && targetMonthStart > endMonthStart) {
+          console.log(`Skipping ${debt.name} for ${targetMonthStr} (after end_date ${debt.end_date})`)
+          continue
+        }
+
         // Build query to check for existing payment
         let existingQuery = supabaseClient
           .from('payment_tracker')
@@ -89,15 +112,20 @@ Deno.serve(async (req) => {
           existingQuery = existingQuery.is('profile_id', null)
         }
 
-        const { data: existingPayment } = await existingQuery.single()
+        const { data: existingPayment, error: existingError } = await existingQuery.maybeSingle()
+        if (existingError && existingError.code !== 'PGRST116') {
+          console.error(`Error checking existing payment for ${debt.name}:`, existingError)
+        }
 
         if (existingPayment) {
           console.log(`Payment already exists for debt ${debt.name} in ${targetMonthStr}`)
           continue
         }
 
-        // Calculate payment date (payment_day of the target month)
-        const paymentDate = new Date(targetMonth.getFullYear(), targetMonth.getMonth(), debt.payment_day)
+        // Calculate payment date (clamped to valid day in month)
+        const lastDayOfMonth = new Date(targetMonth.getFullYear(), targetMonth.getMonth() + 1, 0).getDate()
+        const day = Math.min(Math.max(1, debt.payment_day), lastDayOfMonth)
+        const paymentDate = new Date(targetMonth.getFullYear(), targetMonth.getMonth(), day)
         const paymentDateStr = paymentDate.toISOString().split('T')[0]
 
         // Determine payment status based on current date
@@ -105,6 +133,9 @@ Deno.serve(async (req) => {
         if (paymentDate <= today) {
           paymentStatus = 'pending' // Will be marked as paid when user actually pays
         }
+
+        // Choose amount based on schedule when applicable
+        const amount = (debt.is_installment && debt.installment_amount) ? debt.installment_amount : debt.minimum_payment
 
         // Create payment tracker entry
         const { error: insertError } = await supabaseClient
@@ -116,7 +147,7 @@ Deno.serve(async (req) => {
             payment_type: 'debt',
             source_id: debt.id,
             source_table: 'debts',
-            amount: debt.minimum_payment,
+            amount,
             payment_status: paymentStatus,
             payment_date: paymentDateStr,
             notes: `Pago automático generado para ${debt.name}`
@@ -130,6 +161,7 @@ Deno.serve(async (req) => {
         totalGenerated++
         console.log(`Created payment for debt ${debt.name} on ${paymentDateStr}`)
       }
+
     }
 
     console.log(`Successfully generated ${totalGenerated} payments`)
