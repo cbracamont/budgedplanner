@@ -28,31 +28,23 @@ import {
   useAddPaymentTracker,
   useUpdatePaymentTracker,
   useDeletePaymentTracker,
+  PaymentTrackerEntry,
 } from "@/hooks/usePaymentTracker";
 import { useIncomeSources, useDebts, useFixedExpenses, useSavingsGoals } from "@/hooks/useFinancialData";
 import { Progress } from "@/components/ui/progress";
 import { formatCurrency } from "@/lib/i18n";
 import { format, startOfMonth, addMonths, subMonths, isPast } from "date-fns";
 
-interface PaymentEntry {
-  id: string;
-  month_year: string;
-  payment_type: "income" | "expense" | "debt" | "savings";
-  amount: number;
-  payment_status: "pending" | "paid" | "partial";
-  payment_date: string;
-  notes?: string;
-  source_id?: string;
-}
 
 interface MonthlyPaymentTrackerProps {
   language: Language;
 }
 
 export const MonthlyPaymentTracker = ({ language }: MonthlyPaymentTrackerProps) => {
+  const { toast } = useToast();
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
-  const [editingEntry, setEditingEntry] = useState<PaymentEntry | null>(null);
+  const [editingEntry, setEditingEntry] = useState<PaymentTrackerEntry | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState<"date" | "amount" | "type" | "status">("date");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
@@ -175,13 +167,19 @@ export const MonthlyPaymentTracker = ({ language }: MonthlyPaymentTrackerProps) 
   const sortedPayments = useMemo(() => {
     let sorted = [...payments];
     if (sortBy === "amount") sorted.sort((a, b) => b.amount - a.amount);
-    if (sortBy === "date") sorted.sort((a, b) => new Date(b.payment_date) - new Date(a.payment_date));
+    if (sortBy === "date") sorted.sort((a, b) => {
+      const dateA = a.payment_date ? new Date(a.payment_date).getTime() : 0;
+      const dateB = b.payment_date ? new Date(b.payment_date).getTime() : 0;
+      return dateB - dateA;
+    });
     if (sortOrder === "asc") sorted.reverse();
-    return sorted.filter(
-      (payment) =>
-        payment.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-        payment.notes.toLowerCase().includes(searchQuery.toLowerCase()),
-    );
+    return sorted.filter((payment) => {
+      const searchLower = searchQuery.toLowerCase();
+      return (
+        payment.payment_type.toLowerCase().includes(searchLower) ||
+        (payment.notes && payment.notes.toLowerCase().includes(searchLower))
+      );
+    });
   }, [payments, searchQuery, sortBy, sortOrder]);
 
   // Monthly totals
@@ -266,7 +264,7 @@ export const MonthlyPaymentTracker = ({ language }: MonthlyPaymentTrackerProps) 
     setEditingEntry(null);
   };
 
-  const handleEdit = (entry: PaymentEntry) => {
+  const handleEdit = (entry: PaymentTrackerEntry) => {
     setEditingEntry(entry);
     setFormData({
       payment_type: entry.payment_type,
@@ -471,7 +469,7 @@ export const MonthlyPaymentTracker = ({ language }: MonthlyPaymentTrackerProps) 
                   <span className="text-lg font-bold">{formatCurrency(payment.amount)}</span>
                   <div className="flex gap-1">
                     <Button variant="ghost" size="icon" onClick={() => handleEdit(payment)}>
-                      <Pencil className="h-4 w-4" />
+                      <Edit2 className="h-4 w-4" />
                     </Button>
                     <Button variant="ghost" size="icon" onClick={() => deleteMutation.mutate(payment.id)}>
                       <Trash2 className="h-4 w-4 text-destructive" />
