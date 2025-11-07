@@ -1680,7 +1680,8 @@ const DebtPlanner = ({
     const totalIncome = incomeData.reduce((s, i) => s + i.amount, 0);
     const totalFixed = fixedExpensesData.reduce((s, e) => s + e.amount, 0);
     const totalVariable = variableExpensesData.reduce((s, e) => s + e.amount, 0);
-    const totalDebtPayment = debtData.reduce((s, d) => s + d.minimum_payment, 0);
+    const activeDebts = debtData.filter(d => d.balance > 0 && d.minimum_payment > 0);
+    const totalDebtPayment = activeDebts.reduce((s, d) => s + d.minimum_payment, 0);
     const totalExpenses = totalFixed + totalVariable + totalDebtPayment;
     const cashFlow = totalIncome - totalExpenses;
     const savingsTotal = savings?.emergency_fund || 0;
@@ -1695,14 +1696,16 @@ const DebtPlanner = ({
     };
   }, [incomeData, debtData, fixedExpensesData, variableExpensesData, savings]);
   const debtStrategy = useMemo(() => {
-    if (debtData.length === 0) return null;
+    const activeDebts = debtData.filter(d => d.balance > 0 && d.minimum_payment > 0);
+    if (activeDebts.length === 0) return null;
     const extraForDebt = Math.max(0, cashFlow - monthlySavings);
-    const sortFn = debtMethod === "avalanche" ? (a, b) => b.apr - a.apr : debtMethod === "snowball" ? (a, b) => a.balance - b.balance : (a, b) => b.apr * 0.6 + b.balance / 1000 * 0.4 - (a.apr * 0.6 + a.balance / 1000 * 0.4);
-    const sortedDebts = [...debtData].sort(sortFn);
-    let remainingBalances = sortedDebts.map(d => ({
-      ...d,
-      balance: d.balance
-    }));
+    const sortFn = debtMethod === "avalanche"
+      ? (a, b) => b.apr - a.apr
+      : debtMethod === "snowball"
+      ? (a, b) => a.balance - b.balance
+      : (a, b) => b.apr * 0.6 + (b.balance / 1000) * 0.4 - (a.apr * 0.6 + (a.balance / 1000) * 0.4);
+    const sortedDebts = [...activeDebts].sort(sortFn);
+    let remainingBalances = sortedDebts.map(d => ({ ...d, balance: d.balance }));
     let months = 0;
     let totalInterest = 0;
     let allocation = sortedDebts.map(d => ({
@@ -1727,14 +1730,7 @@ const DebtPlanner = ({
       months++;
     }
     const monthsToEmergency = monthlySavings > 0 ? ((totalExpenses * 3 - savingsTotal) / monthlySavings).toFixed(1) : "N/A";
-    return {
-      sortedDebts,
-      allocation,
-      months,
-      totalInterest: Math.round(totalInterest),
-      monthsToEmergency,
-      extraForDebt
-    };
+    return { sortedDebts, allocation, months, totalInterest: Math.round(totalInterest), monthsToEmergency, extraForDebt };
   }, [debtData, cashFlow, monthlySavings, debtMethod, totalExpenses, savingsTotal]);
   if (!debtStrategy) return <Card>
         <CardHeader>

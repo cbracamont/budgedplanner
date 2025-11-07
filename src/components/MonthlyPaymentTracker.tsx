@@ -313,7 +313,7 @@ export const MonthlyPaymentTracker = ({ language }: MonthlyPaymentTrackerProps) 
                       <SelectValue placeholder={language === "en" ? "Choose a debt..." : language === "es" ? "Elige una deuda..." : "Wybierz dług..."} />
                     </SelectTrigger>
                     <SelectContent>
-                      {debts.map((debt) => (
+                      {debts.filter(d => d.balance > 0).map((debt) => (
                         <SelectItem key={debt.id} value={debt.id}>
                           {debt.name} - {formatCurrency(debt.balance)}
                         </SelectItem>
