@@ -82,7 +82,9 @@ export const MonthlyPaymentTracker = ({ language }: MonthlyPaymentTrackerProps) 
       cancel: "Cancel",
       delete: "Delete",
       edit: "Edit",
-      totalPaid: "Total Paid",
+      totalPaid: "Total Paid This Month",
+      expectedThisMonth: "Expected This Month",
+      totalDebtBalance: "Total Debt Balance",
       remaining: "Remaining",
       confirmDelete: "Are you sure you want to delete this payment?",
     },
@@ -100,7 +102,9 @@ export const MonthlyPaymentTracker = ({ language }: MonthlyPaymentTrackerProps) 
       cancel: "Cancelar",
       delete: "Eliminar",
       edit: "Editar",
-      totalPaid: "Total Pagado",
+      totalPaid: "Total Pagado Este Mes",
+      expectedThisMonth: "Esperado Este Mes",
+      totalDebtBalance: "Balance Total de Deudas",
       remaining: "Restante",
       confirmDelete: "¿Estás seguro de que quieres eliminar este pago?",
     },
@@ -118,17 +122,35 @@ export const MonthlyPaymentTracker = ({ language }: MonthlyPaymentTrackerProps) 
       cancel: "Anuluj",
       delete: "Usuń",
       edit: "Edytuj",
-      totalPaid: "Razem Zapłacone",
+      totalPaid: "Razem Zapłacone W Tym Miesiącu",
+      expectedThisMonth: "Oczekiwane W Tym Miesiącu",
+      totalDebtBalance: "Całkowite Saldo Długów",
       remaining: "Pozostało",
       confirmDelete: "Czy na pewno chcesz usunąć tę płatność?",
     },
   }[language];
 
-  // Monthly totals
+  // Monthly totals - exhaustive calculations
   const monthlyTotals = useMemo(() => {
-    const totalPaid = payments.reduce((sum, p) => sum + p.amount, 0);
-    return { totalPaid };
-  }, [payments]);
+    // Total paid this specific month from payment_tracker
+    const totalPaidThisMonth = payments
+      .filter(p => p.payment_status === "paid")
+      .reduce((sum, p) => sum + p.amount, 0);
+    
+    // Expected payments this month (sum of minimum_payment for active debts)
+    const expectedThisMonth = debts
+      .filter(d => d.balance > 0 && d.minimum_payment > 0)
+      .reduce((sum, d) => sum + d.minimum_payment, 0);
+    
+    // Total debt balance across all debts
+    const totalDebtBalance = debts.reduce((sum, d) => sum + d.balance, 0);
+    
+    return { 
+      totalPaidThisMonth, 
+      expectedThisMonth, 
+      totalDebtBalance 
+    };
+  }, [payments, debts]);
 
   const handleSave = async () => {
     if (!formData.amount || parseFloat(formData.amount) <= 0) {
@@ -364,15 +386,23 @@ export const MonthlyPaymentTracker = ({ language }: MonthlyPaymentTrackerProps) 
       </CardHeader>
       <CardContent className="pt-6">
         {/* Summary Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
-          <div className="p-4 rounded-lg bg-gradient-to-br from-primary/10 to-primary/5 border border-primary/20">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+          <div className="p-4 rounded-lg bg-gradient-to-br from-green-500/10 to-green-500/5 border border-green-500/20">
             <p className="text-sm text-muted-foreground mb-1">{t.totalPaid}</p>
-            <p className="text-2xl font-bold text-primary">{formatCurrency(monthlyTotals.totalPaid)}</p>
+            <p className="text-2xl font-bold text-green-600 dark:text-green-400">
+              {formatCurrency(monthlyTotals.totalPaidThisMonth)}
+            </p>
           </div>
-          <div className="p-4 rounded-lg bg-gradient-to-br from-muted/50 to-muted/20 border border-border">
-            <p className="text-sm text-muted-foreground mb-1">{t.remaining}</p>
-            <p className="text-2xl font-bold">
-              {formatCurrency(debts.reduce((sum, d) => sum + d.balance, 0))}
+          <div className="p-4 rounded-lg bg-gradient-to-br from-blue-500/10 to-blue-500/5 border border-blue-500/20">
+            <p className="text-sm text-muted-foreground mb-1">{t.expectedThisMonth}</p>
+            <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+              {formatCurrency(monthlyTotals.expectedThisMonth)}
+            </p>
+          </div>
+          <div className="p-4 rounded-lg bg-gradient-to-br from-orange-500/10 to-orange-500/5 border border-orange-500/20">
+            <p className="text-sm text-muted-foreground mb-1">{t.totalDebtBalance}</p>
+            <p className="text-2xl font-bold text-orange-600 dark:text-orange-400">
+              {formatCurrency(monthlyTotals.totalDebtBalance)}
             </p>
           </div>
         </div>
