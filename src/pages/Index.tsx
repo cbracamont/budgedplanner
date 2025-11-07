@@ -800,7 +800,7 @@ const Index = () => {
               </h1>
               <p className="text-muted-foreground">Hi, {activeProfile.name}!</p>
             </div>
-            <div className="flex items-center gap-3">
+            <div className="hidden md:flex items-center gap-3">
               <LanguageToggle language={language} onLanguageChange={setLanguage} />
               <ProfileSelector language={language} />
               <Button variant="outline" size="icon" onClick={() => setTheme(theme === "dark" ? "light" : "dark")}>
