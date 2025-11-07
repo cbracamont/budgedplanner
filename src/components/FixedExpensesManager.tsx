@@ -16,7 +16,7 @@ interface FixedExpense {
   amount: number;
   payment_day: number;
   frequency: string;
-  frequency_type: 'monthly' | 'annual';
+  frequency_type: 'monthly' | 'quarterly' | 'semiannual' | 'annual';
   payment_month?: number | null;
 }
 
@@ -41,7 +41,7 @@ export const FixedExpensesManager = ({ language, onExpensesChange }: FixedExpens
     name: "",
     amount: "",
     payment_day: "1",
-    frequency_type: "monthly" as 'monthly' | 'annual',
+    frequency_type: "monthly" as 'monthly' | 'quarterly' | 'semiannual' | 'annual',
     payment_month: null as number | null
   });
   const [editingExpense, setEditingExpense] = useState<{
@@ -49,7 +49,7 @@ export const FixedExpensesManager = ({ language, onExpensesChange }: FixedExpens
     name: string;
     amount: number;
     payment_day: number;
-    frequency_type: 'monthly' | 'annual';
+    frequency_type: 'monthly' | 'quarterly' | 'semiannual' | 'annual';
     payment_month: number | null;
   } | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
@@ -57,11 +57,23 @@ export const FixedExpensesManager = ({ language, onExpensesChange }: FixedExpens
   useEffect(() => {
     const currentMonth = new Date().getMonth() + 1;
     const total = expenses.reduce((sum, expense) => {
-      // Only include annual expenses if the current month matches their payment month
-      if (expense.frequency_type === 'annual') {
+      // Only include expenses if they apply to the current month
+      if (expense.frequency_type === 'monthly') {
+        return sum + expense.amount;
+      } else if (expense.frequency_type === 'quarterly') {
+        // Quarterly: payment_month indicates the first month (e.g., 1 = Jan, Apr, Jul, Oct)
+        const firstMonth = expense.payment_month || 1;
+        const quarterlyMonths = [firstMonth, (firstMonth + 3 - 1) % 12 + 1, (firstMonth + 6 - 1) % 12 + 1, (firstMonth + 9 - 1) % 12 + 1];
+        return sum + (quarterlyMonths.includes(currentMonth) ? expense.amount : 0);
+      } else if (expense.frequency_type === 'semiannual') {
+        // Semiannual: payment_month indicates the first month (e.g., 1 = Jan and Jul)
+        const firstMonth = expense.payment_month || 1;
+        const semiannualMonths = [firstMonth, (firstMonth + 6 - 1) % 12 + 1];
+        return sum + (semiannualMonths.includes(currentMonth) ? expense.amount : 0);
+      } else if (expense.frequency_type === 'annual') {
         return sum + (expense.payment_month === currentMonth ? expense.amount : 0);
       }
-      return sum + expense.amount;
+      return sum;
     }, 0);
     onExpensesChange?.(total);
   }, [expenses, onExpensesChange]);
@@ -76,7 +88,7 @@ export const FixedExpensesManager = ({ language, onExpensesChange }: FixedExpens
       payment_day: parseInt(newExpense.payment_day),
       frequency: "monthly",
       frequency_type: newExpense.frequency_type,
-      payment_month: newExpense.frequency_type === 'annual' ? newExpense.payment_month : null
+      payment_month: newExpense.frequency_type !== 'monthly' ? newExpense.payment_month : null
     }, {
       onSuccess: () => {
         setNewExpense({ name: "", amount: "", payment_day: "1", frequency_type: "monthly", payment_month: null });
@@ -98,7 +110,7 @@ export const FixedExpensesManager = ({ language, onExpensesChange }: FixedExpens
       amount: editingExpense.amount,
       payment_day: editingExpense.payment_day,
       frequency_type: editingExpense.frequency_type,
-      payment_month: editingExpense.frequency_type === 'annual' ? editingExpense.payment_month : null
+      payment_month: editingExpense.frequency_type !== 'monthly' ? editingExpense.payment_month : null
     }, {
       onSuccess: () => {
         setIsEditDialogOpen(false);
@@ -153,7 +165,7 @@ export const FixedExpensesManager = ({ language, onExpensesChange }: FixedExpens
               </Label>
               <Select
                 value={newExpense.frequency_type}
-                onValueChange={(value: 'monthly' | 'annual') => 
+                onValueChange={(value: 'monthly' | 'quarterly' | 'semiannual' | 'annual') => 
                   setNewExpense({ ...newExpense, frequency_type: value, payment_month: value === 'monthly' ? null : newExpense.payment_month })
                 }
               >
@@ -162,14 +174,19 @@ export const FixedExpensesManager = ({ language, onExpensesChange }: FixedExpens
                 </SelectTrigger>
                 <SelectContent>
                   <SelectItem value="monthly">{language === 'en' ? 'Monthly' : 'Mensual'}</SelectItem>
+                  <SelectItem value="quarterly">{language === 'en' ? 'Quarterly' : 'Trimestral'}</SelectItem>
+                  <SelectItem value="semiannual">{language === 'en' ? 'Semiannual' : 'Semestral'}</SelectItem>
                   <SelectItem value="annual">{language === 'en' ? 'Annual' : 'Anual'}</SelectItem>
                 </SelectContent>
               </Select>
             </div>
-            {newExpense.frequency_type === 'annual' && (
+            {newExpense.frequency_type !== 'monthly' && (
               <div className="space-y-2">
                 <Label htmlFor="payment-month">
-                  {language === 'en' ? 'Payment Month' : 'Mes de Pago'}
+                  {newExpense.frequency_type === 'annual' 
+                    ? (language === 'en' ? 'Payment Month' : 'Mes de Pago')
+                    : (language === 'en' ? 'First Payment Month' : 'Primer Mes de Pago')
+                  }
                 </Label>
                 <Select
                   value={newExpense.payment_month?.toString() || ""}
@@ -215,9 +232,11 @@ export const FixedExpensesManager = ({ language, onExpensesChange }: FixedExpens
               <div className="flex-1">
                 <p className="font-medium">{expense.name}</p>
                 <p className="text-sm text-muted-foreground">
-                  £{expense.amount.toFixed(2)} - {expense.frequency_type === 'annual' 
+                  £{expense.amount.toFixed(2)} - {expense.frequency_type !== 'monthly' 
                     ? `${monthNames[language][expense.payment_month! - 1]}, ${language === 'en' ? 'Day' : 'Día'} ${expense.payment_day}`
                     : `${language === 'en' ? 'Day' : 'Día'} ${expense.payment_day}`}
+                  {expense.frequency_type === 'quarterly' && ` (${language === 'en' ? 'Quarterly' : 'Trimestral'})`}
+                  {expense.frequency_type === 'semiannual' && ` (${language === 'en' ? 'Semiannual' : 'Semestral'})`}
                   {expense.frequency_type === 'annual' && ` (${language === 'en' ? 'Annual' : 'Anual'})`}
                 </p>
               </div>
@@ -236,7 +255,7 @@ export const FixedExpensesManager = ({ language, onExpensesChange }: FixedExpens
                           name: expense.name,
                           amount: expense.amount,
                           payment_day: expense.payment_day,
-                          frequency_type: expense.frequency_type as 'monthly' | 'annual',
+                          frequency_type: expense.frequency_type as 'monthly' | 'quarterly' | 'semiannual' | 'annual',
                           payment_month: expense.payment_month
                         });
                         setIsEditDialogOpen(true);
@@ -275,7 +294,7 @@ export const FixedExpensesManager = ({ language, onExpensesChange }: FixedExpens
                           <Label htmlFor="edit-frequency-type">{language === 'en' ? 'Frequency' : 'Frecuencia'}</Label>
                           <Select
                             value={editingExpense.frequency_type}
-                            onValueChange={(value: 'monthly' | 'annual') => 
+                            onValueChange={(value: 'monthly' | 'quarterly' | 'semiannual' | 'annual') => 
                               setEditingExpense({...editingExpense, frequency_type: value, payment_month: value === 'monthly' ? null : editingExpense.payment_month})
                             }
                           >
@@ -284,13 +303,20 @@ export const FixedExpensesManager = ({ language, onExpensesChange }: FixedExpens
                             </SelectTrigger>
                             <SelectContent>
                               <SelectItem value="monthly">{language === 'en' ? 'Monthly' : 'Mensual'}</SelectItem>
+                              <SelectItem value="quarterly">{language === 'en' ? 'Quarterly' : 'Trimestral'}</SelectItem>
+                              <SelectItem value="semiannual">{language === 'en' ? 'Semiannual' : 'Semestral'}</SelectItem>
                               <SelectItem value="annual">{language === 'en' ? 'Annual' : 'Anual'}</SelectItem>
                             </SelectContent>
                           </Select>
                         </div>
-                        {editingExpense.frequency_type === 'annual' && (
+                        {editingExpense.frequency_type !== 'monthly' && (
                           <div className="space-y-2">
-                            <Label htmlFor="edit-payment-month">{language === 'en' ? 'Payment Month' : 'Mes de Pago'}</Label>
+                            <Label htmlFor="edit-payment-month">
+                              {editingExpense.frequency_type === 'annual'
+                                ? (language === 'en' ? 'Payment Month' : 'Mes de Pago')
+                                : (language === 'en' ? 'First Payment Month' : 'Primer Mes de Pago')
+                              }
+                            </Label>
                             <Select
                               value={editingExpense.payment_month?.toString() || ""}
                               onValueChange={(value) => setEditingExpense({...editingExpense, payment_month: parseInt(value)})}
