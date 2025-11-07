@@ -436,19 +436,44 @@ const Index = () => {
           }
         });
 
-        // GASTOS FIJOS - Día de pago
+        // GASTOS FIJOS - Respetar frecuencia
         fixedExpensesData.forEach(exp => {
-          const day = exp.payment_day || 1;
-          const lastDayOfMonth = new Date(year, month + 1, 0).getDate();
-          const date = new Date(year, month, Math.min(day, lastDayOfMonth));
-          allEvents.push({
-            id: `fix-${exp.id}-${year}-${month}`,
-            date: format(date, "yyyy-MM-dd"),
-            type: "fixed",
-            name: exp.name,
-            amount: exp.amount,
-            recurring: true
-          });
+          // Determinar si este gasto debe mostrarse en este mes
+          const shouldInclude = (() => {
+            const monthNum = month + 1; // 1-based month
+            
+            if (exp.frequency_type === 'monthly') {
+              return true;
+            } else if (exp.frequency_type === 'quarterly') {
+              // Quarterly: payment_month indica el primer mes (ej: 1 = Ene, Abr, Jul, Oct)
+              const firstMonth = exp.payment_month || 1;
+              const quarterlyMonths = [firstMonth, (firstMonth + 3 - 1) % 12 + 1, (firstMonth + 6 - 1) % 12 + 1, (firstMonth + 9 - 1) % 12 + 1];
+              return quarterlyMonths.includes(monthNum);
+            } else if (exp.frequency_type === 'semiannual') {
+              // Semiannual: payment_month indica el primer mes (ej: 1 = Ene y Jul)
+              const firstMonth = exp.payment_month || 1;
+              const semiannualMonths = [firstMonth, (firstMonth + 6 - 1) % 12 + 1];
+              return semiannualMonths.includes(monthNum);
+            } else if (exp.frequency_type === 'annual') {
+              // Annual: solo en el mes especificado
+              return exp.payment_month === monthNum;
+            }
+            return true;
+          })();
+
+          if (shouldInclude) {
+            const day = exp.payment_day || 1;
+            const lastDayOfMonth = new Date(year, month + 1, 0).getDate();
+            const date = new Date(year, month, Math.min(day, lastDayOfMonth));
+            allEvents.push({
+              id: `fix-${exp.id}-${year}-${month}`,
+              date: format(date, "yyyy-MM-dd"),
+              type: "fixed",
+              name: exp.name,
+              amount: exp.amount,
+              recurring: exp.frequency_type === 'monthly'
+            });
+          }
         });
 
         // DEUDAS - Día 15
