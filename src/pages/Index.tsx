@@ -16,6 +16,8 @@ import { VariableExpensesManager } from "@/components/VariableExpensesManager";
 import { VariableIncomeManager } from "@/components/VariableIncomeManager";
 import { SavingsManager } from "@/components/SavingsManager";
 import { SavingsGoalsManager } from "@/components/SavingsGoalsManager";
+import { MonthlyPaymentTracker } from "@/components/MonthlyPaymentTracker";
+import { GeneralSavingsTracker } from "@/components/GeneralSavingsTracker";
 import { LanguageToggle } from "@/components/LanguageToggle";
 import { ProfileSelector } from "@/components/ProfileSelector";
 import { MobileMenu } from "@/components/MobileMenu";
@@ -1519,7 +1521,7 @@ const Index = () => {
                     <div className="text-5xl font-bold text-purple-600 dark:text-purple-400 mb-2">
                       {formatCurrency(savingsTotal)}
                     </div>
-                    <div className="grid grid-cols-2 gap-4 mt-4">
+                    <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mt-4">
                       <div className="bg-white/50 dark:bg-black/20 rounded-lg p-3">
                         <p className="text-sm text-muted-foreground">Emergency Fund</p>
                         <p className="text-xl font-bold text-green-600">
@@ -1527,14 +1529,26 @@ const Index = () => {
                         </p>
                       </div>
                       <div className="bg-white/50 dark:bg-black/20 rounded-lg p-3">
-                        <p className="text-sm text-muted-foreground">Goals Saved</p>
+                        <p className="text-sm text-muted-foreground">General Savings</p>
                         <p className="text-xl font-bold text-blue-600">
+                          {formatCurrency(savings?.total_accumulated || 0)}
+                        </p>
+                      </div>
+                      <div className="bg-white/50 dark:bg-black/20 rounded-lg p-3">
+                        <p className="text-sm text-muted-foreground">Goals Saved</p>
+                        <p className="text-xl font-bold text-purple-600">
                           {formatCurrency(savingsGoalsData.reduce((s, g) => s + (g.current_amount || 0), 0))}
                         </p>
                       </div>
                     </div>
                   </CardContent>
                 </Card>
+
+                {/* Monthly Payment Tracker */}
+                <MonthlyPaymentTracker language={language} />
+
+                {/* General Savings Tracker */}
+                <GeneralSavingsTracker language={language} />
 
                 {/* Emergency Fund Card */}
                 <Card>

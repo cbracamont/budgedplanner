@@ -581,6 +581,54 @@ export type Database = {
           },
         ]
       }
+      payment_tracker: {
+        Row: {
+          amount: number
+          created_at: string
+          id: string
+          month_year: string
+          notes: string | null
+          payment_date: string | null
+          payment_status: string
+          payment_type: string
+          profile_id: string | null
+          source_id: string | null
+          source_table: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          amount: number
+          created_at?: string
+          id?: string
+          month_year: string
+          notes?: string | null
+          payment_date?: string | null
+          payment_status?: string
+          payment_type: string
+          profile_id?: string | null
+          source_id?: string | null
+          source_table?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          amount?: number
+          created_at?: string
+          id?: string
+          month_year?: string
+          notes?: string | null
+          payment_date?: string | null
+          payment_status?: string
+          payment_type?: string
+          profile_id?: string | null
+          source_id?: string | null
+          source_table?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       savings: {
         Row: {
           created_at: string
