@@ -1731,7 +1731,7 @@ const DebtPlanner = ({
   return <div className="space-y-6">
       <Card></Card>
 
-      
+      <Card></Card>
 
       <Card>
         <CardHeader>
