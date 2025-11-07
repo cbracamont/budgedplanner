@@ -1005,7 +1005,7 @@ const Index = () => {
                 </Card>}
 
               {/* DEBT FREE */}
-              {debtData.length > 0 && <Card className="border-2 border-gray-200 border-gray-200 \n">
+              {debtData.length > 0 && <Card className="border-2 rounded-none rounded-bl-none \\n bg-[#181a22] rounded-none">
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2 text-orange-600">
                       <TrendingUp className="h-6 w-6" /> Debt Free Date
@@ -1021,7 +1021,7 @@ const Index = () => {
                 </Card>}
 
               {/* PAYMENT TIMELINE - Next 3 Weeks */}
-              <Card>
+              <Card className="rounded">
                 <CardHeader className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                   <CardTitle className="flex items-center gap-2">
                     <Calendar className="h-5 w-5" />
