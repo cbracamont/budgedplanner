@@ -6,6 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Users, Copy, Check, LogOut, UserCheck, UserX } from "lucide-react";
 import { useMyHousehold, useHouseholdMembers, useCreateHousehold, useJoinHousehold, useLeaveHousehold } from "@/hooks/useHousehold";
 import { useApproveHouseholdMember, useRejectHouseholdMember } from "@/hooks/useHouseholdApprovals";
+import { useIsHouseholdOwner } from "@/hooks/useHouseholdRole";
 import { getTranslation, Language } from "@/lib/i18n";
 import { householdSchema } from "@/components/validation/schemas";
 import { toast } from "sonner";
@@ -22,6 +23,7 @@ export const HouseholdManager = ({ language }: HouseholdManagerProps) => {
 
   const myHousehold = useMyHousehold();
   const members = useHouseholdMembers(myHousehold.data?.household_id);
+  const isOwner = useIsHouseholdOwner(myHousehold.data?.household_id);
   const createHousehold = useCreateHousehold();
   const joinHousehold = useJoinHousehold();
   const leaveHousehold = useLeaveHousehold();
@@ -34,7 +36,7 @@ export const HouseholdManager = ({ language }: HouseholdManagerProps) => {
       toast.error(result.error.errors[0].message);
       return;
     }
-    createHousehold.mutate({ displayName });
+    createHousehold.mutate(displayName);
     setDisplayName("");
     setMode(null);
   };
@@ -108,10 +110,10 @@ export const HouseholdManager = ({ language }: HouseholdManagerProps) => {
                     <div>
                       <div className="font-medium">{member.display_name}</div>
                       <div className="text-xs text-muted-foreground">
-                        {member.role} {member.status !== 'approved' && `(${member.status})`}
+                        {member.status !== 'approved' && `(${member.status})`}
                       </div>
                     </div>
-                    {myHousehold.data.role === 'owner' && member.status === 'pending' && (
+                    {isOwner && member.status === 'pending' && (
                       <div className="flex gap-2">
                         <Button
                           size="sm"

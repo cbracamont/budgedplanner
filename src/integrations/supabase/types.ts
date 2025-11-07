@@ -423,7 +423,6 @@ export type Database = {
           id: string
           invited_by: string | null
           joined_at: string
-          role: string
           status: string
           updated_at: string
           user_id: string
@@ -435,7 +434,6 @@ export type Database = {
           id?: string
           invited_by?: string | null
           joined_at?: string
-          role?: string
           status?: string
           updated_at?: string
           user_id: string
@@ -447,8 +445,34 @@ export type Database = {
           id?: string
           invited_by?: string | null
           joined_at?: string
-          role?: string
           status?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
+      household_user_roles: {
+        Row: {
+          created_at: string
+          household_id: string
+          id: string
+          role: Database["public"]["Enums"]["household_role"]
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          household_id: string
+          id?: string
+          role?: Database["public"]["Enums"]["household_role"]
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          household_id?: string
+          id?: string
+          role?: Database["public"]["Enums"]["household_role"]
           updated_at?: string
           user_id?: string
         }
@@ -770,13 +794,25 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      has_household_role: {
+        Args: {
+          _household_id: string
+          _role: Database["public"]["Enums"]["household_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
       is_household_member: {
+        Args: { _household_id: string; _user_id: string }
+        Returns: boolean
+      }
+      is_household_owner: {
         Args: { _household_id: string; _user_id: string }
         Returns: boolean
       }
     }
     Enums: {
-      [_ in never]: never
+      household_role: "owner" | "member"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -903,6 +939,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      household_role: ["owner", "member"],
+    },
   },
 } as const

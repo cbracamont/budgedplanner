@@ -6,13 +6,21 @@ export interface HouseholdMember {
   id: string;
   household_id: string;
   user_id: string;
-  role: string;
   display_name: string | null;
   invited_by: string | null;
   joined_at: string;
   created_at: string;
   updated_at: string;
   status: string;
+}
+
+export interface HouseholdUserRole {
+  id: string;
+  household_id: string;
+  user_id: string;
+  role: 'owner' | 'member';
+  created_at: string;
+  updated_at: string;
 }
 
 export const useHouseholdMembers = (householdId?: string) => {
@@ -62,48 +70,56 @@ export const useCreateHousehold = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ displayName }: { displayName: string }) => {
+    mutationFn: async (displayName: string) => {
       const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("User not authenticated");
+      if (!user) throw new Error("No user found");
 
       // Check if user is already in a household
       const { data: existingMembership } = await supabase
         .from("household_members")
-        .select("*")
+        .select("id")
         .eq("user_id", user.id)
-        .maybeSingle();
-
-      if (existingMembership) {
-        throw new Error("Ya perteneces a un hogar. Debes salir primero antes de crear uno nuevo.");
-      }
-
-      const householdId = crypto.randomUUID();
-
-      const { data, error } = await supabase
-        .from("household_members")
-        .insert([{
-          household_id: householdId,
-          user_id: user.id,
-          role: "owner",
-          display_name: displayName,
-        }])
-        .select()
         .single();
 
-      if (error) throw error;
-      return data;
+      if (existingMembership) {
+        throw new Error("Ya eres miembro de un hogar");
+      }
+
+      // Create household ID
+      const householdId = crypto.randomUUID();
+
+      // Insert household membership
+      const { error: memberError } = await supabase
+        .from("household_members")
+        .insert({
+          household_id: householdId,
+          user_id: user.id,
+          display_name: displayName,
+          status: 'approved', // Creator is auto-approved
+        });
+
+      if (memberError) throw memberError;
+
+      // Assign owner role
+      const { error: roleError } = await supabase
+        .from("household_user_roles")
+        .insert({
+          household_id: householdId,
+          user_id: user.id,
+          role: 'owner',
+        });
+
+      if (roleError) throw roleError;
+
+      return householdId;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["my-household"] });
       queryClient.invalidateQueries({ queryKey: ["household-members"] });
       toast.success("Hogar creado exitosamente");
     },
-    onError: (error: Error) => {
-      if (error.message.includes("Ya perteneces")) {
-        toast.error(error.message);
-      } else {
-        toast.error("Error al crear el hogar");
-      }
+    onError: () => {
+      toast.error("Error al crear hogar");
     },
   });
 };
@@ -132,7 +148,6 @@ export const useJoinHousehold = () => {
         .insert([{
           household_id: householdId,
           user_id: user.id,
-          role: "member",
           display_name: displayName,
           status: "pending",
         }])
