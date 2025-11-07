@@ -275,6 +275,16 @@ const Index = () => {
     data: savings
   } = useSavings();
 
+  const [currentWeekOffset, setCurrentWeekOffset] = useState(0);
+
+  const handlePrevWeek = () => {
+    setCurrentWeekOffset(prev => prev - 1);
+  };
+
+  const handleNextWeek = () => {
+    setCurrentWeekOffset(prev => prev + 1);
+  };
+
   // Fetch variable income separately
   const {
     data: variableIncomeData = []
