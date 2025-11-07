@@ -33,11 +33,12 @@ export const EnhancedDebtAdvisor = ({ debts, extraPayment, language }: EnhancedD
 
   // Calculate total debt-free date for ALL debts
   const calculateTotalDebtFreeDate = () => {
-    if (debts.length === 0) return null;
+    const activeDebts = debts.filter(d => d.balance > 0);
+    if (activeDebts.length === 0) return null;
     
-    let remainingDebts = [...debts].map(d => ({ ...d }));
+    let remainingDebts = [...activeDebts].map(d => ({ ...d }));
     let month = 0;
-    const monthlyPayment = debts.reduce((sum, d) => sum + d.minimumPayment, 0) + (parseFloat(customExtraPayment) || 0);
+    const monthlyPayment = activeDebts.reduce((sum, d) => sum + d.minimumPayment, 0) + (parseFloat(customExtraPayment) || 0);
     
     // Sort debts by APR (Avalanche method)
     remainingDebts.sort((a, b) => b.apr - a.apr);
@@ -88,7 +89,10 @@ export const EnhancedDebtAdvisor = ({ debts, extraPayment, language }: EnhancedD
   const prioritizeDebts = () => {
     const today = new Date();
     
-    return [...debts].sort((a, b) => {
+    // Filter out debts with zero balance
+    return [...debts]
+      .filter(debt => debt.balance > 0)
+      .sort((a, b) => {
       // Calculate effective APR considering promotional periods
       const getEffectiveAPR = (debt: Debt) => {
         if (debt.promotional_apr !== undefined && debt.promotional_apr_end_date) {
@@ -165,7 +169,8 @@ export const EnhancedDebtAdvisor = ({ debts, extraPayment, language }: EnhancedD
     const extraAmount = parseFloat(customExtraPayment) || 0;
     const today = new Date();
 
-    if (debts.length === 0) {
+    const activeDebts = debts.filter(d => d.balance > 0);
+    if (activeDebts.length === 0) {
       return [language === 'en' 
         ? "No debts registered. You're debt-free!" 
         : "No hay deudas registradas. ¡Estás libre de deudas!"];
@@ -219,7 +224,8 @@ export const EnhancedDebtAdvisor = ({ debts, extraPayment, language }: EnhancedD
       );
     }
 
-    const highAPRDebts = debts.filter(d => {
+    const activeDebtsForCheck = debts.filter(d => d.balance > 0);
+    const highAPRDebts = activeDebtsForCheck.filter(d => {
       const effectiveAPR = d.promotional_apr && d.promotional_apr_end_date && new Date(d.promotional_apr_end_date) > today
         ? d.promotional_apr
         : (d.regular_apr || d.apr);
