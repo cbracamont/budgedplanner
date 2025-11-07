@@ -1068,16 +1068,16 @@ const Index = () => {
                         {/* Vertical Timeline */}
                         <div className="relative space-y-4">
                           {/* Vertical line */}
-                          <div className="absolute left-6 top-0 bottom-0 w-0.5 bg-muted" />
+                          <div className="absolute left-6 top-0 bottom-0 w-0.5 bg-muted opacity-60" />
                           {upcomingEvents.map((event, idx) => {
                         const eventDate = new Date(event.date);
                         const isToday = isSameDay(eventDate, today);
                         const isPast = eventDate < today;
-                        return <div key={event.id} className={`relative pl-8 ${isPast ? 'opacity-50' : ''}`}>
+                        return <div key={event.id} className={`relative pl-8 ${isPast ? 'opacity-50' : isToday ? 'opacity-100' : 'opacity-70'}`}>
                                 {/* Timeline dot */}
-                                <div className={`absolute left-[-10px] top-2 h-4 w-4 rounded-full border-2 border-background flex items-center justify-center ${event.type === "income" ? "bg-green-500" : event.type === "debt" ? "bg-red-500" : event.type === "fixed" ? "bg-orange-500" : "bg-blue-500"} ${isToday ? 'ring-2 ring-primary ring-offset-2' : ''}`} />
+                                <div className={`absolute left-[-10px] top-2 h-4 w-4 rounded-full border-2 border-background flex items-center justify-center ${event.type === "income" ? "bg-green-500" : event.type === "debt" ? "bg-red-500" : event.type === "fixed" ? "bg-orange-500" : "bg-blue-500"} ${isToday ? 'ring-4 ring-primary ring-offset-2 scale-125' : ''}`} />
                                 {/* Event card with description */}
-                                <div className={`rounded-lg border p-3 transition-all hover:shadow-md w-full ${isToday ? 'border-primary bg-primary/5' : 'bg-card'}`}>
+                                <div className={`rounded-lg border p-3 transition-all hover:shadow-md w-full ${isToday ? 'border-primary bg-primary/10 shadow-lg shadow-primary/20' : 'bg-card'}`}>
                                   <div className="flex items-start justify-between gap-2">
                                     <div className="flex-1 space-y-1">
                                       <div className="flex items-center gap-2">
