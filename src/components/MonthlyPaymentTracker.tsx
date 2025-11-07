@@ -29,8 +29,10 @@ import {
   useUpdatePaymentTracker,
   useDeletePaymentTracker,
   PaymentTrackerEntry,
+  NewPaymentTrackerEntry,
 } from "@/hooks/usePaymentTracker";
 import { useIncomeSources, useDebts, useFixedExpenses, useSavingsGoals } from "@/hooks/useFinancialData";
+import { supabase } from "@/integrations/supabase/client";
 import { Progress } from "@/components/ui/progress";
 import { formatCurrency } from "@/lib/i18n";
 import { format, startOfMonth, addMonths, subMonths, isPast } from "date-fns";
@@ -190,7 +192,7 @@ export const MonthlyPaymentTracker = ({ language }: MonthlyPaymentTrackerProps) 
     return { paid, pending, total };
   }, [sortedPayments]);
 
-  const handleSave = () => {
+  const handleSave = async () => {
     if (!formData.amount || parseFloat(formData.amount) <= 0) {
       toast({
         title: "Error",
@@ -200,7 +202,16 @@ export const MonthlyPaymentTracker = ({ language }: MonthlyPaymentTrackerProps) 
       return;
     }
 
-    const entry = {
+    if (formData.payment_type === "debt" && !formData.source_id) {
+      toast({
+        title: "Error",
+        description: "Please select a debt.",
+        variant: "destructive",
+      });
+      return;
+    }
+
+    const entry: NewPaymentTrackerEntry = {
       month_year: format(startOfMonth(currentMonth), "yyyy-MM-dd"),
       payment_type: formData.payment_type,
       amount: parseFloat(formData.amount),
@@ -208,6 +219,7 @@ export const MonthlyPaymentTracker = ({ language }: MonthlyPaymentTrackerProps) 
       payment_date: formData.payment_date,
       notes: formData.notes || undefined,
       source_id: formData.source_id || undefined,
+      source_table: formData.payment_type === "debt" ? "debts" : undefined,
     };
 
     if (editingEntry) {
@@ -233,7 +245,25 @@ export const MonthlyPaymentTracker = ({ language }: MonthlyPaymentTrackerProps) 
       );
     } else {
       addMutation.mutate(entry, {
-        onSuccess: () => {
+        onSuccess: async () => {
+          // If it's a debt payment, also create a debt_payment record to update the balance
+          if (formData.payment_type === "debt" && formData.source_id) {
+            try {
+              const { data: { user } } = await supabase.auth.getUser();
+              if (user) {
+                await supabase.from("debt_payments").insert({
+                  user_id: user.id,
+                  debt_id: formData.source_id,
+                  amount: parseFloat(formData.amount),
+                  payment_date: formData.payment_date,
+                  notes: formData.notes || undefined,
+                });
+              }
+            } catch (error) {
+              console.error("Error creating debt payment:", error);
+            }
+          }
+          
           toast({
             title: "Success",
             description: "Payment added successfully.",
@@ -363,7 +393,7 @@ export const MonthlyPaymentTracker = ({ language }: MonthlyPaymentTrackerProps) 
                   <Label>{t.type}</Label>
                   <Select
                     value={formData.payment_type}
-                    onValueChange={(val: any) => setFormData({ ...formData, payment_type: val })}
+                    onValueChange={(val: any) => setFormData({ ...formData, payment_type: val, source_id: "" })}
                   >
                     <SelectTrigger>
                       <SelectValue />
@@ -376,6 +406,26 @@ export const MonthlyPaymentTracker = ({ language }: MonthlyPaymentTrackerProps) 
                     </SelectContent>
                   </Select>
                 </div>
+                {formData.payment_type === "debt" && (
+                  <div className="space-y-2">
+                    <Label>{language === "en" ? "Select Debt" : language === "es" ? "Seleccionar Deuda" : "Wybierz Dług"}</Label>
+                    <Select
+                      value={formData.source_id}
+                      onValueChange={(val: string) => setFormData({ ...formData, source_id: val })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue placeholder={language === "en" ? "Choose a debt..." : language === "es" ? "Elige una deuda..." : "Wybierz dług..."} />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {debts.map((debt) => (
+                          <SelectItem key={debt.id} value={debt.id}>
+                            {debt.name} - {formatCurrency(debt.balance)}
+                          </SelectItem>
+                        ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                )}
                 <div className="space-y-2">
                   <Label>{t.amount} (£)</Label>
                   <Input
@@ -437,34 +487,44 @@ export const MonthlyPaymentTracker = ({ language }: MonthlyPaymentTrackerProps) 
           </div>
         ) : (
           <div className="space-y-3">
-            {payments.map((payment) => (
-              <div
-                key={payment.id}
-                className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors"
-              >
-                <div className="flex items-center gap-3 flex-1">
-                  {payment.payment_status === "paid" ? (
-                    <CheckCircle2 className="h-5 w-5 text-green-600" />
-                  ) : (
-                    <Circle className="h-5 w-5 text-muted-foreground" />
-                  )}
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2 flex-wrap">
-                      <Badge variant={getStatusBadge(payment.payment_status) as any}>
-                        {t[payment.payment_status as keyof typeof t]}
-                      </Badge>
-                      <span className={`font-semibold ${getTypeColor(payment.payment_type)}`}>
-                        {t[payment.payment_type as keyof typeof t]}
-                      </span>
-                    </div>
-                    {payment.notes && <p className="text-sm text-muted-foreground mt-1">{payment.notes}</p>}
-                    {payment.payment_date && (
-                      <p className="text-xs text-muted-foreground mt-1">
-                        {format(new Date(payment.payment_date), "dd MMM yyyy")}
-                      </p>
+            {payments.map((payment) => {
+              const linkedDebt = payment.payment_type === "debt" && payment.source_id 
+                ? debts.find(d => d.id === payment.source_id)
+                : null;
+              
+              return (
+                <div
+                  key={payment.id}
+                  className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors"
+                >
+                  <div className="flex items-center gap-3 flex-1">
+                    {payment.payment_status === "paid" ? (
+                      <CheckCircle2 className="h-5 w-5 text-green-600" />
+                    ) : (
+                      <Circle className="h-5 w-5 text-muted-foreground" />
                     )}
+                    <div className="flex-1">
+                      <div className="flex items-center gap-2 flex-wrap">
+                        <Badge variant={getStatusBadge(payment.payment_status) as any}>
+                          {t[payment.payment_status as keyof typeof t]}
+                        </Badge>
+                        <span className={`font-semibold ${getTypeColor(payment.payment_type)}`}>
+                          {t[payment.payment_type as keyof typeof t]}
+                        </span>
+                        {linkedDebt && (
+                          <span className="text-sm text-muted-foreground">
+                            → {linkedDebt.name}
+                          </span>
+                        )}
+                      </div>
+                      {payment.notes && <p className="text-sm text-muted-foreground mt-1">{payment.notes}</p>}
+                      {payment.payment_date && (
+                        <p className="text-xs text-muted-foreground mt-1">
+                          {format(new Date(payment.payment_date), "dd MMM yyyy")}
+                        </p>
+                      )}
+                    </div>
                   </div>
-                </div>
                 <div className="flex items-center gap-3">
                   <span className="text-lg font-bold">{formatCurrency(payment.amount)}</span>
                   <div className="flex gap-1">
@@ -474,10 +534,11 @@ export const MonthlyPaymentTracker = ({ language }: MonthlyPaymentTrackerProps) 
                     <Button variant="ghost" size="icon" onClick={() => deleteMutation.mutate(payment.id)}>
                       <Trash2 className="h-4 w-4 text-destructive" />
                     </Button>
+                    </div>
                   </div>
                 </div>
-              </div>
-            ))}
+              );
+            })}
           </div>
         )}
       </CardContent>
