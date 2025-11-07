@@ -18,6 +18,7 @@ import { SavingsManager } from "@/components/SavingsManager";
 import { SavingsGoalsManager } from "@/components/SavingsGoalsManager";
 import { LanguageToggle } from "@/components/LanguageToggle";
 import { ProfileSelector } from "@/components/ProfileSelector";
+import { FloatingChatWidget } from "@/components/FloatingChatWidget";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -1801,6 +1802,9 @@ const DebtPlanner = ({
           </div>
         </CardContent>
       </Card>
+      
+      {/* Floating AI Chat Widget */}
+      <FloatingChatWidget language={language} />
     </div>;
 };
 export default Index;
