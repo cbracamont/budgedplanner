@@ -22,14 +22,14 @@ interface Conversation {
 }
 
 interface FloatingChatWidgetProps {
-  language: Language;
+  language?: Language;
 }
 
 const messageSchema = z.object({
   content: z.string().trim().min(1).max(2000, "Message must be less than 2000 characters")
 });
 
-export const FloatingChatWidget = ({ language }: FloatingChatWidgetProps) => {
+export const FloatingChatWidget = ({ language = 'en' as Language }: FloatingChatWidgetProps) => {
   const { toast } = useToast();
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);

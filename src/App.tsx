@@ -10,6 +10,7 @@ import Index from "./pages/Index";
 import Terms from "./pages/Terms";
 import Privacy from "./pages/Privacy";
 import NotFound from "./pages/NotFound";
+import { FloatingChatWidget } from "@/components/FloatingChatWidget";
 
 const queryClient = new QueryClient();
 
@@ -33,6 +34,7 @@ export default function App() {
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
+        <FloatingChatWidget />
         <Toaster />
       </ThemeProvider>
     </QueryClientProvider>
