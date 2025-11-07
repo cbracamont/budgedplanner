@@ -826,6 +826,12 @@ const Index = () => {
               { value: "debts", label: "Debts", icon: <CreditCard className="h-5 w-5" /> },
               { value: "savings", label: "Savings", icon: <Goal className="h-5 w-5" /> },
             ]}
+            language={language}
+            onLanguageChange={setLanguage}
+            theme={theme}
+            onThemeToggle={() => setTheme(theme === "dark" ? "light" : "dark")}
+            onExportData={() => window.print()}
+            onLogout={() => supabase.auth.signOut()}
           />
 
           {/* TABS */}
