@@ -5,8 +5,8 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Card } from "@/components/ui/card";
-import { UserCircle, Plus, Trash2, Check } from "lucide-react";
-import { useFinancialProfiles, useActiveProfile, useAddProfile, useSetActiveProfile, useDeleteProfile } from "@/hooks/useFinancialProfiles";
+import { UserCircle, Plus, Trash2, Check, Pencil } from "lucide-react";
+import { useFinancialProfiles, useActiveProfile, useAddProfile, useSetActiveProfile, useDeleteProfile, useUpdateProfile } from "@/hooks/useFinancialProfiles";
 import { getTranslation, Language } from "@/lib/i18n";
 
 interface ProfileSelectorProps {
@@ -17,12 +17,15 @@ export const ProfileSelector = ({ language }: ProfileSelectorProps) => {
   const [isOpen, setIsOpen] = useState(false);
   const [newProfileName, setNewProfileName] = useState("");
   const [newProfileType, setNewProfileType] = useState("personal");
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editName, setEditName] = useState("");
 
   const { data: profiles, isLoading } = useFinancialProfiles();
   const { data: activeProfile } = useActiveProfile();
   const addProfile = useAddProfile();
   const setActiveProfile = useSetActiveProfile();
   const deleteProfile = useDeleteProfile();
+  const updateProfile = useUpdateProfile();
 
   const handleAddProfile = async () => {
     if (!newProfileName.trim()) return;
@@ -43,6 +46,18 @@ export const ProfileSelector = ({ language }: ProfileSelectorProps) => {
       return;
     }
     await deleteProfile.mutateAsync(id);
+  };
+
+  const handleEditProfile = (profile: any) => {
+    setEditingId(profile.id);
+    setEditName(profile.name);
+  };
+
+  const handleSaveEdit = async () => {
+    if (!editingId || !editName.trim()) return;
+    await updateProfile.mutateAsync({ id: editingId, name: editName });
+    setEditingId(null);
+    setEditName("");
   };
 
   if (isLoading) return null;
@@ -66,31 +81,72 @@ export const ProfileSelector = ({ language }: ProfileSelectorProps) => {
               {profiles.map((profile) => (
                 <Card
                   key={profile.id}
-                  className={`p-3 cursor-pointer transition-colors ${
+                  className={`p-3 transition-colors ${
                     profile.is_active ? "bg-primary/10 border-primary" : "hover:bg-muted"
-                  }`}
-                  onClick={() => !profile.is_active && setActiveProfile.mutate(profile.id)}
+                  } ${editingId === profile.id ? "" : "cursor-pointer"}`}
+                  onClick={() => !profile.is_active && editingId !== profile.id && setActiveProfile.mutate(profile.id)}
                 >
                   <div className="flex items-center justify-between">
-                    <div className="flex items-center gap-2">
+                    <div className="flex items-center gap-2 flex-1">
                       {profile.is_active && <Check className="h-4 w-4 text-primary" />}
-                      <div>
-                        <p className="font-medium">{profile.name}</p>
-                        <p className="text-xs text-muted-foreground capitalize">{profile.type}</p>
+                      <div className="flex-1">
+                        {editingId === profile.id ? (
+                          <Input
+                            value={editName}
+                            onChange={(e) => setEditName(e.target.value)}
+                            onKeyDown={(e) => {
+                              if (e.key === "Enter") handleSaveEdit();
+                              if (e.key === "Escape") setEditingId(null);
+                            }}
+                            onClick={(e) => e.stopPropagation()}
+                            className="h-7"
+                            autoFocus
+                          />
+                        ) : (
+                          <>
+                            <p className="font-medium">{profile.name}</p>
+                            <p className="text-xs text-muted-foreground capitalize">{profile.type}</p>
+                          </>
+                        )}
                       </div>
                     </div>
-                    {profiles.length > 1 && (
-                      <Button
-                        variant="ghost"
-                        size="icon"
-                        onClick={(e) => {
-                          e.stopPropagation();
-                          handleDeleteProfile(profile.id);
-                        }}
-                      >
-                        <Trash2 className="h-4 w-4" />
-                      </Button>
-                    )}
+                    <div className="flex gap-1">
+                      {editingId === profile.id ? (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleSaveEdit();
+                          }}
+                        >
+                          <Check className="h-4 w-4" />
+                        </Button>
+                      ) : (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleEditProfile(profile);
+                          }}
+                        >
+                          <Pencil className="h-4 w-4" />
+                        </Button>
+                      )}
+                      {profiles.length > 1 && (
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={(e) => {
+                            e.stopPropagation();
+                            handleDeleteProfile(profile.id);
+                          }}
+                        >
+                          <Trash2 className="h-4 w-4" />
+                        </Button>
+                      )}
+                    </div>
                   </div>
                 </Card>
               ))}
