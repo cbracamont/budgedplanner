@@ -4,6 +4,7 @@ import { AutoPaymentsGenerator } from "@/components/AutoPaymentsGenerator";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -538,26 +539,58 @@ export const MonthlyPaymentTracker = ({ language }: MonthlyPaymentTrackerProps) 
                     <div className="flex gap-1">
                       {isManual ? (
                         // Manual payments: can only delete (handled by debt_payments table)
-                        <Button 
-                          variant="ghost" 
-                          size="icon" 
-                          onClick={() => {
-                            if (confirm(language === "en" ? "Delete this manual payment?" : language === "es" ? "¿Eliminar este pago manual?" : "Usunąć tę płatność?")) {
-                              deleteDebtPaymentMutation.mutate(payment.id);
-                            }
-                          }}
-                        >
-                          <Trash2 className="h-4 w-4 text-destructive" />
-                        </Button>
+                        <AlertDialog>
+                          <AlertDialogTrigger asChild>
+                            <Button variant="ghost" size="icon">
+                              <Trash2 className="h-4 w-4 text-destructive" />
+                            </Button>
+                          </AlertDialogTrigger>
+                          <AlertDialogContent>
+                            <AlertDialogHeader>
+                              <AlertDialogTitle>
+                                {language === "en" ? "Delete manual payment?" : language === "es" ? "¿Eliminar pago manual?" : "Usunąć płatność ręczną?"}
+                              </AlertDialogTitle>
+                              <AlertDialogDescription>
+                                {language === "en" ? "This action cannot be undone. The debt balance will be restored." : language === "es" ? "Esta acción no se puede deshacer. El balance de la deuda se restaurará." : "Tej operacji nie można cofnąć. Saldo długu zostanie przywrócone."}
+                              </AlertDialogDescription>
+                            </AlertDialogHeader>
+                            <AlertDialogFooter>
+                              <AlertDialogCancel>{t.cancel}</AlertDialogCancel>
+                              <AlertDialogAction onClick={() => deleteDebtPaymentMutation.mutate(payment.id)}>
+                                {t.delete}
+                              </AlertDialogAction>
+                            </AlertDialogFooter>
+                          </AlertDialogContent>
+                        </AlertDialog>
                       ) : (
                         // Auto-generated payments: can edit and delete
                         <>
                           <Button variant="ghost" size="icon" onClick={() => handleEdit(payment)}>
                             <Edit2 className="h-4 w-4" />
                           </Button>
-                          <Button variant="ghost" size="icon" onClick={() => deleteMutation.mutate(payment.id)}>
-                            <Trash2 className="h-4 w-4 text-destructive" />
-                          </Button>
+                          <AlertDialog>
+                            <AlertDialogTrigger asChild>
+                              <Button variant="ghost" size="icon">
+                                <Trash2 className="h-4 w-4 text-destructive" />
+                              </Button>
+                            </AlertDialogTrigger>
+                            <AlertDialogContent>
+                              <AlertDialogHeader>
+                                <AlertDialogTitle>
+                                  {language === "en" ? "Delete payment?" : language === "es" ? "¿Eliminar pago?" : "Usunąć płatność?"}
+                                </AlertDialogTitle>
+                                <AlertDialogDescription>
+                                  {language === "en" ? "This action cannot be undone." : language === "es" ? "Esta acción no se puede deshacer." : "Tej operacji nie można cofnąć."}
+                                </AlertDialogDescription>
+                              </AlertDialogHeader>
+                              <AlertDialogFooter>
+                                <AlertDialogCancel>{t.cancel}</AlertDialogCancel>
+                                <AlertDialogAction onClick={() => deleteMutation.mutate(payment.id)}>
+                                  {t.delete}
+                                </AlertDialogAction>
+                              </AlertDialogFooter>
+                            </AlertDialogContent>
+                          </AlertDialog>
                         </>
                       )}
                     </div>
