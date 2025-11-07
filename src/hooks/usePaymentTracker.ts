@@ -52,6 +52,29 @@ export const usePaymentTracker = (monthYear?: Date) => {
   });
 };
 
+// Hook to get only paid/completed payments for overview calculations
+export const usePaidPaymentsForOverview = () => {
+  const today = new Date().toISOString().split('T')[0];
+
+  return useQuery({
+    queryKey: ["payment-tracker-overview", today],
+    queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return [];
+
+      const { data, error } = await supabase
+        .from("payment_tracker")
+        .select("*")
+        .eq("user_id", user.id)
+        .lte("payment_date", today)
+        .eq("payment_status", "paid");
+
+      if (error) throw error;
+      return data as PaymentTrackerEntry[];
+    },
+  });
+};
+
 export const useAddPaymentTracker = () => {
   const { toast } = useToast();
   const queryClient = useQueryClient();
@@ -70,6 +93,7 @@ export const useAddPaymentTracker = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["payment-tracker"] });
+      queryClient.invalidateQueries({ queryKey: ["payment-tracker-overview"] });
       toast({
         title: "Success",
         description: "Payment tracked successfully",
@@ -100,6 +124,7 @@ export const useUpdatePaymentTracker = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["payment-tracker"] });
+      queryClient.invalidateQueries({ queryKey: ["payment-tracker-overview"] });
       toast({
         title: "Success",
         description: "Payment updated successfully",
@@ -130,6 +155,7 @@ export const useDeletePaymentTracker = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["payment-tracker"] });
+      queryClient.invalidateQueries({ queryKey: ["payment-tracker-overview"] });
       toast({
         title: "Success",
         description: "Payment deleted successfully",

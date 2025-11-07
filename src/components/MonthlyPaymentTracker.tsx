@@ -1,5 +1,6 @@
-import { useState, useEffect, useMemo, useCallback } from "react";
+import { useState, useMemo } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { AutoPaymentsGenerator } from "@/components/AutoPaymentsGenerator";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
@@ -262,7 +263,9 @@ export const MonthlyPaymentTracker = ({ language }: MonthlyPaymentTrackerProps) 
   const monthName = format(currentMonth, "MMMM yyyy", { locale: language === "es" ? undefined : undefined });
 
   return (
-    <Card className="shadow-lg">
+    <>
+      <AutoPaymentsGenerator language={language} />
+      <Card className="shadow-lg">
       <CardHeader className="pb-4">
         <div className="flex items-center justify-between flex-wrap gap-4">
           <div className="flex items-center gap-3">
@@ -429,5 +432,6 @@ export const MonthlyPaymentTracker = ({ language }: MonthlyPaymentTrackerProps) 
         )}
       </CardContent>
     </Card>
+    </>
   );
 };
