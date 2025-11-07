@@ -359,28 +359,28 @@ export const SavingsGoalsManager = ({
               const remaining = goal.target_amount - goal.current_amount;
 
               return (
-                <Card key={goal.id} className={`relative overflow-hidden ${status.color} border-l-4 ${isUrgent ? 'border-orange-500 shadow-md' : 'shadow-sm'}`}>
+                <Card key={goal.id} className={`relative overflow-hidden border ${isUrgent ? 'border-orange-500 dark:border-orange-600 shadow-md' : 'border-border'} bg-card hover:shadow-lg transition-shadow`}>
                   {isUrgent && (
                     <div className="absolute top-2 right-2 z-10">
                       <Badge variant="destructive" className="text-xs">Urgent</Badge>
                     </div>
                   )}
-                  <CardHeader className="pb-4">
+                  <CardHeader className="pb-4 bg-gradient-to-r from-primary/5 to-transparent dark:from-primary/10">
                     <div className="flex items-start justify-between">
                       <div className="flex items-center gap-3">
-                        <div className={`p-2 rounded-full ${status.color} flex-shrink-0`}>
-                          <status.icon className="h-5 w-5" />
+                        <div className="p-2 rounded-full bg-primary/10 dark:bg-primary/20 flex-shrink-0">
+                          <Target className="h-5 w-5 text-primary" />
                         </div>
                         <div>
-                          <h3 className="font-bold text-lg">{goal.goal_name}</h3>
+                          <h3 className="font-bold text-lg text-foreground">{goal.goal_name}</h3>
                           <p className="text-sm text-muted-foreground">{goal.goal_description || 'No description'}</p>
                         </div>
                       </div>
                       <div className="flex gap-1">
-                        <Button variant="ghost" size="sm" onClick={() => handleEditGoal(goal)} className="h-8 w-8 p-0">
+                        <Button variant="ghost" size="sm" onClick={() => handleEditGoal(goal)} className="h-8 w-8 p-0 hover:bg-primary/10">
                           <Pencil className="h-4 w-4" />
                         </Button>
-                        <Button variant="ghost" size="sm" onClick={() => handleDeleteGoal(goal.id)} className="h-8 w-8 p-0 text-destructive">
+                        <Button variant="ghost" size="sm" onClick={() => handleDeleteGoal(goal.id)} className="h-8 w-8 p-0 text-destructive hover:bg-destructive/10">
                           <Trash2 className="h-4 w-4" />
                         </Button>
                       </div>
@@ -412,37 +412,31 @@ export const SavingsGoalsManager = ({
                     </div>
 
                     {/* Breakdown Table */}
-                    <div className="overflow-hidden rounded-lg border">
+                    <div className="overflow-hidden rounded-lg border border-border bg-muted/30">
                       <table className="w-full">
-                        <tbody className="divide-y divide-slate-200 dark:divide-slate-700">
-                          <tr>
-                            <td className="px-4 py-3 text-sm text-slate-500 dark:text-slate-400">Current Amount</td>
-                            <td className="px-4 py-3 text-right font-semibold">{formatCurrency(goal.current_amount)}</td>
+                        <tbody className="divide-y divide-border">
+                          <tr className="hover:bg-muted/50 transition-colors">
+                            <td className="px-4 py-3 text-sm text-muted-foreground">Current Amount</td>
+                            <td className="px-4 py-3 text-right font-semibold text-foreground">{formatCurrency(goal.current_amount)}</td>
                           </tr>
-                          <tr>
-                            <td className="px-4 py-3 text-sm text-slate-500 dark:text-slate-400">Target Amount</td>
-                            <td className="px-4 py-3 text-right font-semibold">{formatCurrency(goal.target_amount)}</td>
+                          <tr className="hover:bg-muted/50 transition-colors">
+                            <td className="px-4 py-3 text-sm text-muted-foreground">Target Amount</td>
+                            <td className="px-4 py-3 text-right font-semibold text-foreground">{formatCurrency(goal.target_amount)}</td>
                           </tr>
-                          <tr>
-                            <td className="px-4 py-3 text-sm text-slate-500 dark:text-slate-400">Remaining</td>
-                            <td className="px-4 py-3 text-right font-semibold text-red-600">{formatCurrency(remaining)}</td>
+                          <tr className="hover:bg-muted/50 transition-colors">
+                            <td className="px-4 py-3 text-sm text-muted-foreground">Remaining</td>
+                            <td className="px-4 py-3 text-right font-semibold text-destructive">{formatCurrency(remaining)}</td>
                           </tr>
                           {goal.target_date && monthsToGoal && (
-                            <tr>
-                              <td className="px-4 py-3 text-sm text-slate-500 dark:text-slate-400">Months to Goal</td>
-                              <td className="px-4 py-3 text-right font-semibold">{monthsToGoal} months</td>
+                            <tr className="hover:bg-muted/50 transition-colors">
+                              <td className="px-4 py-3 text-sm text-muted-foreground">Months to Goal</td>
+                              <td className="px-4 py-3 text-right font-semibold text-foreground">{monthsToGoal} months</td>
                             </tr>
                           )}
                           {suggestedMonthly > 0 && (
-                            <tr>
-                              <td className="px-4 py-3 text-sm text-slate-500 dark:text-slate-400">Suggested Monthly</td>
-                              <td className="px-4 py-3 text-right font-semibold text-blue-600">{formatCurrency(suggestedMonthly)}</td>
-                            </tr>
-                          )}
-                          {roi > 0 && (
-                            <tr>
-                              <td className="px-4 py-3 text-sm text-slate-500 dark:text-slate-400">Estimated ROI</td>
-                              <td className="px-4 py-3 text-right font-semibold text-green-600">+{roi}%</td>
+                            <tr className="hover:bg-muted/50 transition-colors">
+                              <td className="px-4 py-3 text-sm text-muted-foreground">Suggested Monthly</td>
+                              <td className="px-4 py-3 text-right font-semibold text-primary">{formatCurrency(suggestedMonthly)}</td>
                             </tr>
                           )}
                         </tbody>
@@ -450,9 +444,9 @@ export const SavingsGoalsManager = ({
                     </div>
 
                     {/* Action buttons */}
-                    <div className="flex flex-col sm:flex-row gap-2 pt-4 border-t">
+                    <div className="flex flex-col sm:flex-row gap-2 pt-4 border-t border-border">
                       {goal.is_active ? (
-                        <div className="flex items-center gap-2 text-sm text-green-600">
+                        <div className="flex items-center gap-2 text-sm text-success dark:text-success">
                           <CheckCircle2 className="h-4 w-4" />
                           <span>Active monthly contribution: {formatCurrency(goal.monthly_contribution || 0)}</span>
                         </div>
@@ -466,7 +460,7 @@ export const SavingsGoalsManager = ({
                               variant="outline"
                               onClick={() => activateGoalContribution(goal.id, suggestedMonthly)}
                               disabled={suggestedMonthly > availableBudget}
-                              className="w-full sm:w-auto"
+                              className="w-full sm:w-auto border-primary/50 hover:bg-primary/10"
                             >
                               {suggestedMonthly > availableBudget
                                 ? language === "en" ? "Insufficient Budget" : "Presupuesto Insuficiente"
