@@ -37,7 +37,12 @@ interface DebtsManagerProps {
 export const DebtsManager = ({ language, onDebtsChange }: DebtsManagerProps) => {
   const t = (key: string) => getTranslation(language, key);
   const { toast } = useToast();
-  const { data: debts = [] } = useDebts();
+  const { data: allDebts = [] } = useDebts();
+  
+  // Filter out paid debts (balance = 0)
+  const debts = allDebts.filter(debt => debt.balance > 0);
+  const paidDebts = allDebts.filter(debt => debt.balance === 0);
+  
   const addDebtMutation = useAddDebt();
   const updateDebtMutation = useUpdateDebt();
   const deleteDebtMutation = useDeleteDebt();
@@ -546,6 +551,45 @@ export const DebtsManager = ({ language, onDebtsChange }: DebtsManagerProps) => 
             </div>
           ))}
         </div>
+
+        {/* Paid Debts Section */}
+        {paidDebts.length > 0 && (
+          <div className="mt-8 pt-6 border-t border-border">
+            <h3 className="text-lg font-semibold mb-4 text-muted-foreground flex items-center gap-2">
+              ✅ {language === 'en' ? 'Paid Debts' : language === 'es' ? 'Deudas Pagadas' : 'Spłacone Długi'}
+            </h3>
+            <div className="space-y-3 opacity-70">
+              {paidDebts.map((debt) => (
+                <div key={debt.id} className="flex items-center justify-between p-3 bg-green-50 dark:bg-green-950/20 rounded-lg border border-green-200 dark:border-green-900">
+                  <div className="flex-1">
+                    <p className="font-medium text-green-800 dark:text-green-300">{debt.name}</p>
+                    {debt.is_installment ? (
+                      <p className="text-sm text-green-700 dark:text-green-400">
+                        {debt.bank && `${debt.bank} • `}
+                        {language === 'en' ? 'Paid in full' : language === 'es' ? 'Pagado completamente' : 'Spłacone w całości'}
+                      </p>
+                    ) : (
+                      <p className="text-sm text-green-700 dark:text-green-400">
+                        {debt.bank && `${debt.bank} • `}
+                        {language === 'en' ? 'Balance: £0.00 • Paid' : language === 'es' ? 'Balance: £0.00 • Pagado' : 'Saldo: £0.00 • Spłacone'}
+                      </p>
+                    )}
+                  </div>
+                  <div className="flex gap-1">
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={() => deleteDebt(debt.id)}
+                      title={language === 'en' ? 'Delete' : language === 'es' ? 'Eliminar' : 'Usuń'}
+                    >
+                      <Trash2 className="h-4 w-4 text-destructive" />
+                    </Button>
+                  </div>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
       </CardContent>
     </Card>
   );
