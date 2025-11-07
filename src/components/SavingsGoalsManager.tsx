@@ -58,7 +58,6 @@ export const SavingsGoalsManager = ({
     target_amount: "",
     current_amount: "",
     target_date: "",
-    priority: "medium" as "low" | "medium" | "high",
   });
 
   const t = {
@@ -100,7 +99,6 @@ export const SavingsGoalsManager = ({
       target_amount: "",
       current_amount: "",
       target_date: "",
-      priority: "medium",
     });
     setEditingGoal(null);
   };
@@ -121,7 +119,6 @@ export const SavingsGoalsManager = ({
       target_amount: parseFloat(formData.target_amount),
       current_amount: parseFloat(formData.current_amount) || 0,
       target_date: formData.target_date || null,
-      priority: formData.priority,
     };
 
     if (editingGoal) {
@@ -195,7 +192,6 @@ export const SavingsGoalsManager = ({
       target_amount: goal.target_amount.toString(),
       current_amount: goal.current_amount.toString(),
       target_date: goal.target_date || "",
-      priority: goal.priority || "medium",
     });
     setIsAddDialogOpen(true);
   };
@@ -315,19 +311,6 @@ export const SavingsGoalsManager = ({
                     value={formData.target_date}
                     onChange={(e) => setFormData({ ...formData, target_date: e.target.value })}
                   />
-                </div>
-                <div className="space-y-2">
-                  <Label>{language === "en" ? "Priority" : "Prioridad"}</Label>
-                  <Select value={formData.priority} onValueChange={(value) => setFormData({ ...formData, priority: value as "low" | "medium" | "high" })}>
-                    <SelectTrigger>
-                      <SelectValue placeholder="Select priority" />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="low">Low</SelectItem>
-                      <SelectItem value="medium">Medium</SelectItem>
-                      <SelectItem value="high">High</SelectItem>
-                    </SelectContent>
-                  </Select>
                 </div>
                 <Button onClick={handleSaveGoal} className="w-full">
                   {editingGoal
