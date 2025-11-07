@@ -9,11 +9,13 @@ import { Label } from "@/components/ui/label";
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from "@/components/ui/card";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Checkbox } from "@/components/ui/checkbox";
-import { AlertCircle, Mail, Lock, User, Chrome } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { AlertCircle, Mail, Lock, User, Chrome, Phone } from "lucide-react";
 import { useTheme } from "@/hooks/useTheme";
 
 // NUEVO: Tipo ampliado para LanguageToggle
 type Language = "en" | "es" | "pl";
+type AuthMethod = "email" | "phone";
 
 export const Auth = () => {
   useTheme();
@@ -22,9 +24,11 @@ export const Auth = () => {
   const [error, setError] = useState("");
   const [success, setSuccess] = useState("");
   const [acceptedTerms, setAcceptedTerms] = useState(false);
+  const [authMethod, setAuthMethod] = useState<AuthMethod>("email");
 
   const [formData, setFormData] = useState({
     email: "",
+    phone: "",
     password: "",
     confirmPassword: "",
     name: "",
@@ -41,21 +45,27 @@ export const Auth = () => {
     setSuccess("");
     setLoading(true);
 
-    const { email, password, confirmPassword, name } = formData;
+    const { email, phone, password, confirmPassword, name } = formData;
 
-    if (!email || !password) {
+    if (authMethod === "email" && (!email || !password)) {
       setError("Email and password are required");
       setLoading(false);
       return;
     }
 
+    if (authMethod === "phone" && !phone) {
+      setError("Phone number is required");
+      setLoading(false);
+      return;
+    }
+
     if (!isLogin) {
-      if (password !== confirmPassword) {
+      if (authMethod === "email" && password !== confirmPassword) {
         setError("Passwords do not match");
         setLoading(false);
         return;
       }
-      if (password.length < 6) {
+      if (authMethod === "email" && password.length < 6) {
         setError("Password must be at least 6 characters");
         setLoading(false);
         return;
@@ -69,22 +79,42 @@ export const Auth = () => {
 
     try {
       if (isLogin) {
-        const { error } = await supabase.auth.signInWithPassword({
-          email,
-          password,
-        });
-        if (error) throw error;
+        if (authMethod === "email") {
+          const { error } = await supabase.auth.signInWithPassword({
+            email,
+            password,
+          });
+          if (error) throw error;
+        } else {
+          const { error } = await supabase.auth.signInWithOtp({
+            phone,
+          });
+          if (error) throw error;
+          setSuccess("Check your phone! We've sent you a verification code.");
+        }
       } else {
-        const { error } = await supabase.auth.signUp({
-          email,
-          password,
-          options: {
-            data: { name },
-            emailRedirectTo: window.location.origin,
-          },
-        });
-        if (error) throw error;
-        setSuccess("Check your email! We've sent you a confirmation link.");
+        if (authMethod === "email") {
+          const { error } = await supabase.auth.signUp({
+            email,
+            password,
+            options: {
+              data: { name },
+              emailRedirectTo: `${window.location.origin}/`,
+            },
+          });
+          if (error) throw error;
+          setSuccess("Check your email! We've sent you a confirmation link.");
+        } else {
+          const { error } = await supabase.auth.signUp({
+            phone,
+            password,
+            options: {
+              data: { name },
+            },
+          });
+          if (error) throw error;
+          setSuccess("Check your phone! We've sent you a verification code.");
+        }
       }
     } catch (err: any) {
       setError(err.message || "An error occurred");
@@ -101,10 +131,10 @@ export const Auth = () => {
     setLoading(true);
     try {
       const { error } = await supabase.auth.resetPasswordForEmail(formData.email, {
-        redirectTo: `${window.location.origin}/reset-password`,
+        redirectTo: `${window.location.origin}/`,
       });
       if (error) throw error;
-      setSuccess("Password reset link sent to your email");
+      setSuccess("Password reset link sent to your email. Please check your inbox.");
     } catch (err: any) {
       setError(err.message);
     } finally {
@@ -118,7 +148,7 @@ export const Auth = () => {
       const { error } = await supabase.auth.signInWithOAuth({
         provider: "google",
         options: {
-          redirectTo: window.location.origin,
+          redirectTo: `${window.location.origin}/`,
         },
       });
       if (error) throw error;
@@ -146,6 +176,19 @@ export const Auth = () => {
         </CardHeader>
 
         <CardContent>
+          <Tabs value={authMethod} onValueChange={(v) => setAuthMethod(v as AuthMethod)} className="mb-4">
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="email">
+                <Mail className="h-4 w-4 mr-2" />
+                Email
+              </TabsTrigger>
+              <TabsTrigger value="phone">
+                <Phone className="h-4 w-4 mr-2" />
+                Phone
+              </TabsTrigger>
+            </TabsList>
+          </Tabs>
+
           <form onSubmit={handleSubmit} className="space-y-4">
             {!isLogin && (
               <div className="space-y-2">
@@ -164,50 +207,74 @@ export const Auth = () => {
               </div>
             )}
 
-            <div className="space-y-2">
-              <Label htmlFor="email">Email</Label>
-              <div className="relative">
-                <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                <Input
-                  id="email"
-                  type="email"
-                  placeholder="you@example.com"
-                  className="pl-10"
-                  value={formData.email}
-                  onChange={(e) => setFormData({ ...formData, email: e.target.value })}
-                />
-              </div>
-            </div>
+            {authMethod === "email" ? (
+              <>
+                <div className="space-y-2">
+                  <Label htmlFor="email">Email</Label>
+                  <div className="relative">
+                    <Mail className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      id="email"
+                      type="email"
+                      placeholder="you@example.com"
+                      className="pl-10"
+                      value={formData.email}
+                      onChange={(e) => setFormData({ ...formData, email: e.target.value })}
+                    />
+                  </div>
+                </div>
 
-            <div className="space-y-2">
-              <Label htmlFor="password">Password</Label>
-              <div className="relative">
-                <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
-                <Input
-                  id="password"
-                  type="password"
-                  placeholder={isLogin ? "Enter password" : "Create a strong password"}
-                  className="pl-10"
-                  value={formData.password}
-                  onChange={(e) => setFormData({ ...formData, password: e.target.value })}
-                />
-              </div>
-            </div>
+                <div className="space-y-2">
+                  <Label htmlFor="password">Password</Label>
+                  <div className="relative">
+                    <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                    <Input
+                      id="password"
+                      type="password"
+                      placeholder={isLogin ? "Enter password" : "Create a strong password"}
+                      className="pl-10"
+                      value={formData.password}
+                      onChange={(e) => setFormData({ ...formData, password: e.target.value })}
+                    />
+                  </div>
+                </div>
 
-            {!isLogin && (
+                {!isLogin && (
+                  <div className="space-y-2">
+                    <Label htmlFor="confirmPassword">Confirm Password</Label>
+                    <div className="relative">
+                      <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                      <Input
+                        id="confirmPassword"
+                        type="password"
+                        placeholder="Repeat your password"
+                        className="pl-10"
+                        value={formData.confirmPassword}
+                        onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
+                      />
+                    </div>
+                  </div>
+                )}
+              </>
+            ) : (
               <div className="space-y-2">
-                <Label htmlFor="confirmPassword">Confirm Password</Label>
+                <Label htmlFor="phone">Phone Number</Label>
                 <div className="relative">
-                  <Lock className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
+                  <Phone className="absolute left-3 top-3 h-4 w-4 text-muted-foreground" />
                   <Input
-                    id="confirmPassword"
-                    type="password"
-                    placeholder="Repeat your password"
+                    id="phone"
+                    type="tel"
+                    placeholder="+44 7700 900000"
                     className="pl-10"
-                    value={formData.confirmPassword}
-                    onChange={(e) => setFormData({ ...formData, confirmPassword: e.target.value })}
+                    value={formData.phone}
+                    onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                   />
                 </div>
+                <p className="text-xs text-muted-foreground">
+                  {isLogin 
+                    ? "We'll send you a verification code via SMS" 
+                    : "Include country code (e.g., +44 for UK)"}
+                </p>
               </div>
             )}
 
@@ -266,7 +333,7 @@ export const Auth = () => {
             </Button>
           </div>
 
-          {isLogin && (
+          {isLogin && authMethod === "email" && (
             <div className="mt-4 text-center">
               <button
                 onClick={handlePasswordReset}
