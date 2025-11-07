@@ -155,41 +155,7 @@ const translations = {
     monthlyDebtAllocation: "Miesięczna Alokacja Długu"
   }
 };
-const useVariableIncome = () => {
-  const [data, setData] = useState<any[]>([]);
-  const [loading, setLoading] = useState(true);
-  useEffect(() => {
-    const saved = localStorage.getItem("variable_income");
-    if (saved) setData(JSON.parse(saved));
-    setLoading(false);
-  }, []);
-  const addIncome = useCallback((amount: number, description: string) => {
-    const newEntry = {
-      id: Date.now().toString(),
-      amount,
-      description: description || "Extra income",
-      date: new Date().toISOString()
-    };
-    setData(prev => {
-      const updated = [newEntry, ...prev];
-      localStorage.setItem("variable_income", JSON.stringify(updated));
-      return updated;
-    });
-  }, []);
-  const deleteIncome = useCallback((id: string) => {
-    setData(prev => {
-      const updated = prev.filter(i => i.id !== id);
-      localStorage.setItem("variable_income", JSON.stringify(updated));
-      return updated;
-    });
-  }, []);
-  return {
-    data,
-    loading,
-    addIncome,
-    deleteIncome
-  };
-};
+// Variable income hook moved to src/hooks/useVariableIncome.ts for security
 const Index = () => {
   useTheme();
   const queryClient = useQueryClient();
