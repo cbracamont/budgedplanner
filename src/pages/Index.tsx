@@ -1081,7 +1081,7 @@ const Index = () => {
                                   <div className="flex items-start justify-between gap-2">
                                     <div className="flex-1 space-y-1">
                                       <div className="flex items-center gap-2">
-                                        <span className="font-medium text-sm">{event.name}</span> {/* Payment description */}
+                                        <span className="font-medium text-sm text-slate-200">{event.name}</span> {/* Payment description */}
                                         {isToday && <span className="text-xs bg-primary text-primary-foreground px-2 py-0.5 rounded-full">
                                             Today
                                           </span>}
