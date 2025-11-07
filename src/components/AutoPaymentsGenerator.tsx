@@ -22,7 +22,7 @@ export const AutoPaymentsGenerator = ({ language }: AutoPaymentsGeneratorProps) 
       generating: "Generating...",
       success: "Payments generated successfully",
       error: "Failed to generate payments",
-      info: "This will automatically create payment entries for all your active debts for the current and next 2 months based on their payment dates."
+      info: "This will automatically create payment entries for all your active debts for 3 months before and 6 months after the current month based on their payment dates."
     },
     es: {
       title: "Pagos Automáticos de Deudas",
@@ -31,7 +31,7 @@ export const AutoPaymentsGenerator = ({ language }: AutoPaymentsGeneratorProps) 
       generating: "Generando...",
       success: "Pagos generados exitosamente",
       error: "Error al generar pagos",
-      info: "Esto creará automáticamente entradas de pago para todas tus deudas activas para el mes actual y los próximos 2 meses según sus fechas de pago."
+      info: "Esto creará automáticamente entradas de pago para todas tus deudas activas para 3 meses anteriores y 6 meses posteriores al mes actual según sus fechas de pago."
     },
     pl: {
       title: "Automatyczne Płatności Długów",
@@ -40,7 +40,7 @@ export const AutoPaymentsGenerator = ({ language }: AutoPaymentsGeneratorProps) 
       generating: "Generowanie...",
       success: "Płatności wygenerowane pomyślnie",
       error: "Nie udało się wygenerować płatności",
-      info: "Spowoduje to automatyczne utworzenie wpisów płatności dla wszystkich aktywnych długów na bieżący i następne 2 miesiące na podstawie ich dat płatności."
+      info: "Spowoduje to automatyczne utworzenie wpisów płatności dla wszystkich aktywnych długów na 3 miesiące przed i 6 miesięcy po bieżącym miesiącu na podstawie ich dat płatności."
     }
   }[language];
 
