@@ -843,7 +843,7 @@ const Index = () => {
               <TabsTrigger value="overview">Overview</TabsTrigger>
               <TabsTrigger value="income">Income</TabsTrigger>
               <TabsTrigger value="expenses">Expenses</TabsTrigger>
-              <TabsTrigger value="debts">Debts</TabsTrigger>
+              <TabsTrigger value="debts">Debts and Loans</TabsTrigger>
               <TabsTrigger value="savings">Savings</TabsTrigger>
             </TabsList>
 
