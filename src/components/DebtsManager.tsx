@@ -9,6 +9,8 @@ import { CreditCard, Plus, Trash2, Pencil } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { getTranslation, Language, ukBanks } from "@/lib/i18n";
 import { useDebts, useAddDebt, useUpdateDebt, useDeleteDebt } from "@/hooks/useFinancialData";
+import { useDebtPayments } from "@/hooks/useDebtPayments";
+import { format } from "date-fns";
 
 interface Debt {
   id: string;
@@ -67,6 +69,10 @@ export const DebtsManager = ({ language, onDebtsChange }: DebtsManagerProps) => 
   const [hasPromotionalAPR, setHasPromotionalAPR] = useState(false);
   const [editingDebt, setEditingDebt] = useState<Debt | null>(null);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
+  const [viewingDebtHistory, setViewingDebtHistory] = useState<Debt | null>(null);
+  const [isHistoryDialogOpen, setIsHistoryDialogOpen] = useState(false);
+  
+  const { data: debtPayments = [] } = useDebtPayments(viewingDebtHistory?.id);
 
   useEffect(() => {
     const total = debts.reduce((sum, debt) => sum + debt.minimum_payment, 0);
@@ -144,6 +150,7 @@ export const DebtsManager = ({ language, onDebtsChange }: DebtsManagerProps) => 
   };
 
   return (
+    <>
     <Card className="shadow-medium border-debt/20">
       <CardHeader className="bg-debt/10 border-b border-debt/20">
         <div className="flex items-center gap-2">
@@ -560,7 +567,14 @@ export const DebtsManager = ({ language, onDebtsChange }: DebtsManagerProps) => 
             </h3>
             <div className="space-y-3 opacity-70">
               {paidDebts.map((debt) => (
-                <div key={debt.id} className="flex items-center justify-between p-3 bg-green-50 dark:bg-green-950/20 rounded-lg border border-green-200 dark:border-green-900">
+                <div 
+                  key={debt.id} 
+                  className="flex items-center justify-between p-3 bg-green-50 dark:bg-green-950/20 rounded-lg border border-green-200 dark:border-green-900 cursor-pointer hover:bg-green-100 dark:hover:bg-green-950/30 transition-colors"
+                  onClick={() => {
+                    setViewingDebtHistory(debt);
+                    setIsHistoryDialogOpen(true);
+                  }}
+                >
                   <div className="flex-1">
                     <p className="font-medium text-green-800 dark:text-green-300">{debt.name}</p>
                     {debt.is_installment ? (
@@ -579,7 +593,10 @@ export const DebtsManager = ({ language, onDebtsChange }: DebtsManagerProps) => 
                     <Button
                       variant="ghost"
                       size="icon"
-                      onClick={() => deleteDebt(debt.id)}
+                      onClick={(e) => {
+                        e.stopPropagation();
+                        deleteDebt(debt.id);
+                      }}
                       title={language === 'en' ? 'Delete' : language === 'es' ? 'Eliminar' : 'Usuń'}
                     >
                       <Trash2 className="h-4 w-4 text-destructive" />
@@ -592,5 +609,66 @@ export const DebtsManager = ({ language, onDebtsChange }: DebtsManagerProps) => 
         )}
       </CardContent>
     </Card>
+
+    {/* Payment History Dialog */}
+    <Dialog open={isHistoryDialogOpen} onOpenChange={setIsHistoryDialogOpen}>
+      <DialogContent className="max-w-2xl max-h-[80vh] overflow-y-auto">
+        <DialogHeader>
+          <DialogTitle>
+            {language === 'en' ? 'Payment History' : language === 'es' ? 'Historial de Pagos' : 'Historia Płatności'} - {viewingDebtHistory?.name}
+          </DialogTitle>
+        </DialogHeader>
+        <div className="space-y-4">
+          {/* Original Amount */}
+          <div className="p-4 bg-blue-50 dark:bg-blue-950/20 rounded-lg border border-blue-200 dark:border-blue-900">
+            <p className="text-sm text-muted-foreground mb-1">
+              {language === 'en' ? 'Original Amount' : language === 'es' ? 'Monto Original' : 'Pierwotna Kwota'}
+            </p>
+            <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+              £{((viewingDebtHistory?.total_amount || 0) + debtPayments.reduce((sum, p) => sum + p.amount, 0)).toFixed(2)}
+            </p>
+          </div>
+
+          {/* Total Paid */}
+          <div className="p-4 bg-green-50 dark:bg-green-950/20 rounded-lg border border-green-200 dark:border-green-900">
+            <p className="text-sm text-muted-foreground mb-1">
+              {language === 'en' ? 'Total Paid' : language === 'es' ? 'Total Pagado' : 'Razem Zapłacono'}
+            </p>
+            <p className="text-2xl font-bold text-green-600 dark:text-green-400">
+              £{debtPayments.reduce((sum, p) => sum + p.amount, 0).toFixed(2)}
+            </p>
+          </div>
+
+          {/* Payment History */}
+          <div>
+            <h4 className="font-semibold mb-3">
+              {language === 'en' ? 'Payments' : language === 'es' ? 'Pagos' : 'Płatności'} ({debtPayments.length})
+            </h4>
+            {debtPayments.length === 0 ? (
+              <p className="text-center text-muted-foreground py-8">
+                {language === 'en' ? 'No payment records found' : language === 'es' ? 'No se encontraron registros de pago' : 'Nie znaleziono płatności'}
+              </p>
+            ) : (
+              <div className="space-y-2">
+                {debtPayments.map((payment) => (
+                  <div key={payment.id} className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/50 transition-colors">
+                    <div className="flex-1">
+                      <p className="font-medium">£{payment.amount.toFixed(2)}</p>
+                      <p className="text-sm text-muted-foreground">
+                        {format(new Date(payment.payment_date), "dd MMM yyyy")}
+                      </p>
+                      {payment.notes && (
+                        <p className="text-xs text-muted-foreground mt-1">{payment.notes}</p>
+                      )}
+                    </div>
+                  </div>
+                ))}
+              </div>
+            )}
+          </div>
+        </div>
+      </DialogContent>
+    </Dialog>
+    </>
   );
 };
