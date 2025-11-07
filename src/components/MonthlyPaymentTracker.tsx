@@ -29,6 +29,7 @@ import {
   useAddPaymentTracker,
   useUpdatePaymentTracker,
   useDeletePaymentTracker,
+  useAllPaymentHistory,
   PaymentTrackerEntry,
   NewPaymentTrackerEntry,
 } from "@/hooks/usePaymentTracker";
@@ -59,6 +60,7 @@ export const MonthlyPaymentTracker = ({ language }: MonthlyPaymentTrackerProps) 
   });
 
   const { data: payments = [] } = usePaymentTracker(currentMonth, activeProfile?.id);
+  const { data: allPayments = [] } = useAllPaymentHistory(activeProfile?.id);
   const { data: incomes = [] } = useIncomeSources();
   const { data: debts = [] } = useDebts();
   const { data: expenses = [] } = useFixedExpenses();
@@ -130,11 +132,14 @@ export const MonthlyPaymentTracker = ({ language }: MonthlyPaymentTrackerProps) 
     },
   }[language];
 
-  // Monthly totals - exhaustive calculations
+  // Monthly totals - exhaustive calculations with projections
   const monthlyTotals = useMemo(() => {
     const today = new Date();
     const currentMonthStart = startOfMonth(currentMonth);
     const currentMonthEnd = new Date(currentMonthStart.getFullYear(), currentMonthStart.getMonth() + 1, 0);
+    const isCurrentMonth = currentMonthStart.getTime() === startOfMonth(today).getTime();
+    const isFutureMonth = currentMonthStart > startOfMonth(today);
+    const isPastMonth = currentMonthStart < startOfMonth(today);
     
     // Total paid this specific month - include payments with payment_date <= today OR status = "paid"
     const totalPaidThisMonth = payments
@@ -152,21 +157,36 @@ export const MonthlyPaymentTracker = ({ language }: MonthlyPaymentTrackerProps) 
       .filter(d => d.balance > 0 && d.minimum_payment > 0)
       .reduce((sum, d) => sum + d.minimum_payment, 0);
     
-    // Total debt balance across all debts - deduct payments made this month
-    const totalDebtBalance = debts.reduce((sum, d) => {
-      // Find payments for this debt in the current viewing month
-      const debtPaymentsThisMonth = payments
-        .filter(p => {
-          const paymentDate = p.payment_date ? new Date(p.payment_date) : null;
-          return (
-            p.source_id === d.id &&
-            (p.payment_status === "paid" || 
-             (paymentDate && paymentDate >= currentMonthStart && paymentDate <= currentMonthEnd))
-          );
-        })
-        .reduce((pSum, p) => pSum + p.amount, 0);
+    // CRITICAL: Calculate projected total debt balance based on viewing month
+    const totalDebtBalance = debts.reduce((sum, debt) => {
+      let projectedBalance = debt.balance;
       
-      return sum + Math.max(0, d.balance - debtPaymentsThisMonth);
+      if (isFutureMonth) {
+        // FUTURE: Subtract all scheduled payments from NOW until the viewing month (inclusive)
+        const paymentsUntilViewingMonth = allPayments.filter(p => {
+          if (p.source_id !== debt.id) return false;
+          const pMonthStr = p.month_year;
+          const pMonth = new Date(pMonthStr);
+          return pMonth > startOfMonth(today) && pMonth <= currentMonthStart;
+        });
+        const totalPaidFuture = paymentsUntilViewingMonth.reduce((acc, p) => acc + p.amount, 0);
+        projectedBalance = Math.max(0, debt.balance - totalPaidFuture);
+      } else if (isPastMonth) {
+        // PAST: Add back all payments from viewing month until NOW
+        const paymentsFromViewingUntilNow = allPayments.filter(p => {
+          if (p.source_id !== debt.id) return false;
+          const pMonthStr = p.month_year;
+          const pMonth = new Date(pMonthStr);
+          return pMonth > currentMonthStart && pMonth <= startOfMonth(today);
+        });
+        const totalToRestore = paymentsFromViewingUntilNow.reduce((acc, p) => acc + p.amount, 0);
+        projectedBalance = debt.balance + totalToRestore;
+      } else {
+        // CURRENT MONTH: Use current balance as-is
+        projectedBalance = debt.balance;
+      }
+      
+      return sum + Math.max(0, projectedBalance);
     }, 0);
     
     return { 
@@ -174,7 +194,7 @@ export const MonthlyPaymentTracker = ({ language }: MonthlyPaymentTrackerProps) 
       expectedThisMonth, 
       totalDebtBalance 
     };
-  }, [payments, debts, currentMonth]);
+  }, [payments, allPayments, debts, currentMonth]);
 
   const handleSave = async () => {
     if (!formData.amount || parseFloat(formData.amount) <= 0) {

@@ -63,6 +63,38 @@ export const usePaymentTracker = (monthYear?: Date, profileId?: string | null) =
   });
 };
 
+// Hook to get ALL payment history (for projections)
+export const useAllPaymentHistory = (profileId?: string | null) => {
+  return useQuery({
+    queryKey: ["payment-tracker-all", profileId],
+    queryFn: async () => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) return [];
+
+      let query = supabase
+        .from("payment_tracker")
+        .select("*")
+        .eq("user_id", user.id)
+        .eq("payment_type", "debt")
+        .order("month_year", { ascending: true });
+
+      // Filter by profile if provided
+      if (profileId !== undefined) {
+        if (profileId === null) {
+          query = query.is("profile_id", null);
+        } else {
+          query = query.eq("profile_id", profileId);
+        }
+      }
+
+      const { data, error } = await query;
+
+      if (error) throw error;
+      return data as PaymentTrackerEntry[];
+    },
+  });
+};
+
 // Hook to get only paid/completed payments for overview calculations
 export const usePaidPaymentsForOverview = (profileId?: string | null) => {
   const today = new Date().toISOString().split('T')[0];
