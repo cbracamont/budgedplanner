@@ -1,12 +1,13 @@
 import { useState } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import { Badge } from "@/components/ui/badge";
-import { Users, UserPlus, LogOut, Copy, Check } from "lucide-react";
+import { Users, Copy, Check, LogOut, UserCheck, UserX } from "lucide-react";
 import { useMyHousehold, useHouseholdMembers, useCreateHousehold, useJoinHousehold, useLeaveHousehold } from "@/hooks/useHousehold";
-import { Language, getTranslation } from "@/lib/i18n";
+import { useApproveHouseholdMember, useRejectHouseholdMember } from "@/hooks/useHouseholdApprovals";
+import { getTranslation, Language } from "@/lib/i18n";
+import { householdSchema } from "@/components/validation/schemas";
 import { toast } from "sonner";
 
 interface HouseholdManagerProps {
@@ -19,113 +20,122 @@ export const HouseholdManager = ({ language }: HouseholdManagerProps) => {
   const [copied, setCopied] = useState(false);
   const [mode, setMode] = useState<"create" | "join" | null>(null);
 
-  const { data: myHousehold } = useMyHousehold();
-  const { data: members = [] } = useHouseholdMembers(myHousehold?.household_id);
+  const myHousehold = useMyHousehold();
+  const members = useHouseholdMembers(myHousehold.data?.household_id);
   const createHousehold = useCreateHousehold();
   const joinHousehold = useJoinHousehold();
   const leaveHousehold = useLeaveHousehold();
+  const approveMember = useApproveHouseholdMember();
+  const rejectMember = useRejectHouseholdMember();
 
-  const handleCreate = async () => {
-    if (!displayName.trim()) {
-      toast.error(language === "es" ? "Ingresa tu nombre" : "Enter your name");
+  const handleCreate = () => {
+    const result = householdSchema.safeParse({ displayName });
+    if (!result.success) {
+      toast.error(result.error.errors[0].message);
       return;
     }
-
-    await createHousehold.mutateAsync({ displayName });
+    createHousehold.mutate({ displayName });
     setDisplayName("");
     setMode(null);
   };
 
-  const handleJoin = async () => {
-    if (!displayName.trim() || !householdIdInput.trim()) {
-      toast.error(language === "es" ? "Completa todos los campos" : "Fill all fields");
+  const handleJoin = () => {
+    const result = householdSchema.safeParse({ displayName, householdId: householdIdInput });
+    if (!result.success) {
+      toast.error(result.error.errors[0].message);
       return;
     }
-
-    await joinHousehold.mutateAsync({ householdId: householdIdInput, displayName });
+    joinHousehold.mutate({ 
+      householdId: householdIdInput,
+      displayName 
+    });
     setDisplayName("");
     setHouseholdIdInput("");
     setMode(null);
   };
 
   const handleCopyId = () => {
-    if (myHousehold?.household_id) {
-      navigator.clipboard.writeText(myHousehold.household_id);
+    if (myHousehold.data?.household_id) {
+      navigator.clipboard.writeText(myHousehold.data.household_id);
       setCopied(true);
-      toast.success(language === "es" ? "ID copiado al portapapeles" : "ID copied to clipboard");
       setTimeout(() => setCopied(false), 2000);
     }
   };
 
-  if (myHousehold) {
+  if (myHousehold.isLoading) {
+    return <div>Loading...</div>;
+  }
+
+  if (myHousehold.data) {
     return (
       <Card>
         <CardHeader>
-          <CardTitle className="flex items-center gap-2">
-            <Users className="h-5 w-5" />
-            {language === "es" ? "Mi Hogar" : "My Household"}
-          </CardTitle>
-          <CardDescription>
-            {language === "es" 
-              ? "Gestiona las finanzas de tu familia en conjunto" 
-              : "Manage your family finances together"}
-          </CardDescription>
+          <div className="flex items-center justify-between">
+            <div className="flex items-center gap-2">
+              <Users className="h-5 w-5" />
+              <CardTitle>{getTranslation(language, 'household')}</CardTitle>
+            </div>
+            <Button
+              variant="destructive"
+              size="sm"
+              onClick={() => leaveHousehold.mutate(myHousehold.data.id)}
+              disabled={leaveHousehold.isPending}
+            >
+              <LogOut className="h-4 w-4 mr-2" />
+              {getTranslation(language, 'leaveHousehold')}
+            </Button>
+          </div>
         </CardHeader>
-        <CardContent className="space-y-4">
-          <div>
-            <Label>{language === "es" ? "ID del Hogar" : "Household ID"}</Label>
-            <div className="flex gap-2 mt-1">
-              <Input 
-                value={myHousehold.household_id} 
-                readOnly 
-                className="font-mono text-xs"
-              />
+        <CardContent>
+          <div className="space-y-4">
+            <div className="flex items-center gap-2 text-sm">
+              <span className="font-medium">{getTranslation(language, 'householdId')}:</span>
+              <code className="px-2 py-1 bg-muted rounded text-xs">{myHousehold.data.household_id}</code>
               <Button
-                variant="outline"
-                size="icon"
+                variant="ghost"
+                size="sm"
                 onClick={handleCopyId}
               >
                 {copied ? <Check className="h-4 w-4" /> : <Copy className="h-4 w-4" />}
               </Button>
             </div>
-            <p className="text-xs text-muted-foreground mt-1">
-              {language === "es" 
-                ? "Comparte este ID con tu familia para que puedan unirse" 
-                : "Share this ID with your family to join"}
-            </p>
-          </div>
 
-          <div>
-            <Label className="mb-2 block">
-              {language === "es" ? "Miembros del Hogar" : "Household Members"}
-            </Label>
-            <div className="space-y-2">
-              {members.map((member) => (
-                <div key={member.id} className="flex items-center justify-between p-3 rounded-lg border">
-                  <div>
-                    <p className="font-medium">{member.display_name || language === "es" ? "Sin nombre" : "No name"}</p>
-                    <p className="text-xs text-muted-foreground">
-                      {member.role === "owner" 
-                        ? (language === "es" ? "Propietario" : "Owner")
-                        : (language === "es" ? "Miembro" : "Member")}
-                    </p>
+            <div>
+              <h3 className="font-medium mb-2">{getTranslation(language, 'members')}:</h3>
+              <div className="space-y-2">
+                {members.data?.map((member) => (
+                  <div key={member.id} className="flex items-center justify-between p-2 bg-muted rounded">
+                    <div>
+                      <div className="font-medium">{member.display_name}</div>
+                      <div className="text-xs text-muted-foreground">
+                        {member.role} {member.status !== 'approved' && `(${member.status})`}
+                      </div>
+                    </div>
+                    {myHousehold.data.role === 'owner' && member.status === 'pending' && (
+                      <div className="flex gap-2">
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => approveMember.mutate(member.id)}
+                          disabled={approveMember.isPending}
+                        >
+                          <UserCheck className="h-4 w-4 text-green-600" />
+                        </Button>
+                        <Button
+                          size="sm"
+                          variant="ghost"
+                          onClick={() => rejectMember.mutate(member.id)}
+                          disabled={rejectMember.isPending}
+                        >
+                          <UserX className="h-4 w-4 text-red-600" />
+                        </Button>
+                      </div>
+                    )}
                   </div>
-                  <Badge variant={member.role === "owner" ? "default" : "secondary"}>
-                    {member.role === "owner" ? "👑" : "👤"}
-                  </Badge>
-                </div>
-              ))}
+                ))}
+              </div>
             </div>
           </div>
-
-          <Button
-            variant="destructive"
-            className="w-full"
-            onClick={() => myHousehold.id && leaveHousehold.mutate(myHousehold.id)}
-          >
-            <LogOut className="h-4 w-4 mr-2" />
-            {language === "es" ? "Salir del Hogar" : "Leave Household"}
-          </Button>
         </CardContent>
       </Card>
     );
@@ -134,85 +144,77 @@ export const HouseholdManager = ({ language }: HouseholdManagerProps) => {
   return (
     <Card>
       <CardHeader>
-        <CardTitle className="flex items-center gap-2">
+        <div className="flex items-center gap-2">
           <Users className="h-5 w-5" />
-          {language === "es" ? "Modo Familiar" : "Family Mode"}
-        </CardTitle>
-        <CardDescription>
-          {language === "es" 
-            ? "Gestiona las finanzas de tu hogar en conjunto" 
-            : "Manage your household finances together"}
-        </CardDescription>
+          <CardTitle>{getTranslation(language, 'household')}</CardTitle>
+        </div>
       </CardHeader>
-      <CardContent className="space-y-4">
+      <CardContent>
         {!mode && (
-          <div className="grid gap-3">
+          <div className="space-y-2">
             <Button onClick={() => setMode("create")} className="w-full">
-              <Users className="h-4 w-4 mr-2" />
-              {language === "es" ? "Crear Hogar" : "Create Household"}
+              {getTranslation(language, 'createHousehold')}
             </Button>
-            <Button variant="outline" onClick={() => setMode("join")} className="w-full">
-              <UserPlus className="h-4 w-4 mr-2" />
-              {language === "es" ? "Unirse a Hogar" : "Join Household"}
+            <Button onClick={() => setMode("join")} variant="outline" className="w-full">
+              {getTranslation(language, 'joinHousehold')}
             </Button>
           </div>
         )}
 
         {mode === "create" && (
-          <div className="space-y-3">
-            <div>
-              <Label htmlFor="displayName">
-                {language === "es" ? "Tu Nombre" : "Your Name"}
-              </Label>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="displayName">{getTranslation(language, 'displayName')}</Label>
               <Input
                 id="displayName"
                 value={displayName}
                 onChange={(e) => setDisplayName(e.target.value)}
-                placeholder={language === "es" ? "Ej: María" : "E.g: Maria"}
+                placeholder="Your name"
               />
             </div>
             <div className="flex gap-2">
-              <Button onClick={handleCreate} className="flex-1">
-                {language === "es" ? "Crear" : "Create"}
+              <Button 
+                onClick={handleCreate} 
+                disabled={createHousehold.isPending}
+              >
+                {getTranslation(language, 'create')}
               </Button>
-              <Button variant="outline" onClick={() => setMode(null)}>
-                {language === "es" ? "Cancelar" : "Cancel"}
+              <Button onClick={() => setMode(null)} variant="outline">
+                {getTranslation(language, 'cancel')}
               </Button>
             </div>
           </div>
         )}
 
         {mode === "join" && (
-          <div className="space-y-3">
-            <div>
-              <Label htmlFor="householdId">
-                {language === "es" ? "ID del Hogar" : "Household ID"}
-              </Label>
+          <div className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="householdId">{getTranslation(language, 'householdId')}</Label>
               <Input
                 id="householdId"
                 value={householdIdInput}
                 onChange={(e) => setHouseholdIdInput(e.target.value)}
-                placeholder="xxxxxxxx-xxxx-xxxx-xxxx-xxxxxxxxxxxx"
-                className="font-mono text-xs"
+                placeholder="Enter household ID"
               />
             </div>
-            <div>
-              <Label htmlFor="joinDisplayName">
-                {language === "es" ? "Tu Nombre" : "Your Name"}
-              </Label>
+            <div className="space-y-2">
+              <Label htmlFor="joinDisplayName">{getTranslation(language, 'displayName')}</Label>
               <Input
                 id="joinDisplayName"
                 value={displayName}
                 onChange={(e) => setDisplayName(e.target.value)}
-                placeholder={language === "es" ? "Ej: Juan" : "E.g: John"}
+                placeholder="Your name"
               />
             </div>
             <div className="flex gap-2">
-              <Button onClick={handleJoin} className="flex-1">
-                {language === "es" ? "Unirse" : "Join"}
+              <Button 
+                onClick={handleJoin} 
+                disabled={joinHousehold.isPending}
+              >
+                {getTranslation(language, 'join')}
               </Button>
-              <Button variant="outline" onClick={() => setMode(null)}>
-                {language === "es" ? "Cancelar" : "Cancel"}
+              <Button onClick={() => setMode(null)} variant="outline">
+                {getTranslation(language, 'cancel')}
               </Button>
             </div>
           </div>

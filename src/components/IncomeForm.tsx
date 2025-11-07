@@ -5,6 +5,8 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Wallet, TrendingUp } from "lucide-react";
 import { getTranslation, Language } from "@/lib/i18n";
+import { incomeSchema } from "@/components/validation/schemas";
+import { toast } from "sonner";
 
 interface IncomeFormProps {
   onIncomeChange: (salary: number, tips: number) => void;
@@ -18,10 +20,20 @@ export const IncomeForm = ({ onIncomeChange, language }: IncomeFormProps) => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onIncomeChange(
-      parseFloat(salary) || 0,
-      parseFloat(tips) || 0
-    );
+    const parsedSalary = parseFloat(salary) || 0;
+    const parsedTips = parseFloat(tips) || 0;
+    
+    const result = incomeSchema.safeParse({
+      salary: parsedSalary,
+      tips: parsedTips,
+    });
+
+    if (!result.success) {
+      toast.error(result.error.errors[0].message);
+      return;
+    }
+
+    onIncomeChange(parsedSalary, parsedTips);
   };
 
   return (

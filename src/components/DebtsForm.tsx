@@ -6,6 +6,8 @@ import { Button } from "@/components/ui/button";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { CreditCard, Car, Banknote } from "lucide-react";
 import { getTranslation, Language, ukBanks } from "@/lib/i18n";
+import { debtSchema } from "@/components/validation/schemas";
+import { toast } from "sonner";
 
 interface DebtsFormProps {
   onDebtsChange: (
@@ -38,22 +40,69 @@ export const DebtsForm = ({ onDebtsChange, language }: DebtsFormProps) => {
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    
+    const personalLoanAmount = parseFloat(personalLoan) || 0;
+    const carFinanceAmount = parseFloat(carFinance) || 0;
+    const creditCardsAmount = parseFloat(creditCards) || 0;
+    const personalLoanAprVal = parseFloat(personalLoanAPR) || 0;
+    const carFinanceAprVal = parseFloat(carFinanceAPR) || 0;
+    const creditCardsAprVal = parseFloat(creditCardsAPR) || 0;
+
+    // Validate personal loan
+    if (personalLoanAmount > 0) {
+      const result = debtSchema.safeParse({ 
+        amount: personalLoanAmount, 
+        apr: personalLoanAprVal, 
+        bank: personalLoanBank 
+      });
+      if (!result.success) {
+        toast.error(`Personal Loan: ${result.error.errors[0].message}`);
+        return;
+      }
+    }
+
+    // Validate car finance
+    if (carFinanceAmount > 0) {
+      const result = debtSchema.safeParse({ 
+        amount: carFinanceAmount, 
+        apr: carFinanceAprVal, 
+        bank: carFinanceBank 
+      });
+      if (!result.success) {
+        toast.error(`Car Finance: ${result.error.errors[0].message}`);
+        return;
+      }
+    }
+
+    // Validate credit cards
+    if (creditCardsAmount > 0) {
+      const result = debtSchema.safeParse({ 
+        amount: creditCardsAmount, 
+        apr: creditCardsAprVal, 
+        bank: creditCardsBank 
+      });
+      if (!result.success) {
+        toast.error(`Credit Cards: ${result.error.errors[0].message}`);
+        return;
+      }
+    }
+
     onDebtsChange(
-      parseFloat(personalLoan) || 0,
-      parseFloat(carFinance) || 0,
-      parseFloat(creditCards) || 0,
+      personalLoanAmount,
+      carFinanceAmount,
+      creditCardsAmount,
       {
         personalLoan: {
           bank: personalLoanBank,
-          apr: parseFloat(personalLoanAPR) || 0
+          apr: personalLoanAprVal
         },
         carFinance: {
           bank: carFinanceBank,
-          apr: parseFloat(carFinanceAPR) || 0
+          apr: carFinanceAprVal
         },
         creditCards: {
           bank: creditCardsBank,
-          apr: parseFloat(creditCardsAPR) || 0
+          apr: creditCardsAprVal
         }
       }
     );

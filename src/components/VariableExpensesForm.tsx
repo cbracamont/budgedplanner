@@ -5,6 +5,8 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { ShoppingCart, UtensilsCrossed, Fuel, ShoppingBag } from "lucide-react";
 import { getTranslation, Language } from "@/lib/i18n";
+import { variableExpenseSchema } from "@/components/validation/schemas";
+import { toast } from "sonner";
 
 export interface VariableExpensesFormProps {
   onExpensesChange: (groceries: number, dining: number, transport: number, shopping: number, entertainment: number) => void;
@@ -21,12 +23,29 @@ export const VariableExpensesForm = ({ onExpensesChange, language }: VariableExp
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
+    const expenses = {
+      groceries: parseFloat(groceries) || 0,
+      dining: parseFloat(dining) || 0,
+      transport: parseFloat(transport) || 0,
+      shopping: parseFloat(shopping) || 0,
+      entertainment: parseFloat(entertainment) || 0,
+    };
+
+    // Validate each expense
+    for (const [key, value] of Object.entries(expenses)) {
+      const result = variableExpenseSchema.safeParse({ amount: value });
+      if (!result.success) {
+        toast.error(`${key}: ${result.error.errors[0].message}`);
+        return;
+      }
+    }
+
     onExpensesChange(
-      parseFloat(groceries) || 0,
-      parseFloat(dining) || 0,
-      parseFloat(transport) || 0,
-      parseFloat(shopping) || 0,
-      parseFloat(entertainment) || 0
+      expenses.groceries,
+      expenses.dining,
+      expenses.transport,
+      expenses.shopping,
+      expenses.entertainment
     );
   };
 

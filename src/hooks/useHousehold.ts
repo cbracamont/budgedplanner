@@ -12,6 +12,7 @@ export interface HouseholdMember {
   joined_at: string;
   created_at: string;
   updated_at: string;
+  status: string;
 }
 
 export const useHouseholdMembers = (householdId?: string) => {
@@ -133,6 +134,7 @@ export const useJoinHousehold = () => {
           user_id: user.id,
           role: "member",
           display_name: displayName,
+          status: "pending",
         }])
         .select()
         .single();
@@ -143,7 +145,7 @@ export const useJoinHousehold = () => {
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["my-household"] });
       queryClient.invalidateQueries({ queryKey: ["household-members"] });
-      toast.success("Te has unido al hogar exitosamente");
+      toast.success("Solicitud de unión enviada. Pendiente de aprobación.");
     },
     onError: (error: Error) => {
       if (error.message.includes("Ya perteneces")) {

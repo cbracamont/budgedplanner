@@ -5,6 +5,8 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Home, Zap, Wifi, Phone } from "lucide-react";
 import { getTranslation, Language } from "@/lib/i18n";
+import { fixedExpenseSchema } from "@/components/validation/schemas";
+import { toast } from "sonner";
 
 export interface FixedExpensesFormProps {
   onExpensesChange: (rent: number, utilities: number, internet: number, phone: number, other: number) => void;
@@ -21,13 +23,24 @@ export const FixedExpensesForm = ({ onExpensesChange, language }: FixedExpensesF
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
-    onExpensesChange(
-      parseFloat(rent) || 0,
-      parseFloat(utilities) || 0,
-      parseFloat(internet) || 0,
-      parseFloat(phone) || 0,
-      parseFloat(other) || 0
-    );
+    const expenses = {
+      rent: parseFloat(rent) || 0,
+      utilities: parseFloat(utilities) || 0,
+      internet: parseFloat(internet) || 0,
+      phone: parseFloat(phone) || 0,
+      other: parseFloat(other) || 0,
+    };
+
+    // Validate each expense
+    for (const [key, value] of Object.entries(expenses)) {
+      const result = fixedExpenseSchema.safeParse({ amount: value });
+      if (!result.success) {
+        toast.error(`${key}: ${result.error.errors[0].message}`);
+        return;
+      }
+    }
+
+    onExpensesChange(expenses.rent, expenses.utilities, expenses.internet, expenses.phone, expenses.other);
   };
 
   return (
