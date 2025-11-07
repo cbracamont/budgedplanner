@@ -38,8 +38,12 @@ export const FloatingChatWidget = ({ language = 'en' as Language }: FloatingChat
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [currentConversationId, setCurrentConversationId] = useState<string | null>(null);
   const [showConversations, setShowConversations] = useState(false);
+  const [position, setPosition] = useState({ x: 0, y: 0 });
+  const [isDragging, setIsDragging] = useState(false);
+  const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
+  const buttonRef = useRef<HTMLDivElement>(null);
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -55,6 +59,51 @@ export const FloatingChatWidget = ({ language = 'en' as Language }: FloatingChat
       }
     }
   }, [isOpen]);
+
+  useEffect(() => {
+    const handleMouseMove = (e: MouseEvent) => {
+      if (!isDragging) return;
+      
+      const newX = e.clientX - dragOffset.x;
+      const newY = e.clientY - dragOffset.y;
+      
+      // Limitar el movimiento dentro de la ventana
+      const maxX = window.innerWidth - 56;
+      const maxY = window.innerHeight - 56;
+      
+      setPosition({
+        x: Math.max(0, Math.min(newX, maxX)),
+        y: Math.max(0, Math.min(newY, maxY))
+      });
+    };
+
+    const handleMouseUp = () => {
+      setIsDragging(false);
+    };
+
+    if (isDragging) {
+      document.addEventListener('mousemove', handleMouseMove);
+      document.addEventListener('mouseup', handleMouseUp);
+    }
+
+    return () => {
+      document.removeEventListener('mousemove', handleMouseMove);
+      document.removeEventListener('mouseup', handleMouseUp);
+    };
+  }, [isDragging, dragOffset]);
+
+  const handleMouseDown = (e: React.MouseEvent) => {
+    if (isOpen) return; // No arrastrar cuando está abierto
+    
+    const rect = buttonRef.current?.getBoundingClientRect();
+    if (rect) {
+      setDragOffset({
+        x: e.clientX - rect.left,
+        y: e.clientY - rect.top
+      });
+      setIsDragging(true);
+    }
+  };
 
   const loadConversations = async () => {
     try {
@@ -229,12 +278,23 @@ export const FloatingChatWidget = ({ language = 'en' as Language }: FloatingChat
   };
 
   return (
-    <div className="fixed bottom-4 right-4 z-50">
+    <div 
+      ref={buttonRef}
+      className="fixed z-50"
+      style={{
+        bottom: position.y === 0 ? '1rem' : 'auto',
+        right: position.x === 0 ? '1rem' : 'auto',
+        top: position.y !== 0 ? `${position.y}px` : 'auto',
+        left: position.x !== 0 ? `${position.x}px` : 'auto',
+        cursor: isDragging ? 'grabbing' : 'auto'
+      }}
+    >
       {!isOpen && (
         <Button
-          onClick={() => setIsOpen(true)}
+          onMouseDown={handleMouseDown}
+          onClick={() => !isDragging && setIsOpen(true)}
           size="lg"
-          className="h-14 w-14 rounded-full shadow-lg hover:scale-110 transition-transform"
+          className="h-14 w-14 rounded-full shadow-lg hover:scale-110 transition-transform cursor-grab active:cursor-grabbing"
         >
           <MessageSquare className="h-6 w-6" />
         </Button>

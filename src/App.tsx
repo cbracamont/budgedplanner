@@ -10,6 +10,7 @@ import Index from "./pages/Index";
 import Terms from "./pages/Terms";
 import Privacy from "./pages/Privacy";
 import NotFound from "./pages/NotFound";
+import ResetPassword from "./pages/ResetPassword";
 import { FloatingChatWidget } from "@/components/FloatingChatWidget";
 
 const queryClient = new QueryClient();
@@ -31,6 +32,7 @@ export default function App() {
             <Route path="/" element={<Index />} />
             <Route path="/terms" element={<Terms />} />
             <Route path="/privacy" element={<Privacy />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
             <Route path="*" element={<NotFound />} />
           </Routes>
         </BrowserRouter>
