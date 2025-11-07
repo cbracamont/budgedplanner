@@ -52,9 +52,7 @@ export const MonthlyPaymentTracker = ({ language }: MonthlyPaymentTrackerProps) 
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
 
   const [formData, setFormData] = useState({
-    payment_type: "expense" as "income" | "expense" | "debt" | "savings",
     amount: "",
-    payment_status: "pending" as "pending" | "paid" | "partial",
     payment_date: format(new Date(), "yyyy-MM-dd"),
     notes: "",
     source_id: "",
@@ -75,30 +73,17 @@ export const MonthlyPaymentTracker = ({ language }: MonthlyPaymentTrackerProps) 
       description: "Track what you've paid this month",
       addPayment: "Add Payment",
       editPayment: "Edit Payment",
-      type: "Type",
+      selectDebt: "Select Debt",
       amount: "Amount",
-      status: "Status",
       date: "Date",
       notes: "Notes",
-      pending: "Pending",
-      paid: "Paid",
-      partial: "Partial",
-      income: "Income",
-      expense: "Expense",
-      debt: "Debt",
-      savings: "Savings",
       noPayments: "No payments tracked this month",
       save: "Save",
       cancel: "Cancel",
       delete: "Delete",
       edit: "Edit",
-      search: "Search payments",
-      sort: "Sort by",
       totalPaid: "Total Paid",
-      totalPending: "Total Pending",
-      trend: "Trend",
-      monthlyTrend: "Monthly Trend",
-      noTrendData: "No trend data available",
+      remaining: "Remaining",
       confirmDelete: "Are you sure you want to delete this payment?",
     },
     es: {
@@ -106,30 +91,17 @@ export const MonthlyPaymentTracker = ({ language }: MonthlyPaymentTrackerProps) 
       description: "Rastrea lo que has pagado este mes",
       addPayment: "Añadir Pago",
       editPayment: "Editar Pago",
-      type: "Tipo",
+      selectDebt: "Seleccionar Deuda",
       amount: "Monto",
-      status: "Estado",
       date: "Fecha",
       notes: "Notas",
-      pending: "Pendiente",
-      paid: "Pagado",
-      partial: "Parcial",
-      income: "Ingreso",
-      expense: "Gasto",
-      debt: "Deuda",
-      savings: "Ahorro",
       noPayments: "No hay pagos registrados este mes",
       save: "Guardar",
       cancel: "Cancelar",
       delete: "Eliminar",
       edit: "Editar",
-      search: "Buscar pagos",
-      sort: "Ordenar por",
       totalPaid: "Total Pagado",
-      totalPending: "Total Pendiente",
-      trend: "Tendencia",
-      monthlyTrend: "Tendencia Mensual",
-      noTrendData: "No hay datos de tendencia disponibles",
+      remaining: "Restante",
       confirmDelete: "¿Estás seguro de que quieres eliminar este pago?",
     },
     pl: {
@@ -137,60 +109,26 @@ export const MonthlyPaymentTracker = ({ language }: MonthlyPaymentTrackerProps) 
       description: "Śledź, co zapłaciłeś w tym miesiącu",
       addPayment: "Dodaj Płatność",
       editPayment: "Edytuj Płatność",
-      type: "Typ",
+      selectDebt: "Wybierz Dług",
       amount: "Kwota",
-      status: "Status",
       date: "Data",
       notes: "Notatki",
-      pending: "Oczekujące",
-      paid: "Zapłacone",
-      partial: "Częściowe",
-      income: "Dochód",
-      expense: "Wydatek",
-      debt: "Dług",
-      savings: "Oszczędności",
       noPayments: "Brak płatności w tym miesiącu",
       save: "Zapisz",
       cancel: "Anuluj",
       delete: "Usuń",
       edit: "Edytuj",
-      search: "Szukaj płatności",
-      sort: "Sortuj po",
       totalPaid: "Razem Zapłacone",
-      totalPending: "Razem Oczekujące",
-      trend: "Trend",
-      monthlyTrend: "Miesięczny Trend",
-      noTrendData: "Brak danych trendu",
+      remaining: "Pozostało",
       confirmDelete: "Czy na pewno chcesz usunąć tę płatność?",
     },
   }[language];
 
-  // Sorting and filtering
-  const sortedPayments = useMemo(() => {
-    let sorted = [...payments];
-    if (sortBy === "amount") sorted.sort((a, b) => b.amount - a.amount);
-    if (sortBy === "date") sorted.sort((a, b) => {
-      const dateA = a.payment_date ? new Date(a.payment_date).getTime() : 0;
-      const dateB = b.payment_date ? new Date(b.payment_date).getTime() : 0;
-      return dateB - dateA;
-    });
-    if (sortOrder === "asc") sorted.reverse();
-    return sorted.filter((payment) => {
-      const searchLower = searchQuery.toLowerCase();
-      return (
-        payment.payment_type.toLowerCase().includes(searchLower) ||
-        (payment.notes && payment.notes.toLowerCase().includes(searchLower))
-      );
-    });
-  }, [payments, searchQuery, sortBy, sortOrder]);
-
   // Monthly totals
   const monthlyTotals = useMemo(() => {
-    const paid = sortedPayments.filter((p) => p.payment_status === "paid").reduce((sum, p) => sum + p.amount, 0);
-    const pending = sortedPayments.filter((p) => p.payment_status === "pending").reduce((sum, p) => sum + p.amount, 0);
-    const total = paid + pending;
-    return { paid, pending, total };
-  }, [sortedPayments]);
+    const totalPaid = payments.reduce((sum, p) => sum + p.amount, 0);
+    return { totalPaid };
+  }, [payments]);
 
   const handleSave = async () => {
     if (!formData.amount || parseFloat(formData.amount) <= 0) {
@@ -202,7 +140,7 @@ export const MonthlyPaymentTracker = ({ language }: MonthlyPaymentTrackerProps) 
       return;
     }
 
-    if (formData.payment_type === "debt" && !formData.source_id) {
+    if (!formData.source_id) {
       toast({
         title: "Error",
         description: "Please select a debt.",
@@ -213,13 +151,13 @@ export const MonthlyPaymentTracker = ({ language }: MonthlyPaymentTrackerProps) 
 
     const entry: NewPaymentTrackerEntry = {
       month_year: format(startOfMonth(currentMonth), "yyyy-MM-dd"),
-      payment_type: formData.payment_type,
+      payment_type: "debt",
       amount: parseFloat(formData.amount),
-      payment_status: formData.payment_status,
+      payment_status: "paid",
       payment_date: formData.payment_date,
       notes: formData.notes || undefined,
-      source_id: formData.source_id || undefined,
-      source_table: formData.payment_type === "debt" ? "debts" : undefined,
+      source_id: formData.source_id,
+      source_table: "debts",
     };
 
     if (editingEntry) {
@@ -246,22 +184,20 @@ export const MonthlyPaymentTracker = ({ language }: MonthlyPaymentTrackerProps) 
     } else {
       addMutation.mutate(entry, {
         onSuccess: async () => {
-          // If it's a debt payment, also create a debt_payment record to update the balance
-          if (formData.payment_type === "debt" && formData.source_id) {
-            try {
-              const { data: { user } } = await supabase.auth.getUser();
-              if (user) {
-                await supabase.from("debt_payments").insert({
-                  user_id: user.id,
-                  debt_id: formData.source_id,
-                  amount: parseFloat(formData.amount),
-                  payment_date: formData.payment_date,
-                  notes: formData.notes || undefined,
-                });
-              }
-            } catch (error) {
-              console.error("Error creating debt payment:", error);
+          // Create a debt_payment record to update the balance via trigger
+          try {
+            const { data: { user } } = await supabase.auth.getUser();
+            if (user) {
+              await supabase.from("debt_payments").insert({
+                user_id: user.id,
+                debt_id: formData.source_id,
+                amount: parseFloat(formData.amount),
+                payment_date: formData.payment_date,
+                notes: formData.notes || undefined,
+              });
             }
+          } catch (error) {
+            console.error("Error creating debt payment:", error);
           }
           
           toast({
@@ -284,9 +220,7 @@ export const MonthlyPaymentTracker = ({ language }: MonthlyPaymentTrackerProps) 
 
   const resetForm = () => {
     setFormData({
-      payment_type: "expense",
       amount: "",
-      payment_status: "pending",
       payment_date: format(new Date(), "yyyy-MM-dd"),
       notes: "",
       source_id: "",
@@ -297,9 +231,7 @@ export const MonthlyPaymentTracker = ({ language }: MonthlyPaymentTrackerProps) 
   const handleEdit = (entry: PaymentTrackerEntry) => {
     setEditingEntry(entry);
     setFormData({
-      payment_type: entry.payment_type,
       amount: entry.amount.toString(),
-      payment_status: entry.payment_status,
       payment_date: entry.payment_date || format(new Date(), "yyyy-MM-dd"),
       notes: entry.notes || "",
       source_id: entry.source_id || "",
@@ -326,24 +258,6 @@ export const MonthlyPaymentTracker = ({ language }: MonthlyPaymentTrackerProps) 
     });
   };
 
-  const getStatusBadge = (status: string) => {
-    const variants = {
-      paid: "default",
-      pending: "secondary",
-      partial: "outline",
-    };
-    return variants[status as keyof typeof variants] || "secondary";
-  };
-
-  const getTypeColor = (type: string) => {
-    const colors = {
-      income: "text-green-600 dark:text-green-400",
-      expense: "text-orange-600 dark:text-orange-400",
-      debt: "text-red-600 dark:text-red-400",
-      savings: "text-blue-600 dark:text-blue-400",
-    };
-    return colors[type as keyof typeof colors] || "";
-  };
 
   const monthName = format(currentMonth, "MMMM yyyy", { locale: language === "es" ? undefined : undefined });
 
@@ -390,42 +304,23 @@ export const MonthlyPaymentTracker = ({ language }: MonthlyPaymentTrackerProps) 
               </DialogHeader>
               <div className="space-y-4">
                 <div className="space-y-2">
-                  <Label>{t.type}</Label>
+                  <Label>{t.selectDebt}</Label>
                   <Select
-                    value={formData.payment_type}
-                    onValueChange={(val: any) => setFormData({ ...formData, payment_type: val, source_id: "" })}
+                    value={formData.source_id}
+                    onValueChange={(val: string) => setFormData({ ...formData, source_id: val })}
                   >
                     <SelectTrigger>
-                      <SelectValue />
+                      <SelectValue placeholder={language === "en" ? "Choose a debt..." : language === "es" ? "Elige una deuda..." : "Wybierz dług..."} />
                     </SelectTrigger>
                     <SelectContent>
-                      <SelectItem value="income">{t.income}</SelectItem>
-                      <SelectItem value="expense">{t.expense}</SelectItem>
-                      <SelectItem value="debt">{t.debt}</SelectItem>
-                      <SelectItem value="savings">{t.savings}</SelectItem>
+                      {debts.map((debt) => (
+                        <SelectItem key={debt.id} value={debt.id}>
+                          {debt.name} - {formatCurrency(debt.balance)}
+                        </SelectItem>
+                      ))}
                     </SelectContent>
                   </Select>
                 </div>
-                {formData.payment_type === "debt" && (
-                  <div className="space-y-2">
-                    <Label>{language === "en" ? "Select Debt" : language === "es" ? "Seleccionar Deuda" : "Wybierz Dług"}</Label>
-                    <Select
-                      value={formData.source_id}
-                      onValueChange={(val: string) => setFormData({ ...formData, source_id: val })}
-                    >
-                      <SelectTrigger>
-                        <SelectValue placeholder={language === "en" ? "Choose a debt..." : language === "es" ? "Elige una deuda..." : "Wybierz dług..."} />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {debts.map((debt) => (
-                          <SelectItem key={debt.id} value={debt.id}>
-                            {debt.name} - {formatCurrency(debt.balance)}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
-                )}
                 <div className="space-y-2">
                   <Label>{t.amount} (£)</Label>
                   <Input
@@ -435,22 +330,6 @@ export const MonthlyPaymentTracker = ({ language }: MonthlyPaymentTrackerProps) 
                     onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
                     placeholder="0.00"
                   />
-                </div>
-                <div className="space-y-2">
-                  <Label>{t.status}</Label>
-                  <Select
-                    value={formData.payment_status}
-                    onValueChange={(val: any) => setFormData({ ...formData, payment_status: val })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue />
-                    </SelectTrigger>
-                    <SelectContent>
-                      <SelectItem value="pending">{t.pending}</SelectItem>
-                      <SelectItem value="paid">{t.paid}</SelectItem>
-                      <SelectItem value="partial">{t.partial}</SelectItem>
-                    </SelectContent>
-                  </Select>
                 </div>
                 <div className="space-y-2">
                   <Label>{t.date}</Label>
@@ -480,6 +359,20 @@ export const MonthlyPaymentTracker = ({ language }: MonthlyPaymentTrackerProps) 
         </div>
       </CardHeader>
       <CardContent className="pt-6">
+        {/* Summary Cards */}
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-4 mb-6">
+          <div className="p-4 rounded-lg bg-gradient-to-br from-primary/10 to-primary/5 border border-primary/20">
+            <p className="text-sm text-muted-foreground mb-1">{t.totalPaid}</p>
+            <p className="text-2xl font-bold text-primary">{formatCurrency(monthlyTotals.totalPaid)}</p>
+          </div>
+          <div className="p-4 rounded-lg bg-gradient-to-br from-muted/50 to-muted/20 border border-border">
+            <p className="text-sm text-muted-foreground mb-1">{t.remaining}</p>
+            <p className="text-2xl font-bold">
+              {formatCurrency(debts.reduce((sum, d) => sum + d.balance, 0))}
+            </p>
+          </div>
+        </div>
+
         {payments.length === 0 ? (
           <div className="text-center py-12 text-muted-foreground">
             <Receipt className="h-12 w-12 mx-auto mb-4 opacity-50" />
@@ -488,7 +381,7 @@ export const MonthlyPaymentTracker = ({ language }: MonthlyPaymentTrackerProps) 
         ) : (
           <div className="space-y-3">
             {payments.map((payment) => {
-              const linkedDebt = payment.payment_type === "debt" && payment.source_id 
+              const linkedDebt = payment.source_id 
                 ? debts.find(d => d.id === payment.source_id)
                 : null;
               
@@ -498,22 +391,15 @@ export const MonthlyPaymentTracker = ({ language }: MonthlyPaymentTrackerProps) 
                   className="flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors"
                 >
                   <div className="flex items-center gap-3 flex-1">
-                    {payment.payment_status === "paid" ? (
-                      <CheckCircle2 className="h-5 w-5 text-green-600" />
-                    ) : (
-                      <Circle className="h-5 w-5 text-muted-foreground" />
-                    )}
+                    <CheckCircle2 className="h-5 w-5 text-primary" />
                     <div className="flex-1">
                       <div className="flex items-center gap-2 flex-wrap">
-                        <Badge variant={getStatusBadge(payment.payment_status) as any}>
-                          {t[payment.payment_status as keyof typeof t]}
-                        </Badge>
-                        <span className={`font-semibold ${getTypeColor(payment.payment_type)}`}>
-                          {t[payment.payment_type as keyof typeof t]}
+                        <span className="font-semibold">
+                          {linkedDebt?.name || "Deuda"}
                         </span>
                         {linkedDebt && (
                           <span className="text-sm text-muted-foreground">
-                            → {linkedDebt.name}
+                            {t.remaining}: {formatCurrency(linkedDebt.balance)}
                           </span>
                         )}
                       </div>
@@ -525,15 +411,15 @@ export const MonthlyPaymentTracker = ({ language }: MonthlyPaymentTrackerProps) 
                       )}
                     </div>
                   </div>
-                <div className="flex items-center gap-3">
-                  <span className="text-lg font-bold">{formatCurrency(payment.amount)}</span>
-                  <div className="flex gap-1">
-                    <Button variant="ghost" size="icon" onClick={() => handleEdit(payment)}>
-                      <Edit2 className="h-4 w-4" />
-                    </Button>
-                    <Button variant="ghost" size="icon" onClick={() => deleteMutation.mutate(payment.id)}>
-                      <Trash2 className="h-4 w-4 text-destructive" />
-                    </Button>
+                  <div className="flex items-center gap-3">
+                    <span className="text-lg font-bold text-primary">{formatCurrency(payment.amount)}</span>
+                    <div className="flex gap-1">
+                      <Button variant="ghost" size="icon" onClick={() => handleEdit(payment)}>
+                        <Edit2 className="h-4 w-4" />
+                      </Button>
+                      <Button variant="ghost" size="icon" onClick={() => deleteMutation.mutate(payment.id)}>
+                        <Trash2 className="h-4 w-4 text-destructive" />
+                      </Button>
                     </div>
                   </div>
                 </div>
