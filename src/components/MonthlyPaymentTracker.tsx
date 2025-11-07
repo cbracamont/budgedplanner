@@ -33,6 +33,7 @@ import {
   NewPaymentTrackerEntry,
 } from "@/hooks/usePaymentTracker";
 import { useIncomeSources, useDebts, useFixedExpenses, useSavingsGoals } from "@/hooks/useFinancialData";
+import { useActiveProfile } from "@/hooks/useFinancialProfiles";
 import { supabase } from "@/integrations/supabase/client";
 import { Progress } from "@/components/ui/progress";
 import { formatCurrency } from "@/lib/i18n";
@@ -45,12 +46,10 @@ interface MonthlyPaymentTrackerProps {
 
 export const MonthlyPaymentTracker = ({ language }: MonthlyPaymentTrackerProps) => {
   const { toast } = useToast();
+  const { data: activeProfile } = useActiveProfile();
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [editingEntry, setEditingEntry] = useState<PaymentTrackerEntry | null>(null);
-  const [searchQuery, setSearchQuery] = useState("");
-  const [sortBy, setSortBy] = useState<"date" | "amount" | "type" | "status">("date");
-  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
 
   const [formData, setFormData] = useState({
     amount: "",
@@ -59,7 +58,7 @@ export const MonthlyPaymentTracker = ({ language }: MonthlyPaymentTrackerProps) 
     source_id: "",
   });
 
-  const { data: payments = [] } = usePaymentTracker(currentMonth);
+  const { data: payments = [] } = usePaymentTracker(currentMonth, activeProfile?.id);
   const { data: incomes = [] } = useIncomeSources();
   const { data: debts = [] } = useDebts();
   const { data: expenses = [] } = useFixedExpenses();
@@ -150,7 +149,7 @@ export const MonthlyPaymentTracker = ({ language }: MonthlyPaymentTrackerProps) 
       return;
     }
 
-    const entry: NewPaymentTrackerEntry = {
+    const entry: NewPaymentTrackerEntry & { profile_id?: string | null } = {
       month_year: format(startOfMonth(currentMonth), "yyyy-MM-dd"),
       payment_type: "debt",
       amount: parseFloat(formData.amount),
@@ -159,6 +158,7 @@ export const MonthlyPaymentTracker = ({ language }: MonthlyPaymentTrackerProps) 
       notes: formData.notes || undefined,
       source_id: formData.source_id,
       source_table: "debts",
+      profile_id: activeProfile?.id || null,
     };
 
     if (editingEntry) {
@@ -191,6 +191,7 @@ export const MonthlyPaymentTracker = ({ language }: MonthlyPaymentTrackerProps) 
             if (user) {
               await supabase.from("debt_payments").insert({
                 user_id: user.id,
+                profile_id: activeProfile?.id || null,
                 debt_id: formData.source_id,
                 amount: parseFloat(formData.amount),
                 payment_date: formData.payment_date,

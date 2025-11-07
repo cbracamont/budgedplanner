@@ -30,21 +30,32 @@ export interface NewPaymentTrackerEntry {
   notes?: string;
 }
 
-export const usePaymentTracker = (monthYear?: Date) => {
+export const usePaymentTracker = (monthYear?: Date, profileId?: string | null) => {
   const targetMonth = monthYear ? format(startOfMonth(monthYear), "yyyy-MM-dd") : format(startOfMonth(new Date()), "yyyy-MM-dd");
 
   return useQuery({
-    queryKey: ["payment-tracker", targetMonth],
+    queryKey: ["payment-tracker", targetMonth, profileId],
     queryFn: async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return [];
 
-      const { data, error } = await supabase
+      let query = supabase
         .from("payment_tracker")
         .select("*")
         .eq("user_id", user.id)
         .eq("month_year", targetMonth)
         .order("payment_date", { ascending: true });
+
+      // Filter by profile if provided
+      if (profileId !== undefined) {
+        if (profileId === null) {
+          query = query.is("profile_id", null);
+        } else {
+          query = query.eq("profile_id", profileId);
+        }
+      }
+
+      const { data, error } = await query;
 
       if (error) throw error;
       return data as PaymentTrackerEntry[];
@@ -53,21 +64,32 @@ export const usePaymentTracker = (monthYear?: Date) => {
 };
 
 // Hook to get only paid/completed payments for overview calculations
-export const usePaidPaymentsForOverview = () => {
+export const usePaidPaymentsForOverview = (profileId?: string | null) => {
   const today = new Date().toISOString().split('T')[0];
 
   return useQuery({
-    queryKey: ["payment-tracker-overview", today],
+    queryKey: ["payment-tracker-overview", today, profileId],
     queryFn: async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) return [];
 
-      const { data, error } = await supabase
+      let query = supabase
         .from("payment_tracker")
         .select("*")
         .eq("user_id", user.id)
         .lte("payment_date", today)
         .eq("payment_status", "paid");
+
+      // Filter by profile if provided
+      if (profileId !== undefined) {
+        if (profileId === null) {
+          query = query.is("profile_id", null);
+        } else {
+          query = query.eq("profile_id", profileId);
+        }
+      }
+
+      const { data, error } = await query;
 
       if (error) throw error;
       return data as PaymentTrackerEntry[];
@@ -80,7 +102,7 @@ export const useAddPaymentTracker = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async (entry: NewPaymentTrackerEntry) => {
+    mutationFn: async (entry: NewPaymentTrackerEntry & { profile_id?: string | null }) => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("User not authenticated");
 

@@ -8,6 +8,7 @@ const corsHeaders = {
 interface Debt {
   id: string
   user_id: string
+  profile_id: string | null
   name: string
   balance: number
   minimum_payment: number
@@ -72,15 +73,23 @@ Deno.serve(async (req) => {
       console.log(`Generating payments for month: ${targetMonthStr}`)
 
       for (const debt of debts as Debt[]) {
-        // Check if payment already exists for this debt and month
-        const { data: existingPayment } = await supabaseClient
+        // Build query to check for existing payment
+        let existingQuery = supabaseClient
           .from('payment_tracker')
           .select('id')
           .eq('user_id', debt.user_id)
           .eq('month_year', targetMonthStr)
           .eq('source_id', debt.id)
           .eq('payment_type', 'debt')
-          .single()
+
+        // Add profile_id filter if debt has a profile
+        if (debt.profile_id) {
+          existingQuery = existingQuery.eq('profile_id', debt.profile_id)
+        } else {
+          existingQuery = existingQuery.is('profile_id', null)
+        }
+
+        const { data: existingPayment } = await existingQuery.single()
 
         if (existingPayment) {
           console.log(`Payment already exists for debt ${debt.name} in ${targetMonthStr}`)
@@ -102,6 +111,7 @@ Deno.serve(async (req) => {
           .from('payment_tracker')
           .insert({
             user_id: debt.user_id,
+            profile_id: debt.profile_id,
             month_year: targetMonthStr,
             payment_type: 'debt',
             source_id: debt.id,
