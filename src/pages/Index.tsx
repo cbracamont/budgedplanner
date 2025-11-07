@@ -1005,7 +1005,7 @@ const Index = () => {
                 </Card>}
 
               {/* DEBT FREE */}
-              {debtData.length > 0 && <Card className="border-2 rounded-bl-none \\\\\\\\n bg-[#181a22] rounded">
+              {debtData.length > 0 && <Card className="border-2 rounded-bl-none \\\\\\\\\\\\\\\\n bg-[#181a22] rounded-md">
                   <CardHeader>
                     <CardTitle className="flex items-center gap-2 text-slate-200">
                       <TrendingUp className="h-6 w-6" /> Debt Free Date
