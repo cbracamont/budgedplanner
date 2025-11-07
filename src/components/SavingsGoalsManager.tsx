@@ -1,10 +1,11 @@
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
+import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Target, Plus, Trash2, Pencil, Calendar, TrendingUp, CheckCircle2 } from "lucide-react";
+import { Target, Plus, Trash2, Pencil, TrendingDown, TrendingUp as TrendingUpIcon, CheckCircle2, PiggyBank } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Language } from "@/lib/i18n";
 import { useToast } from "@/hooks/use-toast";
@@ -14,167 +15,8 @@ import {
   useUpdateSavingsGoal,
   useDeleteSavingsGoal,
 } from "@/hooks/useFinancialData";
-
-interface SavingsGoal {
-  id: string;
-  goal_name: string;
-  goal_description?: string;
-  target_amount: number;
-  current_amount: number;
-  target_date?: string;
-  monthly_contribution?: number;
-  is_active?: boolean;
-}
-
-interface SavingsGoalsManagerProps {
-  language: Language;
-  availableForSavings: number;
-  availableBudget: number;
-  onBudgetAllocation?: (allocatedAmount: number) => void;
-}
-
-export const SavingsGoalsManager = ({
-  language,
-  availableForSavings,
-  availableBudget,
-  onBudgetAllocation,
-}: SavingsGoalsManagerProps) => {
-  const { toast } = useToast();
-  const { data: goals = [] } = useSavingsGoals();
-  const addGoalMutation = useAddSavingsGoal();
-  const updateGoalMutation = useUpdateSavingsGoal();
-  const deleteGoalMutation = useDeleteSavingsGoal();
-  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
-  const [editingGoal, setEditingGoal] = useState<SavingsGoal | null>(null);
-
-  const [formData, setFormData] = useState({
-    goal_name: "",
-    target_amount: "",
-    current_amount: "",
-    target_date: "",
-  });
-
-  const resetForm = () => {
-    setFormData({
-      goal_name: "",
-      target_amount: "",
-      current_amount: "",
-      target_date: "",
-    });
-    setEditingGoal(null);
-  };
-
-  const handleSaveGoal = async () => {
-    const goalData = {
-      goal_name: formData.goal_name,
-      target_amount: parseFloat(formData.target_amount) || 0,
-      current_amount: parseFloat(formData.current_amount) || 0,
-      target_date: formData.target_date || null,
-    };
-
-    if (editingGoal) {
-      updateGoalMutation.mutate(
-        {
-          id: editingGoal.id,
-          ...goalData,
-        },
-        {
-          onSuccess: () => {
-            resetForm();
-            setIsAddDialogOpen(false);
-          },
-        },
-      );
-    } else {
-      addGoalMutation.mutate(goalData, {
-        onSuccess: () => {
-          resetForm();
-          setIsAddDialogOpen(false);
-        },
-      });
-    }
-  };
-
-  const handleDeleteGoal = async (id: string) => {
-    deleteGoalMutation.mutate(id);
-  };
-
-  const handleEditGoal = (goal: SavingsGoal) => {
-    setEditingGoal(goal);
-    setFormData({
-      goal_name: goal.goal_name,
-      target_amount: goal.target_amount.toString(),
-      current_amount: goal.current_amount.toString(),
-      target_date: goal.target_date || "",
-    });
-    setIsAddDialogOpen(true);
-  };
-
-  const calculateMonthsToGoal = (goal: SavingsGoal) => {
-    const remaining = goal.target_amount - goal.current_amount;
-    if (remaining <= 0 || availableForSavings <= 0) return 0;
-    return Math.ceil(remaining / availableForSavings);
-  };
-
-  const calculateMonthlyAmount = (goal: SavingsGoal) => {
-    if (!goal.target_date) return 0;
-    const targetDate = new Date(goal.target_date);
-    const today = new Date();
-    const monthsRemaining = Math.max(
-      1,
-      Math.ceil((targetDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24 * 30)),
-    );
-    const remaining = goal.target_amount - goal.current_amount;
-    return remaining / monthsRemaining;
-  };
-
-  const activateGoalContribution = async (goalId: string, monthlyAmount: number) => {
-    updateGoalMutation.mutate(
-      {
-        id: goalId,
-        monthly_contribution: monthlyAmount,
-        is_active: true,
-      },
-      {
-        onSuccess: () => {
-          toast({
-            title: language === "en" ? "Success" : "Éxito",
-            description:
-              language === "en"
-                ? `Monthly contribution of £${monthlyAmount.toFixed(2)} activated`
-                : `Aporte mensual de £${monthlyAmount.toFixed(2)} activado`,
-          });
-
-          if (onBudgetAllocation) {
-            const totalAllocated = goals.reduce((sum, g) => sum + (g.monthly_contribution || 0), monthlyAmount);
-            onBudgetAllocation(totalAllocated);
-          }
-        },
-      },
-    );
-  };
-
-  return (
-    <Card className="shadow-medium">
-import { useState, useEffect } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { Target, Plus, Trash2, Pencil, Calendar, TrendingUp, CheckCircle2, AlertCircle, TrendingDown, TrendingUp as TrendingUpIcon } from "lucide-react";
-import { Badge } from "@/components/ui/badge";
-import { Language } from "@/lib/i18n";
-import { useToast } from "@/hooks/use-toast";
-import {
-  useSavingsGoals,
-  useAddSavingsGoal,
-  useUpdateSavingsGoal,
-  useDeleteSavingsGoal,
-} from "@/hooks/useFinancialData";
-import { Progress } from "@/components/ui/progress";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { format, differenceInMonths, isPast, isToday } from "date-fns";
+import { differenceInMonths, isPast } from "date-fns";
 import { formatCurrency } from "@/lib/i18n";
 
 interface SavingsGoal {
@@ -186,6 +28,7 @@ interface SavingsGoal {
   target_date?: string;
   monthly_contribution?: number;
   is_active?: boolean;
+  priority?: "low" | "medium" | "high";
 }
 
 interface SavingsGoalsManagerProps {
@@ -311,7 +154,7 @@ export const SavingsGoalsManager = ({
           });
           resetForm();
           setIsAddDialogOpen(false);
-          if (onBudgetAllocation) onBudgetAllocation(0); // Reset allocation
+          if (onBudgetAllocation) onBudgetAllocation(0);
         },
         onError: (error) => {
           toast({
@@ -332,7 +175,7 @@ export const SavingsGoalsManager = ({
           title: "Success",
           description: "Goal deleted successfully.",
         });
-        if (onBudgetAllocation) onBudgetAllocation(0); // Reset allocation
+        if (onBudgetAllocation) onBudgetAllocation(0);
       },
       onError: (error) => {
         toast({
@@ -526,7 +369,7 @@ export const SavingsGoalsManager = ({
             goals.map((goal) => {
               const progress = (goal.current_amount / goal.target_amount) * 100;
               const monthsToGoal = goal.target_date ? differenceInMonths(new Date(goal.target_date), new Date()) : null;
-              const suggestedMonthly = goal.target_date ? (goal.target_amount - goal.current_amount) / monthsToGoal : 0;
+              const suggestedMonthly = goal.target_date && monthsToGoal ? (goal.target_amount - goal.current_amount) / monthsToGoal : 0;
               const status = getGoalStatus(goal);
               const roi = getROIEstimate(goal);
               const isUrgent = isPast(new Date(goal.target_date || '')) || (monthsToGoal && monthsToGoal < 3);
@@ -543,7 +386,7 @@ export const SavingsGoalsManager = ({
                     <div className="flex items-start justify-between">
                       <div className="flex items-center gap-3">
                         <div className={`p-2 rounded-full ${status.color} flex-shrink-0`}>
-                          {status.icon}
+                          <status.icon className="h-5 w-5" />
                         </div>
                         <div>
                           <h3 className="font-bold text-lg">{goal.goal_name}</h3>
@@ -571,10 +414,10 @@ export const SavingsGoalsManager = ({
                             cy="18"
                             r="16"
                             fill="none"
-                            stroke={status.color.replace('text-', 'border-')}
+                            stroke="currentColor"
                             strokeWidth="2"
                             strokeDasharray={`${progress}, 100`}
-                            className="transition-all duration-1000"
+                            className="transition-all duration-1000 text-primary"
                             strokeLinecap="round"
                           />
                         </svg>
@@ -601,7 +444,7 @@ export const SavingsGoalsManager = ({
                             <td className="px-4 py-3 text-sm text-slate-500 dark:text-slate-400">Remaining</td>
                             <td className="px-4 py-3 text-right font-semibold text-red-600">{formatCurrency(remaining)}</td>
                           </tr>
-                          {goal.target_date && (
+                          {goal.target_date && monthsToGoal && (
                             <tr>
                               <td className="px-4 py-3 text-sm text-slate-500 dark:text-slate-400">Months to Goal</td>
                               <td className="px-4 py-3 text-right font-semibold">{monthsToGoal} months</td>
@@ -653,166 +496,6 @@ export const SavingsGoalsManager = ({
                     </div>
                   </CardContent>
                 </Card>
-              );
-            })
-          )}
-        </div>
-      </CardContent>
-    </Card>
-  );
-};
-      <CardContent className="pt-6 space-y-4">
-        {/* Available for Savings */}
-        <div className="p-4 bg-muted/50 rounded-lg">
-          <p className="text-sm text-muted-foreground">
-            {language === "en" ? "Available Monthly for Savings" : "Disponible Mensual para Ahorros"}
-          </p>
-          <p className="text-2xl font-bold text-primary">£{availableForSavings.toFixed(2)}</p>
-        </div>
-
-        {/* Goals List */}
-        <div className="space-y-3">
-          {goals.length === 0 ? (
-            <p className="text-center text-muted-foreground py-8">
-              {language === "en"
-                ? "No savings goals yet. Create one to get started!"
-                : "¡Aún no hay metas de ahorro. Crea una para comenzar!"}
-            </p>
-          ) : (
-            goals.map((goal) => {
-              const progress = (goal.current_amount / goal.target_amount) * 100;
-              const monthsToGoal = calculateMonthsToGoal(goal);
-              const suggestedMonthly = goal.target_date ? calculateMonthlyAmount(goal) : 0;
-              const remaining = goal.target_amount - goal.current_amount;
-
-              return (
-                <div key={goal.id} className="p-4 bg-secondary/50 rounded-lg space-y-3">
-                  <div className="flex items-start justify-between">
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2">
-                        <h4 className="font-semibold text-lg">{goal.goal_name}</h4>
-                        {goal.is_active && (
-                          <Badge variant="default" className="bg-success text-success-foreground">
-                            <CheckCircle2 className="h-3 w-3 mr-1" />
-                            {language === "en" ? "Active" : "Activo"}
-                          </Badge>
-                        )}
-                      </div>
-                    </div>
-                    <div className="flex gap-1">
-                      <Button variant="ghost" size="icon" onClick={() => handleEditGoal(goal)}>
-                        <Pencil className="h-4 w-4" />
-                      </Button>
-                      <Button variant="ghost" size="icon" onClick={() => handleDeleteGoal(goal.id)}>
-                        <Trash2 className="h-4 w-4 text-destructive" />
-                      </Button>
-                    </div>
-                  </div>
-
-                  <div className="space-y-2">
-                    <div className="flex justify-between text-sm">
-                      <span className="text-muted-foreground">{language === "en" ? "Progress" : "Progreso"}</span>
-                      <span className="font-medium">
-                        £{goal.current_amount.toFixed(2)} / £{goal.target_amount.toFixed(2)}
-                      </span>
-                    </div>
-                    <div className="w-full bg-muted rounded-full h-2">
-                      <div
-                        className="bg-primary h-2 rounded-full transition-all"
-                        style={{ width: `${Math.min(100, progress)}%` }}
-                      />
-                    </div>
-                    <p className="text-xs text-muted-foreground text-right">
-                      {progress.toFixed(1)}% {language === "en" ? "complete" : "completo"}
-                    </p>
-                  </div>
-
-                  {goal.target_date && (
-                    <div className="flex items-center gap-2 text-sm">
-                      <Calendar className="h-4 w-4 text-primary" />
-                      <span className="text-muted-foreground">
-                        {language === "en" ? "Target:" : "Objetivo:"} {new Date(goal.target_date).toLocaleDateString()}
-                      </span>
-                    </div>
-                  )}
-
-                  <div className="grid grid-cols-2 gap-3 pt-2 border-t">
-                    <div className="space-y-1">
-                      <div className="flex items-center gap-1">
-                        <TrendingUp className="h-3 w-3 text-muted-foreground" />
-                        <p className="text-xs text-muted-foreground">{language === "en" ? "Remaining" : "Restante"}</p>
-                      </div>
-                      <p className="text-sm font-semibold">£{remaining.toFixed(2)}</p>
-                    </div>
-                    {suggestedMonthly > 0 && (
-                      <div className="space-y-1">
-                        <p className="text-xs text-muted-foreground">
-                          {language === "en" ? "Monthly needed" : "Mensual necesario"}
-                        </p>
-                        <p className="text-sm font-semibold text-primary">£{suggestedMonthly.toFixed(2)}</p>
-                      </div>
-                    )}
-                    {monthsToGoal > 0 && !goal.target_date && (
-                      <div className="space-y-1">
-                        <p className="text-xs text-muted-foreground">
-                          {language === "en" ? "Months to goal" : "Meses para la meta"}
-                        </p>
-                        <p className="text-sm font-semibold text-success">
-                          {monthsToGoal}{" "}
-                          {monthsToGoal === 1
-                            ? language === "en"
-                              ? "month"
-                              : "mes"
-                            : language === "en"
-                              ? "months"
-                              : "meses"}
-                        </p>
-                      </div>
-                    )}
-                  </div>
-
-                  {/* Suggested monthly contribution */}
-                  {goal.target_date && suggestedMonthly > 0 && !goal.is_active && (
-                    <div className="pt-3 border-t space-y-2">
-                      <div className="flex justify-between items-center">
-                        <div>
-                          <p className="text-sm font-medium">
-                            {language === "en" ? "Suggested monthly" : "Sugerencia mensual"}
-                          </p>
-                          <p className="text-xs text-muted-foreground">
-                            {language === "en" ? "To reach your goal on time" : "Para alcanzar tu meta a tiempo"}
-                          </p>
-                        </div>
-                        <span className="text-lg font-bold text-primary">£{suggestedMonthly.toFixed(2)}</span>
-                      </div>
-                      <Button
-                        onClick={() => activateGoalContribution(goal.id, suggestedMonthly)}
-                        className="w-full"
-                        disabled={suggestedMonthly > availableBudget}
-                      >
-                        {suggestedMonthly > availableBudget
-                          ? language === "en"
-                            ? "Insufficient budget"
-                            : "Presupuesto insuficiente"
-                          : language === "en"
-                            ? "Accept & Activate"
-                            : "Aceptar y Activar"}
-                      </Button>
-                    </div>
-                  )}
-
-                  {/* Active contribution display */}
-                  {goal.is_active && goal.monthly_contribution && (
-                    <div className="pt-3 border-t bg-success/5 -mx-4 -mb-3 px-4 pb-3 rounded-b-lg">
-                      <div className="flex justify-between items-center">
-                        <span className="text-sm font-medium text-success">
-                          {language === "en" ? "Monthly contribution" : "Aporte mensual"}
-                        </span>
-                        <span className="text-lg font-bold text-success">£{goal.monthly_contribution.toFixed(2)}</span>
-                      </div>
-                    </div>
-                  )}
-                </div>
               );
             })
           )}
