@@ -86,36 +86,36 @@ serve(async (req) => {
     const monthlySavingsCommitments = totalSavingsGoals + monthlyEmergencyContribution;
     const monthlyBalance = totalIncome - totalExpenses - monthlySavingsCommitments;
 
-    // Prepare financial context (exactly same rules as dashboard)
+    // Prepare financial context in English
     const financialContext = `
-PERFIL ACTIVO: ${activeProfile.name} (${activeProfile.type})
+ACTIVE PROFILE: ${activeProfile.name} (${activeProfile.type})
 
-REGLAS: Usa estrictamente los TOTALES OFICIALES provistos abajo; no los recalcules a partir de los listados. Si detectas discrepancias, prioriza "Balance disponible mensual".
+RULES: Use strictly the OFFICIAL TOTALS provided below; do not recalculate them from the listings. If you detect discrepancies, prioritize "Monthly available balance".
 
-Totales oficiales (mismo cálculo que el dashboard):
-- Ingresos totales: £${totalIncome.toFixed(2)}
-- Deudas (pago mínimo): £${totalDebts.toFixed(2)}
-- Gastos fijos considerados este mes: £${totalFixed.toFixed(2)} (gastos ANUALES solo si payment_month == ${currentMonth})
-- Gastos variables: £${totalVariable.toFixed(2)}
-- Metas de ahorro ACTIVAS: £${totalSavingsGoals.toFixed(2)}
-- Contribución a fondo de emergencia: £${monthlyEmergencyContribution.toFixed(2)}
-- Balance disponible mensual: £${monthlyBalance.toFixed(2)}
+Official totals (same calculation as dashboard):
+- Total income: £${totalIncome.toFixed(2)}
+- Debts (minimum payment): £${totalDebts.toFixed(2)}
+- Fixed expenses considered this month: £${totalFixed.toFixed(2)} (ANNUAL expenses only if payment_month == ${currentMonth})
+- Variable expenses: £${totalVariable.toFixed(2)}
+- ACTIVE savings goals: £${totalSavingsGoals.toFixed(2)}
+- Emergency fund contribution: £${monthlyEmergencyContribution.toFixed(2)}
+- Monthly available balance: £${monthlyBalance.toFixed(2)}
 
-Listado informativo:
-Deudas:
-${debtsData.data?.map(d => `- ${d.name}: Balance £${Number(d.balance).toFixed(2)}, APR ${Number(d.apr).toFixed(2)}%, Pago mínimo £${Number(d.minimum_payment).toFixed(2)}`).join('\n') || 'Sin deudas'}
+Informational listing:
+Debts:
+${debtsData.data?.map(d => `- ${d.name}: Balance £${Number(d.balance).toFixed(2)}, APR ${Number(d.apr).toFixed(2)}%, Minimum payment £${Number(d.minimum_payment).toFixed(2)}`).join('\n') || 'No debts'}
 
-Ingresos:
-${incomeData.data?.map(i => `- ${i.name}: £${Number(i.amount).toFixed(2)}`).join('\n') || 'Sin ingresos'}
+Income:
+${incomeData.data?.map(i => `- ${i.name}: £${Number(i.amount).toFixed(2)}`).join('\n') || 'No income'}
 
-Gastos fijos (marcados si se incluyen este mes):
-${fixedExpensesData.data?.map(e => `- ${e.name}: £${Number(e.amount).toFixed(2)} (${e.frequency_type}${e.frequency_type === 'annual' ? (e.payment_month === currentMonth ? ' - incluido este mes' : ' - no incluido este mes') : ''})`).join('\n') || 'Sin gastos fijos'}
+Fixed expenses (marked if included this month):
+${fixedExpensesData.data?.map(e => `- ${e.name}: £${Number(e.amount).toFixed(2)} (${e.frequency_type}${e.frequency_type === 'annual' ? (e.payment_month === currentMonth ? ' - included this month' : ' - not included this month') : ''})`).join('\n') || 'No fixed expenses'}
 
-Gastos variables:
-${variableExpensesData.data?.map(e => `- ${e.name || 'Sin nombre'}: £${Number(e.amount).toFixed(2)}`).join('\n') || 'Sin gastos variables'}
+Variable expenses:
+${variableExpensesData.data?.map(e => `- ${e.name || 'Unnamed'}: £${Number(e.amount).toFixed(2)}`).join('\n') || 'No variable expenses'}
 
-Historial de pagos de deudas (últimos registros):
-${debtPaymentsData.data?.slice(0, 20).map(p => `- ${p.debts?.name || 'Deuda'}: £${Number(p.amount).toFixed(2)} pagado el ${new Date(p.payment_date).toLocaleDateString('es-ES')}${p.notes ? ` (Nota: ${p.notes})` : ''}`).join('\n') || 'Sin historial de pagos'}
+Debt payment history (latest records):
+${debtPaymentsData.data?.slice(0, 20).map(p => `- ${p.debts?.name || 'Debt'}: £${Number(p.amount).toFixed(2)} paid on ${new Date(p.payment_date).toLocaleDateString('en-GB')}${p.notes ? ` (Note: ${p.notes})` : ''}`).join('\n') || 'No payment history'}
     `;
 
     const systemPrompt = `You are Budget Buddy, a friendly financial assistant specialized in UK personal finances. Your goal is to help the user:
