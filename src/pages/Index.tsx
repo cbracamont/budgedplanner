@@ -1021,7 +1021,7 @@ const Index = () => {
                 </Card>}
 
               {/* PAYMENT TIMELINE - Next 3 Weeks */}
-              <Card className="rounded">
+              <Card className="rounded-sm">
                 <CardHeader className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                   <CardTitle className="flex items-center gap-2">
                     <Calendar className="h-5 w-5" />
