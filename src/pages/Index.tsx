@@ -4,7 +4,7 @@ import { useState, useEffect, useMemo, useCallback } from "react";
 import { useQueryClient, useQuery } from "@tanstack/react-query";
 import { format, addMonths, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, add, sub, startOfWeek } from "date-fns";
 import { formatCurrency } from "@/lib/i18n";
-import { TrendingUp, Download, LogOut, Bot, Calendar, DollarSign, PiggyBank, Home, Edit2, Trash2, Plus, ChevronLeft, ChevronRight, Send, X, Zap, Snowflake, Moon, Sun, PoundSterling, Shield, AlertCircle, Wallet } from "lucide-react";
+import { TrendingUp, Download, LogOut, Bot, Calendar, DollarSign, PiggyBank, Home, Edit2, Trash2, Plus, ChevronLeft, ChevronRight, Send, X, Zap, Snowflake, Moon, Sun, PoundSterling, Shield, AlertCircle, Wallet, LayoutDashboard, Receipt, CreditCard, Goal, Settings } from "lucide-react";
 import { useIncomeSources, useDebts, useFixedExpenses, useVariableExpenses, useSavingsGoals, useSavings, useAddIncome, useAddDebt, useAddFixedExpense, useAddVariableExpense, useAddSavingsGoal } from "@/hooks/useFinancialData";
 import { toast } from "@/hooks/use-toast";
 import { useFinancialProfiles } from "@/hooks/useFinancialProfiles";
@@ -18,6 +18,8 @@ import { SavingsManager } from "@/components/SavingsManager";
 import { SavingsGoalsManager } from "@/components/SavingsGoalsManager";
 import { LanguageToggle } from "@/components/LanguageToggle";
 import { ProfileSelector } from "@/components/ProfileSelector";
+import { MobileMenu } from "@/components/MobileMenu";
+import { ScrollToTop } from "@/components/ScrollToTop";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -198,6 +200,7 @@ const Index = () => {
   const [language, setLanguage] = useState<Language>("en");
   const [user, setUser] = useState<any>(null);
   const [authLoading, setAuthLoading] = useState(true);
+  const [activeTab, setActiveTab] = useState("overview");
   const [showAI, setShowAI] = useState(false);
   const [aiInput, setAiInput] = useState("");
   const [aiResponse, setAiResponse] = useState("");
@@ -821,6 +824,7 @@ const Index = () => {
       <style>{`@media print { .no-print { display: none !important; } }`}</style>
 
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-slate-900 dark:to-slate-800">
+        <ScrollToTop />
         <div className="max-w-7xl mx-auto p-6 space-y-8">
           {/* HEADER */}
           <div className="no-print flex justify-between items-center mb-8">
@@ -845,9 +849,22 @@ const Index = () => {
             </div>
           </div>
 
+          {/* MOBILE MENU */}
+          <MobileMenu 
+            activeTab={activeTab}
+            onTabChange={setActiveTab}
+            tabs={[
+              { value: "overview", label: "Overview", icon: <LayoutDashboard className="h-5 w-5" /> },
+              { value: "income", label: "Income", icon: <PoundSterling className="h-5 w-5" /> },
+              { value: "expenses", label: "Expenses", icon: <Receipt className="h-5 w-5" /> },
+              { value: "debts", label: "Debts", icon: <CreditCard className="h-5 w-5" /> },
+              { value: "savings", label: "Savings", icon: <Goal className="h-5 w-5" /> },
+            ]}
+          />
+
           {/* TABS */}
-          <Tabs defaultValue="overview" className="no-print">
-            <TabsList className="grid w-full grid-cols-5 mb-6">
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="no-print">
+            <TabsList className="hidden md:grid w-full grid-cols-5 mb-6">
               <TabsTrigger value="overview">Overview</TabsTrigger>
               <TabsTrigger value="income">Income</TabsTrigger>
               <TabsTrigger value="expenses">Expenses</TabsTrigger>
