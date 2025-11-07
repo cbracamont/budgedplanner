@@ -505,12 +505,14 @@ const Index = () => {
   }, [incomeData, fixedExpensesData, variableExpensesData, debtData, savings, savingsGoalsData, currentMonth, monthlySavings]);
   useEffect(() => {
     // Set up auth state listener FIRST
-    const { data: { subscription } } = supabase.auth.onAuthStateChange(
-      (event, session) => {
-        setUser(session?.user ?? null);
-        setAuthLoading(false);
+    const {
+      data: {
+        subscription
       }
-    );
+    } = supabase.auth.onAuthStateChange((event, session) => {
+      setUser(session?.user ?? null);
+      setAuthLoading(false);
+    });
 
     // THEN check for existing session
     supabase.auth.getSession().then(({
@@ -521,7 +523,6 @@ const Index = () => {
       setUser(session?.user ?? null);
       setAuthLoading(false);
     });
-
     return () => subscription.unsubscribe();
   }, []);
   if (authLoading) return <div className="p-8">
@@ -816,23 +817,27 @@ const Index = () => {
           </div>
 
           {/* MOBILE MENU */}
-          <MobileMenu 
-            activeTab={activeTab}
-            onTabChange={setActiveTab}
-            tabs={[
-              { value: "overview", label: "Overview", icon: <LayoutDashboard className="h-5 w-5" /> },
-              { value: "income", label: "Income", icon: <PoundSterling className="h-5 w-5" /> },
-              { value: "expenses", label: "Expenses", icon: <Receipt className="h-5 w-5" /> },
-              { value: "debts", label: "Debts", icon: <CreditCard className="h-5 w-5" /> },
-              { value: "savings", label: "Savings", icon: <Goal className="h-5 w-5" /> },
-            ]}
-            language={language}
-            onLanguageChange={setLanguage}
-            theme={theme}
-            onThemeToggle={() => setTheme(theme === "dark" ? "light" : "dark")}
-            onExportData={() => window.print()}
-            onLogout={() => supabase.auth.signOut()}
-          />
+          <MobileMenu activeTab={activeTab} onTabChange={setActiveTab} tabs={[{
+          value: "overview",
+          label: "Overview",
+          icon: <LayoutDashboard className="h-5 w-5" />
+        }, {
+          value: "income",
+          label: "Income",
+          icon: <PoundSterling className="h-5 w-5" />
+        }, {
+          value: "expenses",
+          label: "Expenses",
+          icon: <Receipt className="h-5 w-5" />
+        }, {
+          value: "debts",
+          label: "Debts",
+          icon: <CreditCard className="h-5 w-5" />
+        }, {
+          value: "savings",
+          label: "Savings",
+          icon: <Goal className="h-5 w-5" />
+        }]} language={language} onLanguageChange={setLanguage} theme={theme} onThemeToggle={() => setTheme(theme === "dark" ? "light" : "dark")} onExportData={() => window.print()} onLogout={() => supabase.auth.signOut()} />
 
           {/* TABS */}
           <Tabs value={activeTab} onValueChange={setActiveTab} className="no-print">
@@ -1078,7 +1083,7 @@ const Index = () => {
                                   <div className="flex items-start justify-between gap-2">
                                     <div className="flex-1 space-y-1">
                                       <div className="flex items-center gap-2">
-                                        <span className="font-medium text-sm text-slate-200">{event.name}</span> {/* Payment description */}
+                                        <span className="font-medium text-sm text-white">{event.name}</span> {/* Payment description */}
                                         {isToday && <span className="text-xs bg-primary text-primary-foreground px-2 py-0.5 rounded-full">
                                             Today
                                           </span>}
