@@ -1015,112 +1015,110 @@ const Index = () => {
 
               {/* PAYMENT TIMELINE - Next 3 Weeks */}
               <Card>
-                <CardHeader>
+                <CardHeader className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                   <CardTitle className="flex items-center gap-2">
                     <Calendar className="h-5 w-5" />
-                    Payment Timeline - Next 3 Weeks
+                    Payment Timeline - This Week
                   </CardTitle>
+                  <div className="flex items-center gap-2">
+                    <Button
+                      variant="outline"
+                      size="sm"
+                      onClick={handlePrevWeek}
+                      disabled={currentWeekOffset === 0 && new Date().getDay() === 0} // Disable if current week and Sunday
+                    >
+                      <ChevronLeft className="h-4 w-4" />
+                      Previous
+                    </Button>
+                    <Button variant="outline" size="sm" onClick={handleNextWeek}>
+                      Next
+                      <ChevronRight className="h-4 w-4 ml-1" />
+                    </Button>
+                  </div>
                 </CardHeader>
                 <CardContent className="space-y-4">
                   {(() => {
-                    const today = new Date();
-                    const threeWeeksLater = add(today, { weeks: 3 });
+                    const today = new Date(); // November 07, 2025
+                    const currentWeekStart = startOfWeek(today, { weekStartsOn: 0 }); // Sunday start
+                    const weekStart = add(currentWeekStart, { weeks: currentWeekOffset });
+                    const weekEnd = add(weekStart, { days: 6 });
                     const upcomingEvents = calendarEvents
                       .filter(e => {
                         const eventDate = new Date(e.date);
-                        return eventDate >= today && eventDate <= threeWeeksLater;
+                        return eventDate >= weekStart && eventDate <= weekEnd && e.type !== "variable"; // Exclude variable expenses
                       })
                       .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-
                     if (upcomingEvents.length === 0) {
-                      return <p className="text-center text-muted-foreground py-8">No upcoming payments in the next 3 weeks</p>;
+                      return <p className="text-center text-muted-foreground py-8">No upcoming payments this week</p>;
                     }
-
-                    // Group events by week
-                    const weekGroups: { [key: string]: typeof upcomingEvents } = {};
-                    upcomingEvents.forEach(event => {
-                      const eventDate = new Date(event.date);
-                      const weekStart = startOfWeek(eventDate, { weekStartsOn: 0 });
-                      const weekKey = format(weekStart, "yyyy-MM-dd");
-                      if (!weekGroups[weekKey]) {
-                        weekGroups[weekKey] = [];
-                      }
-                      weekGroups[weekKey].push(event);
-                    });
-
-                    return Object.entries(weekGroups).map(([weekKey, events]) => {
-                      const weekStart = new Date(weekKey);
-                      const weekEnd = add(weekStart, { days: 6 });
-                      
-                      return (
-                        <div key={weekKey} className="space-y-3">
-                          <div className="flex items-center gap-2 pb-2 border-b">
-                            <div className="h-2 w-2 rounded-full bg-primary" />
-                            <span className="font-semibold text-sm">
-                              {format(weekStart, "MMM d")} - {format(weekEnd, "MMM d, yyyy")}
-                            </span>
-                          </div>
-                          
-                          <div className="space-y-2 pl-4 border-l-2 border-muted">
-                            {events.map((event, idx) => {
-                              const eventDate = new Date(event.date);
-                              const isToday = isSameDay(eventDate, today);
-                              const isPast = eventDate < today;
-                              
-                              return (
-                                <div 
-                                  key={event.id}
-                                  className={`relative pl-6 pb-4 ${isPast ? 'opacity-50' : ''}`}
-                                >
-                                  {/* Timeline dot */}
-                                  <div className={`absolute left-[-9px] top-1 h-4 w-4 rounded-full border-2 border-background ${
-                                    event.type === "income" ? "bg-green-500" :
-                                    event.type === "debt" ? "bg-red-500" :
-                                    event.type === "fixed" ? "bg-orange-500" :
-                                    "bg-blue-500"
-                                  } ${isToday ? 'ring-2 ring-primary ring-offset-2' : ''}`} />
-                                  
-                                  {/* Event card */}
-                                  <div className={`rounded-lg border p-3 transition-all hover:shadow-md ${
-                                    isToday ? 'border-primary bg-primary/5' : 'bg-card'
-                                  }`}>
-                                    <div className="flex items-start justify-between gap-2">
-                                      <div className="flex-1 space-y-1">
-                                        <div className="flex items-center gap-2">
-                                          <span className="font-medium text-sm">{event.name}</span>
-                                          {isToday && (
-                                            <span className="text-xs bg-primary text-primary-foreground px-2 py-0.5 rounded-full">
-                                              Today
-                                            </span>
-                                          )}
-                                        </div>
-                                        <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                                          <span>{format(eventDate, "EEE, MMM d")}</span>
-                                          <span>•</span>
-                                          <span className="capitalize">{event.type}</span>
-                                          {event.recurring && (
-                                            <>
-                                              <span>•</span>
-                                              <span className="italic">Recurring</span>
-                                            </>
-                                          )}
-                                        </div>
+                    return (
+                      <>
+                        {/* Week Header */}
+                        <div className="text-center pb-4">
+                          <h4 className="font-semibold text-sm text-muted-foreground">
+                            {format(weekStart, "MMM d")} - {format(weekEnd, "MMM d, yyyy")}
+                          </h4>
+                        </div>
+                        {/* Vertical Timeline */}
+                        <div className="relative space-y-4">
+                          {/* Vertical line */}
+                          <div className="absolute left-6 top-0 bottom-0 w-0.5 bg-muted" />
+                          {upcomingEvents.map((event, idx) => {
+                            const eventDate = new Date(event.date);
+                            const isToday = isSameDay(eventDate, today);
+                            const isPast = eventDate < today;
+                            return (
+                              <div
+                                key={event.id}
+                                className={`relative pl-8 ${isPast ? 'opacity-50' : ''}`}
+                              >
+                                {/* Timeline dot */}
+                                <div className={`absolute left-[-10px] top-2 h-4 w-4 rounded-full border-2 border-background flex items-center justify-center ${
+                                  event.type === "income" ? "bg-green-500" :
+                                  event.type === "debt" ? "bg-red-500" :
+                                  event.type === "fixed" ? "bg-orange-500" :
+                                  "bg-blue-500"
+                                } ${isToday ? 'ring-2 ring-primary ring-offset-2' : ''}`} />
+                                {/* Event card with description */}
+                                <div className={`rounded-lg border p-3 transition-all hover:shadow-md w-full ${
+                                  isToday ? 'border-primary bg-primary/5' : 'bg-card'
+                                }`}>
+                                  <div className="flex items-start justify-between gap-2">
+                                    <div className="flex-1 space-y-1">
+                                      <div className="flex items-center gap-2">
+                                        <span className="font-medium text-sm">{event.name}</span> {/* Payment description */}
+                                        {isToday && (
+                                          <span className="text-xs bg-primary text-primary-foreground px-2 py-0.5 rounded-full">
+                                            Today
+                                          </span>
+                                        )}
                                       </div>
-                                      <div className={`text-right font-semibold ${
-                                        event.type === "income" ? "text-green-600 dark:text-green-400" :
-                                        "text-red-600 dark:text-red-400"
-                                      }`}>
-                                        {event.type === "income" ? "+" : "-"}£{event.amount.toFixed(2)}
+                                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                                        <span>{format(eventDate, "EEE, MMM d")}</span>
+                                        <span>•</span>
+                                        <span className="capitalize">{event.type}</span>
+                                        {event.recurring && (
+                                          <>
+                                            <span>•</span>
+                                            <span className="italic">Recurring</span>
+                                          </>
+                                        )}
                                       </div>
+                                    </div>
+                                    <div className={`text-right font-semibold ${
+                                      event.type === "income" ? "text-green-600 dark:text-green-400" :
+                                      "text-red-600 dark:text-red-400"
+                                    }`}>
+                                      {event.type === "income" ? "+" : "-"}£{event.amount.toFixed(2)}
                                     </div>
                                   </div>
                                 </div>
-                              );
-                            })}
-                          </div>
+                              </div>
+                            );
+                          })}
                         </div>
-                      );
-                    });
+                      </>
+                    );
                   })()}
                 </CardContent>
               </Card>
