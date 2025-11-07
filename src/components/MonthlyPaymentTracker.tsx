@@ -538,7 +538,7 @@ export const MonthlyPaymentTracker = ({ language }: MonthlyPaymentTrackerProps) 
                           </Badge>
                           {linkedDebt && (
                             <span className="text-sm text-muted-foreground">
-                              Balance proyectado: {formatCurrency(projectedBalance)}
+                              Projected Balance: {formatCurrency(projectedBalance)}
                             </span>
                           )}
                         </div>
