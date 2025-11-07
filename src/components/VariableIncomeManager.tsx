@@ -5,7 +5,7 @@ import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { DollarSign, Trash2, Pencil } from "lucide-react";
+import { PoundSterling, Trash2, Pencil } from "lucide-react";
 import { getTranslation, Language } from "@/lib/i18n";
 import { useToast } from "@/hooks/use-toast";
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
@@ -190,7 +190,7 @@ export const VariableIncomeManager = ({ onIncomeChange, language }: VariableInco
     <Card className="shadow-medium border-warning/20">
       <CardHeader className="bg-muted/50 border-b">
         <div className="flex items-center gap-2">
-          <DollarSign className="h-5 w-5 text-primary" />
+          <PoundSterling className="h-5 w-5 text-primary" />
           <CardTitle>{language === "en" ? "Variable Income" : "Ingresos Variables"}</CardTitle>
         </div>
         <CardDescription>
