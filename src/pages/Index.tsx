@@ -2118,7 +2118,7 @@ const DebtPlanner = ({
                         <td className="p-4">
                           <div>
                             <p className="font-medium">{debt.name}</p>
-                            <p className="text-xs text-slate-500 dark:text-slate-400">Type: {debt.type || "Credit"}</p>
+                            {debt.bank && <p className="text-xs text-slate-500 dark:text-slate-400">{debt.bank}</p>}
                           </div>
                         </td>
                         <td className="p-4">
