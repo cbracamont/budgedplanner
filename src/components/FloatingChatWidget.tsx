@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { MessageSquare, Send, X, Loader2, Trash2, Plus, Sparkles } from "lucide-react";
+import { MessageSquare, Send, X, Loader2, Trash2, Plus, Sparkles, Bot } from "lucide-react";
 import { Language } from "@/lib/i18n";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -41,9 +41,22 @@ export const FloatingChatWidget = ({ language = 'en' as Language }: FloatingChat
   const [position, setPosition] = useState({ x: 0, y: 0 });
   const [isDragging, setIsDragging] = useState(false);
   const [dragOffset, setDragOffset] = useState({ x: 0, y: 0 });
+  const [user, setUser] = useState<any>(null);
   const scrollRef = useRef<HTMLDivElement>(null);
   const inputRef = useRef<HTMLInputElement>(null);
   const buttonRef = useRef<HTMLDivElement>(null);
+
+  useEffect(() => {
+    supabase.auth.getUser().then(({ data: { user } }) => {
+      setUser(user);
+    });
+
+    const { data: { subscription } } = supabase.auth.onAuthStateChange((_event, session) => {
+      setUser(session?.user ?? null);
+    });
+
+    return () => subscription.unsubscribe();
+  }, []);
 
   useEffect(() => {
     if (scrollRef.current) {
@@ -308,6 +321,42 @@ export const FloatingChatWidget = ({ language = 'en' as Language }: FloatingChat
           className="fixed z-50 inset-0 md:inset-auto md:bottom-4 md:right-4 md:max-w-[380px] md:max-h-[600px] w-full h-full md:w-[380px] md:h-[600px] p-4 md:p-0"
         >
           <div className="bg-background border border-border rounded-lg shadow-2xl w-full h-full flex flex-col">
+          
+          {!user ? (
+            <>
+              {/* Header */}
+              <div className="flex items-center justify-between p-4 border-b border-border bg-gradient-to-r from-primary/10 to-primary/5">
+                <div className="flex items-center gap-2">
+                  <Bot className="h-5 w-5 text-primary" />
+                  <h3 className="font-semibold">Budget Buddy</h3>
+                </div>
+                <Button
+                  variant="ghost"
+                  size="sm"
+                  onClick={() => setIsOpen(false)}
+                  className="h-8 w-8 p-0"
+                >
+                  <X className="h-4 w-4" />
+                </Button>
+              </div>
+
+              {/* Not logged in message */}
+              <div className="flex-1 flex flex-col items-center justify-center p-6 text-center">
+                <Bot className="h-16 w-16 text-muted-foreground mb-4" />
+                <h3 className="text-lg font-semibold mb-2">Inicia sesión para chatear</h3>
+                <p className="text-sm text-muted-foreground mb-4">
+                  Necesitas iniciar sesión para poder hablar con Budget Buddy sobre tus finanzas.
+                </p>
+                <Button onClick={() => {
+                  setIsOpen(false);
+                  window.location.href = '/';
+                }}>
+                  Ir a iniciar sesión
+                </Button>
+              </div>
+            </>
+          ) : (
+            <>
           {/* Header */}
           <div className="flex items-center justify-between p-4 border-b border-border bg-gradient-to-r from-primary/10 to-primary/5">
             <div className="flex items-center gap-2">
@@ -499,6 +548,8 @@ export const FloatingChatWidget = ({ language = 'en' as Language }: FloatingChat
                 </div>
               </form>
             </>
+          )}
+          </>
           )}
           </div>
         </div>
