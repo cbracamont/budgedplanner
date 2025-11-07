@@ -987,7 +987,7 @@ const Index = () => {
                       </div>
                     </div>
 
-                    <div className="border-t px-6 py-4 bg-gradient-to-r from-slate-50 to-slate-100 dark:from-slate-800 dark:to-slate-900 rounded-b-lg">
+                    <div className="border-t px-6 py-4 bg-gradient-to-r from-slate-50 to-slate-100 dark:from-slate-800 dark:to-slate-900 rounded-b-lg rounded-sm">
                       <div className="flex justify-between items-center">
                         <span className="text-sm font-medium text-slate-600 dark:text-slate-300">Monthly Total</span>
                         <div className="flex items-center gap-2">
