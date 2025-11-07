@@ -840,9 +840,6 @@ const Index = () => {
               <Button variant="outline" size="icon" onClick={() => window.print()}>
                 <Download className="h-4 w-4" />
               </Button>
-              <Button variant="outline" size="icon" onClick={() => setShowAI(true)}>
-                <Bot className="h-4 w-4" />
-              </Button>
               <Button variant="outline" size="icon" onClick={() => supabase.auth.signOut()}>
                 <LogOut className="h-4 w-4" />
               </Button>
@@ -1125,30 +1122,6 @@ const Index = () => {
             {/* Savings Goals Pots */}
             
 
-            {/* AI MODAL */}
-            <AlertDialog open={showAI} onOpenChange={setShowAI}>
-              <AlertDialogContent className="max-w-2xl">
-                <AlertDialogHeader>
-                  <AlertDialogTitle className="flex items-center gap-2">
-                    <Bot className="h-5 w-5" /> Budget Assistant
-                  </AlertDialogTitle>
-                </AlertDialogHeader>
-                <div className="space-y-4">
-                  <Textarea placeholder="Ask anything: 'How can I save £200/month?' or 'Should I pay off debt first?'" value={aiInput} onChange={e => setAiInput(e.target.value)} className="min-h-24" />
-                  <Button onClick={sendToAI} disabled={aiLoading} className="w-full">
-                    {aiLoading ? "Thinking..." : <>
-                        <Send className="h-4 w-4 mr-2" /> Send
-                      </>}
-                  </Button>
-                  {aiResponse && <Card>
-                      <CardContent className="pt-4 space-y-4 whitespace-pre-wrap text-sm">{aiResponse}</CardContent>
-                    </Card>}
-                </div>
-                <AlertDialogFooter>
-                  <AlertDialogCancel>Close</AlertDialogCancel>
-                </AlertDialogFooter>
-              </AlertDialogContent>
-            </AlertDialog>
 
             {/* DETALLE DEL DÍA */}
             {selectedDate && <AlertDialog open={!!selectedDate} onOpenChange={() => setSelectedDate(null)}>
