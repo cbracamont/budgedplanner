@@ -61,8 +61,8 @@ Deno.serve(async (req) => {
     const currentMonth = new Date(today.getFullYear(), today.getMonth(), 1)
     const monthYearStr = currentMonth.toISOString().split('T')[0]
 
-    // Generate payments for current month and next 2 months
-    const monthsToGenerate = [0, 1, 2]
+    // Generate payments for current month and next 5 months (total 6 months)
+    const monthsToGenerate = [0, 1, 2, 3, 4, 5]
     let totalGenerated = 0
 
     for (const monthOffset of monthsToGenerate) {

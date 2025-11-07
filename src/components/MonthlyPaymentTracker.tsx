@@ -132,9 +132,19 @@ export const MonthlyPaymentTracker = ({ language }: MonthlyPaymentTrackerProps) 
 
   // Monthly totals - exhaustive calculations
   const monthlyTotals = useMemo(() => {
-    // Total paid this specific month from payment_tracker
+    const today = new Date();
+    const currentMonthStart = startOfMonth(currentMonth);
+    const currentMonthEnd = new Date(currentMonthStart.getFullYear(), currentMonthStart.getMonth() + 1, 0);
+    
+    // Total paid this specific month - include payments with payment_date <= today OR status = "paid"
     const totalPaidThisMonth = payments
-      .filter(p => p.payment_status === "paid")
+      .filter(p => {
+        const paymentDate = p.payment_date ? new Date(p.payment_date) : null;
+        return (
+          p.payment_status === "paid" || 
+          (paymentDate && paymentDate <= today && paymentDate >= currentMonthStart && paymentDate <= currentMonthEnd)
+        );
+      })
       .reduce((sum, p) => sum + p.amount, 0);
     
     // Expected payments this month (sum of minimum_payment for active debts)
@@ -142,15 +152,29 @@ export const MonthlyPaymentTracker = ({ language }: MonthlyPaymentTrackerProps) 
       .filter(d => d.balance > 0 && d.minimum_payment > 0)
       .reduce((sum, d) => sum + d.minimum_payment, 0);
     
-    // Total debt balance across all debts
-    const totalDebtBalance = debts.reduce((sum, d) => sum + d.balance, 0);
+    // Total debt balance across all debts - deduct payments made this month
+    const totalDebtBalance = debts.reduce((sum, d) => {
+      // Find payments for this debt in the current viewing month
+      const debtPaymentsThisMonth = payments
+        .filter(p => {
+          const paymentDate = p.payment_date ? new Date(p.payment_date) : null;
+          return (
+            p.source_id === d.id &&
+            (p.payment_status === "paid" || 
+             (paymentDate && paymentDate >= currentMonthStart && paymentDate <= currentMonthEnd))
+          );
+        })
+        .reduce((pSum, p) => pSum + p.amount, 0);
+      
+      return sum + Math.max(0, d.balance - debtPaymentsThisMonth);
+    }, 0);
     
     return { 
       totalPaidThisMonth, 
       expectedThisMonth, 
       totalDebtBalance 
     };
-  }, [payments, debts]);
+  }, [payments, debts, currentMonth]);
 
   const handleSave = async () => {
     if (!formData.amount || parseFloat(formData.amount) <= 0) {
@@ -419,6 +443,25 @@ export const MonthlyPaymentTracker = ({ language }: MonthlyPaymentTrackerProps) 
                 ? debts.find(d => d.id === payment.source_id)
                 : null;
               
+              // Calculate projected balance for this debt in the viewing month
+              const projectedBalance = linkedDebt ? (() => {
+                const currentMonthStart = startOfMonth(currentMonth);
+                const currentMonthEnd = new Date(currentMonthStart.getFullYear(), currentMonthStart.getMonth() + 1, 0);
+                
+                const debtPaymentsThisMonth = payments
+                  .filter(p => {
+                    const paymentDate = p.payment_date ? new Date(p.payment_date) : null;
+                    return (
+                      p.source_id === linkedDebt.id &&
+                      (p.payment_status === "paid" || 
+                       (paymentDate && paymentDate >= currentMonthStart && paymentDate <= currentMonthEnd))
+                    );
+                  })
+                  .reduce((sum, p) => sum + p.amount, 0);
+                
+                return Math.max(0, linkedDebt.balance - debtPaymentsThisMonth);
+              })() : 0;
+              
               return (
                 <div
                   key={payment.id}
@@ -433,7 +476,7 @@ export const MonthlyPaymentTracker = ({ language }: MonthlyPaymentTrackerProps) 
                         </span>
                         {linkedDebt && (
                           <span className="text-sm text-muted-foreground">
-                            {t.remaining}: {formatCurrency(linkedDebt.balance)}
+                            Balance proyectado: {formatCurrency(projectedBalance)}
                           </span>
                         )}
                       </div>
