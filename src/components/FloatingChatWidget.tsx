@@ -278,18 +278,20 @@ export const FloatingChatWidget = ({ language = 'en' as Language }: FloatingChat
   };
 
   return (
-    <div 
-      ref={buttonRef}
-      className="fixed z-50"
-      style={{
-        bottom: position.y === 0 ? '1rem' : 'auto',
-        right: position.x === 0 ? '1rem' : 'auto',
-        top: position.y !== 0 ? `${position.y}px` : 'auto',
-        left: position.x !== 0 ? `${position.x}px` : 'auto',
-        cursor: isDragging ? 'grabbing' : 'auto'
-      }}
-    >
-      {!isOpen && (
+    <>
+      {/* Botón flotante draggable */}
+      <div 
+        ref={buttonRef}
+        className="fixed z-50"
+        style={{
+          bottom: position.y === 0 ? '1rem' : 'auto',
+          right: position.x === 0 ? '1rem' : 'auto',
+          top: position.y !== 0 ? `${position.y}px` : 'auto',
+          left: position.x !== 0 ? `${position.x}px` : 'auto',
+          cursor: isDragging ? 'grabbing' : 'auto',
+          display: isOpen ? 'none' : 'block'
+        }}
+      >
         <Button
           onMouseDown={handleMouseDown}
           onClick={() => !isDragging && setIsOpen(true)}
@@ -298,10 +300,14 @@ export const FloatingChatWidget = ({ language = 'en' as Language }: FloatingChat
         >
           <MessageSquare className="h-6 w-6" />
         </Button>
-      )}
+      </div>
 
+      {/* Ventana de chat - posicionada de forma inteligente */}
       {isOpen && (
-        <div className="bg-background border border-border rounded-lg shadow-2xl w-[380px] h-[600px] flex flex-col">
+        <div 
+          className="fixed z-50 inset-0 md:inset-auto md:bottom-4 md:right-4 md:max-w-[380px] md:max-h-[600px] w-full h-full md:w-[380px] md:h-[600px] p-4 md:p-0"
+        >
+          <div className="bg-background border border-border rounded-lg shadow-2xl w-full h-full flex flex-col">
           {/* Header */}
           <div className="flex items-center justify-between p-4 border-b border-border bg-gradient-to-r from-primary/10 to-primary/5">
             <div className="flex items-center gap-2">
@@ -494,8 +500,9 @@ export const FloatingChatWidget = ({ language = 'en' as Language }: FloatingChat
               </form>
             </>
           )}
+          </div>
         </div>
       )}
-    </div>
+    </>
   );
 };
