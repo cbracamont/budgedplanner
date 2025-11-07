@@ -4,7 +4,8 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogDescription } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Target, Plus, Trash2, Pencil, TrendingDown, TrendingUp as TrendingUpIcon, CheckCircle2, PiggyBank } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Language } from "@/lib/i18n";
@@ -51,6 +52,8 @@ export const SavingsGoalsManager = ({
   const deleteGoalMutation = useDeleteSavingsGoal();
 
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
+  const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
+  const [goalToDelete, setGoalToDelete] = useState<string | null>(null);
   const [editingGoal, setEditingGoal] = useState<SavingsGoal | null>(null);
   const [formData, setFormData] = useState({
     goal_name: "",
@@ -164,15 +167,17 @@ export const SavingsGoalsManager = ({
     }
   };
 
-  const handleDeleteGoal = async (id: string) => {
-    if (!confirm("Are you sure you want to delete this goal?")) return;
-    deleteGoalMutation.mutate(id, {
+  const confirmDeleteGoal = () => {
+    if (!goalToDelete) return;
+    deleteGoalMutation.mutate(goalToDelete, {
       onSuccess: () => {
         toast({
           title: "Success",
           description: "Goal deleted successfully.",
         });
         if (onBudgetAllocation) onBudgetAllocation(0);
+        setDeleteDialogOpen(false);
+        setGoalToDelete(null);
       },
       onError: (error) => {
         toast({
@@ -380,7 +385,10 @@ export const SavingsGoalsManager = ({
                         <Button variant="ghost" size="sm" onClick={() => handleEditGoal(goal)} className="h-8 w-8 p-0 hover:bg-primary/10">
                           <Pencil className="h-4 w-4" />
                         </Button>
-                        <Button variant="ghost" size="sm" onClick={() => handleDeleteGoal(goal.id)} className="h-8 w-8 p-0 text-destructive hover:bg-destructive/10">
+                        <Button variant="ghost" size="sm" onClick={() => {
+                          setGoalToDelete(goal.id);
+                          setDeleteDialogOpen(true);
+                        }} className="h-8 w-8 p-0 text-destructive hover:bg-destructive/10">
                           <Trash2 className="h-4 w-4" />
                         </Button>
                       </div>
@@ -477,6 +485,32 @@ export const SavingsGoalsManager = ({
             })
           )}
         </div>
+
+        {/* Delete Confirmation Dialog */}
+        <AlertDialog open={deleteDialogOpen} onOpenChange={setDeleteDialogOpen}>
+          <AlertDialogContent>
+            <AlertDialogHeader>
+              <AlertDialogTitle>
+                {language === "en" ? "Delete Savings Goal" : language === "es" ? "Eliminar Meta de Ahorro" : "Usuń Cel Oszczędnościowy"}
+              </AlertDialogTitle>
+              <AlertDialogDescription>
+                {language === "en" 
+                  ? "Are you sure you want to delete this savings goal? This action cannot be undone."
+                  : language === "es"
+                  ? "¿Estás seguro de que quieres eliminar esta meta de ahorro? Esta acción no se puede deshacer."
+                  : "Czy na pewno chcesz usunąć ten cel oszczędnościowy? Ta akcja nie może być cofnięta."}
+              </AlertDialogDescription>
+            </AlertDialogHeader>
+            <AlertDialogFooter>
+              <AlertDialogCancel onClick={() => setGoalToDelete(null)}>
+                {language === "en" ? "Cancel" : language === "es" ? "Cancelar" : "Anuluj"}
+              </AlertDialogCancel>
+              <AlertDialogAction onClick={confirmDeleteGoal} className="bg-destructive text-destructive-foreground hover:bg-destructive/90">
+                {language === "en" ? "Delete" : language === "es" ? "Eliminar" : "Usuń"}
+              </AlertDialogAction>
+            </AlertDialogFooter>
+          </AlertDialogContent>
+        </AlertDialog>
       </CardContent>
     </Card>
   );
