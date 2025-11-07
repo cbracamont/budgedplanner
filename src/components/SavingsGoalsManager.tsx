@@ -324,15 +324,15 @@ export const SavingsGoalsManager = ({
       </CardHeader>
       <CardContent className="pt-6 space-y-6">
         {/* Available for Savings - Enhanced */}
-        <Card className="bg-gradient-to-r from-emerald-50 to-green-50 dark:from-emerald-950 dark:to-green-950 border-l-4 border-emerald-500">
+        <Card className="bg-gradient-to-r from-emerald-50/50 to-green-50/50 dark:from-emerald-950/20 dark:to-green-950/20 border border-emerald-200 dark:border-emerald-800">
           <CardContent className="p-6">
             <div className="flex items-center gap-3">
-              <div className="p-3 bg-emerald-100 rounded-full">
-                <PiggyBank className="h-6 w-6 text-emerald-600" />
+              <div className="p-3 bg-emerald-100 dark:bg-emerald-900/50 rounded-full">
+                <PiggyBank className="h-6 w-6 text-emerald-600 dark:text-emerald-400" />
               </div>
               <div>
-                <p className="text-sm font-medium text-emerald-800">Available Monthly for Savings</p>
-                <p className="text-2xl font-bold text-emerald-900">{formatCurrency(availableForSavings)}</p>
+                <p className="text-sm font-medium text-emerald-800 dark:text-emerald-200">Available Monthly for Savings</p>
+                <p className="text-2xl font-bold text-emerald-900 dark:text-emerald-100">{formatCurrency(availableForSavings)}</p>
               </div>
             </div>
           </CardContent>
