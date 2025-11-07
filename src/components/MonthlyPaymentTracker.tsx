@@ -4,7 +4,17 @@ import { AutoPaymentsGenerator } from "@/components/AutoPaymentsGenerator";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -42,7 +52,6 @@ import { supabase } from "@/integrations/supabase/client";
 import { Progress } from "@/components/ui/progress";
 import { formatCurrency } from "@/lib/i18n";
 import { format, startOfMonth, addMonths, subMonths, isPast } from "date-fns";
-
 
 interface MonthlyPaymentTrackerProps {
   language: Language;
@@ -145,31 +154,31 @@ export const MonthlyPaymentTracker = ({ language }: MonthlyPaymentTrackerProps) 
     const isCurrentMonth = currentMonthStart.getTime() === todayMonthStart.getTime();
     const isFutureMonth = currentMonthStart > todayMonthStart;
     const isPastMonth = currentMonthStart < todayMonthStart;
-    
+
     // Total paid this specific month - include payments with payment_date <= today OR status = "paid"
     const totalPaidThisMonth = payments
-      .filter(p => {
+      .filter((p) => {
         const paymentDate = p.payment_date ? new Date(p.payment_date) : null;
         return (
-          p.payment_status === "paid" || 
+          p.payment_status === "paid" ||
           (paymentDate && paymentDate <= today && paymentDate >= currentMonthStart && paymentDate <= currentMonthEnd)
         );
       })
       .reduce((sum, p) => sum + p.amount, 0);
-    
+
     // Expected payments this month (sum of minimum_payment for active debts)
     const expectedThisMonth = debts
-      .filter(d => d.balance > 0 && d.minimum_payment > 0)
+      .filter((d) => d.balance > 0 && d.minimum_payment > 0)
       .reduce((sum, d) => sum + d.minimum_payment, 0);
-    
+
     // CRITICAL: Calculate projected total debt balance based on viewing month
     const totalDebtBalance = debts.reduce((sum, debt) => {
       let projectedBalance = debt.balance; // Current real balance (reflects paid payments)
-      
+
       if (isFutureMonth) {
         // FUTURE: Subtract ALL scheduled payments from current month UP TO AND INCLUDING viewing month
         // This projects how much the debt will be reduced by that future month
-        const paymentsUntilViewingMonth = allPayments.filter(p => {
+        const paymentsUntilViewingMonth = allPayments.filter((p) => {
           if (p.source_id !== debt.id) return false;
           const pMonthStr = p.month_year;
           const pMonth = new Date(pMonthStr);
@@ -178,11 +187,10 @@ export const MonthlyPaymentTracker = ({ language }: MonthlyPaymentTrackerProps) 
         });
         const totalToDeduct = paymentsUntilViewingMonth.reduce((acc, p) => acc + p.amount, 0);
         projectedBalance = Math.max(0, debt.balance - totalToDeduct);
-        
       } else if (isPastMonth) {
         // PAST: Add back all payments made AFTER the viewing month up to current month
         // This reconstructs what the balance was in that past month
-        const paymentsAfterViewingMonth = allPayments.filter(p => {
+        const paymentsAfterViewingMonth = allPayments.filter((p) => {
           if (p.source_id !== debt.id) return false;
           const pMonthStr = p.month_year;
           const pMonth = new Date(pMonthStr);
@@ -191,19 +199,18 @@ export const MonthlyPaymentTracker = ({ language }: MonthlyPaymentTrackerProps) 
         });
         const totalToRestore = paymentsAfterViewingMonth.reduce((acc, p) => acc + p.amount, 0);
         projectedBalance = debt.balance + totalToRestore;
-        
       } else {
         // CURRENT MONTH: Use current balance as-is (already reflects all paid payments)
         projectedBalance = debt.balance;
       }
-      
+
       return sum + Math.max(0, projectedBalance);
     }, 0);
-    
-    return { 
-      totalPaidThisMonth, 
-      expectedThisMonth, 
-      totalDebtBalance 
+
+    return {
+      totalPaidThisMonth,
+      expectedThisMonth,
+      totalDebtBalance,
     };
   }, [payments, allPayments, debts, currentMonth]);
 
@@ -264,7 +271,9 @@ export const MonthlyPaymentTracker = ({ language }: MonthlyPaymentTrackerProps) 
         onSuccess: async () => {
           // Create a debt_payment record to update the balance via trigger
           try {
-            const { data: { user } } = await supabase.auth.getUser();
+            const {
+              data: { user },
+            } = await supabase.auth.getUser();
             if (user) {
               await supabase.from("debt_payments").insert({
                 user_id: user.id,
@@ -278,7 +287,7 @@ export const MonthlyPaymentTracker = ({ language }: MonthlyPaymentTrackerProps) 
           } catch (error) {
             console.error("Error creating debt payment:", error);
           }
-          
+
           toast({
             title: "Success",
             description: "Payment added successfully.",
@@ -337,237 +346,219 @@ export const MonthlyPaymentTracker = ({ language }: MonthlyPaymentTrackerProps) 
     });
   };
 
-
   const monthName = format(currentMonth, "MMMM yyyy", { locale: language === "es" ? undefined : undefined });
 
   return (
     <>
       <AutoPaymentsGenerator language={language} />
       <Card className="shadow-lg">
-      <CardHeader className="pb-4">
-        <div className="flex items-center justify-between flex-wrap gap-4">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-gradient-to-br from-primary to-primary/80 rounded-xl">
-              <Receipt className="h-6 w-6 text-white" />
-            </div>
-            <div>
-              <CardTitle>{t.title}</CardTitle>
-              <CardDescription>{t.description}</CardDescription>
-            </div>
-          </div>
-
-          <div className="flex items-center gap-2">
-            <Button variant="outline" size="icon" onClick={() => setCurrentMonth(subMonths(currentMonth, 1))}>
-              <ChevronLeft className="h-4 w-4" />
-            </Button>
-            <span className="min-w-[160px] text-center font-semibold">{monthName}</span>
-            <Button variant="outline" size="icon" onClick={() => setCurrentMonth(addMonths(currentMonth, 1))}>
-              <ChevronRight className="h-4 w-4" />
-            </Button>
-          </div>
-
-          <Dialog
-            open={isAddDialogOpen}
-            onOpenChange={(open) => {
-              setIsAddDialogOpen(open);
-              if (!open) resetForm();
-            }}
-          >
-            <DialogTrigger asChild>
-              <Button variant="outline" className="gap-2">
-                <Plus className="h-4 w-4" />
-                {t.addPayment}
-              </Button>
-            </DialogTrigger>
-            <DialogContent className="sm:max-w-md">
-              <DialogHeader>
-                <DialogTitle>{editingEntry ? t.editPayment : t.addPayment}</DialogTitle>
-              </DialogHeader>
-              <div className="space-y-4">
-                <div className="space-y-2">
-                  <Label>{t.selectDebt}</Label>
-                  <Select
-                    value={formData.source_id}
-                    onValueChange={(val: string) => setFormData({ ...formData, source_id: val })}
-                  >
-                    <SelectTrigger>
-                      <SelectValue placeholder={language === "en" ? "Choose a debt..." : language === "es" ? "Elige una deuda..." : "Wybierz dług..."} />
-                    </SelectTrigger>
-                    <SelectContent>
-                      {debts.filter(d => d.balance > 0).map((debt) => (
-                        <SelectItem key={debt.id} value={debt.id}>
-                          {debt.name} - {formatCurrency(debt.balance)}
-                        </SelectItem>
-                      ))}
-                    </SelectContent>
-                  </Select>
-                </div>
-                <div className="space-y-2">
-                  <Label>{t.amount} (£)</Label>
-                  <Input
-                    type="number"
-                    step="0.01"
-                    value={formData.amount}
-                    onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
-                    placeholder="0.00"
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>{t.date}</Label>
-                  <Input
-                    type="date"
-                    value={formData.payment_date}
-                    onChange={(e) => setFormData({ ...formData, payment_date: e.target.value })}
-                  />
-                </div>
-                <div className="space-y-2">
-                  <Label>{t.notes}</Label>
-                  <Textarea
-                    value={formData.notes}
-                    onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                    placeholder={language === "en" ? "Optional notes..." : "Notas opcionales..."}
-                  />
-                </div>
+        <CardHeader className="pb-4">
+          <div className="flex items-center justify-between flex-wrap gap-4">
+            <div className="flex items-center gap-3">
+              <div className="p-2 bg-gradient-to-br from-primary to-primary/80 rounded-xl">
+                <Receipt className="h-6 w-6 text-white" />
               </div>
-              <DialogFooter>
-                <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>
-                  {t.cancel}
-                </Button>
-                <Button onClick={handleSave}>{t.save}</Button>
-              </DialogFooter>
-            </DialogContent>
-          </Dialog>
-        </div>
-      </CardHeader>
-      <CardContent className="pt-6">
-        {/* Summary Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
-          <div className="p-4 rounded-lg bg-gradient-to-br from-green-500/10 to-green-500/5 border border-green-500/20">
-            <p className="text-sm text-muted-foreground mb-1">{t.totalPaid}</p>
-            <p className="text-2xl font-bold text-green-600 dark:text-green-400">
-              {formatCurrency(monthlyTotals.totalPaidThisMonth)}
-            </p>
-          </div>
-          <div className="p-4 rounded-lg bg-gradient-to-br from-blue-500/10 to-blue-500/5 border border-blue-500/20">
-            <p className="text-sm text-muted-foreground mb-1">{t.expectedThisMonth}</p>
-            <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">
-              {formatCurrency(monthlyTotals.expectedThisMonth)}
-            </p>
-          </div>
-          <div className="p-4 rounded-lg bg-gradient-to-br from-orange-500/10 to-orange-500/5 border border-orange-500/20">
-            <p className="text-sm text-muted-foreground mb-1">{t.totalDebtBalance}</p>
-            <p className="text-2xl font-bold text-orange-600 dark:text-orange-400">
-              {formatCurrency(monthlyTotals.totalDebtBalance)}
-            </p>
-          </div>
-        </div>
+              <div>
+                <CardTitle>{t.title}</CardTitle>
+                <CardDescription>{t.description}</CardDescription>
+              </div>
+            </div>
 
-        {payments.length === 0 ? (
-          <div className="text-center py-12 text-muted-foreground">
-            <Receipt className="h-12 w-12 mx-auto mb-4 opacity-50" />
-            <p>{t.noPayments}</p>
+            <div className="flex items-center gap-2">
+              <Button variant="outline" size="icon" onClick={() => setCurrentMonth(subMonths(currentMonth, 1))}>
+                <ChevronLeft className="h-4 w-4" />
+              </Button>
+              <span className="min-w-[160px] text-center font-semibold">{monthName}</span>
+              <Button variant="outline" size="icon" onClick={() => setCurrentMonth(addMonths(currentMonth, 1))}>
+                <ChevronRight className="h-4 w-4" />
+              </Button>
+            </div>
+
+            <Dialog
+              open={isAddDialogOpen}
+              onOpenChange={(open) => {
+                setIsAddDialogOpen(open);
+                if (!open) resetForm();
+              }}
+            >
+              <DialogTrigger asChild>
+                <Button variant="outline" className="gap-2">
+                  <Plus className="h-4 w-4" />
+                  {t.addPayment}
+                </Button>
+              </DialogTrigger>
+              <DialogContent className="sm:max-w-md">
+                <DialogHeader>
+                  <DialogTitle>{editingEntry ? t.editPayment : t.addPayment}</DialogTitle>
+                </DialogHeader>
+                <div className="space-y-4">
+                  <div className="space-y-2">
+                    <Label>{t.selectDebt}</Label>
+                    <Select
+                      value={formData.source_id}
+                      onValueChange={(val: string) => setFormData({ ...formData, source_id: val })}
+                    >
+                      <SelectTrigger>
+                        <SelectValue
+                          placeholder={
+                            language === "en"
+                              ? "Choose a debt..."
+                              : language === "es"
+                                ? "Elige una deuda..."
+                                : "Wybierz dług..."
+                          }
+                        />
+                      </SelectTrigger>
+                      <SelectContent>
+                        {debts
+                          .filter((d) => d.balance > 0)
+                          .map((debt) => (
+                            <SelectItem key={debt.id} value={debt.id}>
+                              {debt.name} - {formatCurrency(debt.balance)}
+                            </SelectItem>
+                          ))}
+                      </SelectContent>
+                    </Select>
+                  </div>
+                  <div className="space-y-2">
+                    <Label>{t.amount} (£)</Label>
+                    <Input
+                      type="number"
+                      step="0.01"
+                      value={formData.amount}
+                      onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
+                      placeholder="0.00"
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>{t.date}</Label>
+                    <Input
+                      type="date"
+                      value={formData.payment_date}
+                      onChange={(e) => setFormData({ ...formData, payment_date: e.target.value })}
+                    />
+                  </div>
+                  <div className="space-y-2">
+                    <Label>{t.notes}</Label>
+                    <Textarea
+                      value={formData.notes}
+                      onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
+                      placeholder={language === "en" ? "Optional notes..." : "Notas opcionales..."}
+                    />
+                  </div>
+                </div>
+                <DialogFooter>
+                  <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>
+                    {t.cancel}
+                  </Button>
+                  <Button onClick={handleSave}>{t.save}</Button>
+                </DialogFooter>
+              </DialogContent>
+            </Dialog>
           </div>
-        ) : (
-          <div className="space-y-3">
-            {payments.map((payment) => {
-              const linkedDebt = payment.source_id 
-                ? debts.find(d => d.id === payment.source_id)
-                : null;
-              
-              // Check if it's a manual payment (from debt_payments table or marked as manual)
-              const isManual = (payment as any).is_manual === true;
-              const isAutoGenerated = !isManual;
-              
-              // Calculate projected balance for this debt in the viewing month
-              const projectedBalance = linkedDebt ? (() => {
-                const currentMonthStart = startOfMonth(currentMonth);
-                const currentMonthEnd = new Date(currentMonthStart.getFullYear(), currentMonthStart.getMonth() + 1, 0);
-                
-                const debtPaymentsThisMonth = payments
-                  .filter(p => {
-                    const paymentDate = p.payment_date ? new Date(p.payment_date) : null;
-                    return (
-                      p.source_id === linkedDebt.id &&
-                      (p.payment_status === "paid" || 
-                       (paymentDate && paymentDate >= currentMonthStart && paymentDate <= currentMonthEnd))
-                    );
-                  })
-                  .reduce((sum, p) => sum + p.amount, 0);
-                
-                return Math.max(0, linkedDebt.balance - debtPaymentsThisMonth);
-              })() : 0;
-              
-              return (
-                <div
-                  key={payment.id}
-                  className={`flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors ${
-                    isAutoGenerated 
-                      ? "border-blue-500/30 bg-blue-500/5" 
-                      : "border-green-500/30 bg-green-500/5"
-                  }`}
-                >
-                  <div className="flex items-center gap-3 flex-1">
-                    <CheckCircle2 className={`h-5 w-5 ${isAutoGenerated ? "text-blue-600 dark:text-blue-400" : "text-green-600 dark:text-green-400"}`} />
-                    <div className="flex-1">
-                      <div className="flex items-center gap-2 flex-wrap">
-                        <span className="font-semibold">
-                          {linkedDebt?.name || "Deuda"}
-                        </span>
-                        <Badge variant={isAutoGenerated ? "secondary" : "default"} className="text-xs">
-                          {isAutoGenerated ? "Automático" : "Manual"}
-                        </Badge>
-                        {linkedDebt && (
-                          <span className="text-sm text-muted-foreground">
-                            Balance proyectado: {formatCurrency(projectedBalance)}
-                          </span>
+        </CardHeader>
+        <CardContent className="pt-6">
+          {/* Summary Cards */}
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+            <div className="p-4 rounded-lg bg-gradient-to-br from-green-500/10 to-green-500/5 border border-green-500/20">
+              <p className="text-sm text-muted-foreground mb-1">{t.totalPaid}</p>
+              <p className="text-2xl font-bold text-green-600 dark:text-green-400">
+                {formatCurrency(monthlyTotals.totalPaidThisMonth)}
+              </p>
+            </div>
+            <div className="p-4 rounded-lg bg-gradient-to-br from-blue-500/10 to-blue-500/5 border border-blue-500/20">
+              <p className="text-sm text-muted-foreground mb-1">{t.expectedThisMonth}</p>
+              <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+                {formatCurrency(monthlyTotals.expectedThisMonth)}
+              </p>
+            </div>
+            <div className="p-4 rounded-lg bg-gradient-to-br from-orange-500/10 to-orange-500/5 border border-orange-500/20">
+              <p className="text-sm text-muted-foreground mb-1">{t.totalDebtBalance}</p>
+              <p className="text-2xl font-bold text-orange-600 dark:text-orange-400">
+                {formatCurrency(monthlyTotals.totalDebtBalance)}
+              </p>
+            </div>
+          </div>
+
+          {payments.length === 0 ? (
+            <div className="text-center py-12 text-muted-foreground">
+              <Receipt className="h-12 w-12 mx-auto mb-4 opacity-50" />
+              <p>{t.noPayments}</p>
+            </div>
+          ) : (
+            <div className="space-y-3">
+              {payments.map((payment) => {
+                const linkedDebt = payment.source_id ? debts.find((d) => d.id === payment.source_id) : null;
+
+                // Check if it's a manual payment (from debt_payments table or marked as manual)
+                const isManual = (payment as any).is_manual === true;
+                const isAutoGenerated = !isManual;
+
+                // Calculate projected balance for this debt in the viewing month
+                const projectedBalance = linkedDebt
+                  ? (() => {
+                      const currentMonthStart = startOfMonth(currentMonth);
+                      const currentMonthEnd = new Date(
+                        currentMonthStart.getFullYear(),
+                        currentMonthStart.getMonth() + 1,
+                        0,
+                      );
+
+                      const debtPaymentsThisMonth = payments
+                        .filter((p) => {
+                          const paymentDate = p.payment_date ? new Date(p.payment_date) : null;
+                          return (
+                            p.source_id === linkedDebt.id &&
+                            (p.payment_status === "paid" ||
+                              (paymentDate && paymentDate >= currentMonthStart && paymentDate <= currentMonthEnd))
+                          );
+                        })
+                        .reduce((sum, p) => sum + p.amount, 0);
+
+                      return Math.max(0, linkedDebt.balance - debtPaymentsThisMonth);
+                    })()
+                  : 0;
+
+                return (
+                  <div
+                    key={payment.id}
+                    className={`flex items-center justify-between p-4 border rounded-lg hover:bg-muted/50 transition-colors ${
+                      isAutoGenerated ? "border-blue-500/30 bg-blue-500/5" : "border-green-500/30 bg-green-500/5"
+                    }`}
+                  >
+                    <div className="flex items-center gap-3 flex-1">
+                      <CheckCircle2
+                        className={`h-5 w-5 ${isAutoGenerated ? "text-blue-600 dark:text-blue-400" : "text-green-600 dark:text-green-400"}`}
+                      />
+                      <div className="flex-1">
+                        <div className="flex items-center gap-2 flex-wrap">
+                          <span className="font-semibold">{linkedDebt?.name || "Deuda"}</span>
+                          <Badge variant={isAutoGenerated ? "secondary" : "default"} className="text-xs">
+                            {isAutoGenerated ? "Automatic" : "Manual"}
+                          </Badge>
+                          {linkedDebt && (
+                            <span className="text-sm text-muted-foreground">
+                              Balance proyectado: {formatCurrency(projectedBalance)}
+                            </span>
+                          )}
+                        </div>
+                        {payment.notes && <p className="text-sm text-muted-foreground mt-1">{payment.notes}</p>}
+                        {payment.payment_date && (
+                          <p className="text-xs text-muted-foreground mt-1">
+                            {format(new Date(payment.payment_date), "dd MMM yyyy")}
+                          </p>
                         )}
                       </div>
-                      {payment.notes && (
-                        <p className="text-sm text-muted-foreground mt-1">{payment.notes}</p>
-                      )}
-                      {payment.payment_date && (
-                        <p className="text-xs text-muted-foreground mt-1">
-                          {format(new Date(payment.payment_date), "dd MMM yyyy")}
-                        </p>
-                      )}
                     </div>
-                  </div>
-                  <div className="flex items-center gap-3">
-                    <span className={`text-lg font-bold ${isAutoGenerated ? "text-blue-600 dark:text-blue-400" : "text-green-600 dark:text-green-400"}`}>
-                      {formatCurrency(payment.amount)}
-                    </span>
-                    <div className="flex gap-1">
-                      {isManual ? (
-                        // Manual payments: can only delete (handled by debt_payments table)
-                        <AlertDialog>
-                          <AlertDialogTrigger asChild>
-                            <Button variant="ghost" size="icon">
-                              <Trash2 className="h-4 w-4 text-destructive" />
-                            </Button>
-                          </AlertDialogTrigger>
-                          <AlertDialogContent>
-                            <AlertDialogHeader>
-                              <AlertDialogTitle>
-                                {language === "en" ? "Delete manual payment?" : language === "es" ? "¿Eliminar pago manual?" : "Usunąć płatność ręczną?"}
-                              </AlertDialogTitle>
-                              <AlertDialogDescription>
-                                {language === "en" ? "This action cannot be undone. The debt balance will be restored." : language === "es" ? "Esta acción no se puede deshacer. El balance de la deuda se restaurará." : "Tej operacji nie można cofnąć. Saldo długu zostanie przywrócone."}
-                              </AlertDialogDescription>
-                            </AlertDialogHeader>
-                            <AlertDialogFooter>
-                              <AlertDialogCancel>{t.cancel}</AlertDialogCancel>
-                              <AlertDialogAction onClick={() => deleteDebtPaymentMutation.mutate(payment.id)}>
-                                {t.delete}
-                              </AlertDialogAction>
-                            </AlertDialogFooter>
-                          </AlertDialogContent>
-                        </AlertDialog>
-                      ) : (
-                        // Auto-generated payments: can edit and delete
-                        <>
-                          <Button variant="ghost" size="icon" onClick={() => handleEdit(payment)}>
-                            <Edit2 className="h-4 w-4" />
-                          </Button>
+                    <div className="flex items-center gap-3">
+                      <span
+                        className={`text-lg font-bold ${isAutoGenerated ? "text-blue-600 dark:text-blue-400" : "text-green-600 dark:text-green-400"}`}
+                      >
+                        {formatCurrency(payment.amount)}
+                      </span>
+                      <div className="flex gap-1">
+                        {isManual ? (
+                          // Manual payments: can only delete (handled by debt_payments table)
                           <AlertDialog>
                             <AlertDialogTrigger asChild>
                               <Button variant="ghost" size="icon">
@@ -577,31 +568,76 @@ export const MonthlyPaymentTracker = ({ language }: MonthlyPaymentTrackerProps) 
                             <AlertDialogContent>
                               <AlertDialogHeader>
                                 <AlertDialogTitle>
-                                  {language === "en" ? "Delete payment?" : language === "es" ? "¿Eliminar pago?" : "Usunąć płatność?"}
+                                  {language === "en"
+                                    ? "Delete manual payment?"
+                                    : language === "es"
+                                      ? "¿Eliminar pago manual?"
+                                      : "Usunąć płatność ręczną?"}
                                 </AlertDialogTitle>
                                 <AlertDialogDescription>
-                                  {language === "en" ? "This action cannot be undone." : language === "es" ? "Esta acción no se puede deshacer." : "Tej operacji nie można cofnąć."}
+                                  {language === "en"
+                                    ? "This action cannot be undone. The debt balance will be restored."
+                                    : language === "es"
+                                      ? "Esta acción no se puede deshacer. El balance de la deuda se restaurará."
+                                      : "Tej operacji nie można cofnąć. Saldo długu zostanie przywrócone."}
                                 </AlertDialogDescription>
                               </AlertDialogHeader>
                               <AlertDialogFooter>
                                 <AlertDialogCancel>{t.cancel}</AlertDialogCancel>
-                                <AlertDialogAction onClick={() => deleteMutation.mutate(payment.id)}>
+                                <AlertDialogAction onClick={() => deleteDebtPaymentMutation.mutate(payment.id)}>
                                   {t.delete}
                                 </AlertDialogAction>
                               </AlertDialogFooter>
                             </AlertDialogContent>
                           </AlertDialog>
-                        </>
-                      )}
+                        ) : (
+                          // Auto-generated payments: can edit and delete
+                          <>
+                            <Button variant="ghost" size="icon" onClick={() => handleEdit(payment)}>
+                              <Edit2 className="h-4 w-4" />
+                            </Button>
+                            <AlertDialog>
+                              <AlertDialogTrigger asChild>
+                                <Button variant="ghost" size="icon">
+                                  <Trash2 className="h-4 w-4 text-destructive" />
+                                </Button>
+                              </AlertDialogTrigger>
+                              <AlertDialogContent>
+                                <AlertDialogHeader>
+                                  <AlertDialogTitle>
+                                    {language === "en"
+                                      ? "Delete payment?"
+                                      : language === "es"
+                                        ? "¿Eliminar pago?"
+                                        : "Usunąć płatność?"}
+                                  </AlertDialogTitle>
+                                  <AlertDialogDescription>
+                                    {language === "en"
+                                      ? "This action cannot be undone."
+                                      : language === "es"
+                                        ? "Esta acción no se puede deshacer."
+                                        : "Tej operacji nie można cofnąć."}
+                                  </AlertDialogDescription>
+                                </AlertDialogHeader>
+                                <AlertDialogFooter>
+                                  <AlertDialogCancel>{t.cancel}</AlertDialogCancel>
+                                  <AlertDialogAction onClick={() => deleteMutation.mutate(payment.id)}>
+                                    {t.delete}
+                                  </AlertDialogAction>
+                                </AlertDialogFooter>
+                              </AlertDialogContent>
+                            </AlertDialog>
+                          </>
+                        )}
+                      </div>
                     </div>
                   </div>
-                </div>
-              );
-            })}
-          </div>
-        )}
-      </CardContent>
-    </Card>
+                );
+              })}
+            </div>
+          )}
+        </CardContent>
+      </Card>
     </>
   );
 };
