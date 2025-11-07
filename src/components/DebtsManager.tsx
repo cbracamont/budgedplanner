@@ -7,6 +7,7 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@
 import { useToast } from "@/hooks/use-toast";
 import { CreditCard, Plus, Trash2, Pencil } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { getTranslation, Language, ukBanks } from "@/lib/i18n";
 import { useDebts, useAddDebt, useUpdateDebt, useDeleteDebt } from "@/hooks/useFinancialData";
 import { useDebtPayments } from "@/hooks/useDebtPayments";
@@ -547,13 +548,30 @@ export const DebtsManager = ({ language, onDebtsChange }: DebtsManagerProps) => 
                     </form>
                   </DialogContent>
                 </Dialog>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => deleteDebt(debt.id)}
-                >
-                  <Trash2 className="h-4 w-4 text-destructive" />
-                </Button>
+                <AlertDialog>
+                  <AlertDialogTrigger asChild>
+                    <Button
+                      variant="ghost"
+                      size="icon"
+                      onClick={(e) => e.stopPropagation()}
+                      title={language === 'en' ? 'Delete' : language === 'es' ? 'Eliminar' : 'Usuń'}
+                    >
+                      <Trash2 className="h-4 w-4 text-destructive" />
+                    </Button>
+                  </AlertDialogTrigger>
+                  <AlertDialogContent>
+                    <AlertDialogHeader>
+                      <AlertDialogTitle>{language === 'en' ? 'Delete debt?' : language === 'es' ? '¿Eliminar deuda?' : 'Usunąć dług?'}</AlertDialogTitle>
+                      <AlertDialogDescription>
+                        {language === 'en' ? 'This action cannot be undone.' : language === 'es' ? 'Esta acción no se puede deshacer.' : 'Tej operacji nie można cofnąć.'}
+                      </AlertDialogDescription>
+                    </AlertDialogHeader>
+                    <AlertDialogFooter>
+                      <AlertDialogCancel>{language === 'en' ? 'Cancel' : language === 'es' ? 'Cancelar' : 'Anuluj'}</AlertDialogCancel>
+                      <AlertDialogAction onClick={() => deleteDebt(debt.id)}>{language === 'en' ? 'Delete' : language === 'es' ? 'Eliminar' : 'Usuń'}</AlertDialogAction>
+                    </AlertDialogFooter>
+                  </AlertDialogContent>
+                </AlertDialog>
               </div>
             </div>
           ))}
@@ -590,17 +608,30 @@ export const DebtsManager = ({ language, onDebtsChange }: DebtsManagerProps) => 
                     )}
                   </div>
                   <div className="flex gap-1">
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={(e) => {
-                        e.stopPropagation();
-                        deleteDebt(debt.id);
-                      }}
-                      title={language === 'en' ? 'Delete' : language === 'es' ? 'Eliminar' : 'Usuń'}
-                    >
-                      <Trash2 className="h-4 w-4 text-destructive" />
-                    </Button>
+                    <AlertDialog>
+                      <AlertDialogTrigger asChild>
+                        <Button
+                          variant="ghost"
+                          size="icon"
+                          onClick={(e) => e.stopPropagation()}
+                          title={language === 'en' ? 'Delete' : language === 'es' ? 'Eliminar' : 'Usuń'}
+                        >
+                          <Trash2 className="h-4 w-4 text-destructive" />
+                        </Button>
+                      </AlertDialogTrigger>
+                      <AlertDialogContent>
+                        <AlertDialogHeader>
+                          <AlertDialogTitle>{language === 'en' ? 'Delete debt?' : language === 'es' ? '¿Eliminar deuda?' : 'Usunąć dług?'}</AlertDialogTitle>
+                          <AlertDialogDescription>
+                            {language === 'en' ? 'This action cannot be undone.' : language === 'es' ? 'Esta acción no se puede deshacer.' : 'Tej operacji nie można cofnąć.'}
+                          </AlertDialogDescription>
+                        </AlertDialogHeader>
+                        <AlertDialogFooter>
+                          <AlertDialogCancel>{language === 'en' ? 'Cancel' : language === 'es' ? 'Cancelar' : 'Anuluj'}</AlertDialogCancel>
+                          <AlertDialogAction onClick={() => deleteDebt(debt.id)}>{language === 'en' ? 'Delete' : language === 'es' ? 'Eliminar' : 'Usuń'}</AlertDialogAction>
+                        </AlertDialogFooter>
+                      </AlertDialogContent>
+                    </AlertDialog>
                   </div>
                 </div>
               ))}

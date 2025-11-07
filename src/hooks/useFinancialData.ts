@@ -139,6 +139,9 @@ export const useAddDebt = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['debts'] });
+      queryClient.invalidateQueries({ queryKey: ['payment-tracker'] });
+      queryClient.invalidateQueries({ queryKey: ['payment-tracker-all'] });
+      queryClient.invalidateQueries({ queryKey: ['combined-monthly-payments'] });
       toast({ title: 'Success', description: 'Debt added' });
     },
     onError: (error: Error) => {
@@ -162,6 +165,9 @@ export const useUpdateDebt = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['debts'] });
+      queryClient.invalidateQueries({ queryKey: ['payment-tracker'] });
+      queryClient.invalidateQueries({ queryKey: ['payment-tracker-all'] });
+      queryClient.invalidateQueries({ queryKey: ['combined-monthly-payments'] });
       toast({ title: 'Success', description: 'Debt updated' });
     },
     onError: (error: Error) => {
@@ -181,6 +187,9 @@ export const useDeleteDebt = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ['debts'] });
+      queryClient.invalidateQueries({ queryKey: ['payment-tracker'] });
+      queryClient.invalidateQueries({ queryKey: ['payment-tracker-all'] });
+      queryClient.invalidateQueries({ queryKey: ['combined-monthly-payments'] });
       toast({ title: 'Success', description: 'Debt deleted' });
     },
     onError: (error: Error) => {
