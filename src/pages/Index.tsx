@@ -535,6 +535,15 @@ const Index = () => {
     };
   }, [incomeData, fixedExpensesData, variableExpensesData, debtData, savings, savingsGoalsData, currentMonth, monthlySavings]);
   useEffect(() => {
+    // Set up auth state listener FIRST
+    const { data: { subscription } } = supabase.auth.onAuthStateChange(
+      (event, session) => {
+        setUser(session?.user ?? null);
+        setAuthLoading(false);
+      }
+    );
+
+    // THEN check for existing session
     supabase.auth.getSession().then(({
       data: {
         session
@@ -543,6 +552,8 @@ const Index = () => {
       setUser(session?.user ?? null);
       setAuthLoading(false);
     });
+
+    return () => subscription.unsubscribe();
   }, []);
   if (authLoading) return <div className="p-8">
         <Skeleton className="h-64 w-full" />
