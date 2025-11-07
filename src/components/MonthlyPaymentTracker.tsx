@@ -137,9 +137,10 @@ export const MonthlyPaymentTracker = ({ language }: MonthlyPaymentTrackerProps) 
     const today = new Date();
     const currentMonthStart = startOfMonth(currentMonth);
     const currentMonthEnd = new Date(currentMonthStart.getFullYear(), currentMonthStart.getMonth() + 1, 0);
-    const isCurrentMonth = currentMonthStart.getTime() === startOfMonth(today).getTime();
-    const isFutureMonth = currentMonthStart > startOfMonth(today);
-    const isPastMonth = currentMonthStart < startOfMonth(today);
+    const todayMonthStart = startOfMonth(today);
+    const isCurrentMonth = currentMonthStart.getTime() === todayMonthStart.getTime();
+    const isFutureMonth = currentMonthStart > todayMonthStart;
+    const isPastMonth = currentMonthStart < todayMonthStart;
     
     // Total paid this specific month - include payments with payment_date <= today OR status = "paid"
     const totalPaidThisMonth = payments
@@ -159,30 +160,36 @@ export const MonthlyPaymentTracker = ({ language }: MonthlyPaymentTrackerProps) 
     
     // CRITICAL: Calculate projected total debt balance based on viewing month
     const totalDebtBalance = debts.reduce((sum, debt) => {
-      let projectedBalance = debt.balance;
+      let projectedBalance = debt.balance; // Current real balance (reflects paid payments)
       
       if (isFutureMonth) {
-        // FUTURE: Subtract all scheduled payments from NOW until the viewing month (inclusive)
+        // FUTURE: Subtract ALL scheduled payments from current month UP TO AND INCLUDING viewing month
+        // This projects how much the debt will be reduced by that future month
         const paymentsUntilViewingMonth = allPayments.filter(p => {
           if (p.source_id !== debt.id) return false;
           const pMonthStr = p.month_year;
           const pMonth = new Date(pMonthStr);
-          return pMonth > startOfMonth(today) && pMonth <= currentMonthStart;
+          // Include current month and all months up to the viewing month
+          return pMonth >= todayMonthStart && pMonth <= currentMonthStart;
         });
-        const totalPaidFuture = paymentsUntilViewingMonth.reduce((acc, p) => acc + p.amount, 0);
-        projectedBalance = Math.max(0, debt.balance - totalPaidFuture);
+        const totalToDeduct = paymentsUntilViewingMonth.reduce((acc, p) => acc + p.amount, 0);
+        projectedBalance = Math.max(0, debt.balance - totalToDeduct);
+        
       } else if (isPastMonth) {
-        // PAST: Add back all payments from viewing month until NOW
-        const paymentsFromViewingUntilNow = allPayments.filter(p => {
+        // PAST: Add back all payments made AFTER the viewing month up to current month
+        // This reconstructs what the balance was in that past month
+        const paymentsAfterViewingMonth = allPayments.filter(p => {
           if (p.source_id !== debt.id) return false;
           const pMonthStr = p.month_year;
           const pMonth = new Date(pMonthStr);
-          return pMonth > currentMonthStart && pMonth <= startOfMonth(today);
+          // Include all months AFTER viewing month up to and including current month
+          return pMonth > currentMonthStart && pMonth <= todayMonthStart;
         });
-        const totalToRestore = paymentsFromViewingUntilNow.reduce((acc, p) => acc + p.amount, 0);
+        const totalToRestore = paymentsAfterViewingMonth.reduce((acc, p) => acc + p.amount, 0);
         projectedBalance = debt.balance + totalToRestore;
+        
       } else {
-        // CURRENT MONTH: Use current balance as-is
+        // CURRENT MONTH: Use current balance as-is (already reflects all paid payments)
         projectedBalance = debt.balance;
       }
       
