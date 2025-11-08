@@ -17,6 +17,8 @@ const languageOptions = [
   { value: 'en', label: 'English', flag: '🇬🇧' },
   { value: 'es', label: 'Español', flag: '🇪🇸' },
   { value: 'pt', label: 'Português', flag: '🇵🇹' },
+  { value: 'pl', label: 'Polski', flag: '🇵🇱' },
+  { value: 'ro', label: 'Română', flag: '🇷🇴' },
 ];
 
 export const LanguageToggle = ({ language, onLanguageChange }: LanguageToggleProps) => {
