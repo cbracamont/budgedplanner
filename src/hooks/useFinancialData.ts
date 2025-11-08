@@ -16,7 +16,31 @@ export const useIncomeSources = () => {
         .from('income_sources')
         .select('*')
         .eq('profile_id', activeProfile.id)
+        .eq('income_type', 'fixed')
         .order('created_at', { ascending: true });
+      
+      if (error) throw error;
+      return data || [];
+    },
+    enabled: !!activeProfile,
+  });
+};
+
+// Variable Income hooks
+export const useVariableIncome = (monthYear?: Date) => {
+  const { data: activeProfile } = useActiveProfile();
+  
+  return useQuery({
+    queryKey: ['variable-income', activeProfile?.id, monthYear],
+    queryFn: async () => {
+      if (!activeProfile) return [];
+      
+      const { data, error } = await supabase
+        .from('income_sources')
+        .select('*')
+        .eq('profile_id', activeProfile.id)
+        .eq('income_type', 'variable')
+        .order('created_at', { ascending: false });
       
       if (error) throw error;
       return data || [];

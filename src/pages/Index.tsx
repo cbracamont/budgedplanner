@@ -5,7 +5,7 @@ import { useQueryClient, useQuery } from "@tanstack/react-query";
 import { format, addMonths, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, add, sub, startOfWeek } from "date-fns";
 import { formatCurrency } from "@/lib/i18n";
 import { TrendingUp, Download, LogOut, Bot, Calendar, DollarSign, PiggyBank, Home, Edit2, Trash2, Plus, ChevronLeft, ChevronRight, Send, X, Zap, Snowflake, Moon, Sun, PoundSterling, Shield, AlertCircle, Wallet, LayoutDashboard, Receipt, CreditCard, Goal, Settings } from "lucide-react";
-import { useIncomeSources, useDebts, useFixedExpenses, useVariableExpenses, useSavingsGoals, useSavings, useAddIncome, useAddDebt, useAddFixedExpense, useAddVariableExpense, useAddSavingsGoal } from "@/hooks/useFinancialData";
+import { useIncomeSources, useVariableIncome, useDebts, useFixedExpenses, useVariableExpenses, useSavingsGoals, useSavings, useAddIncome, useAddDebt, useAddFixedExpense, useAddVariableExpense, useAddSavingsGoal } from "@/hooks/useFinancialData";
 import { toast } from "@/hooks/use-toast";
 import { useFinancialProfiles } from "@/hooks/useFinancialProfiles";
 import { Auth } from "@/components/Auth";
@@ -231,6 +231,9 @@ const Index = () => {
     data: incomeData = []
   } = useIncomeSources();
   const {
+    data: variableIncomeData = []
+  } = useVariableIncome();
+  const {
     data: debtData = []
   } = useDebts();
   const {
@@ -253,29 +256,6 @@ const Index = () => {
     setCurrentWeekOffset(prev => prev + 1);
   };
 
-  // Fetch variable income separately
-  const {
-    data: variableIncomeData = []
-  } = useQuery({
-    queryKey: ["variable-income"],
-    queryFn: async () => {
-      const {
-        data: {
-          user
-        }
-      } = await supabase.auth.getUser();
-      if (!user) return [];
-      const {
-        data,
-        error
-      } = await supabase.from("income_sources").select("*").eq("user_id", user.id).eq("income_type", "variable").order("created_at", {
-        ascending: false
-      });
-      if (error) throw error;
-      return data || [];
-    }
-  });
-
   // Mutation hooks for adding financial data
   const addIncomeMutation = useAddIncome();
   const addDebtMutation = useAddDebt();
@@ -285,6 +265,7 @@ const Index = () => {
   const t = translations[language];
   const {
     totalIncome,
+    totalVariableIncome,
     totalFixed,
     totalVariable,
     totalDebtPayment,
@@ -301,9 +282,9 @@ const Index = () => {
     firstDayOfWeek,
     blankDays
   } = useMemo(() => {
-    const totalIncome = incomeData.reduce((s, i) => s + i.amount, 0);
+    const totalFixedIncome = incomeData.reduce((s, i) => s + i.amount, 0);
 
-    // Calculate total variable income based on frequency
+    // Calculate total variable income based on frequency for current month
     const currentDate = new Date();
     const currentYear = currentDate.getFullYear();
     const currentMonthNum = currentDate.getMonth();
@@ -319,9 +300,19 @@ const Index = () => {
           }
         }
         return sum + inc.amount * count;
+      } else if (inc.frequency === "monthly") {
+        return sum + inc.amount;
+      } else if (inc.frequency === "quarterly" && (currentMonthNum % 3 === 0)) {
+        return sum + inc.amount;
+      } else if (inc.frequency === "semi-annually" && (currentMonthNum % 6 === 0)) {
+        return sum + inc.amount;
+      } else if (inc.frequency === "annually" && currentMonthNum === 0) {
+        return sum + inc.amount;
       }
-      return sum + inc.amount;
+      return sum;
     }, 0);
+
+    const totalIncome = totalFixedIncome + totalVariableIncome;
     const totalFixed = fixedExpensesData.reduce((s, e) => s + e.amount, 0);
     const totalVariable = variableExpensesData.reduce((s, e) => s + e.amount, 0);
     const totalDebtPayment = debtData.reduce((s, d) => s + d.minimum_payment, 0);
@@ -330,10 +321,12 @@ const Index = () => {
     // Calculate total active monthly contributions from savings goals
     const totalSavingsCommitments = savingsGoalsData.filter(g => g.is_active && g.monthly_contribution).reduce((s, g) => s + (g.monthly_contribution || 0), 0);
 
-    // Deduct savings commitments from cashflow, include variable income
-    const grossCashFlow = totalIncome + totalVariableIncome - totalExpenses;
+    // Deduct savings commitments from cashflow
+    const grossCashFlow = totalIncome - totalExpenses;
     const cashFlow = grossCashFlow - totalSavingsCommitments;
-    const savingsTotal = (savings?.emergency_fund || 0) + savingsGoalsData.reduce((s, g) => s + (g.current_amount || 0), 0);
+    
+    // Calculate total savings including emergency fund, general savings, and goals
+    const savingsTotal = (savings?.emergency_fund || 0) + (savings?.total_accumulated || 0) + savingsGoalsData.reduce((s, g) => s + (g.current_amount || 0), 0);
     let remaining = debtData.reduce((s, d) => s + d.balance, 0);
     let months = 0;
 
@@ -513,6 +506,7 @@ const Index = () => {
     const blankDays = Array(firstDayOfWeek).fill(null);
     return {
       totalIncome,
+      totalVariableIncome,
       totalFixed,
       totalVariable,
       totalDebtPayment,
@@ -529,7 +523,7 @@ const Index = () => {
       firstDayOfWeek,
       blankDays
     };
-  }, [incomeData, fixedExpensesData, variableExpensesData, debtData, savings, savingsGoalsData, currentMonth, monthlySavings]);
+  }, [incomeData, variableIncomeData, fixedExpensesData, variableExpensesData, debtData, savings, savingsGoalsData, currentMonth, monthlySavings]);
   useEffect(() => {
     // Set up auth state listener FIRST
     const {
@@ -885,6 +879,11 @@ const Index = () => {
                   </CardHeader>
                   <CardContent>
                     <div className="text-3xl font-bold text-green-600">{formatCurrency(totalIncome)}</div>
+                    {totalVariableIncome > 0 && (
+                      <p className="text-xs text-muted-foreground mt-1">
+                        Variable: {formatCurrency(totalVariableIncome)}
+                      </p>
+                    )}
                   </CardContent>
                 </Card>
                 <Card className="border-red-200">
@@ -915,6 +914,11 @@ const Index = () => {
                   </CardHeader>
                   <CardContent>
                     <div className="text-3xl font-bold text-purple-600">{formatCurrency(savingsTotal)}</div>
+                    <div className="text-xs text-muted-foreground mt-1 space-y-0.5">
+                      <p>Emergency: {formatCurrency(savings?.emergency_fund || 0)}</p>
+                      <p>General: {formatCurrency(savings?.total_accumulated || 0)}</p>
+                      <p>Goals: {formatCurrency(savingsGoalsData.reduce((s, g) => s + (g.current_amount || 0), 0))}</p>
+                    </div>
                   </CardContent>
                 </Card>
               </div>

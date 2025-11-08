@@ -56,8 +56,9 @@ serve(async (req) => {
     }
 
     // Fetch user's financial data filtered by active profile
-    const [incomeData, debtsData, fixedExpensesData, variableExpensesData, savingsData, savingsGoalsData, debtPaymentsData] = await Promise.all([
-      supabase.from('income_sources').select('*').eq('user_id', user.id).eq('profile_id', activeProfile.id),
+    const [fixedIncomeData, variableIncomeData, debtsData, fixedExpensesData, variableExpensesData, savingsData, savingsGoalsData, debtPaymentsData] = await Promise.all([
+      supabase.from('income_sources').select('*').eq('user_id', user.id).eq('profile_id', activeProfile.id).eq('income_type', 'fixed'),
+      supabase.from('income_sources').select('*').eq('user_id', user.id).eq('profile_id', activeProfile.id).eq('income_type', 'variable'),
       supabase.from('debts').select('*').eq('user_id', user.id).eq('profile_id', activeProfile.id),
       supabase.from('fixed_expenses').select('*').eq('user_id', user.id).eq('profile_id', activeProfile.id),
       supabase.from('variable_expenses').select('*').eq('user_id', user.id).eq('profile_id', activeProfile.id),
@@ -67,7 +68,36 @@ serve(async (req) => {
     ]);
 
     // Calculate totals
-    const totalIncome = incomeData.data?.reduce((sum, i) => sum + Number(i.amount), 0) || 0;
+    const totalFixedIncome = fixedIncomeData.data?.reduce((sum, i) => sum + Number(i.amount), 0) || 0;
+    
+    // Calculate variable income for current month
+    const currentDate = new Date();
+    const currentYear = currentDate.getFullYear();
+    const currentMonthNum = currentDate.getMonth();
+    const totalVariableIncome = variableIncomeData.data?.reduce((sum, inc) => {
+      if (inc.frequency === "weekly") {
+        const daysInMonth = new Date(currentYear, currentMonthNum + 1, 0).getDate();
+        let count = 0;
+        for (let day = 1; day <= daysInMonth; day++) {
+          const date = new Date(currentYear, currentMonthNum, day);
+          if (date.getDay() === inc.day_of_week) {
+            count++;
+          }
+        }
+        return sum + Number(inc.amount) * count;
+      } else if (inc.frequency === "monthly") {
+        return sum + Number(inc.amount);
+      } else if (inc.frequency === "quarterly" && (currentMonthNum % 3 === 0)) {
+        return sum + Number(inc.amount);
+      } else if (inc.frequency === "semi-annually" && (currentMonthNum % 6 === 0)) {
+        return sum + Number(inc.amount);
+      } else if (inc.frequency === "annually" && currentMonthNum === 0) {
+        return sum + Number(inc.amount);
+      }
+      return sum;
+    }, 0) || 0;
+    
+    const totalIncome = totalFixedIncome + totalVariableIncome;
     const totalDebts = debtsData.data?.reduce((sum, d) => sum + Number(d.minimum_payment), 0) || 0;
     const currentMonth = new Date().getMonth() + 1;
     const totalFixed = fixedExpensesData.data?.reduce((sum, e) => {
@@ -82,6 +112,10 @@ serve(async (req) => {
       ?.filter((g) => !!g.is_active)
       .reduce((sum, g) => sum + Number(g.monthly_contribution || 0), 0) || 0;
     const monthlyEmergencyContribution = Number(savingsData.data?.monthly_emergency_contribution || 0);
+    const emergencyFund = Number(savingsData.data?.emergency_fund || 0);
+    const generalSavings = Number(savingsData.data?.total_accumulated || 0);
+    const goalsCurrentAmount = savingsGoalsData.data?.reduce((sum, g) => sum + Number(g.current_amount || 0), 0) || 0;
+    const totalSavingsBalance = emergencyFund + generalSavings + goalsCurrentAmount;
     const totalExpenses = totalDebts + totalFixed + totalVariable;
     const monthlySavingsCommitments = totalSavingsGoals + monthlyEmergencyContribution;
     const monthlyBalance = totalIncome - totalExpenses - monthlySavingsCommitments;
@@ -93,26 +127,40 @@ ACTIVE PROFILE: ${activeProfile.name} (${activeProfile.type})
 RULES: Use strictly the OFFICIAL TOTALS provided below; do not recalculate them from the listings. If you detect discrepancies, prioritize "Monthly available balance".
 
 Official totals (same calculation as dashboard):
+- Fixed income: £${totalFixedIncome.toFixed(2)}
+- Variable income (this month): £${totalVariableIncome.toFixed(2)}
 - Total income: £${totalIncome.toFixed(2)}
 - Debts (minimum payment): £${totalDebts.toFixed(2)}
 - Fixed expenses considered this month: £${totalFixed.toFixed(2)} (ANNUAL expenses only if payment_month == ${currentMonth})
 - Variable expenses: £${totalVariable.toFixed(2)}
-- ACTIVE savings goals: £${totalSavingsGoals.toFixed(2)}
+- ACTIVE savings goals monthly: £${totalSavingsGoals.toFixed(2)}
 - Emergency fund contribution: £${monthlyEmergencyContribution.toFixed(2)}
 - Monthly available balance: £${monthlyBalance.toFixed(2)}
+
+Total Savings Balance:
+- Emergency fund: £${emergencyFund.toFixed(2)}
+- General savings: £${generalSavings.toFixed(2)}
+- Savings goals accumulated: £${goalsCurrentAmount.toFixed(2)}
+- TOTAL SAVINGS: £${totalSavingsBalance.toFixed(2)}
 
 Informational listing:
 Debts:
 ${debtsData.data?.map(d => `- ${d.name}: Balance £${Number(d.balance).toFixed(2)}, APR ${Number(d.apr).toFixed(2)}%, Minimum payment £${Number(d.minimum_payment).toFixed(2)}`).join('\n') || 'No debts'}
 
-Income:
-${incomeData.data?.map(i => `- ${i.name}: £${Number(i.amount).toFixed(2)}`).join('\n') || 'No income'}
+Fixed Income:
+${fixedIncomeData.data?.map(i => `- ${i.name}: £${Number(i.amount).toFixed(2)} (${i.frequency || 'monthly'})`).join('\n') || 'No fixed income'}
+
+Variable Income (recurring):
+${variableIncomeData.data?.map(i => `- ${i.name}: £${Number(i.amount).toFixed(2)} (${i.frequency || 'monthly'}${i.frequency === 'weekly' && i.day_of_week !== undefined ? `, day ${i.day_of_week}` : ''})`).join('\n') || 'No variable income'}
 
 Fixed expenses (marked if included this month):
 ${fixedExpensesData.data?.map(e => `- ${e.name}: £${Number(e.amount).toFixed(2)} (${e.frequency_type}${e.frequency_type === 'annual' ? (e.payment_month === currentMonth ? ' - included this month' : ' - not included this month') : ''})`).join('\n') || 'No fixed expenses'}
 
 Variable expenses:
 ${variableExpensesData.data?.map(e => `- ${e.name || 'Unnamed'}: £${Number(e.amount).toFixed(2)}`).join('\n') || 'No variable expenses'}
+
+Savings Goals:
+${savingsGoalsData.data?.map(g => `- ${g.goal_name}: £${Number(g.current_amount || 0).toFixed(2)} / £${Number(g.target_amount).toFixed(2)} (${g.is_active ? 'Active' : 'Inactive'}, monthly: £${Number(g.monthly_contribution || 0).toFixed(2)})`).join('\n') || 'No savings goals'}
 
 Debt payment history (latest records):
 ${debtPaymentsData.data?.slice(0, 20).map(p => `- ${p.debts?.name || 'Debt'}: £${Number(p.amount).toFixed(2)} paid on ${new Date(p.payment_date).toLocaleDateString('en-GB')}${p.notes ? ` (Note: ${p.notes})` : ''}`).join('\n') || 'No payment history'}
