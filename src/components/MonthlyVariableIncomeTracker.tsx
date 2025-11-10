@@ -5,31 +5,19 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { ChevronLeft, ChevronRight, Plus, Edit2, Trash2, DollarSign } from "lucide-react";
 import { format, addMonths, subMonths, startOfMonth } from "date-fns";
 import { formatCurrency, Language } from "@/lib/i18n";
-import {
-  useMonthlyVariableIncome,
-  useAddMonthlyVariableIncome,
-  useUpdateMonthlyVariableIncome,
-  useDeleteMonthlyVariableIncome,
-  type MonthlyVariableIncome,
-} from "@/hooks/useMonthlyVariableIncome";
+import { useMonthlyVariableIncome, useAddMonthlyVariableIncome, useUpdateMonthlyVariableIncome, useDeleteMonthlyVariableIncome, type MonthlyVariableIncome } from "@/hooks/useMonthlyVariableIncome";
 interface MonthlyVariableIncomeTrackerProps {
   language: Language;
   onIncomeChange?: (total: number) => void;
 }
-export const MonthlyVariableIncomeTracker = ({ language, onIncomeChange }: MonthlyVariableIncomeTrackerProps) => {
+export const MonthlyVariableIncomeTracker = ({
+  language,
+  onIncomeChange
+}: MonthlyVariableIncomeTrackerProps) => {
   const [currentMonth, setCurrentMonth] = useState(startOfMonth(new Date()));
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
@@ -38,9 +26,12 @@ export const MonthlyVariableIncomeTracker = ({ language, onIncomeChange }: Month
   const [formData, setFormData] = useState({
     amount: "",
     date: format(new Date(), "yyyy-MM-dd"),
-    description: "",
+    description: ""
   });
-  const { data: incomes = [], isLoading } = useMonthlyVariableIncome(currentMonth);
+  const {
+    data: incomes = [],
+    isLoading
+  } = useMonthlyVariableIncome(currentMonth);
   const addMutation = useAddMonthlyVariableIncome();
   const updateMutation = useUpdateMonthlyVariableIncome();
   const deleteMutation = useDeleteMonthlyVariableIncome();
@@ -52,16 +43,16 @@ export const MonthlyVariableIncomeTracker = ({ language, onIncomeChange }: Month
     return total;
   }, [incomes, onIncomeChange]);
   const handlePrevMonth = () => {
-    setCurrentMonth((prev) => subMonths(prev, 1));
+    setCurrentMonth(prev => subMonths(prev, 1));
   };
   const handleNextMonth = () => {
-    setCurrentMonth((prev) => addMonths(prev, 1));
+    setCurrentMonth(prev => addMonths(prev, 1));
   };
   const handleAdd = () => {
     setFormData({
       amount: "",
       date: format(currentMonth, "yyyy-MM-dd"),
-      description: "",
+      description: ""
     });
     setIsAddDialogOpen(true);
   };
@@ -73,13 +64,13 @@ export const MonthlyVariableIncomeTracker = ({ language, onIncomeChange }: Month
     addMutation.mutate({
       amount,
       date: formData.date,
-      description: formData.description,
+      description: formData.description
     });
     setIsAddDialogOpen(false);
     setFormData({
       amount: "",
       date: format(currentMonth, "yyyy-MM-dd"),
-      description: "",
+      description: ""
     });
   };
   const handleEdit = (income: MonthlyVariableIncome) => {
@@ -87,7 +78,7 @@ export const MonthlyVariableIncomeTracker = ({ language, onIncomeChange }: Month
     setFormData({
       amount: income.amount.toString(),
       date: income.date,
-      description: income.description || "",
+      description: income.description || ""
     });
     setIsEditDialogOpen(true);
   };
@@ -101,14 +92,14 @@ export const MonthlyVariableIncomeTracker = ({ language, onIncomeChange }: Month
       id: editingIncome.id,
       amount,
       date: formData.date,
-      description: formData.description,
+      description: formData.description
     });
     setIsEditDialogOpen(false);
     setEditingIncome(null);
     setFormData({
       amount: "",
       date: format(currentMonth, "yyyy-MM-dd"),
-      description: "",
+      description: ""
     });
   };
   const handleDelete = (id: string) => {
@@ -133,7 +124,7 @@ export const MonthlyVariableIncomeTracker = ({ language, onIncomeChange }: Month
       delete: "Delete",
       deleteConfirm: "Are you sure you want to delete this income entry?",
       monthTotal: "Month Total",
-      noEntries: "No variable income entries for this month",
+      noEntries: "No variable income entries for this month"
     },
     es: {
       title: "Ingresos Variables Mensuales",
@@ -147,7 +138,7 @@ export const MonthlyVariableIncomeTracker = ({ language, onIncomeChange }: Month
       delete: "Eliminar",
       deleteConfirm: "¿Está seguro de eliminar este ingreso?",
       monthTotal: "Total del Mes",
-      noEntries: "No hay ingresos variables para este mes",
+      noEntries: "No hay ingresos variables para este mes"
     },
     pl: {
       title: "Miesięczne Zmienne Dochody",
@@ -161,14 +152,13 @@ export const MonthlyVariableIncomeTracker = ({ language, onIncomeChange }: Month
       delete: "Usuń",
       deleteConfirm: "Czy na pewno chcesz usunąć ten wpis dochodu?",
       monthTotal: "Suma Miesiąca",
-      noEntries: "Brak zmiennych dochodów w tym miesiącu",
-    },
+      noEntries: "Brak zmiennych dochodów w tym miesiącu"
+    }
   };
   const translations = t[language];
-  return (
-    <>
+  return <>
       <Card className="shadow-medium">
-        <CardHeader className="bg-gradient-primary text-primary-foreground rounded-md bg-[#000a00]/[0.36]">
+        <CardHeader className="bg-gradient-primary text-primary-foreground rounded-md bg-amber-300">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <poundsterling className="h-5 w-5" />
@@ -202,16 +192,7 @@ export const MonthlyVariableIncomeTracker = ({ language, onIncomeChange }: Month
 
           {/* Income List */}
           <div className="space-y-3">
-            {isLoading ? (
-              <p className="text-center text-muted-foreground py-4">Cargando...</p>
-            ) : incomes.length === 0 ? (
-              <p className="text-center text-muted-foreground py-4">{translations.noEntries}</p>
-            ) : (
-              incomes.map((income) => (
-                <div
-                  key={income.id}
-                  className="flex items-center justify-between p-4 bg-card border border-border rounded-lg hover:shadow-sm transition-shadow"
-                >
+            {isLoading ? <p className="text-center text-muted-foreground py-4">Cargando...</p> : incomes.length === 0 ? <p className="text-center text-muted-foreground py-4">{translations.noEntries}</p> : incomes.map(income => <div key={income.id} className="flex items-center justify-between p-4 bg-card border border-border rounded-lg hover:shadow-sm transition-shadow">
                   <div className="flex-1">
                     <div className="flex items-center gap-2">
                       <p className="font-semibold text-income">{formatCurrency(income.amount)}</p>
@@ -225,18 +206,11 @@ export const MonthlyVariableIncomeTracker = ({ language, onIncomeChange }: Month
                     <Button onClick={() => handleEdit(income)} variant="ghost" size="icon" className="h-8 w-8">
                       <Edit2 className="h-4 w-4" />
                     </Button>
-                    <Button
-                      onClick={() => handleDelete(income.id)}
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8 text-destructive hover:text-destructive"
-                    >
+                    <Button onClick={() => handleDelete(income.id)} variant="ghost" size="icon" className="h-8 w-8 text-destructive hover:text-destructive">
                       <Trash2 className="h-4 w-4" />
                     </Button>
                   </div>
-                </div>
-              ))
-            )}
+                </div>)}
           </div>
         </CardContent>
       </Card>
@@ -250,46 +224,24 @@ export const MonthlyVariableIncomeTracker = ({ language, onIncomeChange }: Month
           <div className="space-y-4">
             <div>
               <Label htmlFor="add-amount">{translations.amount}</Label>
-              <Input
-                id="add-amount"
-                type="number"
-                step="0.01"
-                value={formData.amount}
-                onChange={(e) =>
-                  setFormData({
-                    ...formData,
-                    amount: e.target.value,
-                  })
-                }
-              />
+              <Input id="add-amount" type="number" step="0.01" value={formData.amount} onChange={e => setFormData({
+              ...formData,
+              amount: e.target.value
+            })} />
             </div>
             <div>
               <Label htmlFor="add-date">{translations.date}</Label>
-              <Input
-                id="add-date"
-                type="date"
-                value={formData.date}
-                onChange={(e) =>
-                  setFormData({
-                    ...formData,
-                    date: e.target.value,
-                  })
-                }
-              />
+              <Input id="add-date" type="date" value={formData.date} onChange={e => setFormData({
+              ...formData,
+              date: e.target.value
+            })} />
             </div>
             <div>
               <Label htmlFor="add-description">{translations.description}</Label>
-              <Textarea
-                id="add-description"
-                value={formData.description}
-                onChange={(e) =>
-                  setFormData({
-                    ...formData,
-                    description: e.target.value,
-                  })
-                }
-                rows={3}
-              />
+              <Textarea id="add-description" value={formData.description} onChange={e => setFormData({
+              ...formData,
+              description: e.target.value
+            })} rows={3} />
             </div>
           </div>
           <DialogFooter>
@@ -310,46 +262,24 @@ export const MonthlyVariableIncomeTracker = ({ language, onIncomeChange }: Month
           <div className="space-y-4">
             <div>
               <Label htmlFor="edit-amount">{translations.amount}</Label>
-              <Input
-                id="edit-amount"
-                type="number"
-                step="0.01"
-                value={formData.amount}
-                onChange={(e) =>
-                  setFormData({
-                    ...formData,
-                    amount: e.target.value,
-                  })
-                }
-              />
+              <Input id="edit-amount" type="number" step="0.01" value={formData.amount} onChange={e => setFormData({
+              ...formData,
+              amount: e.target.value
+            })} />
             </div>
             <div>
               <Label htmlFor="edit-date">{translations.date}</Label>
-              <Input
-                id="edit-date"
-                type="date"
-                value={formData.date}
-                onChange={(e) =>
-                  setFormData({
-                    ...formData,
-                    date: e.target.value,
-                  })
-                }
-              />
+              <Input id="edit-date" type="date" value={formData.date} onChange={e => setFormData({
+              ...formData,
+              date: e.target.value
+            })} />
             </div>
             <div>
               <Label htmlFor="edit-description">{translations.description}</Label>
-              <Textarea
-                id="edit-description"
-                value={formData.description}
-                onChange={(e) =>
-                  setFormData({
-                    ...formData,
-                    description: e.target.value,
-                  })
-                }
-                rows={3}
-              />
+              <Textarea id="edit-description" value={formData.description} onChange={e => setFormData({
+              ...formData,
+              description: e.target.value
+            })} rows={3} />
             </div>
           </div>
           <DialogFooter>
@@ -374,6 +304,5 @@ export const MonthlyVariableIncomeTracker = ({ language, onIncomeChange }: Month
           </AlertDialogFooter>
         </AlertDialogContent>
       </AlertDialog>
-    </>
-  );
+    </>;
 };
