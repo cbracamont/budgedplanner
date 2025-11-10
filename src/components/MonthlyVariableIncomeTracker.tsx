@@ -161,7 +161,7 @@ export const MonthlyVariableIncomeTracker = ({
         <CardHeader className="bg-gradient-primary text-primary-foreground rounded-md bg-amber-300">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
-              <poundsterling className="h-5 w-5" />
+              <DollarSign className="h-5 w-5" />
               <CardTitle className="text-lg">{translations.title}</CardTitle>
             </div>
             <Button onClick={handleAdd} size="sm" variant="secondary" className="gap-2">
