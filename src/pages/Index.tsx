@@ -6,6 +6,8 @@ import { format, addMonths, startOfMonth, endOfMonth, eachDayOfInterval, isSameD
 import { formatCurrency } from "@/lib/i18n";
 import { TrendingUp, Download, LogOut, Bot, Calendar, DollarSign, PiggyBank, Home, Edit2, Trash2, Plus, ChevronLeft, ChevronRight, Send, X, Zap, Snowflake, Moon, Sun, PoundSterling, Shield, AlertCircle, Wallet, LayoutDashboard, Receipt, CreditCard, Goal, Settings } from "lucide-react";
 import { useIncomeSources, useVariableIncome, useDebts, useFixedExpenses, useVariableExpenses, useSavingsGoals, useSavings, useAddIncome, useAddDebt, useAddFixedExpense, useAddVariableExpense, useAddSavingsGoal } from "@/hooks/useFinancialData";
+import { useMonthlyVariableIncomeTotal } from "@/hooks/useMonthlyVariableIncome";
+import { useMonthlyVariableExpensesTotal } from "@/hooks/useMonthlyVariableExpenses";
 import { toast } from "@/hooks/use-toast";
 import { useFinancialProfiles } from "@/hooks/useFinancialProfiles";
 import { Auth } from "@/components/Auth";
@@ -14,6 +16,8 @@ import { DebtsManager } from "@/components/DebtsManager";
 import { FixedExpensesManager } from "@/components/FixedExpensesManager";
 import { VariableExpensesManager } from "@/components/VariableExpensesManager";
 import { VariableIncomeManager } from "@/components/VariableIncomeManager";
+import { MonthlyVariableIncomeTracker } from "@/components/MonthlyVariableIncomeTracker";
+import { MonthlyVariableExpensesTracker } from "@/components/MonthlyVariableExpensesTracker";
 import { SavingsManager } from "@/components/SavingsManager";
 import { SavingsGoalsManager } from "@/components/SavingsGoalsManager";
 import { MonthlyPaymentTracker } from "@/components/MonthlyPaymentTracker";
@@ -233,6 +237,10 @@ const Index = () => {
   const {
     data: variableIncomeData = []
   } = useVariableIncome();
+  
+  // Get current month's variable income and expenses totals
+  const currentMonthVariableIncome = useMonthlyVariableIncomeTotal(new Date());
+  const currentMonthVariableExpenses = useMonthlyVariableExpensesTotal(new Date());
   const {
     data: debtData = []
   } = useDebts();
@@ -284,37 +292,15 @@ const Index = () => {
   } = useMemo(() => {
     const totalFixedIncome = incomeData.reduce((s, i) => s + i.amount, 0);
 
-    // Calculate total variable income based on frequency for current month
-    const currentDate = new Date();
-    const currentYear = currentDate.getFullYear();
-    const currentMonthNum = currentDate.getMonth();
-    const totalVariableIncome = variableIncomeData.reduce((sum, inc) => {
-      if (inc.frequency === "weekly") {
-        // Count how many times this day of week occurs in current month
-        const daysInMonth = new Date(currentYear, currentMonthNum + 1, 0).getDate();
-        let count = 0;
-        for (let day = 1; day <= daysInMonth; day++) {
-          const date = new Date(currentYear, currentMonthNum, day);
-          if (date.getDay() === inc.day_of_week) {
-            count++;
-          }
-        }
-        return sum + inc.amount * count;
-      } else if (inc.frequency === "monthly") {
-        return sum + inc.amount;
-      } else if (inc.frequency === "quarterly" && (currentMonthNum % 3 === 0)) {
-        return sum + inc.amount;
-      } else if (inc.frequency === "semi-annually" && (currentMonthNum % 6 === 0)) {
-        return sum + inc.amount;
-      } else if (inc.frequency === "annually" && currentMonthNum === 0) {
-        return sum + inc.amount;
-      }
-      return sum;
-    }, 0);
+    // Use monthly variable income from database instead of calculated from recurring
+    const totalVariableIncome = currentMonthVariableIncome;
 
     const totalIncome = totalFixedIncome + totalVariableIncome;
     const totalFixed = fixedExpensesData.reduce((s, e) => s + e.amount, 0);
-    const totalVariable = variableExpensesData.reduce((s, e) => s + e.amount, 0);
+    
+    // Use monthly variable expenses from database instead of regular variable expenses
+    const totalVariable = currentMonthVariableExpenses;
+    
     const totalDebtPayment = debtData.reduce((s, d) => s + d.minimum_payment, 0);
     const totalExpenses = totalFixed + totalVariable + totalDebtPayment;
 
@@ -330,10 +316,9 @@ const Index = () => {
     let remaining = debtData.reduce((s, d) => s + d.balance, 0);
     let months = 0;
 
-    // Calculate extra payment for debt, accounting for savings commitments
-    const availableForDebt = Math.max(0, grossCashFlow - monthlySavings - totalSavingsCommitments);
-    const extra = Math.max(0, availableForDebt * 0.3);
-    const monthlyPay = totalDebtPayment + extra;
+    // NO aplicar automáticamente el excedente del cashflow a las deudas
+    // Solo usar los pagos mínimos para el cálculo
+    const monthlyPay = totalDebtPayment;
     while (remaining > 0 && months < 120) {
       const interest = debtData.reduce((s, d) => s + d.balance * (d.apr / 100 / 12), 0);
       remaining = Math.max(0, remaining + interest - monthlyPay);
@@ -523,7 +508,7 @@ const Index = () => {
       firstDayOfWeek,
       blankDays
     };
-  }, [incomeData, variableIncomeData, fixedExpensesData, variableExpensesData, debtData, savings, savingsGoalsData, currentMonth, monthlySavings]);
+  }, [incomeData, currentMonthVariableIncome, currentMonthVariableExpenses, fixedExpensesData, variableExpensesData, debtData, savings, savingsGoalsData, currentMonth, monthlySavings]);
   useEffect(() => {
     // Set up auth state listener FIRST
     const {
@@ -1511,7 +1496,7 @@ const Index = () => {
                 </TabsContent>
 
                 <TabsContent value="variable">
-                  <VariableIncomeManager language={language} />
+                  <MonthlyVariableIncomeTracker language={language} />
                 </TabsContent>
               </Tabs>
             </TabsContent>
@@ -1526,7 +1511,7 @@ const Index = () => {
                   <FixedExpensesManager language={language} />
                 </TabsContent>
                 <TabsContent value="variable">
-                  <VariableExpensesManager language={language} />
+                  <MonthlyVariableExpensesTracker language={language} />
                 </TabsContent>
               </Tabs>
             </TabsContent>
@@ -1702,7 +1687,11 @@ const DebtPlanner = ({
   const debtStrategy = useMemo(() => {
     const activeDebts = debtData.filter(d => d.balance > 0 && d.minimum_payment > 0);
     if (activeDebts.length === 0) return null;
-    const extraForDebt = Math.max(0, cashFlow - monthlySavings);
+    
+    // NO aplicar automáticamente el excedente del cashflow a las deudas
+    // Solo usar pagos mínimos
+    const extraForDebt = 0;
+    
     const sortFn = debtMethod === "avalanche"
       ? (a, b) => b.apr - a.apr
       : debtMethod === "snowball"
@@ -1725,9 +1714,8 @@ const DebtPlanner = ({
         const interest = debt.balance * (debt.apr / 100 / 12);
         monthlyInterest += interest;
         debt.balance += interest;
-        const payment = debt.minimum_payment + (index === 0 ? extraForDebt : 0);
+        const payment = debt.minimum_payment;
         allocation[index].totalPayment += payment;
-        allocation[index].extra += index === 0 ? extraForDebt : 0;
         debt.balance = Math.max(0, debt.balance - payment);
       });
       totalInterest += monthlyInterest;
