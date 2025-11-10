@@ -239,8 +239,9 @@ const Index = () => {
   } = useVariableIncome();
   
   // Get current month's variable income and expenses totals
-  const currentMonthVariableIncome = useMonthlyVariableIncomeTotal(new Date());
-  const currentMonthVariableExpenses = useMonthlyVariableExpensesTotal(new Date());
+  const currentMonthStart = useMemo(() => startOfMonth(new Date()), []);
+  const currentMonthVariableIncome = useMonthlyVariableIncomeTotal(currentMonthStart);
+  const currentMonthVariableExpenses = useMonthlyVariableExpensesTotal(currentMonthStart);
   const {
     data: debtData = []
   } = useDebts();
