@@ -258,11 +258,19 @@ const Index = () => {
     data: savings
   } = useSavings();
   const [currentWeekOffset, setCurrentWeekOffset] = useState(0);
+  const [projectionMonthOffset, setProjectionMonthOffset] = useState(0); // New state for month projection
+  
   const handlePrevWeek = () => {
     setCurrentWeekOffset(prev => prev - 1);
   };
   const handleNextWeek = () => {
     setCurrentWeekOffset(prev => prev + 1);
+  };
+  const handlePrevProjectionMonth = () => {
+    setProjectionMonthOffset(prev => prev - 1);
+  };
+  const handleNextProjectionMonth = () => {
+    setProjectionMonthOffset(prev => prev + 1);
   };
 
   // Mutation hooks for adding financial data
@@ -283,6 +291,9 @@ const Index = () => {
     savingsTotal,
     debtFreeDate,
     monthsToDebtFree,
+    idealProgressPercent,
+    idealRemainingDebt,
+    projectionDate,
     pieData,
     calendarEvents,
     monthStart,
@@ -314,12 +325,26 @@ const Index = () => {
     
     // Calculate total savings including emergency fund, general savings, and goals
     const savingsTotal = (savings?.emergency_fund || 0) + (savings?.total_accumulated || 0) + savingsGoalsData.reduce((s, g) => s + (g.current_amount || 0), 0);
+    
+    // Calculate ideal projection based on offset
+    const projectionDate = addMonths(new Date(), projectionMonthOffset);
+    const currentDate = new Date();
+    const monthsSinceStart = projectionMonthOffset;
+    
     let remaining = debtData.reduce((s, d) => s + d.balance, 0);
     let months = 0;
 
     // NO aplicar automáticamente el excedente del cashflow a las deudas
     // Solo usar los pagos mínimos para el cálculo
     const monthlyPay = totalDebtPayment;
+    
+    // Calculate ideal progression
+    const totalDebt = debtData.reduce((s, d) => s + d.balance, 0);
+    const idealMonthlyReduction = totalDebt > 0 ? monthlyPay : 0;
+    const idealRemainingDebt = Math.max(0, totalDebt - (idealMonthlyReduction * Math.abs(monthsSinceStart)));
+    const idealProgressPercent = totalDebt > 0 ? ((totalDebt - idealRemainingDebt) / totalDebt) * 100 : 0;
+    
+    // Calculate actual debt free months
     while (remaining > 0 && months < 120) {
       const interest = debtData.reduce((s, d) => s + d.balance * (d.apr / 100 / 12), 0);
       remaining = Math.max(0, remaining + interest - monthlyPay);
@@ -501,6 +526,9 @@ const Index = () => {
       savingsTotal,
       debtFreeDate,
       monthsToDebtFree,
+      idealProgressPercent,
+      idealRemainingDebt,
+      projectionDate,
       pieData,
       calendarEvents: allEvents,
       monthStart,
@@ -509,7 +537,7 @@ const Index = () => {
       firstDayOfWeek,
       blankDays
     };
-  }, [incomeData, currentMonthVariableIncome, currentMonthVariableExpenses, fixedExpensesData, variableExpensesData, debtData, savings, savingsGoalsData, currentMonth, monthlySavings]);
+  }, [incomeData, currentMonthVariableIncome, currentMonthVariableExpenses, fixedExpensesData, variableExpensesData, debtData, savings, savingsGoalsData, currentMonth, monthlySavings, projectionMonthOffset]);
   useEffect(() => {
     // Set up auth state listener FIRST
     const {
@@ -1023,19 +1051,52 @@ const Index = () => {
                   </CardContent>
                 </Card>}
 
-              {/* DEBT FREE */}
+              {/* DEBT FREE with Projection Navigation */}
               {debtData.length > 0 && <Card className="border-2 rounded-bl-none rounded-md bg-card">
                   <CardHeader>
-                    <CardTitle className="flex items-center gap-2 text-slate-200">
-                      <TrendingUp className="h-6 w-6" /> Debt Free Date
-                    </CardTitle>
+                    <div className="flex items-center justify-between">
+                      <CardTitle className="flex items-center gap-2 text-slate-200">
+                        <TrendingUp className="h-6 w-6" /> Debt Free Date
+                      </CardTitle>
+                      <div className="flex items-center gap-2">
+                        <Button variant="outline" size="sm" onClick={handlePrevProjectionMonth}>
+                          <ChevronLeft className="h-4 w-4" />
+                        </Button>
+                        <span className="text-sm font-medium min-w-[100px] text-center">
+                          {projectionMonthOffset === 0 ? 'Current' : 
+                           projectionMonthOffset > 0 ? `+${projectionMonthOffset}m` : 
+                           `${projectionMonthOffset}m`}
+                        </span>
+                        <Button variant="outline" size="sm" onClick={handleNextProjectionMonth}>
+                          <ChevronRight className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    </div>
                   </CardHeader>
                   <CardContent>
-                    <div className="text-center">
-                      <p className="text-4xl font-bold">{format(debtFreeDate, "d MMM yyyy")}</p>
-                      <p className="text-lg text-muted-foreground">{monthsToDebtFree} months away</p>
+                    <div className="text-center space-y-4">
+                      <div>
+                        <p className="text-4xl font-bold">{format(debtFreeDate, "d MMM yyyy")}</p>
+                        <p className="text-lg text-muted-foreground">{monthsToDebtFree} months away</p>
+                      </div>
+                      
+                      {/* Progress vs Ideal */}
+                      <div className="space-y-2">
+                        <div className="flex items-center justify-between text-sm">
+                          <span className="text-muted-foreground">Ideal Progress</span>
+                          <span className="font-semibold">{idealProgressPercent.toFixed(1)}%</span>
+                        </div>
+                        <Progress value={idealProgressPercent} className="h-4" />
+                        <p className="text-xs text-muted-foreground">
+                          Ideal Remaining Debt: {formatCurrency(idealRemainingDebt)}
+                        </p>
+                        {projectionMonthOffset !== 0 && (
+                          <p className="text-xs text-primary font-medium">
+                            Projection for {format(projectionDate, "MMM yyyy")}
+                          </p>
+                        )}
+                      </div>
                     </div>
-                    <Progress value={80} className="h-4 mt-3" />
                   </CardContent>
                 </Card>}
 

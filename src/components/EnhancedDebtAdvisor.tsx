@@ -364,14 +364,17 @@ export const EnhancedDebtAdvisor = ({ debts: allDebts, extraPayment, language }:
                     year: 'numeric' 
                   })}
                 </p>
-                <p className="text-sm text-muted-foreground">
-                  {parseFloat(customExtraPayment) > 0
-                    ? (language === 'en' 
-                      ? `With £${parseFloat(customExtraPayment).toFixed(2)} extra monthly payment using ${payoffMethod} strategy` 
-                      : `Con £${parseFloat(customExtraPayment).toFixed(2)} de pago extra mensual usando estrategia ${payoffMethod}`)
-                    : (language === 'en' 
-                      ? 'Using minimum payments only' 
-                      : 'Usando solo pagos mínimos')}
+                <p className="text-sm text-muted-foreground mt-2">
+                  {(() => {
+                    const today = new Date();
+                    const months = Math.ceil((totalDebtFreeDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24 * 30));
+                    return `${months} ${months === 1 ? (language === 'en' ? 'month' : 'mes') : (language === 'en' ? 'months' : 'meses')} ${language === 'en' ? 'away' : 'restantes'}`;
+                  })()}
+                </p>
+                <p className="text-xs text-muted-foreground mt-1">
+                  {language === 'en' 
+                    ? 'Using minimum payments only' 
+                    : 'Usando solo pagos mínimos'}
                 </p>
               </div>
             </div>
