@@ -171,6 +171,22 @@ export const MonthlyPaymentTracker = ({ language }: MonthlyPaymentTrackerProps) 
       .filter((d) => d.balance > 0 && d.minimum_payment > 0)
       .reduce((sum, d) => sum + d.minimum_payment, 0);
 
+    // Calculate extra paid (amount above minimum payments)
+    const extraPaid = payments
+      .filter((p) => {
+        const paymentDate = p.payment_date ? new Date(p.payment_date) : null;
+        return (
+          p.payment_status === "paid" ||
+          (paymentDate && paymentDate <= today && paymentDate >= currentMonthStart && paymentDate <= currentMonthEnd)
+        );
+      })
+      .reduce((sum, p) => {
+        const debt = debts.find((d) => d.id === p.source_id);
+        if (!debt) return sum;
+        const extraAmount = Math.max(0, p.amount - debt.minimum_payment);
+        return sum + extraAmount;
+      }, 0);
+
     // CRITICAL: Calculate projected total debt balance based on viewing month
     const totalDebtBalance = debts.reduce((sum, debt) => {
       let projectedBalance = debt.balance; // Current real balance (reflects paid payments)
@@ -211,6 +227,7 @@ export const MonthlyPaymentTracker = ({ language }: MonthlyPaymentTrackerProps) 
       totalPaidThisMonth,
       expectedThisMonth,
       totalDebtBalance,
+      extraPaid,
     };
   }, [payments, allPayments, debts, currentMonth]);
 
@@ -459,7 +476,7 @@ export const MonthlyPaymentTracker = ({ language }: MonthlyPaymentTrackerProps) 
         </CardHeader>
         <CardContent className="pt-6">
           {/* Summary Cards */}
-          <div className="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+          <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
             <div className="p-4 rounded-lg bg-gradient-to-br from-green-500/10 to-green-500/5 border border-green-500/20">
               <p className="text-sm text-muted-foreground mb-1">{t.totalPaid}</p>
               <p className="text-2xl font-bold text-green-600 dark:text-green-400">
@@ -476,6 +493,14 @@ export const MonthlyPaymentTracker = ({ language }: MonthlyPaymentTrackerProps) 
               <p className="text-sm text-muted-foreground mb-1">{t.totalDebtBalance}</p>
               <p className="text-2xl font-bold text-orange-600 dark:text-orange-400">
                 {formatCurrency(monthlyTotals.totalDebtBalance)}
+              </p>
+            </div>
+            <div className="p-4 rounded-lg bg-gradient-to-br from-purple-500/10 to-purple-500/5 border border-purple-500/20">
+              <p className="text-sm text-muted-foreground mb-1">
+                {language === 'en' ? 'Extra Paid' : language === 'es' ? 'Extra Pagado' : 'Dodatkowe Płatności'}
+              </p>
+              <p className="text-2xl font-bold text-purple-600 dark:text-purple-400">
+                {formatCurrency(monthlyTotals.extraPaid)}
               </p>
             </div>
           </div>

@@ -5,7 +5,7 @@ import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { TrendingDown, Lightbulb, Calendar, PoundSterling } from "lucide-react";
-import { Language } from "@/lib/i18n";
+import { Language, formatCurrency } from "@/lib/i18n";
 
 interface Debt {
   id?: string;
@@ -34,24 +34,22 @@ export const EnhancedDebtAdvisor = ({ debts: allDebts, extraPayment, language }:
   const [customExtraPayment, setCustomExtraPayment] = useState(extraPayment.toString());
   const [payoffMethod, setPayoffMethod] = useState<PayoffMethod>('avalanche');
 
-  // Calculate total debt-free date for ALL debts
+  // Calculate total debt-free date for ALL debts using ONLY minimum payments
   const calculateTotalDebtFreeDate = () => {
     if (debts.length === 0) return null;
     
     let remainingDebts = [...debts].map(d => ({ ...d }));
     let month = 0;
-    const monthlyPayment = debts.reduce((sum, d) => sum + d.minimumPayment, 0) + (parseFloat(customExtraPayment) || 0);
     
-    // Sort debts by APR (Avalanche method)
-    remainingDebts.sort((a, b) => b.apr - a.apr);
+    // Sort debts by selected payoff method
+    const prioritized = prioritizeDebts();
+    remainingDebts = prioritized.map(d => ({ ...d }));
     
     while (remainingDebts.some(d => d.balance > 0)) {
       month++;
       if (month > 1200) break; // Safety check (100 years max)
       
-      let extraAvailable = parseFloat(customExtraPayment) || 0;
-      
-      // Apply minimum payments
+      // Apply ONLY minimum payments
       remainingDebts.forEach(debt => {
         if (debt.balance > 0) {
           const monthlyRate = debt.apr / 100 / 12;
@@ -60,15 +58,6 @@ export const EnhancedDebtAdvisor = ({ debts: allDebts, extraPayment, language }:
           debt.balance = debt.balance + interest - payment;
         }
       });
-      
-      // Apply extra payment to highest APR debt
-      for (let i = 0; i < remainingDebts.length && extraAvailable > 0; i++) {
-        if (remainingDebts[i].balance > 0) {
-          const payment = Math.min(extraAvailable, remainingDebts[i].balance);
-          remainingDebts[i].balance -= payment;
-          extraAvailable -= payment;
-        }
-      }
     }
     
     const debtFreeDate = new Date();
@@ -445,6 +434,7 @@ export const EnhancedDebtAdvisor = ({ debts: allDebts, extraPayment, language }:
                 const today = new Date();
                 const hasPromo = debt.promotional_apr && debt.promotional_apr_end_date && new Date(debt.promotional_apr_end_date) > today;
                 const effectiveAPR = hasPromo ? debt.promotional_apr : (debt.regular_apr || debt.apr);
+                const monthsToPayoff = Math.ceil(debt.balance / debt.minimumPayment);
                 
                 return (
                   <div key={debt.name} className="flex items-center gap-3 p-3 bg-secondary/50 rounded-lg">
@@ -460,6 +450,9 @@ export const EnhancedDebtAdvisor = ({ debts: allDebts, extraPayment, language }:
                             ({language === 'en' ? 'Promo until' : 'Promo hasta'} {new Date(debt.promotional_apr_end_date!).toLocaleDateString()})
                           </span>
                         )}
+                      </p>
+                      <p className="text-xs text-muted-foreground mt-1">
+                        {formatCurrency(debt.minimumPayment)}/mo • ~{monthsToPayoff} {monthsToPayoff === 1 ? (language === 'en' ? 'month' : 'mes') : (language === 'en' ? 'months' : 'meses')}
                       </p>
                     </div>
                   </div>

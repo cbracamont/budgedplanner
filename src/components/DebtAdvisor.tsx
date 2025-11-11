@@ -19,9 +19,10 @@ export const DebtAdvisor = ({ debts, extraPayment, language }: DebtAdvisorProps)
   const t = (key: string) => getTranslation(language, key);
 
   const calculateDebtFreeDate = () => {
-    if (debts.length === 0 || extraPayment <= 0) return null;
+    if (debts.length === 0) return null;
     
-    const totalMonthlyPayment = debts.reduce((sum, d) => sum + d.minimumPayment, 0) + extraPayment;
+    // Only use minimum payments for calculation
+    const totalMonthlyPayment = debts.reduce((sum, d) => sum + d.minimumPayment, 0);
     const totalBalance = debts.reduce((sum, d) => sum + d.balance, 0);
     
     // Simplified calculation (doesn't account for compound interest)
@@ -177,6 +178,9 @@ export const DebtAdvisor = ({ debts, extraPayment, language }: DebtAdvisorProps)
                     <div className="text-right">
                       <p className="text-sm font-medium text-debt">
                         {formatCurrency(debt.minimumPayment)}/mo
+                      </p>
+                      <p className="text-xs text-muted-foreground">
+                        {Math.ceil(debt.balance / debt.minimumPayment)} {language === 'en' ? 'months' : 'meses'}
                       </p>
                     </div>
                   </div>
