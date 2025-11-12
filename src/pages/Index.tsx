@@ -22,6 +22,9 @@ import { SavingsManager } from "@/components/SavingsManager";
 import { SavingsGoalsManager } from "@/components/SavingsGoalsManager";
 import { MonthlyPaymentTracker } from "@/components/MonthlyPaymentTracker";
 import { GeneralSavingsTracker } from "@/components/GeneralSavingsTracker";
+import { FeedbackButton } from "@/components/FeedbackButton";
+import { MonthlyPaymentProposal } from "@/components/MonthlyPaymentProposal";
+import { SimplifiedDebtPriority } from "@/components/SimplifiedDebtPriority";
 import { LanguageToggle } from "@/components/LanguageToggle";
 import { ProfileSelector } from "@/components/ProfileSelector";
 import { MobileMenu } from "@/components/MobileMenu";
@@ -817,13 +820,35 @@ const Index = () => {
     setTimeout(() => {
       const lower = aiInput.toLowerCase();
       let response = "";
-      if (lower.includes("save")) response = `Cut £50-100 from variable expenses (£${totalVariable}).`;else if (lower.includes("debt")) response = `Pay highest APR first. Debt-free in ${monthsToDebtFree} months.`;else response = `Track every expense for 30 days.`;
-      setAiResponse(response);
+      
+      // Include variable income in AI context
+      const contextPrompt = `
+        Monthly Income: ${formatCurrency(totalIncome)}
+        Variable Income: ${formatCurrency(currentMonthVariableIncome)}
+        Total Expenses: ${formatCurrency(totalExpenses)}
+        Cash Flow: ${formatCurrency(cashFlow)}
+      `;
+      
+      if (lower.includes("save")) {
+        response = `Cut £50-100 from variable expenses (£${totalVariable}).`;
+      } else if (lower.includes("debt")) {
+        response = `Pay highest APR first. Debt-free in ${monthsToDebtFree} months.`;
+      } else if (lower.includes("variable income") || lower.includes("extra income")) {
+        const variableAllocation = currentMonthVariableIncome * 0.2;
+        response = `You have ${formatCurrency(currentMonthVariableIncome)} in variable income this month. Suggestion: Allocate 20% (${formatCurrency(variableAllocation)}) to debt payoff.`;
+      } else {
+        response = `Track every expense for 30 days.`;
+      }
+      
+      setAiResponse(`${contextPrompt}\n\n${response}`);
       setAiLoading(false);
     }, 800);
   };
   return <>
       <style>{`@media print { .no-print { display: none !important; } }`}</style>
+      
+      {/* Feedback Button - only visible when logged in */}
+      <FeedbackButton />
 
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-slate-900 dark:to-slate-800">
         <ScrollToTop />
@@ -1558,7 +1583,16 @@ const Index = () => {
                 </TabsContent>
 
                 <TabsContent value="variable">
-                  <MonthlyVariableIncomeTracker language={language} />
+                  <Card className="rounded-lg shadow-sm border border-slate-200 dark:border-slate-700 bg-gradient-to-r from-slate-50 to-slate-100 dark:from-slate-800 dark:to-slate-900 hover:from-slate-100 hover:to-slate-200 dark:hover:from-slate-700 dark:hover:to-slate-800 transition-colors">
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <PoundSterling className="h-5 w-5" /> Variable Income
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <MonthlyVariableIncomeTracker language={language} />
+                    </CardContent>
+                  </Card>
                 </TabsContent>
               </Tabs>
             </TabsContent>
@@ -1573,7 +1607,16 @@ const Index = () => {
                   <FixedExpensesManager language={language} />
                 </TabsContent>
                 <TabsContent value="variable">
-                  <MonthlyVariableExpensesTracker language={language} />
+                  <Card className="rounded-lg shadow-sm border border-slate-200 dark:border-slate-700 bg-gradient-to-r from-slate-50 to-slate-100 dark:from-slate-800 dark:to-slate-900 hover:from-slate-100 hover:to-slate-200 dark:hover:from-slate-700 dark:hover:to-slate-800 transition-colors">
+                    <CardHeader>
+                      <CardTitle className="flex items-center gap-2">
+                        <Receipt className="h-5 w-5" /> Variable Expenses
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent>
+                      <MonthlyVariableExpensesTracker language={language} />
+                    </CardContent>
+                  </Card>
                 </TabsContent>
               </Tabs>
             </TabsContent>
@@ -1795,134 +1838,52 @@ const DebtPlanner = ({
         </CardContent>
       </Card>;
   return <div className="space-y-6">
-      <Card></Card>
-
-      <Card></Card>
+      {/* Monthly Payment Proposal */}
+      <MonthlyPaymentProposal 
+        cashFlow={cashFlow}
+        monthlySavings={monthlySavings}
+        totalFixed={totalFixed}
+        totalVariable={totalVariable}
+        debts={debtData.filter(d => d.balance > 0)}
+      />
 
       <Card>
-        
-        {/* Debt Strategy - Improved Table with Projections */}
-        <Card>
-          <CardHeader>
-            <CardTitle className="flex items-center justify-between">
-              <span className="text-lg font-semibold">Debt Priority Order</span>
-              <Select value={debtMethod} onValueChange={value => setDebtMethod(value as DebtMethod)}>
-                <SelectTrigger className="w-[200px]">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="avalanche">
-                    <Zap className="mr-2 h-4 w-4" /> Avalanche (High APR First)
-                  </SelectItem>
-                  <SelectItem value="snowball">
-                    <Snowflake className="mr-2 h-4 w-4" /> Snowball (Smallest Balance First)
-                  </SelectItem>
-                  <SelectItem value="hybrid">
-                    <Zap className="mr-2 h-4 w-4" /> Hybrid (APR + Balance)
-                  </SelectItem>
-                </SelectContent>
-              </Select>
-            </CardTitle>
-            <CardDescription className="text-sm">
-              Prioritized debts with projected payoff times and interest saved
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="p-0">
-            <div className="overflow-x-auto">
-              <table className="w-full">
-                <thead className="bg-slate-50 dark:bg-slate-800/50 border-b">
-                  <tr>
-                    <th className="text-left p-4 text-sm font-semibold text-slate-900 dark:text-slate-100">Priority</th>
-                    <th className="text-left p-4 text-sm font-semibold text-slate-900 dark:text-slate-100">
-                      Debt Name
-                    </th>
-                    <th className="text-left p-4 text-sm font-semibold text-slate-900 dark:text-slate-100">APR</th>
-                    <th className="text-right p-4 text-sm font-semibold text-slate-900 dark:text-slate-100">Balance</th>
-                    <th className="text-right p-4 text-sm font-semibold text-slate-900 dark:text-slate-100">
-                      Min Payment
-                    </th>
-                    <th className="text-right p-4 text-sm font-semibold text-slate-900 dark:text-slate-100">Extra</th>
-                    <th className="text-right p-4 text-sm font-semibold text-slate-900 dark:text-slate-100">
-                      Total Payment
-                    </th>
-                    <th className="text-right p-4 text-sm font-semibold text-slate-900 dark:text-slate-100">
-                      Payoff Months
-                    </th>
-                    <th className="text-right p-4 text-sm font-semibold text-slate-900 dark:text-slate-100">
-                      Interest Saved
-                    </th>
-                  </tr>
-                </thead>
-                <tbody>
-                  {debtStrategy.sortedDebts.map((debt, index) => {
-                  // Sophisticated data: Calculate individual payoff time and interest saved
-                  const extraForThisDebt = index === 0 ? debtStrategy.extraForDebt : 0;
-                  const totalPayment = debt.minimum_payment + extraForThisDebt;
-                  const monthsForDebt = Math.ceil(debt.balance / totalPayment);
-                  const interestSaved = Math.round(debt.balance * (debt.apr / 100 / 12) * monthsForDebt * 0.3); // 30% savings estimate
-
-                  return <tr key={debt.id} className={`hover:bg-slate-50 dark:hover:bg-slate-800/50 transition-colors ${index === 0 ? "bg-emerald-50 dark:bg-emerald-950/20 border-l-4 border-emerald-500" : ""}`}>
-                        <td className="p-4">
-                          <Badge variant="secondary" className={`w-8 h-8 flex items-center justify-center font-bold ${index === 0 ? "bg-emerald-100 text-emerald-800" : "bg-slate-100 text-slate-800"}`}>
-                            {index + 1}
-                          </Badge>
-                        </td>
-                        <td className="p-4">
-                          <div>
-                            <p className="font-medium">{debt.name}</p>
-                            {debt.bank && <p className="text-xs text-slate-500 dark:text-slate-400">{debt.bank}</p>}
-                          </div>
-                        </td>
-                        <td className="p-4">
-                          <Badge variant="outline" className="text-red-600">
-                            {debt.apr}%
-                          </Badge>
-                        </td>
-                        <td className="p-4 text-right">
-                          <span className="font-semibold">{formatCurrency(debt.balance)}</span>
-                        </td>
-                        <td className="p-4 text-right">
-                          <span className="text-sm text-slate-600 dark:text-slate-400">
-                            {formatCurrency(debt.minimum_payment)}
-                          </span>
-                        </td>
-                        <td className="p-4 text-right">
-                          <Badge variant={extraForThisDebt > 0 ? "default" : "secondary"} className={`${extraForThisDebt > 0 ? "bg-emerald-100 text-emerald-800" : "bg-slate-100 text-slate-800"}`}>
-                            {extraForThisDebt > 0 ? formatCurrency(extraForThisDebt) : "-"}
-                          </Badge>
-                        </td>
-                        <td className="p-4 text-right">
-                          <span className="font-semibold text-indigo-600">
-                            {formatCurrency(debt.minimum_payment + extraForThisDebt)}
-                          </span>
-                        </td>
-                        <td className="p-4 text-right">
-                          <Badge variant="outline" className={monthsForDebt < 6 ? "bg-green-100 text-green-800" : monthsForDebt < 12 ? "bg-yellow-100 text-yellow-800" : "bg-red-100 text-red-800"}>
-                            {monthsForDebt} mo
-                          </Badge>
-                        </td>
-                        <td className="p-4 text-right">
-                          <span className="font-medium text-green-600">{formatCurrency(interestSaved)}</span>
-                        </td>
-                      </tr>;
-                })}
-                </tbody>
-                <tfoot className="bg-slate-50 dark:bg-slate-800/50 border-t font-semibold">
-                  <tr>
-                    <td colSpan={5} className="p-4 text-right">
-                      Totals
-                    </td>
-                    <td className="p-4 text-right">{formatCurrency(debtStrategy.extraForDebt)}</td>
-                    <td className="p-4 text-right">{formatCurrency(debtStrategy.extraForDebt + totalDebtPayment)}</td>
-                    <td colSpan={2} className="p-4 text-right text-lg text-green-600">
-                      Debt Free in {debtStrategy.months} {t.months} | Saved {formatCurrency(debtStrategy.totalInterest)}
-                    </td>
-                  </tr>
-                </tfoot>
-              </table>
-            </div>
-          </CardContent>
-        </Card>
+        <CardHeader>
+          <CardTitle className="flex items-center justify-between">
+            <span className="text-lg font-semibold">Debt Priority Order</span>
+            <Select value={debtMethod} onValueChange={value => setDebtMethod(value as DebtMethod)}>
+              <SelectTrigger className="w-[200px]">
+                <SelectValue />
+              </SelectTrigger>
+              <SelectContent>
+                <SelectItem value="avalanche">
+                  <div className="flex items-center gap-2">
+                    <Zap className="h-4 w-4" /> Avalanche (High APR First)
+                  </div>
+                </SelectItem>
+                <SelectItem value="snowball">
+                  <div className="flex items-center gap-2">
+                    <Snowflake className="h-4 w-4" /> Snowball (Smallest Balance First)
+                  </div>
+                </SelectItem>
+                <SelectItem value="hybrid">
+                  <div className="flex items-center gap-2">
+                    <Zap className="h-4 w-4" /> Hybrid (APR + Balance)
+                  </div>
+                </SelectItem>
+              </SelectContent>
+            </Select>
+          </CardTitle>
+          <CardDescription className="text-sm">
+            Simplified debt prioritization based on your chosen strategy
+          </CardDescription>
+        </CardHeader>
+        <CardContent>
+          <SimplifiedDebtPriority 
+            debts={debtStrategy.sortedDebts}
+            method={debtMethod}
+          />
+        </CardContent>
       </Card>
     </div>;
 };

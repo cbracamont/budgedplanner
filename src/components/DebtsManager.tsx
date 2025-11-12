@@ -312,18 +312,41 @@ export const DebtsManager = ({ language, onDebtsChange }: DebtsManagerProps) => 
                     onChange={(e) => {
                       const startDate = e.target.value;
                       const numInstallments = parseInt(newDebt.number_of_installments);
+                      
+                      // Calculate next payment date (first payment is next month from start date)
+                      let nextPaymentDate = "";
                       let endDate = "";
                       
                       if (startDate && numInstallments > 0) {
                         const start = new Date(startDate);
-                        start.setMonth(start.getMonth() + numInstallments);
-                        endDate = start.toISOString().split('T')[0];
+                        const nextMonth = new Date(start);
+                        nextMonth.setMonth(nextMonth.getMonth() + 1);
+                        nextPaymentDate = nextMonth.toISOString().split('T')[0];
+                        
+                        // Calculate end date
+                        const end = new Date(start);
+                        end.setMonth(end.getMonth() + numInstallments);
+                        endDate = end.toISOString().split('T')[0];
                       }
                       
-                      setNewDebt({ ...newDebt, start_date: startDate, end_date: endDate });
+                      setNewDebt({ 
+                        ...newDebt, 
+                        start_date: startDate, 
+                        end_date: endDate 
+                      });
                     }}
                     required
                   />
+                  {newDebt.start_date && newDebt.number_of_installments && (
+                    <p className="text-xs text-muted-foreground">
+                      {language === 'en' ? 'First payment:' : 'Primer pago:'} {(() => {
+                        const start = new Date(newDebt.start_date);
+                        const nextMonth = new Date(start);
+                        nextMonth.setMonth(nextMonth.getMonth() + 1);
+                        return nextMonth.toLocaleDateString();
+                      })()}
+                    </p>
+                  )}
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="end-date">{language === 'en' ? 'End Date' : 'Fecha de Finalización'}</Label>
