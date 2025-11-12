@@ -1,20 +1,8 @@
-import { useState, useMemo } from "react";
+import { useState, useEffect, useMemo, useCallback } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { AutoPaymentsGenerator } from "@/components/AutoPaymentsGenerator";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-  AlertDialogTrigger,
-} from "@/components/ui/alert-dialog";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -32,6 +20,8 @@ import {
   Filter,
   SortAsc,
   SortDesc,
+  TrendingUp,
+  TrendingDown,
 } from "lucide-react";
 import { Language } from "@/lib/i18n";
 import { useToast } from "@/hooks/use-toast";
@@ -40,39 +30,47 @@ import {
   useAddPaymentTracker,
   useUpdatePaymentTracker,
   useDeletePaymentTracker,
-  useAllPaymentHistory,
-  useCombinedMonthlyPayments,
-  PaymentTrackerEntry,
-  NewPaymentTrackerEntry,
 } from "@/hooks/usePaymentTracker";
-import { useDeleteDebtPayment } from "@/hooks/useDebtPayments";
 import { useIncomeSources, useDebts, useFixedExpenses, useSavingsGoals } from "@/hooks/useFinancialData";
-import { useActiveProfile } from "@/hooks/useFinancialProfiles";
-import { supabase } from "@/integrations/supabase/client";
 import { Progress } from "@/components/ui/progress";
 import { formatCurrency } from "@/lib/i18n";
-import { format, startOfMonth, addMonths, subMonths, isPast } from "date-fns";
+import { format, startOfMonth, addMonths, subMonths, isPast, isToday, differenceInMonths } from "date-fns";
+
+interface PaymentEntry {
+  id: string;
+  month_year: string;
+  payment_type: "income" | "expense" | "debt" | "savings";
+  amount: number;
+  payment_status: "pending" | "paid" | "partial";
+  payment_date: string;
+  notes?: string;
+  source_id?: string;
+  is_manual?: boolean;
+}
 
 interface MonthlyPaymentTrackerProps {
   language: Language;
 }
 
 export const MonthlyPaymentTracker = ({ language }: MonthlyPaymentTrackerProps) => {
-  const { toast } = useToast();
-  const { data: activeProfile } = useActiveProfile();
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
-  const [editingEntry, setEditingEntry] = useState<PaymentTrackerEntry | null>(null);
+  const [editingEntry, setEditingEntry] = useState<PaymentEntry | null>(null);
+  const [searchQuery, setSearchQuery] = useState("");
+  const [sortBy, setSortBy] = useState<"date" | "amount" | "type" | "status">("date");
+  const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
+  const [filterType, setFilterType] = useState<"all" | "income" | "expense" | "debt" | "savings">("all");
 
   const [formData, setFormData] = useState({
+    payment_type: "expense" as "income" | "expense" | "debt" | "savings",
     amount: "",
+    payment_status: "pending" as "pending" | "paid" | "partial",
     payment_date: format(new Date(), "yyyy-MM-dd"),
     notes: "",
     source_id: "",
   });
 
-  const { data: payments = [] } = useCombinedMonthlyPayments(currentMonth, activeProfile?.id);
-  const { data: allPayments = [] } = useAllPaymentHistory(activeProfile?.id);
+  const { data: payments = [] } = usePaymentTracker(currentMonth);
   const { data: incomes = [] } = useIncomeSources();
   const { data: debts = [] } = useDebts();
   const { data: expenses = [] } = useFixedExpenses();
@@ -80,7 +78,6 @@ export const MonthlyPaymentTracker = ({ language }: MonthlyPaymentTrackerProps) 
   const addMutation = useAddPaymentTracker();
   const updateMutation = useUpdatePaymentTracker();
   const deleteMutation = useDeletePaymentTracker();
-  const deleteDebtPaymentMutation = useDeleteDebtPayment();
 
   const t = {
     en: {
@@ -97,11 +94,19 @@ export const MonthlyPaymentTracker = ({ language }: MonthlyPaymentTrackerProps) 
       cancel: "Cancel",
       delete: "Delete",
       edit: "Edit",
-      totalPaid: "Total Paid This Month",
-      expectedThisMonth: "Expected This Month",
-      totalDebtBalance: "Total Debt Balance",
-      remaining: "Remaining",
+      search: "Search payments",
+      sort: "Sort by",
+      filter: "Filter by type",
+      all: "All",
+      totalPaid: "Total Paid",
+      totalPending: "Total Pending",
+      trend: "Trend",
+      monthlyTrend: "Monthly Trend",
+      noTrendData: "No trend data available",
       confirmDelete: "Are you sure you want to delete this payment?",
+      extraPaid: "Extra Paid",
+      totalDebtBalance: "Total Debt Balance",
+      expectedThisMonth: "Expected This Month",
     },
     es: {
       title: "Seguimiento de Pagos Mensuales",
@@ -117,11 +122,19 @@ export const MonthlyPaymentTracker = ({ language }: MonthlyPaymentTrackerProps) 
       cancel: "Cancelar",
       delete: "Eliminar",
       edit: "Editar",
-      totalPaid: "Total Pagado Este Mes",
-      expectedThisMonth: "Esperado Este Mes",
-      totalDebtBalance: "Balance Total de Deudas",
-      remaining: "Restante",
+      search: "Buscar pagos",
+      sort: "Ordenar por",
+      filter: "Filtrar por tipo",
+      all: "Todos",
+      totalPaid: "Total Pagado",
+      totalPending: "Total Pendiente",
+      trend: "Tendencia",
+      monthlyTrend: "Tendencia Mensual",
+      noTrendData: "No hay datos de tendencia disponibles",
       confirmDelete: "¿Estás seguro de que quieres eliminar este pago?",
+      extraPaid: "Extra Pagado",
+      totalDebtBalance: "Balance Total de Deudas",
+      expectedThisMonth: "Esperado Este Mes",
     },
     pl: {
       title: "Miesięczny Tracker Płatności",
@@ -137,15 +150,55 @@ export const MonthlyPaymentTracker = ({ language }: MonthlyPaymentTrackerProps) 
       cancel: "Anuluj",
       delete: "Usuń",
       edit: "Edytuj",
-      totalPaid: "Razem Zapłacone W Tym Miesiącu",
-      expectedThisMonth: "Oczekiwane W Tym Miesiącu",
-      totalDebtBalance: "Całkowite Saldo Długów",
-      remaining: "Pozostało",
+      search: "Szukaj płatności",
+      sort: "Sortuj według",
+      filter: "Filtruj według typu",
+      all: "Wszystkie",
+      totalPaid: "Razem Zapłacone",
+      totalPending: "Razem Oczekujące",
+      trend: "Trend",
+      monthlyTrend: "Miesięczny Trend",
+      noTrendData: "Brak danych trendu",
       confirmDelete: "Czy na pewno chcesz usunąć tę płatność?",
+      extraPaid: "Dodatkowe Płatności",
+      totalDebtBalance: "Całkowite Saldo Długów",
+      expectedThisMonth: "Oczekiwane W Tym Miesiącu",
     },
   }[language];
 
-  // Monthly totals - exhaustive calculations with projections
+  // Sorting and filtering
+  const filteredPayments = useMemo(() => {
+    let filtered = [...payments];
+    if (filterType !== "all") filtered = filtered.filter((p) => p.payment_type === filterType);
+    if (searchQuery)
+      filtered = filtered.filter(
+        (p) =>
+          p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+          p.notes.toLowerCase().includes(searchQuery.toLowerCase()),
+      );
+    if (sortBy === "amount") filtered.sort((a, b) => (sortOrder === "asc" ? a.amount - b.amount : b.amount - a.amount));
+    if (sortBy === "date")
+      filtered.sort((a, b) =>
+        sortOrder === "asc"
+          ? new Date(a.payment_date) - new Date(b.payment_date)
+          : new Date(b.payment_date) - new Date(a.payment_date),
+      );
+    if (sortBy === "type")
+      filtered.sort((a, b) =>
+        sortOrder === "asc"
+          ? a.payment_type.localeCompare(b.payment_type)
+          : b.payment_type.localeCompare(a.payment_type),
+      );
+    if (sortBy === "status")
+      filtered.sort((a, b) =>
+        sortOrder === "asc"
+          ? a.payment_status.localeCompare(b.payment_status)
+          : b.payment_status.localeCompare(a.payment_status),
+      );
+    return filtered;
+  }, [payments, searchQuery, sortBy, sortOrder, filterType]);
+
+  // Sophisticated data: Monthly totals, trend
   const monthlyTotals = useMemo(() => {
     const today = new Date();
     const currentMonthStart = startOfMonth(currentMonth);
@@ -154,7 +207,6 @@ export const MonthlyPaymentTracker = ({ language }: MonthlyPaymentTrackerProps) 
     const isCurrentMonth = currentMonthStart.getTime() === todayMonthStart.getTime();
     const isFutureMonth = currentMonthStart > todayMonthStart;
     const isPastMonth = currentMonthStart < todayMonthStart;
-
     // Total paid this specific month - include payments with payment_date <= today OR status = "paid"
     const totalPaidThisMonth = payments
       .filter((p) => {
@@ -165,12 +217,10 @@ export const MonthlyPaymentTracker = ({ language }: MonthlyPaymentTrackerProps) 
         );
       })
       .reduce((sum, p) => sum + p.amount, 0);
-
     // Expected payments this month (sum of minimum_payment for active debts)
     const expectedThisMonth = debts
       .filter((d) => d.balance > 0 && d.minimum_payment > 0)
       .reduce((sum, d) => sum + d.minimum_payment, 0);
-
     // Calculate extra paid (amount above minimum payments)
     const extraPaid = payments
       .filter((p) => {
@@ -186,11 +236,9 @@ export const MonthlyPaymentTracker = ({ language }: MonthlyPaymentTrackerProps) 
         const extraAmount = Math.max(0, p.amount - debt.minimum_payment);
         return sum + extraAmount;
       }, 0);
-
     // CRITICAL: Calculate projected total debt balance based on viewing month
     const totalDebtBalance = debts.reduce((sum, debt) => {
       let projectedBalance = debt.balance; // Current real balance (reflects paid payments)
-
       if (isFutureMonth) {
         // FUTURE: Subtract ALL scheduled payments from current month UP TO AND INCLUDING viewing month
         // This projects how much the debt will be reduced by that future month
@@ -219,10 +267,8 @@ export const MonthlyPaymentTracker = ({ language }: MonthlyPaymentTrackerProps) 
         // CURRENT MONTH: Use current balance as-is (already reflects all paid payments)
         projectedBalance = debt.balance;
       }
-
       return sum + Math.max(0, projectedBalance);
     }, 0);
-
     return {
       totalPaidThisMonth,
       expectedThisMonth,
@@ -230,7 +276,6 @@ export const MonthlyPaymentTracker = ({ language }: MonthlyPaymentTrackerProps) 
       extraPaid,
     };
   }, [payments, allPayments, debts, currentMonth]);
-
   const handleSave = async () => {
     if (!formData.amount || parseFloat(formData.amount) <= 0) {
       toast({
@@ -240,7 +285,6 @@ export const MonthlyPaymentTracker = ({ language }: MonthlyPaymentTrackerProps) 
       });
       return;
     }
-
     if (!formData.source_id) {
       toast({
         title: "Error",
@@ -249,7 +293,6 @@ export const MonthlyPaymentTracker = ({ language }: MonthlyPaymentTrackerProps) 
       });
       return;
     }
-
     const entry: NewPaymentTrackerEntry & { profile_id?: string | null } = {
       month_year: format(startOfMonth(currentMonth), "yyyy-MM-dd"),
       payment_type: "debt",
@@ -261,7 +304,6 @@ export const MonthlyPaymentTracker = ({ language }: MonthlyPaymentTrackerProps) 
       source_table: "debts",
       profile_id: activeProfile?.id || null,
     };
-
     if (editingEntry) {
       updateMutation.mutate(
         { id: editingEntry.id, ...entry },
@@ -304,7 +346,6 @@ export const MonthlyPaymentTracker = ({ language }: MonthlyPaymentTrackerProps) 
           } catch (error) {
             console.error("Error creating debt payment:", error);
           }
-
           toast({
             title: "Success",
             description: "Payment added successfully.",
@@ -322,7 +363,6 @@ export const MonthlyPaymentTracker = ({ language }: MonthlyPaymentTrackerProps) 
       });
     }
   };
-
   const resetForm = () => {
     setFormData({
       amount: "",
@@ -332,7 +372,6 @@ export const MonthlyPaymentTracker = ({ language }: MonthlyPaymentTrackerProps) 
     });
     setEditingEntry(null);
   };
-
   const handleEdit = (entry: PaymentTrackerEntry) => {
     setEditingEntry(entry);
     setFormData({
@@ -343,7 +382,6 @@ export const MonthlyPaymentTracker = ({ language }: MonthlyPaymentTrackerProps) 
     });
     setIsAddDialogOpen(true);
   };
-
   const handleDelete = (id: string) => {
     if (!confirm(t.confirmDelete)) return;
     deleteMutation.mutate(id, {
@@ -362,9 +400,7 @@ export const MonthlyPaymentTracker = ({ language }: MonthlyPaymentTrackerProps) 
       },
     });
   };
-
   const monthName = format(currentMonth, "MMMM yyyy", { locale: language === "es" ? undefined : undefined });
-
   return (
     <>
       <AutoPaymentsGenerator language={language} />
@@ -380,7 +416,6 @@ export const MonthlyPaymentTracker = ({ language }: MonthlyPaymentTrackerProps) 
                 <CardDescription>{t.description}</CardDescription>
               </div>
             </div>
-
             <div className="flex items-center gap-2">
               <Button variant="outline" size="icon" onClick={() => setCurrentMonth(subMonths(currentMonth, 1))}>
                 <ChevronLeft className="h-4 w-4" />
@@ -390,7 +425,6 @@ export const MonthlyPaymentTracker = ({ language }: MonthlyPaymentTrackerProps) 
                 <ChevronRight className="h-4 w-4" />
               </Button>
             </div>
-
             <Dialog
               open={isAddDialogOpen}
               onOpenChange={(open) => {
@@ -497,14 +531,13 @@ export const MonthlyPaymentTracker = ({ language }: MonthlyPaymentTrackerProps) 
             </div>
             <div className="p-4 rounded-lg bg-gradient-to-br from-purple-500/10 to-purple-500/5 border border-purple-500/20">
               <p className="text-sm text-muted-foreground mb-1">
-                {language === 'en' ? 'Extra Paid' : language === 'es' ? 'Extra Pagado' : 'Dodatkowe Płatności'}
+                {language === "en" ? "Extra Paid" : language === "es" ? "Extra Pagado" : "Dodatkowe Płatności"}
               </p>
               <p className="text-2xl font-bold text-purple-600 dark:text-purple-400">
                 {formatCurrency(monthlyTotals.extraPaid)}
               </p>
             </div>
           </div>
-
           {payments.length === 0 ? (
             <div className="text-center py-12 text-muted-foreground">
               <Receipt className="h-12 w-12 mx-auto mb-4 opacity-50" />
@@ -514,11 +547,9 @@ export const MonthlyPaymentTracker = ({ language }: MonthlyPaymentTrackerProps) 
             <div className="space-y-3">
               {payments.map((payment) => {
                 const linkedDebt = payment.source_id ? debts.find((d) => d.id === payment.source_id) : null;
-
                 // Check if it's a manual payment (from debt_payments table or marked as manual)
                 const isManual = (payment as any).is_manual === true;
                 const isAutoGenerated = !isManual;
-
                 // Calculate projected balance for this debt in the viewing month
                 const projectedBalance = linkedDebt
                   ? (() => {
@@ -528,7 +559,6 @@ export const MonthlyPaymentTracker = ({ language }: MonthlyPaymentTrackerProps) 
                         currentMonthStart.getMonth() + 1,
                         0,
                       );
-
                       const debtPaymentsThisMonth = payments
                         .filter((p) => {
                           const paymentDate = p.payment_date ? new Date(p.payment_date) : null;
@@ -539,11 +569,9 @@ export const MonthlyPaymentTracker = ({ language }: MonthlyPaymentTrackerProps) 
                           );
                         })
                         .reduce((sum, p) => sum + p.amount, 0);
-
                       return Math.max(0, linkedDebt.balance - debtPaymentsThisMonth);
                     })()
                   : 0;
-
                 return (
                   <div
                     key={payment.id}
@@ -583,7 +611,6 @@ export const MonthlyPaymentTracker = ({ language }: MonthlyPaymentTrackerProps) 
                       </span>
                       <div className="flex gap-1">
                         {isManual ? (
-                          // Manual payments: can only delete (handled by debt_payments table)
                           <AlertDialog>
                             <AlertDialogTrigger asChild>
                               <Button variant="ghost" size="icon">
@@ -616,7 +643,6 @@ export const MonthlyPaymentTracker = ({ language }: MonthlyPaymentTrackerProps) 
                             </AlertDialogContent>
                           </AlertDialog>
                         ) : (
-                          // Auto-generated payments: can edit and delete
                           <>
                             <Button variant="ghost" size="icon" onClick={() => handleEdit(payment)}>
                               <Edit2 className="h-4 w-4" />
