@@ -90,6 +90,17 @@ import { supabase } from "@/integrations/supabase/client";
 import { useTheme } from "@/hooks/useTheme";
 import { useTheme as useNextTheme } from "next-themes";
 import { Skeleton } from "@/components/ui/skeleton";
+
+// Calendar Event Type
+type CalendarEvent = {
+  id: string;
+  date: string;
+  type: "income" | "fixed" | "debt" | "variable";
+  name: string;
+  amount: number;
+  recurring: boolean;
+  payment_status?: "paid" | "pending";
+};
 import {
   AlertDialog,
   AlertDialogAction,
@@ -425,7 +436,7 @@ const Index = () => {
     ].filter((d) => d.value > 0);
 
     // CALENDARIO CON EVENTOS EN TODOS LOS MESES
-    const allEvents: Event[] = [];
+    const allEvents: CalendarEvent[] = [];
     const startYear = currentMonth.getFullYear() - 1;
     const endYear = currentMonth.getFullYear() + 1;
     for (let year = startYear; year <= endYear; year++) {
