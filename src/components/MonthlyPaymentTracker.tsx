@@ -3,6 +3,17 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter } from "@/components/ui/dialog";
+import {
+  AlertDialog,
+  AlertDialogAction,
+  AlertDialogCancel,
+  AlertDialogContent,
+  AlertDialogDescription,
+  AlertDialogFooter,
+  AlertDialogHeader,
+  AlertDialogTitle,
+  AlertDialogTrigger,
+} from "@/components/ui/alert-dialog";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Textarea } from "@/components/ui/textarea";
@@ -30,11 +41,17 @@ import {
   useAddPaymentTracker,
   useUpdatePaymentTracker,
   useDeletePaymentTracker,
+  useAllPaymentHistory,
+  type PaymentTrackerEntry,
+  type NewPaymentTrackerEntry,
 } from "@/hooks/usePaymentTracker";
 import { useIncomeSources, useDebts, useFixedExpenses, useSavingsGoals } from "@/hooks/useFinancialData";
+import { useFinancialProfiles, useActiveProfile } from "@/hooks/useFinancialProfiles";
 import { Progress } from "@/components/ui/progress";
 import { formatCurrency } from "@/lib/i18n";
 import { format, startOfMonth, addMonths, subMonths, isPast, isToday, differenceInMonths } from "date-fns";
+import { supabase } from "@/integrations/supabase/client";
+import { AutoPaymentsGenerator } from "@/components/AutoPaymentsGenerator";
 
 interface PaymentEntry {
   id: string;
@@ -55,7 +72,7 @@ interface MonthlyPaymentTrackerProps {
 export const MonthlyPaymentTracker = ({ language }: MonthlyPaymentTrackerProps) => {
   const [currentMonth, setCurrentMonth] = useState(new Date());
   const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
-  const [editingEntry, setEditingEntry] = useState<PaymentEntry | null>(null);
+  const [editingEntry, setEditingEntry] = useState<PaymentTrackerEntry | null>(null);
   const [searchQuery, setSearchQuery] = useState("");
   const [sortBy, setSortBy] = useState<"date" | "amount" | "type" | "status">("date");
   const [sortOrder, setSortOrder] = useState<"asc" | "desc">("desc");
@@ -70,7 +87,10 @@ export const MonthlyPaymentTracker = ({ language }: MonthlyPaymentTrackerProps) 
     source_id: "",
   });
 
+  const { toast } = useToast();
+  const { data: activeProfile } = useActiveProfile();
   const { data: payments = [] } = usePaymentTracker(currentMonth);
+  const { data: allPayments = [] } = useAllPaymentHistory();
   const { data: incomes = [] } = useIncomeSources();
   const { data: debts = [] } = useDebts();
   const { data: expenses = [] } = useFixedExpenses();
@@ -173,15 +193,15 @@ export const MonthlyPaymentTracker = ({ language }: MonthlyPaymentTrackerProps) 
     if (searchQuery)
       filtered = filtered.filter(
         (p) =>
-          p.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-          p.notes.toLowerCase().includes(searchQuery.toLowerCase()),
+          (p.notes && p.notes.toLowerCase().includes(searchQuery.toLowerCase())) ||
+          (p.source_id && p.source_id.toLowerCase().includes(searchQuery.toLowerCase())),
       );
     if (sortBy === "amount") filtered.sort((a, b) => (sortOrder === "asc" ? a.amount - b.amount : b.amount - a.amount));
     if (sortBy === "date")
       filtered.sort((a, b) =>
         sortOrder === "asc"
-          ? new Date(a.payment_date) - new Date(b.payment_date)
-          : new Date(b.payment_date) - new Date(a.payment_date),
+          ? new Date(a.payment_date).getTime() - new Date(b.payment_date).getTime()
+          : new Date(b.payment_date).getTime() - new Date(a.payment_date).getTime(),
       );
     if (sortBy === "type")
       filtered.sort((a, b) =>
@@ -365,7 +385,9 @@ export const MonthlyPaymentTracker = ({ language }: MonthlyPaymentTrackerProps) 
   };
   const resetForm = () => {
     setFormData({
+      payment_type: "expense" as "income" | "expense" | "debt" | "savings",
       amount: "",
+      payment_status: "pending" as "pending" | "paid" | "partial",
       payment_date: format(new Date(), "yyyy-MM-dd"),
       notes: "",
       source_id: "",
@@ -375,7 +397,9 @@ export const MonthlyPaymentTracker = ({ language }: MonthlyPaymentTrackerProps) 
   const handleEdit = (entry: PaymentTrackerEntry) => {
     setEditingEntry(entry);
     setFormData({
+      payment_type: entry.payment_type,
       amount: entry.amount.toString(),
+      payment_status: entry.payment_status,
       payment_date: entry.payment_date || format(new Date(), "yyyy-MM-dd"),
       notes: entry.notes || "",
       source_id: entry.source_id || "",
@@ -636,7 +660,7 @@ export const MonthlyPaymentTracker = ({ language }: MonthlyPaymentTrackerProps) 
                               </AlertDialogHeader>
                               <AlertDialogFooter>
                                 <AlertDialogCancel>{t.cancel}</AlertDialogCancel>
-                                <AlertDialogAction onClick={() => deleteDebtPaymentMutation.mutate(payment.id)}>
+                                <AlertDialogAction onClick={() => handleDelete(payment.id)}>
                                   {t.delete}
                                 </AlertDialogAction>
                               </AlertDialogFooter>
