@@ -68,6 +68,58 @@ Deno.serve(async (req) => {
     // Generate payments for 3 months before and 6 months after current month
     const monthsToGenerate = [-3, -2, -1, 0, 1, 2, 3, 4, 5, 6];
     let totalGenerated = 0;
+    let totalSkipped = 0;
+    
+    // First, clean up duplicate payment_tracker entries for each debt
+    console.log("Cleaning up duplicate payment_tracker entries...");
+    for (const debt of debts as Debt[]) {
+      const { data: allPayments, error: fetchError } = await supabaseClient
+        .from("payment_tracker")
+        .select("*")
+        .eq("user_id", debt.user_id)
+        .eq("source_id", debt.id)
+        .eq("payment_type", "debt")
+        .order("created_at", { ascending: true });
+      
+      if (fetchError) {
+        console.error(`Error fetching payments for ${debt.name}:`, fetchError);
+        continue;
+      }
+      
+      if (!allPayments || allPayments.length === 0) continue;
+      
+      // Group by month_year and keep only the first one (oldest created_at)
+      const paymentsByMonth = new Map<string, any[]>();
+      for (const payment of allPayments) {
+        const monthKey = payment.month_year;
+        if (!paymentsByMonth.has(monthKey)) {
+          paymentsByMonth.set(monthKey, []);
+        }
+        paymentsByMonth.get(monthKey)!.push(payment);
+      }
+      
+      // Delete duplicates (keep first, delete rest)
+      for (const [monthYear, payments] of paymentsByMonth.entries()) {
+        if (payments.length > 1) {
+          const toDelete = payments.slice(1); // Keep first, delete rest
+          console.log(`Found ${toDelete.length} duplicates for ${debt.name} in ${monthYear}`);
+          
+          for (const dup of toDelete) {
+            const { error: deleteError } = await supabaseClient
+              .from("payment_tracker")
+              .delete()
+              .eq("id", dup.id);
+            
+            if (deleteError) {
+              console.error(`Error deleting duplicate payment ${dup.id}:`, deleteError);
+            } else {
+              console.log(`Deleted duplicate payment ${dup.id}`);
+            }
+          }
+        }
+      }
+    }
+    console.log("Cleanup complete.");
 
     for (const monthOffset of monthsToGenerate) {
       const targetMonth = new Date(currentMonth);
@@ -95,7 +147,7 @@ Deno.serve(async (req) => {
           continue;
         }
 
-        // Build query to check for existing payment
+        // Build query to check for existing payment - check both payment_tracker AND debt_payments
         let existingQuery = supabaseClient
           .from("payment_tracker")
           .select("id")
@@ -111,13 +163,14 @@ Deno.serve(async (req) => {
           existingQuery = existingQuery.is("profile_id", null);
         }
 
-        const { data: existingPayment, error: existingError } = await existingQuery.maybeSingle();
-        if (existingError && existingError.code !== "PGRST116") {
+        const { data: existingPayments, error: existingError } = await existingQuery;
+        if (existingError) {
           console.error(`Error checking existing payment for ${debt.name}:`, existingError);
         }
 
-        if (existingPayment) {
-          console.log(`Payment already exists for debt ${debt.name} in ${targetMonthStr}`);
+        if (existingPayments && existingPayments.length > 0) {
+          console.log(`Payment already exists for debt ${debt.name} in ${targetMonthStr} (${existingPayments.length} found)`);
+          totalSkipped++;
           continue;
         }
 
@@ -147,7 +200,7 @@ Deno.serve(async (req) => {
           amount,
           payment_status: paymentStatus,
           payment_date: paymentDateStr,
-          notes: `Automatic payment generated for ${debt.name}`,
+          notes: `Auto-generated payment for ${debt.name}`,
         });
 
         if (insertError) {
@@ -160,12 +213,12 @@ Deno.serve(async (req) => {
       }
     }
 
-    console.log(`Successfully generated ${totalGenerated} payments`);
+    console.log(`Successfully generated ${totalGenerated} payments, skipped ${totalSkipped} existing`);
 
     return new Response(
       JSON.stringify({
         success: true,
-        message: `Generated ${totalGenerated} automatic debt payments`,
+        message: `Generated ${totalGenerated} new automatic debt payments (${totalSkipped} already existed)`,
         debtsProcessed: debts.length,
       }),
       { headers: { ...corsHeaders, "Content-Type": "application/json" }, status: 200 },
