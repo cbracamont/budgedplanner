@@ -72,6 +72,9 @@ export const ThemeSettings = ({ language, onThemeChange }: ThemeSettingsProps) =
     if (data?.color_theme) {
       setCurrentTheme(data.color_theme);
       applyThemeToDocument(data.color_theme);
+    } else {
+      // Apply default theme if no settings exist
+      applyThemeToDocument('gold');
     }
   };
 

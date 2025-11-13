@@ -55,10 +55,18 @@ serve(async (req) => {
       throw new Error("No active profile found. Please select a profile first.");
     }
 
+    // Get current month range for variable income
+    const currentDate = new Date();
+    const currentYear = currentDate.getFullYear();
+    const currentMonthNum = currentDate.getMonth();
+    const startDate = new Date(currentYear, currentMonthNum, 1).toISOString().split('T')[0];
+    const endDate = new Date(currentYear, currentMonthNum + 1, 0).toISOString().split('T')[0];
+
     // Fetch user's financial data filtered by active profile
-    const [fixedIncomeData, variableIncomeData, debtsData, fixedExpensesData, variableExpensesData, savingsData, savingsGoalsData, debtPaymentsData] = await Promise.all([
+    const [fixedIncomeData, variableIncomeRecurringData, monthlyVariableIncomeData, debtsData, fixedExpensesData, variableExpensesData, savingsData, savingsGoalsData, debtPaymentsData] = await Promise.all([
       supabase.from('income_sources').select('*').eq('user_id', user.id).eq('profile_id', activeProfile.id).eq('income_type', 'fixed'),
       supabase.from('income_sources').select('*').eq('user_id', user.id).eq('profile_id', activeProfile.id).eq('income_type', 'variable'),
+      supabase.from('variable_income').select('*').eq('user_id', user.id).eq('profile_id', activeProfile.id).gte('date', startDate).lte('date', endDate),
       supabase.from('debts').select('*').eq('user_id', user.id).eq('profile_id', activeProfile.id),
       supabase.from('fixed_expenses').select('*').eq('user_id', user.id).eq('profile_id', activeProfile.id),
       supabase.from('variable_expenses').select('*').eq('user_id', user.id).eq('profile_id', activeProfile.id),
