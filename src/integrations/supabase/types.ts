@@ -61,7 +61,6 @@ export type Database = {
           id: string
           updated_at: string
           user_id: string
-          wallpaper_url: string | null
         }
         Insert: {
           chart_type?: string | null
@@ -70,7 +69,6 @@ export type Database = {
           id?: string
           updated_at?: string
           user_id: string
-          wallpaper_url?: string | null
         }
         Update: {
           chart_type?: string | null
@@ -79,7 +77,6 @@ export type Database = {
           id?: string
           updated_at?: string
           user_id?: string
-          wallpaper_url?: string | null
         }
         Relationships: []
       }

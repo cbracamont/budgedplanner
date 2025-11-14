@@ -157,8 +157,8 @@ export const MonthlyVariableIncomeTracker = ({
   };
   const translations = t[language];
   return <>
-      <Card className="shadow-medium">
-        <CardHeader className="bg-gradient-primary text-primary-foreground rounded-md bg-amber-300">
+      <Card className="shadow-medium bg-card/50 backdrop-blur-sm border-border/50">
+        <CardHeader className="bg-primary/10 border-b border-border/30">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <DollarSign className="h-5 w-5" />
