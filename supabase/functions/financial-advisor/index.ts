@@ -76,13 +76,10 @@ serve(async (req) => {
     ]);
 
     // Calculate totals
-    const totalFixedIncome = fixedIncomeData.data?.reduce((sum, i) => sum + Number(i.amount), 0) || 0;
+    const totalFixedIncome = fixedIncomeData.data?.reduce((sum: number, i: any) => sum + Number(i.amount), 0) || 0;
     
-    // Calculate variable income for current month
-    const currentDate = new Date();
-    const currentYear = currentDate.getFullYear();
-    const currentMonthNum = currentDate.getMonth();
-    const totalVariableIncome = variableIncomeData.data?.reduce((sum, inc) => {
+    // Calculate recurring variable income for current month
+    const totalRecurringVariableIncome = variableIncomeRecurringData.data?.reduce((sum: number, inc: any) => {
       if (inc.frequency === "weekly") {
         const daysInMonth = new Date(currentYear, currentMonthNum + 1, 0).getDate();
         let count = 0;

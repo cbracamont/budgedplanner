@@ -170,8 +170,8 @@ export const MonthlyVariableExpensesTracker = ({ language, onExpensesChange }: M
 
   return (
     <>
-      <Card className="shadow-medium">
-        <CardHeader className="bg-gradient-primary text-primary-foreground">
+      <Card className="shadow-medium bg-card/50 backdrop-blur-sm border-border/50">
+        <CardHeader className="bg-destructive/10 border-b border-border/30">
           <div className="flex items-center justify-between">
             <div className="flex items-center gap-2">
               <ShoppingCart className="h-5 w-5" />
