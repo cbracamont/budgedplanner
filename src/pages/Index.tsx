@@ -407,7 +407,7 @@ const Index = () => {
     const totalDebt = debtData.reduce((s, d) => s + d.balance, 0);
     const idealMonthlyReduction = totalDebt > 0 ? monthlyPay : 0;
     const idealRemainingDebt = Math.max(0, totalDebt - idealMonthlyReduction * Math.abs(monthsSinceStart));
-    const idealProgressPercent = totalDebt > 0 ? ((totalDebt - idealRemainingDebt) / totalDebt) * 100 : 0;
+    const idealProgressPercent = totalDebt > 0 ? Math.min(100, ((totalDebt - idealRemainingDebt) / totalDebt) * 100) : 0;
 
     // Calculate actual debt free months
     while (remaining > 0 && months < 120) {

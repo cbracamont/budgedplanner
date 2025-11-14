@@ -77,7 +77,7 @@ export const SavingsGoalsManager = ({
 
   // Sophisticated calculations
   const getGoalStatus = (goal: SavingsGoal) => {
-    const progress = (goal.current_amount / goal.target_amount) * 100;
+    const progress = goal.target_amount > 0 ? Math.min(100, (goal.current_amount / goal.target_amount) * 100) : 0;
     const monthsRemaining = goal.target_date ? differenceInMonths(new Date(goal.target_date), new Date()) : null;
     const onTrack = monthsRemaining && goal.monthly_contribution ? goal.monthly_contribution * monthsRemaining >= goal.target_amount - goal.current_amount : progress > 50;
 
@@ -355,7 +355,7 @@ export const SavingsGoalsManager = ({
             </Card>
           ) : (
             goals.map((goal) => {
-              const progress = (goal.current_amount / goal.target_amount) * 100;
+              const progress = goal.target_amount > 0 ? Math.min(100, (goal.current_amount / goal.target_amount) * 100) : 0;
               const monthsToGoal = goal.target_date ? differenceInMonths(new Date(goal.target_date), new Date()) : null;
               const suggestedMonthly = goal.target_date && monthsToGoal ? (goal.target_amount - goal.current_amount) / monthsToGoal : 0;
               const status = getGoalStatus(goal);
