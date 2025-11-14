@@ -282,7 +282,7 @@ export const AchievementsBadges = ({ language }: AchievementsBadgesProps) => {
 };
 
 const AchievementCard = ({ achievement, language }: { achievement: Achievement; language: Language }) => {
-  const progress = Math.min((achievement.current / achievement.target) * 100, 100);
+  const progress = achievement.target > 0 ? Math.min(100, (achievement.current / achievement.target) * 100) : 0;
   
   return (
     <div

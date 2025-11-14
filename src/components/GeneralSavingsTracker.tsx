@@ -70,7 +70,7 @@ export const GeneralSavingsTracker = ({ language }: GeneralSavingsTrackerProps) 
 
   const currentAmount = savings?.total_accumulated || 0;
   const goal = parseFloat(monthlyGoal) || 0;
-  const progressPercent = goal > 0 ? Math.min((currentAmount / goal) * 100, 100) : 0;
+  const progressPercent = goal > 0 ? Math.min(100, (currentAmount / goal) * 100) : 0;
 
   const handleAddMoney = () => {
     const amount = parseFloat(addAmount);

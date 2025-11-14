@@ -60,10 +60,11 @@ export const SimplifiedDebtPriority = ({ debts, method }: SimplifiedDebtPriority
 
   // Calculate payoff progress for each debt
   const getPayoffProgress = (debt: Debt): number => {
-    if (debt.minimum_payment === 0) return 0;
+    if (debt.minimum_payment === 0 || debt.balance === 0) return 0;
     const monthsToPayoff = debt.balance / debt.minimum_payment;
     // Progress inversely related to months (fewer months = more progress)
-    return Math.min(100, (12 / monthsToPayoff) * 100);
+    // Cap at 100% to avoid over-100% values
+    return Math.min(100, Math.max(0, (12 / monthsToPayoff) * 100));
   };
 
   // Get color based on priority score

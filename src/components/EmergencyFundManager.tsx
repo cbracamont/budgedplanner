@@ -28,7 +28,7 @@ export const EmergencyFundManager = ({ language, totalExpenses }: EmergencyFundM
 
   const emergencyFundTarget = totalExpenses * emergencyFundMonths;
   const emergencyFundProgress = emergencyFundTarget > 0 
-    ? (parseFloat(emergencyFund || "0") / emergencyFundTarget) * 100 
+    ? Math.min(100, (parseFloat(emergencyFund || "0") / emergencyFundTarget) * 100) 
     : 0;
   const remainingForEmergencyFund = Math.max(0, emergencyFundTarget - parseFloat(emergencyFund || "0"));
 
