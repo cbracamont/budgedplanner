@@ -42,7 +42,9 @@ import {
   Receipt,
   CreditCard,
   Goal,
-  Settings,
+  Settings as SettingsIcon,
+  Users,
+  History,
 } from "lucide-react";
 import {
   useIncomeSources,
@@ -81,6 +83,10 @@ import { LanguageToggle } from "@/components/LanguageToggle";
 import { ProfileSelector } from "@/components/ProfileSelector";
 import { MobileMenu } from "@/components/MobileMenu";
 import { ScrollToTop } from "@/components/ScrollToTop";
+import { SettingsTab } from "@/components/SettingsTab";
+import { HouseholdManager } from "@/components/HouseholdManager";
+import { InvitationsManager } from "@/components/InvitationsManager";
+import { AuditLogViewer } from "@/components/AuditLogViewer";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -978,6 +984,21 @@ const Index = () => {
                 value: "savings",
                 label: "Savings",
                 icon: <Goal className="h-5 w-5" />,
+              },
+              {
+                value: "settings",
+                label: "Settings",
+                icon: <SettingsIcon className="h-5 w-5" />,
+              },
+              {
+                value: "household",
+                label: "Household",
+                icon: <Users className="h-5 w-5" />,
+              },
+              {
+                value: "history",
+                label: "History",
+                icon: <History className="h-5 w-5" />,
               },
             ]}
             language={language}
@@ -2079,6 +2100,21 @@ const Index = () => {
                   />
                 </div>
               </div>
+            </TabsContent>
+
+            <TabsContent value="settings">
+              <SettingsTab />
+            </TabsContent>
+
+            <TabsContent value="household">
+              <div className="space-y-6">
+                <HouseholdManager language={language} />
+                <InvitationsManager />
+              </div>
+            </TabsContent>
+
+            <TabsContent value="history">
+              <AuditLogViewer />
             </TabsContent>
           </Tabs>
 

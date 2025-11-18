@@ -80,6 +80,48 @@ export type Database = {
         }
         Relationships: []
       }
+      audit_log: {
+        Row: {
+          action: string
+          created_at: string
+          household_id: string | null
+          id: string
+          new_values: Json | null
+          old_values: Json | null
+          profile_id: string | null
+          record_id: string | null
+          table_name: string
+          user_display_name: string | null
+          user_id: string
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          household_id?: string | null
+          id?: string
+          new_values?: Json | null
+          old_values?: Json | null
+          profile_id?: string | null
+          record_id?: string | null
+          table_name: string
+          user_display_name?: string | null
+          user_id: string
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          household_id?: string | null
+          id?: string
+          new_values?: Json | null
+          old_values?: Json | null
+          profile_id?: string | null
+          record_id?: string | null
+          table_name?: string
+          user_display_name?: string | null
+          user_id?: string
+        }
+        Relationships: []
+      }
       category_names: {
         Row: {
           category_key: string
@@ -411,6 +453,72 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      household_backups: {
+        Row: {
+          backup_data: Json
+          created_at: string
+          created_by: string
+          description: string | null
+          household_id: string
+          id: string
+        }
+        Insert: {
+          backup_data: Json
+          created_at?: string
+          created_by: string
+          description?: string | null
+          household_id: string
+          id?: string
+        }
+        Update: {
+          backup_data?: Json
+          created_at?: string
+          created_by?: string
+          description?: string | null
+          household_id?: string
+          id?: string
+        }
+        Relationships: []
+      }
+      household_invitations: {
+        Row: {
+          created_at: string
+          expires_at: string
+          household_id: string
+          id: string
+          invitation_code: string
+          invited_by: string
+          invited_email: string
+          role: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          expires_at?: string
+          household_id: string
+          id?: string
+          invitation_code: string
+          invited_by: string
+          invited_email: string
+          role?: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          expires_at?: string
+          household_id?: string
+          id?: string
+          invitation_code?: string
+          invited_by?: string
+          invited_email?: string
+          role?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
       }
       household_members: {
         Row: {
@@ -759,6 +867,30 @@ export type Database = {
         }
         Relationships: []
       }
+      user_settings: {
+        Row: {
+          created_at: string
+          currency: string
+          id: string
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          currency?: string
+          id?: string
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          currency?: string
+          id?: string
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
+      }
       variable_expense_categories: {
         Row: {
           created_at: string
@@ -901,7 +1033,7 @@ export type Database = {
       }
     }
     Enums: {
-      household_role: "owner" | "member"
+      household_role: "owner" | "member" | "viewer" | "contributor" | "editor"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -1029,7 +1161,7 @@ export type CompositeTypes<
 export const Constants = {
   public: {
     Enums: {
-      household_role: ["owner", "member"],
+      household_role: ["owner", "member", "viewer", "contributor", "editor"],
     },
   },
 } as const
