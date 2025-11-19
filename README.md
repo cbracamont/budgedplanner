@@ -1,73 +1,34 @@
-# Welcome to your Lovable project
+# Family Budget Planner UK 
 
-## Project info
+**La app financiera familiar.**
 
-**URL**: https://lovable.dev/projects/f97d07cd-a47b-4547-9f22-8c5675e55df8
+Entiende perfectamente cómo funciona el dinero real en Reino Unido, España y Polonia en 2025:
 
-## How can I edit this code?
+- Tarjetas con 0% interés 29 meses  
+- Klarna, Clearpay, overdraft 39.9%  
+- Student Loan Plan 2 / Plan 5  
+- Lifetime ISA + bonus automático del gobierno  
+- Fondo de emergencia inteligente  
+- Notificaciones push reales  
+- Onboarding que retiene al 80% de usuarios  
 
-There are several ways of editing your application.
+**Live Demo → https://family-budget-planner-uk.vercel.app**
 
-**Use Lovable**
+**Tecnologías:**  
+React + TypeScript + Vite + shadcn/ui + Tailwind + Supabase + TanStack Query
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/f97d07cd-a47b-4547-9f22-8c5675e55df8) and start prompting.
+**Hecho con** Lovable.dev + Grok 4
 
-Changes made via Lovable will be committed automatically to this repo.
+**100% Open Source • MIT License**
 
-**Use your preferred IDE**
+[![Deploy with Vercel](https://vercel.com/button)](https://vercel.com/new/clone?repository-url=https://github.com/cbracamont/family-budget-planner-uk)
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+### Capturas (próximamente)
+- Debt Freedom Plan con fecha exacta  
+- Smart Savings Engine  
+- Notificaciones push en acción
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+**¿Quieres ser debt-free en 2026?**  
+Entra ahora: https://family-budget-planner-uk.vercel.app
 
-Follow these steps:
-
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
-```
-
-**Edit a file directly in GitHub**
-
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
-
-**Use GitHub Codespaces**
-
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
-
-## What technologies are used for this project?
-
-This project is built with:
-
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
-
-## How can I deploy this project?
-
-Simply open [Lovable](https://lovable.dev/projects/f97d07cd-a47b-4547-9f22-8c5675e55df8) and click on Share -> Publish.
-
-## Can I connect a custom domain to my Lovable project?
-
-Yes, you can!
-
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
-
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+Made with ❤️ in 2025 by cbracamont & Grok
