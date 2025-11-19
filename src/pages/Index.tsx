@@ -96,6 +96,7 @@ import { supabase } from "@/integrations/supabase/client";
 import { useTheme } from "@/hooks/useTheme";
 import { useTheme as useNextTheme } from "next-themes";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 
 // Calendar Event Type
 type CalendarEvent = {
@@ -946,9 +947,47 @@ const Index = () => {
               <Button variant="outline" size="icon" onClick={() => setTheme(theme === "dark" ? "light" : "dark")}>
                 {theme === "dark" ? <Sun className="h-4 w-4" /> : <Moon className="h-4 w-4" />}
               </Button>
-              <Button variant="outline" size="icon" onClick={() => window.print()}>
-                <Download className="h-4 w-4" />
-              </Button>
+              <Sheet>
+                <SheetTrigger asChild>
+                  <Button variant="outline" size="icon" title="Configuración">
+                    <SettingsIcon className="h-4 w-4" />
+                  </Button>
+                </SheetTrigger>
+                <SheetContent className="w-full sm:max-w-2xl overflow-y-auto">
+                  <SheetHeader>
+                    <SheetTitle>Configuración</SheetTitle>
+                    <SheetDescription>
+                      Gestiona tu moneda, invitaciones al grupo familiar y registro de cambios
+                    </SheetDescription>
+                  </SheetHeader>
+                  <Tabs defaultValue="settings" className="mt-6">
+                    <TabsList className="grid w-full grid-cols-3">
+                      <TabsTrigger value="settings">General</TabsTrigger>
+                      <TabsTrigger value="invitations">Invitaciones</TabsTrigger>
+                      <TabsTrigger value="audit">Registro</TabsTrigger>
+                    </TabsList>
+                    <TabsContent value="settings" className="mt-4">
+                      <SettingsTab />
+                      <div className="mt-6 pt-6 border-t">
+                        <Button
+                          variant="outline"
+                          onClick={() => window.print()}
+                          className="w-full"
+                        >
+                          <Download className="h-4 w-4 mr-2" />
+                          Exportar datos
+                        </Button>
+                      </div>
+                    </TabsContent>
+                    <TabsContent value="invitations" className="mt-4">
+                      <InvitationsManager />
+                    </TabsContent>
+                    <TabsContent value="audit" className="mt-4">
+                      <AuditLogViewer />
+                    </TabsContent>
+                  </Tabs>
+                </SheetContent>
+              </Sheet>
               <Button variant="outline" size="icon" onClick={() => supabase.auth.signOut()}>
                 <LogOut className="h-4 w-4" />
               </Button>
