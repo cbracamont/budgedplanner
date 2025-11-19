@@ -91,13 +91,13 @@ export const useCreateInvitation = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["household-invitations"] });
-      toast.success("Invitación enviada");
+      toast.success("Invitation sent successfully");
     },
     onError: (error: any) => {
       if (error.message.includes("duplicate")) {
-        toast.error("Ya existe una invitación para este email");
+        toast.error("An invitation already exists for this email");
       } else {
-        toast.error("Error al enviar invitación");
+        toast.error("Error sending invitation");
       }
     },
   });
@@ -107,17 +107,11 @@ export const useAcceptInvitation = () => {
   const queryClient = useQueryClient();
 
   return useMutation({
-    mutationFn: async ({ 
-      invitationId, 
-      displayName 
-    }: { 
-      invitationId: string; 
-      displayName: string;
-    }) => {
+    mutationFn: async (invitationId: string) => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("User not authenticated");
 
-      // Obtener la invitación
+      // Get the invitation
       const { data: invitation, error: invError } = await supabase
         .from("household_invitations")
         .select("*")
@@ -126,17 +120,20 @@ export const useAcceptInvitation = () => {
 
       if (invError) throw invError;
 
-      // Verificar que la invitación es para este usuario
+      // Verify invitation is for this user
       if (invitation.invited_email !== user.email) {
-        throw new Error("Esta invitación no es para ti");
+        throw new Error("This invitation is not for you");
       }
 
-      // Verificar que no esté expirada
+      // Verify not expired
       if (new Date(invitation.expires_at) < new Date()) {
-        throw new Error("Esta invitación ha expirado");
+        throw new Error("This invitation has expired");
       }
 
-      // Crear membresía
+      // Get user email for display name
+      const displayName = user.email?.split('@')[0] || 'User';
+
+      // Create membership
       const { error: memberError } = await supabase
         .from("household_members")
         .insert({
@@ -148,7 +145,7 @@ export const useAcceptInvitation = () => {
 
       if (memberError) throw memberError;
 
-      // Crear rol
+      // Create role
       const { error: roleError } = await supabase
         .from("household_user_roles")
         .insert({
@@ -159,7 +156,7 @@ export const useAcceptInvitation = () => {
 
       if (roleError) throw roleError;
 
-      // Actualizar invitación
+      // Update invitation
       const { error: updateError } = await supabase
         .from("household_invitations")
         .update({ status: "accepted" })
@@ -171,10 +168,10 @@ export const useAcceptInvitation = () => {
       queryClient.invalidateQueries({ queryKey: ["my-invitations"] });
       queryClient.invalidateQueries({ queryKey: ["my-household"] });
       queryClient.invalidateQueries({ queryKey: ["household-members"] });
-      toast.success("Te has unido al hogar");
+      toast.success("You have joined the household");
     },
     onError: (error: Error) => {
-      toast.error(error.message || "Error al aceptar invitación");
+      toast.error(error.message || "Error accepting invitation");
     },
   });
 };
@@ -193,10 +190,10 @@ export const useRejectInvitation = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["my-invitations"] });
-      toast.success("Invitación rechazada");
+      toast.success("Invitation rejected");
     },
     onError: () => {
-      toast.error("Error al rechazar invitación");
+      toast.error("Error rejecting invitation");
     },
   });
 };
@@ -215,10 +212,92 @@ export const useCancelInvitation = () => {
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["household-invitations"] });
-      toast.success("Invitación cancelada");
+      toast.success("Invitation cancelled");
     },
     onError: () => {
-      toast.error("Error al cancelar invitación");
+      toast.error("Error cancelling invitation");
     },
   });
 };
+
+export const useJoinByCode = () => {
+  const queryClient = useQueryClient();
+
+  return useMutation({
+    mutationFn: async (invitationCode: string) => {
+      const { data: { user } } = await supabase.auth.getUser();
+      if (!user) throw new Error("User not authenticated");
+
+      // Find invitation by code
+      const { data: invitation, error: invError } = await supabase
+        .from("household_invitations")
+        .select("*")
+        .eq("invitation_code", invitationCode)
+        .eq("status", "pending")
+        .single();
+
+      if (invError || !invitation) {
+        throw new Error("Invalid or expired invitation code");
+      }
+
+      // Verify not expired
+      if (new Date(invitation.expires_at) < new Date()) {
+        throw new Error("This invitation has expired");
+      }
+
+      // Get user email for display name
+      const displayName = user.email?.split('@')[0] || 'User';
+
+      // Create membership
+      const { error: memberError } = await supabase
+        .from("household_members")
+        .insert({
+          household_id: invitation.household_id,
+          user_id: user.id,
+          display_name: displayName,
+          status: "approved",
+        });
+
+      if (memberError) {
+        if (memberError.message.includes("duplicate")) {
+          throw new Error("You are already a member of this household");
+        }
+        throw memberError;
+      }
+
+      // Create role
+      const { error: roleError } = await supabase
+        .from("household_user_roles")
+        .insert({
+          household_id: invitation.household_id,
+          user_id: user.id,
+          role: invitation.role as "owner" | "member" | "viewer" | "contributor" | "editor",
+        });
+
+      if (roleError) throw roleError;
+
+      // Update invitation
+      const { error: updateError } = await supabase
+        .from("household_invitations")
+        .update({ 
+          status: "accepted",
+          invited_email: user.email || "",
+        })
+        .eq("id", invitation.id);
+
+      if (updateError) throw updateError;
+
+      return invitation;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["my-household"] });
+      queryClient.invalidateQueries({ queryKey: ["household-members"] });
+      queryClient.invalidateQueries({ queryKey: ["my-invitations"] });
+      toast.success("Successfully joined the household");
+    },
+    onError: (error: Error) => {
+      toast.error(error.message || "Error joining household");
+    },
+  });
+};
+
