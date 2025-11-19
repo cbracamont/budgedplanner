@@ -1,3 +1,6 @@
+
+
+
 // src/App.tsx
 "use client";
 
@@ -12,7 +15,17 @@ import Privacy from "./pages/Privacy";
 import NotFound from "./pages/NotFound";
 import ResetPassword from "./pages/ResetPassword";
 import { FloatingChatWidget } from "@/components/FloatingChatWidget";
+import { DebtPlannerPro } from "./components/DebtPlannerPro";
+import { SavingsEngine } from "./components/SavingsEngine";
+import { OnboardingFlow } from "./components/OnboardingFlow";
 
+// Dentro del return principal:
+<OnboardingFlow />
+<div className="p-8">
+  <h1 className="text-4xl font-bold mb-8">Family Budget Planner UK 2025</h1>
+  <DebtPlannerPro />
+  <SavingsEngine />
+</div>
 const queryClient = new QueryClient();
 
 export default function App() {
