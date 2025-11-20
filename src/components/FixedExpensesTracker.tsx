@@ -1,8 +1,13 @@
 // src/components/FixedExpensesTracker.tsx
-import { Trash2, Plus } from "lucide-react";
+import { Trash2, Plus, CalendarIcon } from "lucide-react";
 import { useFixedExpenses, useAddFixedExpense, useDeleteFixedExpense } from "@/hooks/useFinancialData";
 import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
+import { format } from "date-fns";
+import { Calendar } from "@/components/ui/calendar";
+import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 type Frequency = "weekly" | "bi-weekly" | "monthly" | "quarterly" | "annually";
 interface VariableExpense {
   id: string;
@@ -32,7 +37,8 @@ export const FixedExpensesTracker = () => {
   const [newExpense, setNewExpense] = useState({
     name: "",
     amount: 0,
-    frequency: "monthly" as Frequency
+    frequency: "monthly" as Frequency,
+    date: new Date()
   });
 
   // Calculate monthly total from database expenses
@@ -46,13 +52,14 @@ export const FixedExpensesTracker = () => {
         await addExpenseMutation.mutateAsync({
           name: newExpense.name,
           amount: newExpense.amount,
-          payment_day: 1,
+          payment_day: newExpense.date.getDate(),
           frequency_type: newExpense.frequency
         });
         setNewExpense({
           name: "",
           amount: 0,
-          frequency: "monthly"
+          frequency: "monthly",
+          date: new Date()
         });
         setIsAdding(false);
         toast({
@@ -100,7 +107,7 @@ export const FixedExpensesTracker = () => {
             <div>
               <p className="font-semibold text-lg">{expense.name}</p>
               <p className="text-sm text-gray-500 capitalize">
-                {expense.frequency_type === "bi-weekly" ? "Bi-weekly" : expense.frequency_type}
+                {expense.frequency_type === "bi-weekly" ? "Bi-weekly" : expense.frequency_type} - Day {expense.payment_day}
               </p>
             </div>
             <div className="flex items-center gap-4">
@@ -113,26 +120,67 @@ export const FixedExpensesTracker = () => {
       </div>
 
       {isAdding && <div className="bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20 p-6 rounded-2xl border-2 border-indigo-200 dark:border-indigo-700">
-          <h3 className="text-xl font-bold mb-4">New Variable Expense</h3>
-          <div className="grid md:grid-cols-3 gap-4">
-            <input type="text" placeholder="e.g. Gym membership" value={newExpense.name} onChange={e => setNewExpense({
-          ...newExpense,
-          name: e.target.value
-        })} className="px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500" />
-            <input type="number" placeholder="Amount" value={newExpense.amount || ""} onChange={e => setNewExpense({
-          ...newExpense,
-          amount: Number(e.target.value)
-        })} className="px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500" />
-            <select value={newExpense.frequency} onChange={e => setNewExpense({
-          ...newExpense,
-          frequency: e.target.value as Frequency
-        })} className="px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500">
+          <h3 className="text-xl font-bold mb-4">New Fixed Expense</h3>
+          <div className="grid md:grid-cols-2 gap-4 mb-4">
+            <input 
+              type="text" 
+              placeholder="e.g. Gym membership" 
+              value={newExpense.name} 
+              onChange={e => setNewExpense({
+                ...newExpense,
+                name: e.target.value
+              })} 
+              className="px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500" 
+            />
+            <input 
+              type="number" 
+              placeholder="Amount" 
+              value={newExpense.amount || ""} 
+              onChange={e => setNewExpense({
+                ...newExpense,
+                amount: Number(e.target.value)
+              })} 
+              className="px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500" 
+            />
+          </div>
+          <div className="grid md:grid-cols-2 gap-4">
+            <select 
+              value={newExpense.frequency} 
+              onChange={e => setNewExpense({
+                ...newExpense,
+                frequency: e.target.value as Frequency
+              })} 
+              className="px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            >
               <option value="weekly">Weekly</option>
               <option value="bi-weekly">Bi-weekly</option>
               <option value="monthly">Monthly</option>
               <option value="quarterly">Quarterly</option>
               <option value="annually">Annually</option>
             </select>
+            <Popover>
+              <PopoverTrigger asChild>
+                <Button
+                  variant="outline"
+                  className={cn(
+                    "justify-start text-left font-normal h-[50px]",
+                    !newExpense.date && "text-muted-foreground"
+                  )}
+                >
+                  <CalendarIcon className="mr-2 h-4 w-4" />
+                  {newExpense.date ? format(newExpense.date, "PPP") : <span>Pick a date</span>}
+                </Button>
+              </PopoverTrigger>
+              <PopoverContent className="w-auto p-0" align="start">
+                <Calendar
+                  mode="single"
+                  selected={newExpense.date}
+                  onSelect={(date) => date && setNewExpense({ ...newExpense, date })}
+                  initialFocus
+                  className={cn("p-3 pointer-events-auto")}
+                />
+              </PopoverContent>
+            </Popover>
           </div>
           <div className="flex gap-3 mt-4">
             <button onClick={handleAdd} className="bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-3 rounded-xl font-bold transition">
