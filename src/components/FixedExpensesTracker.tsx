@@ -20,7 +20,7 @@ const frequencyMultiplier: Record<Frequency, number> = {
   annually: 0.0833,
 };
 
-export const MonthlyVariableExpensesTracker = () => {
+export const FixedExpensesTracker = () => {
   const [expenses, setExpenses] = useState<VariableExpense[]>([
     { id: "1", name: "Groceries", amount: 320, frequency: "monthly" },
     { id: "2", name: "Eating Out & Coffee", amount: 180, frequency: "monthly" },
