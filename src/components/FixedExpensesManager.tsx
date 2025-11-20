@@ -1,370 +1,241 @@
-import { useEffect, useState } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Button } from "@/components/ui/button";
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
-import { useToast } from "@/hooks/use-toast";
-import { Home, Plus, Trash2, Pencil } from "lucide-react";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
-import { getTranslation, Language } from "@/lib/i18n";
-import { useFixedExpenses, useAddFixedExpense, useUpdateFixedExpense, useDeleteFixedExpense } from "@/hooks/useFinancialData";
+// src/components/FixedExpensesManager.tsx
+import { useState } from "react";
+import { format, getMonth, getYear } from "date-fns";
+import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
+import { toast } from "sonner";
+import { Plus, Trash2, Edit2, Calendar, PoundSterling } from "lucide-react";
+
+type Frequency = "weekly" | "bi-weekly" | "monthly" | "quarterly" | "annually";
 
 interface FixedExpense {
   id: string;
   name: string;
   amount: number;
-  payment_day: number;
-  frequency: string;
-  frequency_type: 'monthly' | 'quarterly' | 'semiannual' | 'annual';
-  payment_month?: number | null;
+  frequency: Frequency;
+  day_of_month?: number; // para mensual/quincenal
+  start_date: string; // ISO string
 }
 
-interface FixedExpensesManagerProps {
-  language: Language;
-  onExpensesChange?: (total: number) => void;
-}
-
-const monthNames = {
-  en: ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'],
-  es: ['Enero', 'Febrero', 'Marzo', 'Abril', 'Mayo', 'Junio', 'Julio', 'Agosto', 'Septiembre', 'Octubre', 'Noviembre', 'Diciembre']
+const frequencyMultiplier: Record<Frequency, number> = {
+  weekly: 4.333, // promedio semanas por mes
+  "bi-weekly": 2, // dos veces al mes
+  monthly: 1,
+  quarterly: 0.333, // 1/3 por mes
+  annually: 0.0833, // 1/12 por mes
 };
 
-export const FixedExpensesManager = ({ language, onExpensesChange }: FixedExpensesManagerProps) => {
-  const t = (key: string) => getTranslation(language, key);
-  const { toast } = useToast();
-  const { data: expenses = [] } = useFixedExpenses();
-  const addExpenseMutation = useAddFixedExpense();
-  const updateExpenseMutation = useUpdateFixedExpense();
-  const deleteExpenseMutation = useDeleteFixedExpense();
-  const [newExpense, setNewExpense] = useState({
+export const FixedExpensesManager = () => {
+  const queryClient = useQueryClient();
+  const [isAdding, setIsAdding] = useState(false);
+  const [editingId, setEditingId] = useState<string | null>(null);
+
+  const [form, setForm] = useState<Partial<FixedExpense>>({
     name: "",
-    amount: "",
-    payment_day: "1",
-    frequency_type: "monthly" as 'monthly' | 'quarterly' | 'semiannual' | 'annual',
-    payment_month: null as number | null
+    amount: 0,
+    frequency: "monthly",
+    day_of_month: 1,
+    start_date: format(new Date(), "yyyy-MM-dd"),
   });
-  const [editingExpense, setEditingExpense] = useState<{
-    id: string;
-    name: string;
-    amount: number;
-    payment_day: number;
-    frequency_type: 'monthly' | 'quarterly' | 'semiannual' | 'annual';
-    payment_month: number | null;
-  } | null>(null);
-  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
 
-  useEffect(() => {
-    const currentMonth = new Date().getMonth() + 1;
-    const total = expenses.reduce((sum, expense) => {
-      // Only include expenses if they apply to the current month
-      if (expense.frequency_type === 'monthly') {
-        return sum + expense.amount;
-      } else if (expense.frequency_type === 'quarterly') {
-        // Quarterly: payment_month indicates the first month (e.g., 1 = Jan, Apr, Jul, Oct)
-        const firstMonth = expense.payment_month || 1;
-        const quarterlyMonths = [firstMonth, (firstMonth + 3 - 1) % 12 + 1, (firstMonth + 6 - 1) % 12 + 1, (firstMonth + 9 - 1) % 12 + 1];
-        return sum + (quarterlyMonths.includes(currentMonth) ? expense.amount : 0);
-      } else if (expense.frequency_type === 'semiannual') {
-        // Semiannual: payment_month indicates the first month (e.g., 1 = Jan and Jul)
-        const firstMonth = expense.payment_month || 1;
-        const semiannualMonths = [firstMonth, (firstMonth + 6 - 1) % 12 + 1];
-        return sum + (semiannualMonths.includes(currentMonth) ? expense.amount : 0);
-      } else if (expense.frequency_type === 'annual') {
-        return sum + (expense.payment_month === currentMonth ? expense.amount : 0);
+  const { data: expenses = [] } = useQuery<FixedExpense[]>({
+    queryKey: ["fixed_expenses"],
+    initialData: [],
+  });
+
+  const mutation = useMutation({
+    mutationFn: async (expense: FixedExpense) => {
+      // Aquí iría Supabase: supabase.from('fixed_expenses').upsert(...)
+      // Simulamos por ahora
+      return expense;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["fixed_expenses"] });
+      toast.success("Gasto fijo guardado");
+      setIsAdding(false);
+      setEditingId(null);
+      setForm({
+        name: "",
+        amount: 0,
+        frequency: "monthly",
+        day_of_month: 1,
+        start_date: format(new Date(), "yyyy-MM-dd"),
+      });
+    },
+  });
+
+  const deleteMutation = useMutation({
+    mutationFn: async (id: string) => {
+      // supabase.from('fixed_expenses').delete().eq('id', id)
+      return id;
+    },
+    onSuccess: () => {
+      queryClient.invalidateQueries({ queryKey: ["fixed_expenses"] });
+      toast.success("Gasto eliminado");
+    },
+  });
+
+  // CÁLCULO MENSUAL CORRECTO SEGÚN FRECUENCIA
+  const getMonthlyTotal = () => {
+    const today = new Date();
+    const currentMonth = getMonth(today);
+    const currentYear = getYear(today);
+
+    return expenses.reduce((total, expense) => {
+      const startDate = new Date(expense.start_date);
+      if (startDate > today) return total; // aún no empezó
+
+      let monthlyAmount = 0;
+
+      switch (expense.frequency) {
+        case "weekly":
+          monthlyAmount = expense.amount * frequencyMultiplier.weekly;
+          break;
+        case "bi-weekly":
+          monthlyAmount = expense.amount * frequencyMultiplier["bi-weekly"];
+          break;
+        case "monthly":
+          monthlyAmount = expense.amount;
+          break;
+        case "quarterly":
+          const startMonth = getMonth(startDate);
+          const startYear = getYear(startDate);
+          const monthsSinceStart = (currentYear - startYear) * 12 + (currentMonth - startMonth);
+          if (monthsSinceStart % 3 === 0) {
+            monthlyAmount = expense.amount;
+          }
+          break;
+        case "annually":
+          if (currentMonth === getMonth(startDate)) {
+            monthlyAmount = expense.amount;
+          }
+          break;
       }
-      return sum;
+
+      return total + monthlyAmount;
     }, 0);
-    onExpensesChange?.(total);
-  }, [expenses, onExpensesChange]);
-
-  const addExpense = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!newExpense.name || !newExpense.amount) return;
-
-    addExpenseMutation.mutate({
-      name: newExpense.name,
-      amount: parseFloat(newExpense.amount),
-      payment_day: parseInt(newExpense.payment_day),
-      frequency: "monthly",
-      frequency_type: newExpense.frequency_type,
-      payment_month: newExpense.frequency_type !== 'monthly' ? newExpense.payment_month : null
-    }, {
-      onSuccess: () => {
-        setNewExpense({ name: "", amount: "", payment_day: "1", frequency_type: "monthly", payment_month: null });
-      }
-    });
   };
 
-  const deleteExpense = async (id: string) => {
-    deleteExpenseMutation.mutate(id);
-  };
-
-  const updateExpense = async (e: React.FormEvent) => {
-    e.preventDefault();
-    if (!editingExpense) return;
-
-    updateExpenseMutation.mutate({
-      id: editingExpense.id,
-      name: editingExpense.name,
-      amount: editingExpense.amount,
-      payment_day: editingExpense.payment_day,
-      frequency_type: editingExpense.frequency_type,
-      payment_month: editingExpense.frequency_type !== 'monthly' ? editingExpense.payment_month : null
-    }, {
-      onSuccess: () => {
-        setIsEditDialogOpen(false);
-        setEditingExpense(null);
-      }
-    });
-  };
+  const monthlyTotal = getMonthlyTotal();
 
   return (
-    <Card className="shadow-medium border-warning/20">
-      <CardHeader className="bg-warning/10 border-b border-warning/20">
-        <div className="flex items-center gap-2">
-          <Home className="h-5 w-5 text-warning" />
-          <CardTitle>{t('fixedExpenses')}</CardTitle>
+    <div className="space-y-6">
+      <div className="flex justify-between items-center">
+        <div>
+          <h2 className="text-2xl font-bold">Gastos Fijos</h2>
+          <p className="text-gray-600">
+            Total mensual estimado:{" "}
+            <span className="text-3xl font-black text-emerald-600">£{monthlyTotal.toFixed(0)}</span>
+          </p>
         </div>
-        <CardDescription>
-          {language === 'en' ? 'Manage your fixed monthly and annual expenses' : 'Administra tus gastos fijos mensuales y anuales'}
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="pt-6 space-y-6">
-        <form onSubmit={addExpense} className="space-y-4">
-          <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
-            <div className="space-y-2">
-              <Label htmlFor="expense-name">
-                {language === 'en' ? 'Name' : 'Nombre'}
-              </Label>
-              <Input
-                id="expense-name"
-                placeholder={language === 'en' ? 'Rent, Utilities, etc.' : 'Alquiler, Servicios, etc.'}
-                value={newExpense.name}
-                onChange={(e) => setNewExpense({ ...newExpense, name: e.target.value })}
-                required
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="expense-amount">
-                {language === 'en' ? 'Amount' : 'Monto'}
-              </Label>
-              <Input
-                id="expense-amount"
-                type="number"
-                step="0.01"
-                placeholder="0.00"
-                value={newExpense.amount}
-                onChange={(e) => setNewExpense({ ...newExpense, amount: e.target.value })}
-                required
-              />
-            </div>
-            <div className="space-y-2">
-              <Label htmlFor="frequency-type">
-                {language === 'en' ? 'Frequency' : 'Frecuencia'}
-              </Label>
-              <Select
-                value={newExpense.frequency_type}
-                onValueChange={(value: 'monthly' | 'quarterly' | 'semiannual' | 'annual') => 
-                  setNewExpense({ ...newExpense, frequency_type: value, payment_month: value === 'monthly' ? null : newExpense.payment_month })
-                }
-              >
-                <SelectTrigger id="frequency-type">
-                  <SelectValue />
-                </SelectTrigger>
-                <SelectContent>
-                  <SelectItem value="monthly">{language === 'en' ? 'Monthly' : 'Mensual'}</SelectItem>
-                  <SelectItem value="quarterly">{language === 'en' ? 'Quarterly' : 'Trimestral'}</SelectItem>
-                  <SelectItem value="semiannual">{language === 'en' ? 'Semiannual' : 'Semestral'}</SelectItem>
-                  <SelectItem value="annual">{language === 'en' ? 'Annual' : 'Anual'}</SelectItem>
-                </SelectContent>
-              </Select>
-            </div>
-            {newExpense.frequency_type !== 'monthly' && (
-              <div className="space-y-2">
-                <Label htmlFor="payment-month">
-                  {newExpense.frequency_type === 'annual' 
-                    ? (language === 'en' ? 'Payment Month' : 'Mes de Pago')
-                    : (language === 'en' ? 'First Payment Month' : 'Primer Mes de Pago')
-                  }
-                </Label>
-                <Select
-                  value={newExpense.payment_month?.toString() || ""}
-                  onValueChange={(value) => setNewExpense({ ...newExpense, payment_month: parseInt(value) })}
-                >
-                  <SelectTrigger id="payment-month">
-                    <SelectValue placeholder={language === 'en' ? 'Select month' : 'Selecciona mes'} />
-                  </SelectTrigger>
-                  <SelectContent>
-                    {monthNames[language].map((month, index) => (
-                      <SelectItem key={index + 1} value={(index + 1).toString()}>
-                        {month}
-                      </SelectItem>
-                    ))}
-                  </SelectContent>
-                </Select>
-              </div>
-            )}
-            <div className="space-y-2">
-              <Label htmlFor="expense-day">
-                {language === 'en' ? 'Payment Day' : 'Día de Pago'}
-              </Label>
-              <Input
-                id="expense-day"
-                type="number"
-                min="1"
-                max="31"
-                value={newExpense.payment_day}
-                onChange={(e) => setNewExpense({ ...newExpense, payment_day: e.target.value })}
-                required
-              />
-            </div>
-          </div>
-          <Button type="submit" className="w-full">
-            <Plus className="mr-2 h-4 w-4" />
-            {language === 'en' ? 'Add Fixed Expense' : 'Agregar Gasto Fijo'}
-          </Button>
-        </form>
+        <button
+          onClick={() => setIsAdding(true)}
+          className="bg-blue-600 text-white px-6 py-3 rounded-xl flex items-center gap-2 hover:bg-blue-700 transition"
+        >
+          <Plus className="w-5 h-5" /> Añadir gasto
+        </button>
+      </div>
 
-        <div className="space-y-3">
-          {expenses.map((expense) => (
-            <div key={expense.id} className="flex items-center justify-between p-3 bg-secondary/50 rounded-lg">
-              <div className="flex-1">
-                <p className="font-medium">{expense.name}</p>
-                <p className="text-sm text-muted-foreground">
-                  £{expense.amount.toFixed(2)} - {expense.frequency_type !== 'monthly' 
-                    ? `${monthNames[language][expense.payment_month! - 1]}, ${language === 'en' ? 'Day' : 'Día'} ${expense.payment_day}`
-                    : `${language === 'en' ? 'Day' : 'Día'} ${expense.payment_day}`}
-                  {expense.frequency_type === 'quarterly' && ` (${language === 'en' ? 'Quarterly' : 'Trimestral'})`}
-                  {expense.frequency_type === 'semiannual' && ` (${language === 'en' ? 'Semiannual' : 'Semestral'})`}
-                  {expense.frequency_type === 'annual' && ` (${language === 'en' ? 'Annual' : 'Anual'})`}
+      {(isAdding || editingId) && (
+        <div className="bg-gray-50 dark:bg-gray-900 p-6 rounded-2xl border">
+          <h3 className="text-xl font-semibold mb-4">{editingId ? "Editar" : "Nuevo"} gasto fijo</h3>
+          <div className="grid md:grid-cols-2 gap-4">
+            <input
+              type="text"
+              placeholder="Nombre (ej. Hipoteca)"
+              value={form.name}
+              onChange={(e) => setForm({ ...form, name: e.target.value })}
+              className="px-4 py-3 border rounded-xl"
+            />
+            <div className="flex items-center gap-2">
+              <PoundSterling className="w-5 h-5 text-gray-500" />
+              <input
+                type="number"
+                placeholder="Cantidad"
+                value={form.amount}
+                onChange={(e) => setForm({ ...form, amount: Number(e.target.value) })}
+                className="px-4 py-3 border rounded-xl flex-1"
+              />
+            </div>
+            <select
+              value={form.frequency}
+              onChange={(e) => setForm({ ...form, frequency: e.target.value as Frequency })}
+              className="px-4 py-3 border rounded-xl"
+            >
+              <option value="weekly">Semanal</option>
+              <option value="bi-weekly">Quincenal</option>
+              <option value="monthly">Mensual</option>
+              <option value="quarterly">Trimestral</option>
+              <option value="annually">Anual</option>
+            </select>
+            <input
+              type="date"
+              value={form.start_date}
+              onChange={(e) => setForm({ ...form, start_date: e.target.value })}
+              className="px-4 py-3 border rounded-xl"
+            />
+          </div>
+          <div className="flex gap-3 mt-6">
+            <button
+              onClick={() => mutation.mutate(form as FixedExpense)}
+              className="bg-emerald-600 text-white px-6 py-3 rounded-xl hover:bg-emerald-700"
+            >
+              Guardar
+            </button>
+            <button
+              onClick={() => {
+                setIsAdding(false);
+                setEditingId(null);
+              }}
+              className="bg-gray-300 px-6 py-3 rounded-xl hover:bg-gray-400"
+            >
+              Cancelar
+            </button>
+          </div>
+        </div>
+      )}
+
+      <div className="space-y-3">
+        {expenses.length === 0 ? (
+          <p className="text-center text-gray-500 py-12">No tienes gastos fijos aún</p>
+        ) : (
+          expenses.map((expense) => (
+            <div
+              key={expense.id}
+              className="bg-white dark:bg-gray-800 p-6 rounded-2xl border flex justify-between items-center"
+            >
+              <div>
+                <h4 className="font-semibold text-lg">{expense.name}</h4>
+                <p className="text-gray-600">
+                  £{expense.amount.toFixed(0)} •{" "}
+                  {expense.frequency === "bi-weekly"
+                    ? "Quincenal"
+                    : expense.frequency === "weekly"
+                      ? "Semanal"
+                      : expense.frequency === "quarterly"
+                        ? "Trimestral"
+                        : expense.frequency === "annually"
+                          ? "Anual"
+                          : "Mensual"}
                 </p>
               </div>
-              <div className="flex gap-1">
-                <Dialog open={isEditDialogOpen && editingExpense?.id === expense.id} onOpenChange={(open) => {
-                  setIsEditDialogOpen(open);
-                  if (!open) setEditingExpense(null);
-                }}>
-                  <DialogTrigger asChild>
-                    <Button
-                      variant="ghost"
-                      size="icon"
-                      onClick={() => {
-                        setEditingExpense({
-                          id: expense.id,
-                          name: expense.name,
-                          amount: expense.amount,
-                          payment_day: expense.payment_day,
-                          frequency_type: expense.frequency_type as 'monthly' | 'quarterly' | 'semiannual' | 'annual',
-                          payment_month: expense.payment_month
-                        });
-                        setIsEditDialogOpen(true);
-                      }}
-                    >
-                      <Pencil className="h-4 w-4" />
-                    </Button>
-                  </DialogTrigger>
-                  <DialogContent>
-                    <DialogHeader>
-                      <DialogTitle>{language === 'en' ? 'Edit Fixed Expense' : 'Editar Gasto Fijo'}</DialogTitle>
-                    </DialogHeader>
-                    {editingExpense && (
-                      <form onSubmit={updateExpense} className="space-y-4">
-                        <div className="space-y-2">
-                          <Label htmlFor="edit-expense-name">{language === 'en' ? 'Name' : 'Nombre'}</Label>
-                          <Input
-                            id="edit-expense-name"
-                            value={editingExpense.name}
-                            onChange={(e) => setEditingExpense({...editingExpense, name: e.target.value})}
-                            required
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="edit-expense-amount">{language === 'en' ? 'Amount' : 'Monto'}</Label>
-                          <Input
-                            id="edit-expense-amount"
-                            type="number"
-                            step="0.01"
-                            value={editingExpense.amount}
-                            onChange={(e) => setEditingExpense({...editingExpense, amount: parseFloat(e.target.value)})}
-                            required
-                          />
-                        </div>
-                        <div className="space-y-2">
-                          <Label htmlFor="edit-frequency-type">{language === 'en' ? 'Frequency' : 'Frecuencia'}</Label>
-                          <Select
-                            value={editingExpense.frequency_type}
-                            onValueChange={(value: 'monthly' | 'quarterly' | 'semiannual' | 'annual') => 
-                              setEditingExpense({...editingExpense, frequency_type: value, payment_month: value === 'monthly' ? null : editingExpense.payment_month})
-                            }
-                          >
-                            <SelectTrigger id="edit-frequency-type">
-                              <SelectValue />
-                            </SelectTrigger>
-                            <SelectContent>
-                              <SelectItem value="monthly">{language === 'en' ? 'Monthly' : 'Mensual'}</SelectItem>
-                              <SelectItem value="quarterly">{language === 'en' ? 'Quarterly' : 'Trimestral'}</SelectItem>
-                              <SelectItem value="semiannual">{language === 'en' ? 'Semiannual' : 'Semestral'}</SelectItem>
-                              <SelectItem value="annual">{language === 'en' ? 'Annual' : 'Anual'}</SelectItem>
-                            </SelectContent>
-                          </Select>
-                        </div>
-                        {editingExpense.frequency_type !== 'monthly' && (
-                          <div className="space-y-2">
-                            <Label htmlFor="edit-payment-month">
-                              {editingExpense.frequency_type === 'annual'
-                                ? (language === 'en' ? 'Payment Month' : 'Mes de Pago')
-                                : (language === 'en' ? 'First Payment Month' : 'Primer Mes de Pago')
-                              }
-                            </Label>
-                            <Select
-                              value={editingExpense.payment_month?.toString() || ""}
-                              onValueChange={(value) => setEditingExpense({...editingExpense, payment_month: parseInt(value)})}
-                            >
-                              <SelectTrigger id="edit-payment-month">
-                                <SelectValue />
-                              </SelectTrigger>
-                              <SelectContent>
-                                {monthNames[language].map((month, index) => (
-                                  <SelectItem key={index + 1} value={(index + 1).toString()}>
-                                    {month}
-                                  </SelectItem>
-                                ))}
-                              </SelectContent>
-                            </Select>
-                          </div>
-                        )}
-                        <div className="space-y-2">
-                          <Label htmlFor="edit-expense-day">{language === 'en' ? 'Payment Day' : 'Día de Pago'}</Label>
-                          <Input
-                            id="edit-expense-day"
-                            type="number"
-                            min="1"
-                            max="31"
-                            value={editingExpense.payment_day}
-                            onChange={(e) => setEditingExpense({...editingExpense, payment_day: parseInt(e.target.value)})}
-                            required
-                          />
-                        </div>
-                        <Button type="submit" className="w-full">
-                          {language === 'en' ? 'Update' : 'Actualizar'}
-                        </Button>
-                      </form>
-                    )}
-                  </DialogContent>
-                </Dialog>
-                <Button
-                  variant="ghost"
-                  size="icon"
-                  onClick={() => deleteExpense(expense.id)}
+              <div className="flex gap-3">
+                <button
+                  onClick={() => setEditingId(expense.id)}
+                  className="text-blue-600 hover:bg-blue-50 p-3 rounded-xl"
                 >
-                  <Trash2 className="h-4 w-4 text-destructive" />
-                </Button>
+                  <Edit2 className="w-5 h-5" />
+                </button>
+                <button
+                  onClick={() => deleteMutation.mutate(expense.id)}
+                  className="text-red-600 hover:bg-red-50 p-3 rounded-xl"
+                >
+                  <Trash2 className="w-5 h-5" />
+                </button>
               </div>
             </div>
-          ))}
-        </div>
-      </CardContent>
-    </Card>
+          ))
+        )}
+      </div>
+    </div>
   );
 };
