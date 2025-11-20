@@ -2,64 +2,10 @@
 
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { useQueryClient, useQuery } from "@tanstack/react-query";
-import {
-  format,
-  addMonths,
-  startOfMonth,
-  endOfMonth,
-  eachDayOfInterval,
-  isSameDay,
-  add,
-  sub,
-  startOfWeek,
-} from "date-fns";
+import { format, addMonths, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, add, sub, startOfWeek } from "date-fns";
 import { formatCurrency } from "@/lib/i18n";
-import {
-  TrendingUp,
-  Download,
-  LogOut,
-  Bot,
-  Calendar,
-  DollarSign,
-  PiggyBank,
-  Home,
-  Edit2,
-  Trash2,
-  Plus,
-  ChevronLeft,
-  ChevronRight,
-  Send,
-  X,
-  Zap,
-  Snowflake,
-  Moon,
-  Sun,
-  PoundSterling,
-  Shield,
-  AlertCircle,
-  Wallet,
-  LayoutDashboard,
-  Receipt,
-  CreditCard,
-  Goal,
-  Settings as SettingsIcon,
-  Users,
-  History,
-} from "lucide-react";
-import {
-  useIncomeSources,
-  useVariableIncome,
-  useDebts,
-  useFixedExpenses,
-  useVariableExpenses,
-  useSavingsGoals,
-  useSavings,
-  useAddIncome,
-  useAddDebt,
-  useAddFixedExpense,
-  useAddVariableExpense,
-  useAddSavingsGoal,
-} from "@/hooks/useFinancialData";
+import { TrendingUp, Download, LogOut, Bot, Calendar, DollarSign, PiggyBank, Home, Edit2, Trash2, Plus, ChevronLeft, ChevronRight, Send, X, Zap, Snowflake, Moon, Sun, PoundSterling, Shield, AlertCircle, Wallet, LayoutDashboard, Receipt, CreditCard, Goal, Settings as SettingsIcon, Users, History } from "lucide-react";
+import { useIncomeSources, useVariableIncome, useDebts, useFixedExpenses, useVariableExpenses, useSavingsGoals, useSavings, useAddIncome, useAddDebt, useAddFixedExpense, useAddVariableExpense, useAddSavingsGoal } from "@/hooks/useFinancialData";
 import { useMonthlyVariableIncomeTotal } from "@/hooks/useMonthlyVariableIncome";
 import { useMonthlyVariableExpensesTotal } from "@/hooks/useMonthlyVariableExpenses";
 import { toast } from "@/hooks/use-toast";
@@ -109,16 +55,7 @@ type CalendarEvent = {
   recurring: boolean;
   payment_status?: "paid" | "pending";
 };
-import {
-  AlertDialog,
-  AlertDialogAction,
-  AlertDialogCancel,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogFooter,
-  AlertDialogHeader,
-  AlertDialogTitle,
-} from "@/components/ui/alert-dialog";
+import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
 import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
@@ -169,7 +106,7 @@ const translations = {
     cashFlowAfterSavings: "Cash Flow After Savings",
     debtPayment: "Available for Debt Payment",
     monthsToEmergency: "Months to Emergency Fund Goal",
-    monthlyDebtAllocation: "Monthly Debt Allocation",
+    monthlyDebtAllocation: "Monthly Debt Allocation"
   },
   es: {
     overview: "Resumen",
@@ -205,7 +142,7 @@ const translations = {
     cashFlowAfterSavings: "Flujo de Caja Después de Ahorros",
     debtPayment: "Disponible para Pago de Deuda",
     monthsToEmergency: "Meses para Meta de Fondo de Emergencia",
-    monthlyDebtAllocation: "Asignación Mensual de Deuda",
+    monthlyDebtAllocation: "Asignación Mensual de Deuda"
   },
   pl: {
     overview: "Przegląd",
@@ -241,14 +178,17 @@ const translations = {
     cashFlowAfterSavings: "Przepływ Gotówki Po Oszczędnościach",
     debtPayment: "Dostępne na Płatność Długu",
     monthsToEmergency: "Miesiące do Celu Funduszu Awaryjnego",
-    monthlyDebtAllocation: "Miesięczna Alokacja Długu",
-  },
+    monthlyDebtAllocation: "Miesięczna Alokacja Długu"
+  }
 };
 // Variable income hook moved to src/hooks/useVariableIncome.ts for security
 const Index = () => {
   useTheme();
   const queryClient = useQueryClient();
-  const { theme, setTheme } = useNextTheme();
+  const {
+    theme,
+    setTheme
+  } = useNextTheme();
   const [language, setLanguage] = useState<Language>("en");
   const [user, setUser] = useState<any>(null);
   const [authLoading, setAuthLoading] = useState(true);
@@ -265,7 +205,7 @@ const Index = () => {
   const [showIncomeModal, setShowIncomeModal] = useState(false);
   const [newIncome, setNewIncome] = useState({
     description: "",
-    amount: 0,
+    amount: 0
   });
   const [monthlySavings, setMonthlySavings] = useState(0);
   const [debtMethod, setDebtMethod] = useState<DebtMethod>("avalanche");
@@ -279,7 +219,7 @@ const Index = () => {
     target_amount: number;
   }>({
     current_amount: 0,
-    target_amount: 0,
+    target_amount: 0
   });
   const [showAddEmergencyFund, setShowAddEmergencyFund] = useState(false);
   const [emergencyFundAmount, setEmergencyFundAmount] = useState(0);
@@ -303,42 +243,54 @@ const Index = () => {
     type: "income",
     recurring: false,
     payment_day: 1,
-    frequency: "monthly",
+    frequency: "monthly"
   });
-  const { data: profiles = [] } = useFinancialProfiles();
-  const activeProfile = useMemo(
-    () =>
-      profiles.find((p) => p.is_active) || {
-        name: "Family",
-      },
-    [profiles],
-  );
-  const { data: incomeData = [] } = useIncomeSources();
-  const { data: variableIncomeData = [] } = useVariableIncome();
+  const {
+    data: profiles = []
+  } = useFinancialProfiles();
+  const activeProfile = useMemo(() => profiles.find(p => p.is_active) || {
+    name: "Family"
+  }, [profiles]);
+  const {
+    data: incomeData = []
+  } = useIncomeSources();
+  const {
+    data: variableIncomeData = []
+  } = useVariableIncome();
 
   // Get current month's variable income and expenses totals
   const currentMonthStart = useMemo(() => startOfMonth(new Date()), []);
   const currentMonthVariableIncome = useMonthlyVariableIncomeTotal(currentMonthStart);
   const currentMonthVariableExpenses = useMonthlyVariableExpensesTotal(currentMonthStart);
-  const { data: debtData = [] } = useDebts();
-  const { data: fixedExpensesData = [] } = useFixedExpenses();
-  const { data: variableExpensesData = [] } = useVariableExpenses();
-  const { data: savingsGoalsData = [] } = useSavingsGoals();
-  const { data: savings } = useSavings();
+  const {
+    data: debtData = []
+  } = useDebts();
+  const {
+    data: fixedExpensesData = []
+  } = useFixedExpenses();
+  const {
+    data: variableExpensesData = []
+  } = useVariableExpenses();
+  const {
+    data: savingsGoalsData = []
+  } = useSavingsGoals();
+  const {
+    data: savings
+  } = useSavings();
   const [currentWeekOffset, setCurrentWeekOffset] = useState(0);
   const [projectionMonthOffset, setProjectionMonthOffset] = useState(0); // New state for month projection
 
   const handlePrevWeek = () => {
-    setCurrentWeekOffset((prev) => prev - 1);
+    setCurrentWeekOffset(prev => prev - 1);
   };
   const handleNextWeek = () => {
-    setCurrentWeekOffset((prev) => prev + 1);
+    setCurrentWeekOffset(prev => prev + 1);
   };
   const handlePrevProjectionMonth = () => {
-    setProjectionMonthOffset((prev) => prev - 1);
+    setProjectionMonthOffset(prev => prev - 1);
   };
   const handleNextProjectionMonth = () => {
-    setProjectionMonthOffset((prev) => prev + 1);
+    setProjectionMonthOffset(prev => prev + 1);
   };
 
   // Mutation hooks for adding financial data
@@ -368,42 +320,34 @@ const Index = () => {
     monthEnd,
     monthDays,
     firstDayOfWeek,
-    blankDays,
+    blankDays
   } = useMemo(() => {
     const totalFixedIncome = incomeData.reduce((s, i) => s + i.amount, 0);
 
     // Use monthly variable income from database instead of calculated from recurring
     const totalVariableIncome = currentMonthVariableIncome;
-
     const totalIncome = totalFixedIncome + totalVariableIncome;
     const totalFixed = fixedExpensesData.reduce((s, e) => s + e.amount, 0);
 
     // Use monthly variable expenses from database instead of regular variable expenses
     const totalVariable = currentMonthVariableExpenses;
-
     const totalDebtPayment = debtData.reduce((s, d) => s + d.minimum_payment, 0);
     const totalExpenses = totalFixed + totalVariable + totalDebtPayment;
 
     // Calculate total active monthly contributions from savings goals
-    const totalSavingsCommitments = savingsGoalsData
-      .filter((g) => g.is_active && g.monthly_contribution)
-      .reduce((s, g) => s + (g.monthly_contribution || 0), 0);
+    const totalSavingsCommitments = savingsGoalsData.filter(g => g.is_active && g.monthly_contribution).reduce((s, g) => s + (g.monthly_contribution || 0), 0);
 
     // Deduct savings commitments from cashflow
     const grossCashFlow = totalIncome - totalExpenses;
     const cashFlow = grossCashFlow - totalSavingsCommitments;
 
     // Calculate total savings including emergency fund, general savings, and goals
-    const savingsTotal =
-      (savings?.emergency_fund || 0) +
-      (savings?.total_accumulated || 0) +
-      savingsGoalsData.reduce((s, g) => s + (g.current_amount || 0), 0);
+    const savingsTotal = (savings?.emergency_fund || 0) + (savings?.total_accumulated || 0) + savingsGoalsData.reduce((s, g) => s + (g.current_amount || 0), 0);
 
     // Calculate ideal projection based on offset
     const projectionDate = addMonths(new Date(), projectionMonthOffset);
     const currentDate = new Date();
     const monthsSinceStart = projectionMonthOffset;
-
     let remaining = debtData.reduce((s, d) => s + d.balance, 0);
     let months = 0;
 
@@ -415,8 +359,7 @@ const Index = () => {
     const totalDebt = debtData.reduce((s, d) => s + d.balance, 0);
     const idealMonthlyReduction = totalDebt > 0 ? monthlyPay : 0;
     const idealRemainingDebt = Math.max(0, totalDebt - idealMonthlyReduction * Math.abs(monthsSinceStart));
-    const idealProgressPercent =
-      totalDebt > 0 ? Math.min(100, ((totalDebt - idealRemainingDebt) / totalDebt) * 100) : 0;
+    const idealProgressPercent = totalDebt > 0 ? Math.min(100, (totalDebt - idealRemainingDebt) / totalDebt * 100) : 0;
 
     // Calculate actual debt free months
     while (remaining > 0 && months < 120) {
@@ -426,23 +369,19 @@ const Index = () => {
     }
     const monthsToDebtFree = months;
     const debtFreeDate = addMonths(new Date(), months);
-    const pieData = [
-      {
-        name: "Fixed",
-        value: totalFixed,
-        color: "#3b82f6",
-      },
-      {
-        name: "Variable",
-        value: totalVariable,
-        color: "#10b981",
-      },
-      {
-        name: "Debt",
-        value: totalDebtPayment,
-        color: "#ef4444",
-      },
-    ].filter((d) => d.value > 0);
+    const pieData = [{
+      name: "Fixed",
+      value: totalFixed,
+      color: "#3b82f6"
+    }, {
+      name: "Variable",
+      value: totalVariable,
+      color: "#10b981"
+    }, {
+      name: "Debt",
+      value: totalDebtPayment,
+      color: "#ef4444"
+    }].filter(d => d.value > 0);
 
     // CALENDARIO CON EVENTOS EN TODOS LOS MESES
     const allEvents: CalendarEvent[] = [];
@@ -454,7 +393,7 @@ const Index = () => {
         if (currentDate > new Date(endYear, 11, 31)) break;
 
         // INGRESOS FIJOS - payment_day
-        incomeData.forEach((inc) => {
+        incomeData.forEach(inc => {
           const day = inc.payment_day || 1;
           const lastDayOfMonth = new Date(year, month + 1, 0).getDate();
           const date = new Date(year, month, Math.min(day, lastDayOfMonth));
@@ -464,12 +403,12 @@ const Index = () => {
             type: "income",
             name: inc.name,
             amount: inc.amount,
-            recurring: true,
+            recurring: true
           });
         });
 
         // VARIABLE INCOME - Based on frequency and payment_day/day_of_week
-        variableIncomeData.forEach((inc) => {
+        variableIncomeData.forEach(inc => {
           if (inc.frequency === "weekly" && inc.day_of_week !== undefined) {
             // For weekly, add event for each occurrence of the day in the month
             const daysInMonth = new Date(year, month + 1, 0).getDate();
@@ -482,7 +421,7 @@ const Index = () => {
                   type: "income",
                   name: `${inc.name} (weekly)`,
                   amount: inc.amount,
-                  recurring: true,
+                  recurring: true
                 });
               }
             }
@@ -512,14 +451,14 @@ const Index = () => {
                 type: "income",
                 name: `${inc.name} (${inc.frequency})`,
                 amount: inc.amount,
-                recurring: true,
+                recurring: true
               });
             }
           }
         });
 
         // GASTOS FIJOS - Respetar frecuencia
-        fixedExpensesData.forEach((exp) => {
+        fixedExpensesData.forEach(exp => {
           // Determinar si este gasto debe mostrarse en este mes
           const shouldInclude = (() => {
             const monthNum = month + 1; // 1-based month
@@ -529,17 +468,12 @@ const Index = () => {
             } else if (exp.frequency_type === "quarterly") {
               // Quarterly: payment_month indica el primer mes (ej: 1 = Ene, Abr, Jul, Oct)
               const firstMonth = exp.payment_month || 1;
-              const quarterlyMonths = [
-                firstMonth,
-                ((firstMonth + 3 - 1) % 12) + 1,
-                ((firstMonth + 6 - 1) % 12) + 1,
-                ((firstMonth + 9 - 1) % 12) + 1,
-              ];
+              const quarterlyMonths = [firstMonth, (firstMonth + 3 - 1) % 12 + 1, (firstMonth + 6 - 1) % 12 + 1, (firstMonth + 9 - 1) % 12 + 1];
               return quarterlyMonths.includes(monthNum);
             } else if (exp.frequency_type === "semiannual") {
               // Semiannual: payment_month indica el primer mes (ej: 1 = Ene y Jul)
               const firstMonth = exp.payment_month || 1;
-              const semiannualMonths = [firstMonth, ((firstMonth + 6 - 1) % 12) + 1];
+              const semiannualMonths = [firstMonth, (firstMonth + 6 - 1) % 12 + 1];
               return semiannualMonths.includes(monthNum);
             } else if (exp.frequency_type === "annual") {
               // Annual: solo en el mes especificado
@@ -547,7 +481,6 @@ const Index = () => {
             }
             return true;
           })();
-
           if (shouldInclude) {
             const day = exp.payment_day || 1;
             const lastDayOfMonth = new Date(year, month + 1, 0).getDate();
@@ -558,13 +491,13 @@ const Index = () => {
               type: "fixed",
               name: exp.name,
               amount: exp.amount,
-              recurring: exp.frequency_type === "monthly",
+              recurring: exp.frequency_type === "monthly"
             });
           }
         });
 
         // DEUDAS - Día 15
-        debtData.forEach((debt) => {
+        debtData.forEach(debt => {
           const date = new Date(year, month, 15);
           allEvents.push({
             id: `debt-${debt.id}-${year}-${month}`,
@@ -572,12 +505,12 @@ const Index = () => {
             type: "debt",
             name: `${debt.name} (min)`,
             amount: debt.minimum_payment,
-            recurring: true,
+            recurring: true
           });
         });
 
         // GASTOS VARIABLES - Día 10
-        variableExpensesData.forEach((exp) => {
+        variableExpensesData.forEach(exp => {
           const date = new Date(year, month, 10);
           allEvents.push({
             id: `var-${exp.id}-${year}-${month}`,
@@ -585,7 +518,7 @@ const Index = () => {
             type: "variable",
             name: exp.name,
             amount: exp.amount,
-            recurring: true,
+            recurring: true
           });
         });
       }
@@ -594,7 +527,7 @@ const Index = () => {
     const monthEnd = endOfMonth(currentMonth);
     const monthDays = eachDayOfInterval({
       start: monthStart,
-      end: monthEnd,
+      end: monthEnd
     });
     const firstDayOfWeek = monthStart.getDay();
     const blankDays = Array(firstDayOfWeek).fill(null);
@@ -618,45 +551,36 @@ const Index = () => {
       monthEnd,
       monthDays,
       firstDayOfWeek,
-      blankDays,
+      blankDays
     };
-  }, [
-    incomeData,
-    currentMonthVariableIncome,
-    currentMonthVariableExpenses,
-    fixedExpensesData,
-    variableExpensesData,
-    debtData,
-    savings,
-    savingsGoalsData,
-    currentMonth,
-    monthlySavings,
-    projectionMonthOffset,
-  ]);
+  }, [incomeData, currentMonthVariableIncome, currentMonthVariableExpenses, fixedExpensesData, variableExpensesData, debtData, savings, savingsGoalsData, currentMonth, monthlySavings, projectionMonthOffset]);
   useEffect(() => {
     // Set up auth state listener FIRST
     const {
-      data: { subscription },
+      data: {
+        subscription
+      }
     } = supabase.auth.onAuthStateChange((event, session) => {
       setUser(session?.user ?? null);
       setAuthLoading(false);
     });
 
     // THEN check for existing session
-    supabase.auth.getSession().then(({ data: { session } }) => {
+    supabase.auth.getSession().then(({
+      data: {
+        session
+      }
+    }) => {
       setUser(session?.user ?? null);
       setAuthLoading(false);
     });
     return () => subscription.unsubscribe();
   }, []);
-  if (authLoading)
-    return (
-      <div className="p-8">
+  if (authLoading) return <div className="p-8">
         <Skeleton className="h-64 w-full" />
-      </div>
-    );
+      </div>;
   if (!user) return <Auth />;
-  const getEventsForDay = (date: Date) => calendarEvents.filter((e) => isSameDay(new Date(e.date), date));
+  const getEventsForDay = (date: Date) => calendarEvents.filter(e => isSameDay(new Date(e.date), date));
   const resetEventForm = () => {
     setNewEvent({
       name: "",
@@ -664,7 +588,7 @@ const Index = () => {
       type: "income",
       recurring: false,
       payment_day: 1,
-      frequency: "monthly",
+      frequency: "monthly"
     });
   };
   const addEvent = async () => {
@@ -675,7 +599,7 @@ const Index = () => {
           await addIncomeMutation.mutateAsync({
             name: newEvent.name,
             amount: newEvent.amount,
-            payment_day: newEvent.payment_day,
+            payment_day: newEvent.payment_day
           });
           break;
         case "debt":
@@ -683,7 +607,7 @@ const Index = () => {
             toast({
               title: "Missing Information",
               description: "Please fill in all debt fields",
-              variant: "destructive",
+              variant: "destructive"
             });
             return;
           }
@@ -692,7 +616,7 @@ const Index = () => {
             balance: newEvent.balance,
             apr: newEvent.apr,
             minimum_payment: newEvent.minimum_payment,
-            payment_day: newEvent.payment_day,
+            payment_day: newEvent.payment_day
           });
           break;
         case "fixed":
@@ -700,13 +624,13 @@ const Index = () => {
             name: newEvent.name,
             amount: newEvent.amount,
             payment_day: newEvent.payment_day,
-            frequency_type: newEvent.frequency,
+            frequency_type: newEvent.frequency
           });
           break;
         case "variable":
           await addVariableExpenseMutation.mutateAsync({
             name: newEvent.name,
-            amount: newEvent.amount,
+            amount: newEvent.amount
           });
           break;
         case "savings":
@@ -714,7 +638,7 @@ const Index = () => {
             toast({
               title: "Missing Information",
               description: "Please enter a target amount for savings goal",
-              variant: "destructive",
+              variant: "destructive"
             });
             return;
           }
@@ -722,7 +646,7 @@ const Index = () => {
             goal_name: newEvent.name,
             target_amount: newEvent.target_amount,
             current_amount: newEvent.amount,
-            target_date: newEvent.target_date || null,
+            target_date: newEvent.target_date || null
           });
           break;
       }
@@ -740,21 +664,23 @@ const Index = () => {
     resetEventForm();
   };
   const deleteEvent = (id: string) => {
-    setEvents(events.filter((e) => e.id !== id));
+    setEvents(events.filter(e => e.id !== id));
     setDeleteId(null);
   };
   const handleDeleteGoal = async (goalId: string) => {
     try {
-      const { error } = await supabase.from("savings_goals").delete().eq("id", goalId);
+      const {
+        error
+      } = await supabase.from("savings_goals").delete().eq("id", goalId);
       if (error) throw error;
 
       // Invalidate and refetch savings goals
       await queryClient.invalidateQueries({
-        queryKey: ["savings_goals"],
+        queryKey: ["savings_goals"]
       });
       toast({
         title: "Success",
-        description: "Savings goal deleted successfully",
+        description: "Savings goal deleted successfully"
       });
       setDeleteGoalId(null);
     } catch (error) {
@@ -762,31 +688,30 @@ const Index = () => {
       toast({
         title: "Error",
         description: "Failed to delete savings goal",
-        variant: "destructive",
+        variant: "destructive"
       });
     }
   };
   const handleAddMoney = async () => {
     if (!addMoneyGoalId || addMoneyAmount <= 0) return;
     try {
-      const goal = savingsGoalsData.find((g) => g.id === addMoneyGoalId);
+      const goal = savingsGoalsData.find(g => g.id === addMoneyGoalId);
       if (!goal) return;
       const newAmount = goal.current_amount + addMoneyAmount;
-      const { error } = await supabase
-        .from("savings_goals")
-        .update({
-          current_amount: newAmount,
-        })
-        .eq("id", addMoneyGoalId);
+      const {
+        error
+      } = await supabase.from("savings_goals").update({
+        current_amount: newAmount
+      }).eq("id", addMoneyGoalId);
       if (error) throw error;
 
       // Invalidate and refetch savings goals
       await queryClient.invalidateQueries({
-        queryKey: ["savings_goals"],
+        queryKey: ["savings_goals"]
       });
       toast({
         title: "Success",
-        description: `Added ${formatCurrency(addMoneyAmount)} to ${goal.goal_name}`,
+        description: `Added ${formatCurrency(addMoneyAmount)} to ${goal.goal_name}`
       });
       setAddMoneyGoalId(null);
       setAddMoneyAmount(0);
@@ -795,27 +720,26 @@ const Index = () => {
       toast({
         title: "Error",
         description: "Failed to add money to savings goal",
-        variant: "destructive",
+        variant: "destructive"
       });
     }
   };
   const handleEditGoal = async () => {
     if (!editingGoalId) return;
     try {
-      const { error } = await supabase
-        .from("savings_goals")
-        .update({
-          current_amount: editGoalData.current_amount,
-          target_amount: editGoalData.target_amount,
-        })
-        .eq("id", editingGoalId);
+      const {
+        error
+      } = await supabase.from("savings_goals").update({
+        current_amount: editGoalData.current_amount,
+        target_amount: editGoalData.target_amount
+      }).eq("id", editingGoalId);
       if (error) throw error;
       await queryClient.invalidateQueries({
-        queryKey: ["savings_goals"],
+        queryKey: ["savings_goals"]
       });
       toast({
         title: "Success",
-        description: "Goal amounts updated successfully",
+        description: "Goal amounts updated successfully"
       });
       setEditingGoalId(null);
     } catch (error) {
@@ -823,33 +747,37 @@ const Index = () => {
       toast({
         title: "Error",
         description: "Failed to update goal amounts",
-        variant: "destructive",
+        variant: "destructive"
       });
     }
   };
   const handleAddEmergencyFund = async () => {
     const {
-      data: { user },
+      data: {
+        user
+      }
     } = await supabase.auth.getUser();
     if (!user || emergencyFundAmount <= 0) return;
     try {
       const currentEmergencyFund = savings?.emergency_fund || 0;
       const newTotal = currentEmergencyFund + emergencyFundAmount;
-      const { error } = await supabase.from("savings").upsert({
+      const {
+        error
+      } = await supabase.from("savings").upsert({
         id: savings?.id,
         user_id: user.id,
         profile_id: "id" in activeProfile ? activeProfile.id : null,
         emergency_fund: newTotal,
         monthly_goal: savings?.monthly_goal || 0,
-        total_accumulated: savings?.total_accumulated || 0,
+        total_accumulated: savings?.total_accumulated || 0
       });
       if (error) throw error;
       await queryClient.invalidateQueries({
-        queryKey: ["savings"],
+        queryKey: ["savings"]
       });
       toast({
         title: "Success",
-        description: `Added ${formatCurrency(emergencyFundAmount)} to emergency fund`,
+        description: `Added ${formatCurrency(emergencyFundAmount)} to emergency fund`
       });
       setShowAddEmergencyFund(false);
       setEmergencyFundAmount(0);
@@ -858,31 +786,35 @@ const Index = () => {
       toast({
         title: "Error",
         description: "Failed to add to emergency fund",
-        variant: "destructive",
+        variant: "destructive"
       });
     }
   };
   const handleEditEmergencyFund = async () => {
     const {
-      data: { user },
+      data: {
+        user
+      }
     } = await supabase.auth.getUser();
     if (!user || editEmergencyFundAmount < 0) return;
     try {
-      const { error } = await supabase.from("savings").upsert({
+      const {
+        error
+      } = await supabase.from("savings").upsert({
         id: savings?.id,
         user_id: user.id,
         profile_id: "id" in activeProfile ? activeProfile.id : null,
         emergency_fund: editEmergencyFundAmount,
         monthly_goal: savings?.monthly_goal || 0,
-        total_accumulated: savings?.total_accumulated || 0,
+        total_accumulated: savings?.total_accumulated || 0
       });
       if (error) throw error;
       await queryClient.invalidateQueries({
-        queryKey: ["savings"],
+        queryKey: ["savings"]
       });
       toast({
         title: "Success",
-        description: `Emergency fund updated to ${formatCurrency(editEmergencyFundAmount)}`,
+        description: `Emergency fund updated to ${formatCurrency(editEmergencyFundAmount)}`
       });
       setShowEditEmergencyFund(false);
       setEditEmergencyFundAmount(0);
@@ -891,7 +823,7 @@ const Index = () => {
       toast({
         title: "Error",
         description: "Failed to update emergency fund",
-        variant: "destructive",
+        variant: "destructive"
       });
     }
   };
@@ -909,7 +841,6 @@ const Index = () => {
         Total Expenses: ${formatCurrency(totalExpenses)}
         Cash Flow: ${formatCurrency(cashFlow)}
       `;
-
       if (lower.includes("save")) {
         response = `Cut £50-100 from variable expenses (£${totalVariable}).`;
       } else if (lower.includes("debt")) {
@@ -920,13 +851,11 @@ const Index = () => {
       } else {
         response = `Track every expense for 30 days.`;
       }
-
       setAiResponse(`${contextPrompt}\n\n${response}`);
       setAiLoading(false);
     }, 800);
   };
-  return (
-    <>
+  return <>
       <style>{`@media print { .no-print { display: none !important; } }`}</style>
 
       {/* Feedback Button - only visible when logged in */}
@@ -993,58 +922,39 @@ const Index = () => {
           </div>
 
           {/* MOBILE MENU */}
-          <MobileMenu
-            activeTab={activeTab}
-            onTabChange={setActiveTab}
-            tabs={[
-              {
-                value: "overview",
-                label: "Overview",
-                icon: <LayoutDashboard className="h-5 w-5" />,
-              },
-              {
-                value: "income",
-                label: "Income",
-                icon: <PoundSterling className="h-5 w-5" />,
-              },
-              {
-                value: "expenses",
-                label: "Expenses",
-                icon: <Receipt className="h-5 w-5" />,
-              },
-              {
-                value: "debts",
-                label: "Debts",
-                icon: <CreditCard className="h-5 w-5" />,
-              },
-              {
-                value: "savings",
-                label: "Savings",
-                icon: <Goal className="h-5 w-5" />,
-              },
-              {
-                value: "settings",
-                label: "Settings",
-                icon: <SettingsIcon className="h-5 w-5" />,
-              },
-              {
-                value: "household",
-                label: "Household",
-                icon: <Users className="h-5 w-5" />,
-              },
-              {
-                value: "history",
-                label: "History",
-                icon: <History className="h-5 w-5" />,
-              },
-            ]}
-            language={language}
-            onLanguageChange={setLanguage}
-            theme={theme}
-            onThemeToggle={() => setTheme(theme === "dark" ? "light" : "dark")}
-            onExportData={() => window.print()}
-            onLogout={() => supabase.auth.signOut()}
-          />
+          <MobileMenu activeTab={activeTab} onTabChange={setActiveTab} tabs={[{
+          value: "overview",
+          label: "Overview",
+          icon: <LayoutDashboard className="h-5 w-5" />
+        }, {
+          value: "income",
+          label: "Income",
+          icon: <PoundSterling className="h-5 w-5" />
+        }, {
+          value: "expenses",
+          label: "Expenses",
+          icon: <Receipt className="h-5 w-5" />
+        }, {
+          value: "debts",
+          label: "Debts",
+          icon: <CreditCard className="h-5 w-5" />
+        }, {
+          value: "savings",
+          label: "Savings",
+          icon: <Goal className="h-5 w-5" />
+        }, {
+          value: "settings",
+          label: "Settings",
+          icon: <SettingsIcon className="h-5 w-5" />
+        }, {
+          value: "household",
+          label: "Household",
+          icon: <Users className="h-5 w-5" />
+        }, {
+          value: "history",
+          label: "History",
+          icon: <History className="h-5 w-5" />
+        }]} language={language} onLanguageChange={setLanguage} theme={theme} onThemeToggle={() => setTheme(theme === "dark" ? "light" : "dark")} onExportData={() => window.print()} onLogout={() => supabase.auth.signOut()} />
 
           {/* TABS */}
           <Tabs value={activeTab} onValueChange={setActiveTab} className="no-print">
@@ -1065,11 +975,9 @@ const Index = () => {
                   </CardHeader>
                   <CardContent>
                     <div className="text-3xl font-bold text-green-600">{formatCurrency(totalIncome)}</div>
-                    {totalVariableIncome > 0 && (
-                      <p className="text-xs text-muted-foreground mt-1">
+                    {totalVariableIncome > 0 && <p className="text-xs text-muted-foreground mt-1">
                         Variable: {formatCurrency(totalVariableIncome)}
-                      </p>
-                    )}
+                      </p>}
                   </CardContent>
                 </Card>
                 <Card className="border-red-200">
@@ -1112,62 +1020,55 @@ const Index = () => {
               {/* Main Status - Multi-Stage */}
               <div className="text-center py-8">
                 {(() => {
-                  const status = (() => {
-                    if (cashFlow > totalExpenses * 0.3)
-                      return {
-                        emoji: "🚀",
-                        label: "Excellent",
-                        color: "text-emerald-600",
-                        progress: 95,
-                        message: `Amazing! You're saving ${formatCurrency(cashFlow)} per month — 30%+ of expenses. Keep going!`,
-                      };
-                    if (cashFlow > totalExpenses * 0.1)
-                      return {
-                        emoji: "💪",
-                        label: "Strong",
-                        color: "text-green-600",
-                        progress: 80,
-                        message: `Great job! You have ${formatCurrency(cashFlow)} per month in disposable income — 10-30% of expenses. Solid foundation.`,
-                      };
-                    if (cashFlow > 0)
-                      return {
-                        emoji: "✅",
-                        label: "Healthy",
-                        color: "text-blue-600",
-                        progress: 65,
-                        message: `You're in the green! Saving ${formatCurrency(cashFlow)} per month. Small wins add up.`,
-                      };
-                    if (cashFlow > -totalExpenses * 0.1)
-                      return {
-                        emoji: "⚠️",
-                        label: "Review",
-                        color: "text-orange-600",
-                        progress: 40,
-                        message: `Close call! You're overspending by ${formatCurrency(Math.abs(cashFlow))} — less than 10% of expenses. Trim a little.`,
-                      };
-                    return {
-                      emoji: "🔴",
-                      label: "Critical",
-                      color: "text-red-600",
-                      progress: 20,
-                      message: `Alert! Overspending by ${formatCurrency(Math.abs(cashFlow))} — over 10% of expenses. Cut now to avoid debt.`,
-                    };
-                  })();
-                  return (
-                    <div>
+                const status = (() => {
+                  if (cashFlow > totalExpenses * 0.3) return {
+                    emoji: "🚀",
+                    label: "Excellent",
+                    color: "text-emerald-600",
+                    progress: 95,
+                    message: `Amazing! You're saving ${formatCurrency(cashFlow)} per month — 30%+ of expenses. Keep going!`
+                  };
+                  if (cashFlow > totalExpenses * 0.1) return {
+                    emoji: "💪",
+                    label: "Strong",
+                    color: "text-green-600",
+                    progress: 80,
+                    message: `Great job! You have ${formatCurrency(cashFlow)} per month in disposable income — 10-30% of expenses. Solid foundation.`
+                  };
+                  if (cashFlow > 0) return {
+                    emoji: "✅",
+                    label: "Healthy",
+                    color: "text-blue-600",
+                    progress: 65,
+                    message: `You're in the green! Saving ${formatCurrency(cashFlow)} per month. Small wins add up.`
+                  };
+                  if (cashFlow > -totalExpenses * 0.1) return {
+                    emoji: "⚠️",
+                    label: "Review",
+                    color: "text-orange-600",
+                    progress: 40,
+                    message: `Close call! You're overspending by ${formatCurrency(Math.abs(cashFlow))} — less than 10% of expenses. Trim a little.`
+                  };
+                  return {
+                    emoji: "🔴",
+                    label: "Critical",
+                    color: "text-red-600",
+                    progress: 20,
+                    message: `Alert! Overspending by ${formatCurrency(Math.abs(cashFlow))} — over 10% of expenses. Cut now to avoid debt.`
+                  };
+                })();
+                return <div>
                       <div className={`text-7xl font-bold ${status.color} animate-scale-in`}>
                         {status.emoji} {status.label}
                       </div>
                       <Progress value={status.progress} className="mt-6 h-3" />
                       <p className="mt-4 text-muted-foreground">{status.message}</p>
-                    </div>
-                  );
-                })()}
+                    </div>;
+              })()}
               </div>
 
               {/* GASTOS PASTEL */}
-              {pieData.length > 0 && (
-                <Card className="overflow-hidden">
+              {pieData.length > 0 && <Card className="overflow-hidden">
                   <CardHeader className="pb-3">
                     <CardTitle className="text-lg font-semibold flex items-center gap-2">
                       <Zap className="h-5 w-5 text-blue-600" />
@@ -1191,21 +1092,13 @@ const Index = () => {
 
                       <div className="flex flex-col justify-center space-y-4">
                         {pieData.map((d, i) => {
-                          const percent = ((d.value / totalExpenses) * 100).toFixed(1);
-                          const trend =
-                            d.value > totalExpenses * 0.2 ? "High" : d.value > totalExpenses * 0.1 ? "Medium" : "Low";
-                          return (
-                            <div
-                              key={i}
-                              className="flex items-center justify-between p-3 rounded-lg bg-slate-50 dark:bg-slate-800/50 hover:bg-slate-100 dark:hover:bg-slate-700/50 transition-all"
-                            >
+                      const percent = (d.value / totalExpenses * 100).toFixed(1);
+                      const trend = d.value > totalExpenses * 0.2 ? "High" : d.value > totalExpenses * 0.1 ? "Medium" : "Low";
+                      return <div key={i} className="flex items-center justify-between p-3 rounded-lg bg-slate-50 dark:bg-slate-800/50 hover:bg-slate-100 dark:hover:bg-slate-700/50 transition-all">
                               <div className="flex items-center gap-3">
-                                <div
-                                  className="w-4 h-4 rounded-full shadow-md"
-                                  style={{
-                                    backgroundColor: d.color,
-                                  }}
-                                />
+                                <div className="w-4 h-4 rounded-full shadow-md" style={{
+                            backgroundColor: d.color
+                          }} />
                                 <div>
                                   <p className="font-medium text-sm">{d.name}</p>
                                   <p className="text-xs text-slate-500 dark:text-slate-400">{percent}%</p>
@@ -1216,9 +1109,8 @@ const Index = () => {
                                 <p className="font-bold text-sm">{formatCurrency(d.value)}</p>
                                 <p className="text-xs text-slate-500 dark:text-slate-400">Monthly</p>
                               </div>
-                            </div>
-                          );
-                        })}
+                            </div>;
+                    })}
                       </div>
                     </div>
 
@@ -1231,18 +1123,16 @@ const Index = () => {
                           </span>
                           <div className="flex items-center gap-1 text-xs text-slate-500 dark:text-slate-400">
                             <TrendingUp className="h-3 w-3 text-emerald-500" />
-                            <span>{((totalExpenses / totalIncome) * 100).toFixed(0)}% of income</span>
+                            <span>{(totalExpenses / totalIncome * 100).toFixed(0)}% of income</span>
                           </div>
                         </div>
                       </div>
                     </div>
                   </CardContent>
-                </Card>
-              )}
+                </Card>}
 
               {/* DEBT FREE with Projection Navigation */}
-              {debtData.length > 0 && (
-                <Card className="border-2 rounded-bl-none rounded-md bg-card">
+              {debtData.length > 0 && <Card className="border-2 rounded-bl-none rounded-md bg-card">
                   <CardHeader>
                     <div className="flex items-center justify-between">
                       <CardTitle className="flex items-center gap-2 text-slate-200">
@@ -1253,11 +1143,7 @@ const Index = () => {
                           <ChevronLeft className="h-4 w-4" />
                         </Button>
                         <span className="text-sm font-medium min-w-[100px] text-center">
-                          {projectionMonthOffset === 0
-                            ? "Current"
-                            : projectionMonthOffset > 0
-                              ? `+${projectionMonthOffset}m`
-                              : `${projectionMonthOffset}m`}
+                          {projectionMonthOffset === 0 ? "Current" : projectionMonthOffset > 0 ? `+${projectionMonthOffset}m` : `${projectionMonthOffset}m`}
                         </span>
                         <Button variant="outline" size="sm" onClick={handleNextProjectionMonth}>
                           <ChevronRight className="h-4 w-4" />
@@ -1282,16 +1168,13 @@ const Index = () => {
                         <p className="text-xs text-muted-foreground">
                           Ideal Remaining Debt: {formatCurrency(idealRemainingDebt)}
                         </p>
-                        {projectionMonthOffset !== 0 && (
-                          <p className="text-xs text-primary font-medium">
+                        {projectionMonthOffset !== 0 && <p className="text-xs text-primary font-medium">
                             Projection for {format(projectionDate, "MMM yyyy")}
-                          </p>
-                        )}
+                          </p>}
                       </div>
                     </div>
                   </CardContent>
-                </Card>
-              )}
+                </Card>}
 
               {/* PAYMENT TIMELINE - Next 3 Weeks */}
               <Card className="rounded-sm">
@@ -1301,12 +1184,8 @@ const Index = () => {
                     Payment Timeline - This Week
                   </CardTitle>
                   <div className="flex items-center gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={handlePrevWeek}
-                      disabled={currentWeekOffset === 0 && new Date().getDay() === 0} // Disable if current week and Sunday
-                    >
+                    <Button variant="outline" size="sm" onClick={handlePrevWeek} disabled={currentWeekOffset === 0 && new Date().getDay() === 0} // Disable if current week and Sunday
+                  >
                       <ChevronLeft className="h-4 w-4" />
                       Previous
                     </Button>
@@ -1318,23 +1197,24 @@ const Index = () => {
                 </CardHeader>
                 <CardContent className="space-y-4">
                   {(() => {
-                    const today = new Date(); // November 07, 2025
-                    const currentWeekStart = startOfWeek(today, { weekStartsOn: 0 }); // Sunday start
-                    const weekStart = add(currentWeekStart, { weeks: currentWeekOffset });
-                    const weekEnd = add(weekStart, { days: 6 });
-                    const upcomingEvents = calendarEvents
-                      .filter((e) => {
-                        const eventDate = new Date(e.date);
-                        return eventDate >= weekStart && eventDate <= weekEnd && e.type !== "variable"; // Exclude variable expenses
-                      })
-                      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-
-                    if (upcomingEvents.length === 0) {
-                      return <p className="text-center text-muted-foreground py-8">No upcoming payments this week</p>;
-                    }
-
-                    return (
-                      <>
+                  const today = new Date(); // November 07, 2025
+                  const currentWeekStart = startOfWeek(today, {
+                    weekStartsOn: 0
+                  }); // Sunday start
+                  const weekStart = add(currentWeekStart, {
+                    weeks: currentWeekOffset
+                  });
+                  const weekEnd = add(weekStart, {
+                    days: 6
+                  });
+                  const upcomingEvents = calendarEvents.filter(e => {
+                    const eventDate = new Date(e.date);
+                    return eventDate >= weekStart && eventDate <= weekEnd && e.type !== "variable"; // Exclude variable expenses
+                  }).sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
+                  if (upcomingEvents.length === 0) {
+                    return <p className="text-center text-muted-foreground py-8">No upcoming payments this week</p>;
+                  }
+                  return <>
                         {/* Week Header */}
                         <div className="text-center pb-4">
                           <h4 className="font-semibold text-sm text-muted-foreground">
@@ -1346,83 +1226,53 @@ const Index = () => {
                           {/* Vertical line */}
                           <div className="absolute left-6 top-0 bottom-0 w-0.5 bg-muted opacity-60" />
                           {upcomingEvents.map((event, idx) => {
-                            const eventDate = new Date(event.date);
-                            const isToday = isSameDay(eventDate, today);
-                            const isPast = eventDate < today;
-                            const isPaid = event.payment_status === "paid"; // Assume event has payment_status
+                        const eventDate = new Date(event.date);
+                        const isToday = isSameDay(eventDate, today);
+                        const isPast = eventDate < today;
+                        const isPaid = event.payment_status === "paid"; // Assume event has payment_status
 
-                            // Opacity logic: Full for paid, semi for pending/future, low for past unpaid
-                            const opacityClass = isPaid
-                              ? "opacity-100" // Full opacity for paid
-                              : isPast
-                                ? "opacity-30" // Low opacity for past unpaid
-                                : isToday
-                                  ? "opacity-100" // Full for today
-                                  : "opacity-70"; // Semi for future pending
+                        // Opacity logic: Full for paid, semi for pending/future, low for past unpaid
+                        const opacityClass = isPaid ? "opacity-100" // Full opacity for paid
+                        : isPast ? "opacity-30" // Low opacity for past unpaid
+                        : isToday ? "opacity-100" // Full for today
+                        : "opacity-70"; // Semi for future pending
 
-                            return (
-                              <div key={event.id} className={`relative pl-8 ${opacityClass}`}>
+                        return <div key={event.id} className={`relative pl-8 ${opacityClass}`}>
                                 {/* Timeline dot - Color intensity based on status */}
-                                <div
-                                  className={`absolute left-[-10px] top-2 h-4 w-4 rounded-full border-2 border-background flex items-center justify-center transition-all duration-300 ${
-                                    event.type === "income"
-                                      ? "bg-green-500"
-                                      : event.type === "debt"
-                                        ? "bg-red-500"
-                                        : event.type === "fixed"
-                                          ? "bg-orange-500"
-                                          : "bg-blue-500"
-                                  } ${isPaid ? "scale-110 shadow-lg" : isToday ? "ring-4 ring-primary ring-offset-2" : ""}`}
-                                />
+                                <div className={`absolute left-[-10px] top-2 h-4 w-4 rounded-full border-2 border-background flex items-center justify-center transition-all duration-300 ${event.type === "income" ? "bg-green-500" : event.type === "debt" ? "bg-red-500" : event.type === "fixed" ? "bg-orange-500" : "bg-blue-500"} ${isPaid ? "scale-110 shadow-lg" : isToday ? "ring-4 ring-primary ring-offset-2" : ""}`} />
                                 {/* Event card with description */}
-                                <div
-                                  className={`rounded-lg border p-3 transition-all hover:shadow-md w-full ${isPaid ? "border-green-500 bg-green-50/50" : isToday ? "border-primary bg-primary/10 shadow-lg shadow-primary/20" : "bg-card"}`}
-                                >
+                                <div className={`rounded-lg border p-3 transition-all hover:shadow-md w-full ${isPaid ? "border-green-500 bg-green-50/50" : isToday ? "border-primary bg-primary/10 shadow-lg shadow-primary/20" : "bg-card"}`}>
                                   <div className="flex items-start justify-between gap-2">
                                     <div className="flex-1 space-y-1">
                                       <div className="flex items-center gap-2">
                                         <span className="font-medium text-sm">{event.name}</span>
-                                        {isPaid && (
-                                          <Badge variant="default" className="text-xs bg-green-100 text-green-800">
+                                        {isPaid && <Badge variant="default" className="text-xs bg-green-100 text-green-800">
                                             Paid
-                                          </Badge>
-                                        )}
-                                        {isToday && (
-                                          <Badge variant="secondary" className="text-xs">
+                                          </Badge>}
+                                        {isToday && <Badge variant="secondary" className="text-xs">
                                             Today
-                                          </Badge>
-                                        )}
+                                          </Badge>}
                                       </div>
                                       <div className="flex items-center gap-2 text-xs text-muted-foreground">
                                         <span>{format(eventDate, "EEE, MMM d")}</span>
                                         <span>•</span>
                                         <span className="capitalize">{event.type}</span>
-                                        {event.recurring && (
-                                          <>
+                                        {event.recurring && <>
                                             <span>•</span>
                                             <span className="italic">Recurring</span>
-                                          </>
-                                        )}
+                                          </>}
                                       </div>
                                     </div>
-                                    <div
-                                      className={`text-right font-semibold ${
-                                        event.type === "income"
-                                          ? "text-green-600 dark:text-green-400"
-                                          : "text-red-600 dark:text-red-400"
-                                      }`}
-                                    >
+                                    <div className={`text-right font-semibold ${event.type === "income" ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400"}`}>
                                       {event.type === "income" ? "+" : "-"}£{event.amount.toFixed(2)}
                                     </div>
                                   </div>
                                 </div>
-                              </div>
-                            );
-                          })}
+                              </div>;
+                      })}
                         </div>
-                      </>
-                    );
-                  })()}
+                      </>;
+                })()}
                 </CardContent>
               </Card>
             </TabsContent>
@@ -1430,45 +1280,34 @@ const Index = () => {
             {/* Savings Goals Pots */}
 
             {/* DETALLE DEL DÍA */}
-            {selectedDate && (
-              <AlertDialog open={!!selectedDate} onOpenChange={() => setSelectedDate(null)}>
+            {selectedDate && <AlertDialog open={!!selectedDate} onOpenChange={() => setSelectedDate(null)}>
                 <AlertDialogContent>
                   <AlertDialogHeader>
                     <AlertDialogTitle>{format(selectedDate, "PPP")}</AlertDialogTitle>
                   </AlertDialogHeader>
                   <AlertDialogDescription className="space-y-3">
-                    {getEventsForDay(selectedDate).length === 0 ? (
-                      <p className="text-center py-4">No events</p>
-                    ) : (
-                      getEventsForDay(selectedDate).map((e) => (
-                        <div key={e.id} className="flex justify-between items-center p-3 bg-muted rounded-lg">
+                    {getEventsForDay(selectedDate).length === 0 ? <p className="text-center py-4">No events</p> : getEventsForDay(selectedDate).map(e => <div key={e.id} className="flex justify-between items-center p-3 bg-muted rounded-lg">
                           <div>
                             <p className="font-medium">{e.name}</p>
                             <p className="text-xs text-muted-foreground">{e.type}</p>
                           </div>
                           <div className="flex items-center gap-2">
-                            <span
-                              className={e.type === "income" ? "text-green-600 font-bold" : "text-red-600 font-bold"}
-                            >
+                            <span className={e.type === "income" ? "text-green-600 font-bold" : "text-red-600 font-bold"}>
                               {formatCurrency(e.amount)}
                             </span>
                             <div className="flex gap-1">
-                              <Button
-                                size="sm"
-                                variant="ghost"
-                                onClick={() => {
-                                  setEditingEvent(e);
-                                  setNewEvent({
-                                    name: e.name,
-                                    amount: e.amount,
-                                    type: e.type,
-                                    recurring: e.recurring || false,
-                                    payment_day: 1,
-                                    frequency: "monthly",
-                                  });
-                                  setShowEventDialog(true);
-                                }}
-                              >
+                              <Button size="sm" variant="ghost" onClick={() => {
+                        setEditingEvent(e);
+                        setNewEvent({
+                          name: e.name,
+                          amount: e.amount,
+                          type: e.type,
+                          recurring: e.recurring || false,
+                          payment_day: 1,
+                          frequency: "monthly"
+                        });
+                        setShowEventDialog(true);
+                      }}>
                                 <Edit2 className="h-4 w-4" />
                               </Button>
                               <Button size="sm" variant="ghost" onClick={() => setDeleteId(e.id)}>
@@ -1476,26 +1315,20 @@ const Index = () => {
                               </Button>
                             </div>
                           </div>
-                        </div>
-                      ))
-                    )}
+                        </div>)}
                   </AlertDialogDescription>
                   <AlertDialogFooter>
-                    <Button
-                      variant="default"
-                      onClick={() => {
-                        setEditingEvent(null);
-                        resetEventForm();
-                        setShowEventDialog(true);
-                      }}
-                    >
+                    <Button variant="default" onClick={() => {
+                  setEditingEvent(null);
+                  resetEventForm();
+                  setShowEventDialog(true);
+                }}>
                       <Plus className="h-4 w-4 mr-1" /> Add Event
                     </Button>
                     <AlertDialogCancel>Close</AlertDialogCancel>
                   </AlertDialogFooter>
                 </AlertDialogContent>
-              </AlertDialog>
-            )}
+              </AlertDialog>}
 
             {/* AGREGAR/EDITAR EVENTO */}
             <AlertDialog open={showEventDialog} onOpenChange={setShowEventDialog}>
@@ -1508,15 +1341,10 @@ const Index = () => {
                   {/* Type Selection */}
                   <div>
                     <Label>Type</Label>
-                    <Select
-                      value={newEvent.type}
-                      onValueChange={(v: Event["type"]) =>
-                        setNewEvent({
-                          ...newEvent,
-                          type: v,
-                        })
-                      }
-                    >
+                    <Select value={newEvent.type} onValueChange={(v: Event["type"]) => setNewEvent({
+                    ...newEvent,
+                    type: v
+                  })}>
                       <SelectTrigger>
                         <SelectValue />
                       </SelectTrigger>
@@ -1533,163 +1361,80 @@ const Index = () => {
                   {/* Common Fields */}
                   <div>
                     <Label>{newEvent.type === "savings" ? "Goal Name" : "Name"}</Label>
-                    <Input
-                      value={newEvent.name}
-                      onChange={(e) =>
-                        setNewEvent({
-                          ...newEvent,
-                          name: e.target.value,
-                        })
-                      }
-                      placeholder={
-                        newEvent.type === "income"
-                          ? "e.g., Salary"
-                          : newEvent.type === "debt"
-                            ? "e.g., Credit Card"
-                            : newEvent.type === "savings"
-                              ? "e.g., Vacation"
-                              : "e.g., Rent"
-                      }
-                    />
+                    <Input value={newEvent.name} onChange={e => setNewEvent({
+                    ...newEvent,
+                    name: e.target.value
+                  })} placeholder={newEvent.type === "income" ? "e.g., Salary" : newEvent.type === "debt" ? "e.g., Credit Card" : newEvent.type === "savings" ? "e.g., Vacation" : "e.g., Rent"} />
                   </div>
 
                   {/* Amount (not for debts) */}
-                  {newEvent.type !== "debt" && (
-                    <div>
+                  {newEvent.type !== "debt" && <div>
                       <Label>{newEvent.type === "savings" ? "Current Saved Amount (£)" : "Amount (£)"}</Label>
-                      <Input
-                        type="number"
-                        step="0.01"
-                        value={newEvent.amount || ""}
-                        onChange={(e) =>
-                          setNewEvent({
-                            ...newEvent,
-                            amount: parseFloat(e.target.value) || 0,
-                          })
-                        }
-                        placeholder="0.00"
-                      />
-                    </div>
-                  )}
+                      <Input type="number" step="0.01" value={newEvent.amount || ""} onChange={e => setNewEvent({
+                    ...newEvent,
+                    amount: parseFloat(e.target.value) || 0
+                  })} placeholder="0.00" />
+                    </div>}
 
                   {/* Debt-specific fields */}
-                  {newEvent.type === "debt" && (
-                    <>
+                  {newEvent.type === "debt" && <>
                       <div>
                         <Label>Total Balance (£)</Label>
-                        <Input
-                          type="number"
-                          step="0.01"
-                          value={newEvent.balance || ""}
-                          onChange={(e) =>
-                            setNewEvent({
-                              ...newEvent,
-                              balance: parseFloat(e.target.value) || 0,
-                            })
-                          }
-                          placeholder="0.00"
-                        />
+                        <Input type="number" step="0.01" value={newEvent.balance || ""} onChange={e => setNewEvent({
+                      ...newEvent,
+                      balance: parseFloat(e.target.value) || 0
+                    })} placeholder="0.00" />
                       </div>
                       <div>
                         <Label>APR (%)</Label>
-                        <Input
-                          type="number"
-                          step="0.1"
-                          value={newEvent.apr || ""}
-                          onChange={(e) =>
-                            setNewEvent({
-                              ...newEvent,
-                              apr: parseFloat(e.target.value) || 0,
-                            })
-                          }
-                          placeholder="e.g., 19.9"
-                        />
+                        <Input type="number" step="0.1" value={newEvent.apr || ""} onChange={e => setNewEvent({
+                      ...newEvent,
+                      apr: parseFloat(e.target.value) || 0
+                    })} placeholder="e.g., 19.9" />
                       </div>
                       <div>
                         <Label>Minimum Payment (£)</Label>
-                        <Input
-                          type="number"
-                          step="0.01"
-                          value={newEvent.minimum_payment || ""}
-                          onChange={(e) =>
-                            setNewEvent({
-                              ...newEvent,
-                              minimum_payment: parseFloat(e.target.value) || 0,
-                            })
-                          }
-                          placeholder="0.00"
-                        />
+                        <Input type="number" step="0.01" value={newEvent.minimum_payment || ""} onChange={e => setNewEvent({
+                      ...newEvent,
+                      minimum_payment: parseFloat(e.target.value) || 0
+                    })} placeholder="0.00" />
                       </div>
-                    </>
-                  )}
+                    </>}
 
                   {/* Savings Goal specific fields */}
-                  {newEvent.type === "savings" && (
-                    <>
+                  {newEvent.type === "savings" && <>
                       <div>
                         <Label>Target Amount (£)</Label>
-                        <Input
-                          type="number"
-                          step="0.01"
-                          value={newEvent.target_amount || ""}
-                          onChange={(e) =>
-                            setNewEvent({
-                              ...newEvent,
-                              target_amount: parseFloat(e.target.value) || 0,
-                            })
-                          }
-                          placeholder="0.00"
-                        />
+                        <Input type="number" step="0.01" value={newEvent.target_amount || ""} onChange={e => setNewEvent({
+                      ...newEvent,
+                      target_amount: parseFloat(e.target.value) || 0
+                    })} placeholder="0.00" />
                       </div>
                       <div>
                         <Label>Target Date (Optional)</Label>
-                        <Input
-                          type="date"
-                          value={newEvent.target_date || ""}
-                          onChange={(e) =>
-                            setNewEvent({
-                              ...newEvent,
-                              target_date: e.target.value,
-                            })
-                          }
-                        />
+                        <Input type="date" value={newEvent.target_date || ""} onChange={e => setNewEvent({
+                      ...newEvent,
+                      target_date: e.target.value
+                    })} />
                       </div>
-                    </>
-                  )}
+                    </>}
 
                   {/* Payment Day (for income, fixed expenses, and debts) */}
-                  {(newEvent.type === "income" || newEvent.type === "fixed" || newEvent.type === "debt") && (
-                    <div>
+                  {(newEvent.type === "income" || newEvent.type === "fixed" || newEvent.type === "debt") && <div>
                       <Label>Payment Day of Month</Label>
-                      <Input
-                        type="number"
-                        min="1"
-                        max="31"
-                        value={newEvent.payment_day || ""}
-                        onChange={(e) =>
-                          setNewEvent({
-                            ...newEvent,
-                            payment_day: parseInt(e.target.value) || 1,
-                          })
-                        }
-                        placeholder="1-31"
-                      />
-                    </div>
-                  )}
+                      <Input type="number" min="1" max="31" value={newEvent.payment_day || ""} onChange={e => setNewEvent({
+                    ...newEvent,
+                    payment_day: parseInt(e.target.value) || 1
+                  })} placeholder="1-31" />
+                    </div>}
 
                   {/* Frequency (for fixed expenses) */}
-                  {newEvent.type === "fixed" && (
-                    <div>
+                  {newEvent.type === "fixed" && <div>
                       <Label>Frequency</Label>
-                      <Select
-                        value={newEvent.frequency}
-                        onValueChange={(v) =>
-                          setNewEvent({
-                            ...newEvent,
-                            frequency: v,
-                          })
-                        }
-                      >
+                      <Select value={newEvent.frequency} onValueChange={v => setNewEvent({
+                    ...newEvent,
+                    frequency: v
+                  })}>
                         <SelectTrigger>
                           <SelectValue />
                         </SelectTrigger>
@@ -1698,8 +1443,7 @@ const Index = () => {
                           <SelectItem value="yearly">Yearly</SelectItem>
                         </SelectContent>
                       </Select>
-                    </div>
-                  )}
+                    </div>}
                 </div>
                 <AlertDialogFooter>
                   <AlertDialogCancel onClick={resetEventForm}>Cancel</AlertDialogCancel>
@@ -1733,39 +1477,24 @@ const Index = () => {
                 <div className="space-y-4">
                   <div>
                     <Label>Description</Label>
-                    <Input
-                      value={newIncome.description}
-                      onChange={(e) =>
-                        setNewIncome({
-                          ...newIncome,
-                          description: e.target.value,
-                        })
-                      }
-                      placeholder="e.g. Freelance work, Bonus, Gift"
-                    />
+                    <Input value={newIncome.description} onChange={e => setNewIncome({
+                    ...newIncome,
+                    description: e.target.value
+                  })} placeholder="e.g. Freelance work, Bonus, Gift" />
                   </div>
                   <div>
                     <Label>Amount (£)</Label>
-                    <Input
-                      type="number"
-                      value={newIncome.amount || ""}
-                      onChange={(e) =>
-                        setNewIncome({
-                          ...newIncome,
-                          amount: parseFloat(e.target.value) || 0,
-                        })
-                      }
-                      placeholder="0"
-                    />
+                    <Input type="number" value={newIncome.amount || ""} onChange={e => setNewIncome({
+                    ...newIncome,
+                    amount: parseFloat(e.target.value) || 0
+                  })} placeholder="0" />
                   </div>
                 </div>
                 <AlertDialogFooter>
                   <AlertDialogCancel>Cancel</AlertDialogCancel>
-                  <AlertDialogAction
-                    onClick={() => {
-                      setShowIncomeModal(false);
-                    }}
-                  >
+                  <AlertDialogAction onClick={() => {
+                  setShowIncomeModal(false);
+                }}>
                     Close
                   </AlertDialogAction>
                 </AlertDialogFooter>
@@ -1773,13 +1502,10 @@ const Index = () => {
             </AlertDialog>
 
             {/* ADD MONEY TO GOAL MODAL */}
-            <AlertDialog
-              open={!!addMoneyGoalId}
-              onOpenChange={() => {
-                setAddMoneyGoalId(null);
-                setAddMoneyAmount(0);
-              }}
-            >
+            <AlertDialog open={!!addMoneyGoalId} onOpenChange={() => {
+            setAddMoneyGoalId(null);
+            setAddMoneyAmount(0);
+          }}>
               <AlertDialogContent>
                 <AlertDialogHeader>
                   <AlertDialogTitle>Add Money to Goal</AlertDialogTitle>
@@ -1788,14 +1514,7 @@ const Index = () => {
                 <div className="space-y-4">
                   <div>
                     <Label>Amount (£)</Label>
-                    <Input
-                      type="number"
-                      value={addMoneyAmount || ""}
-                      onChange={(e) => setAddMoneyAmount(parseFloat(e.target.value) || 0)}
-                      placeholder="0"
-                      min="0"
-                      step="0.01"
-                    />
+                    <Input type="number" value={addMoneyAmount || ""} onChange={e => setAddMoneyAmount(parseFloat(e.target.value) || 0)} placeholder="0" min="0" step="0.01" />
                   </div>
                 </div>
                 <AlertDialogFooter>
@@ -1817,35 +1536,17 @@ const Index = () => {
                 <div className="space-y-4">
                   <div>
                     <Label>Current Amount Saved (£)</Label>
-                    <Input
-                      type="number"
-                      value={editGoalData.current_amount || ""}
-                      onChange={(e) =>
-                        setEditGoalData({
-                          ...editGoalData,
-                          current_amount: parseFloat(e.target.value) || 0,
-                        })
-                      }
-                      placeholder="0"
-                      min="0"
-                      step="0.01"
-                    />
+                    <Input type="number" value={editGoalData.current_amount || ""} onChange={e => setEditGoalData({
+                    ...editGoalData,
+                    current_amount: parseFloat(e.target.value) || 0
+                  })} placeholder="0" min="0" step="0.01" />
                   </div>
                   <div>
                     <Label>Target Amount (£)</Label>
-                    <Input
-                      type="number"
-                      value={editGoalData.target_amount || ""}
-                      onChange={(e) =>
-                        setEditGoalData({
-                          ...editGoalData,
-                          target_amount: parseFloat(e.target.value) || 0,
-                        })
-                      }
-                      placeholder="0"
-                      min="0"
-                      step="0.01"
-                    />
+                    <Input type="number" value={editGoalData.target_amount || ""} onChange={e => setEditGoalData({
+                    ...editGoalData,
+                    target_amount: parseFloat(e.target.value) || 0
+                  })} placeholder="0" min="0" step="0.01" />
                   </div>
                 </div>
                 <AlertDialogFooter>
@@ -1885,14 +1586,7 @@ const Index = () => {
                 <div className="space-y-4 py-4">
                   <div className="space-y-2">
                     <Label htmlFor="emergency-amount">Amount to Add (£)</Label>
-                    <Input
-                      id="emergency-amount"
-                      type="number"
-                      step="0.01"
-                      value={emergencyFundAmount || ""}
-                      onChange={(e) => setEmergencyFundAmount(parseFloat(e.target.value) || 0)}
-                      placeholder="0.00"
-                    />
+                    <Input id="emergency-amount" type="number" step="0.01" value={emergencyFundAmount || ""} onChange={e => setEmergencyFundAmount(parseFloat(e.target.value) || 0)} placeholder="0.00" />
                   </div>
                   <div className="bg-muted p-3 rounded-lg">
                     <p className="text-sm text-muted-foreground">
@@ -1919,14 +1613,7 @@ const Index = () => {
                 <div className="space-y-4 py-4">
                   <div className="space-y-2">
                     <Label htmlFor="edit-emergency-amount">Current Amount (£)</Label>
-                    <Input
-                      id="edit-emergency-amount"
-                      type="number"
-                      step="0.01"
-                      value={editEmergencyFundAmount || ""}
-                      onChange={(e) => setEditEmergencyFundAmount(parseFloat(e.target.value) || 0)}
-                      placeholder="0.00"
-                    />
+                    <Input id="edit-emergency-amount" type="number" step="0.01" value={editEmergencyFundAmount || ""} onChange={e => setEditEmergencyFundAmount(parseFloat(e.target.value) || 0)} placeholder="0.00" />
                   </div>
                   <div className="bg-muted p-3 rounded-lg">
                     <p className="text-sm text-muted-foreground">
@@ -1981,7 +1668,7 @@ const Index = () => {
                   <FixedExpensesTracker />
                 </TabsContent>
                 <TabsContent value="variable">
-                  <Card className="rounded-lg shadow-sm border border-slate-200 dark:border-slate-700 bg-gradient-to-r from-slate-50 to-slate-100 dark:from-slate-800 dark:to-slate-900 hover:from-slate-100 hover:to-slate-200 dark:hover:from-slate-700 dark:hover:to-slate-800 transition-colors">
+                  <Card className="">
                     <CardHeader>
                       <CardTitle className="flex items-center gap-2">
                         <Receipt className="h-5 w-5" /> Variable Expenses
@@ -1997,13 +1684,7 @@ const Index = () => {
 
             <TabsContent value="debts">
               <DebtsManager language={language} />
-              <DebtPlanner
-                language={language}
-                monthlySavings={monthlySavings}
-                setMonthlySavings={setMonthlySavings}
-                debtMethod={debtMethod}
-                setDebtMethod={setDebtMethod}
-              />
+              <DebtPlanner language={language} monthlySavings={monthlySavings} setMonthlySavings={setMonthlySavings} debtMethod={debtMethod} setDebtMethod={setDebtMethod} />
             </TabsContent>
 
             <TabsContent value="savings">
@@ -2061,23 +1742,13 @@ const Index = () => {
                         <CardDescription>Build your safety net</CardDescription>
                       </div>
                       <div className="flex gap-1">
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={() => {
-                            setEditEmergencyFundAmount(savings?.emergency_fund || 0);
-                            setShowEditEmergencyFund(true);
-                          }}
-                          title="Edit emergency fund amount"
-                        >
+                        <Button size="sm" variant="ghost" onClick={() => {
+                        setEditEmergencyFundAmount(savings?.emergency_fund || 0);
+                        setShowEditEmergencyFund(true);
+                      }} title="Edit emergency fund amount">
                           <Edit2 className="h-4 w-4" />
                         </Button>
-                        <Button
-                          size="sm"
-                          variant="ghost"
-                          onClick={() => setShowAddEmergencyFund(true)}
-                          title="Add money to emergency fund"
-                        >
+                        <Button size="sm" variant="ghost" onClick={() => setShowAddEmergencyFund(true)} title="Add money to emergency fund">
                           <Wallet className="h-4 w-4" />
                         </Button>
                       </div>
@@ -2096,19 +1767,11 @@ const Index = () => {
                           {formatCurrency((totalFixed + totalVariable) * 6)}
                         </span>
                       </div>
-                      <Progress
-                        value={Math.min(
-                          100,
-                          ((savings?.emergency_fund || 0) / ((totalFixed + totalVariable) * 3)) * 100,
-                        )}
-                        className="h-3"
-                      />
+                      <Progress value={Math.min(100, (savings?.emergency_fund || 0) / ((totalFixed + totalVariable) * 3) * 100)} className="h-3" />
                     </div>
                     <div className="bg-orange-50 dark:bg-orange-950 border border-orange-200 dark:border-orange-800 rounded-lg p-3">
                       <p className="text-xs text-orange-700 dark:text-orange-300">
-                        {(savings?.emergency_fund || 0) >= (totalFixed + totalVariable) * 3
-                          ? "✅ Emergency fund is healthy!"
-                          : `💡 Save ${formatCurrency((totalFixed + totalVariable) * 3 - (savings?.emergency_fund || 0))} more to reach minimum goal`}
+                        {(savings?.emergency_fund || 0) >= (totalFixed + totalVariable) * 3 ? "✅ Emergency fund is healthy!" : `💡 Save ${formatCurrency((totalFixed + totalVariable) * 3 - (savings?.emergency_fund || 0))} more to reach minimum goal`}
                       </p>
                     </div>
                   </CardContent>
@@ -2116,25 +1779,7 @@ const Index = () => {
 
                 {/* Savings Goals Manager */}
                 <div className="mb-6">
-                  <SavingsGoalsManager
-                    language={language}
-                    availableForSavings={Math.max(
-                      0,
-                      totalIncome -
-                        totalExpenses -
-                        savingsGoalsData
-                          .filter((g) => g.is_active && g.monthly_contribution)
-                          .reduce((s, g) => s + (g.monthly_contribution || 0), 0),
-                    )}
-                    availableBudget={Math.max(
-                      0,
-                      totalIncome -
-                        totalExpenses -
-                        savingsGoalsData
-                          .filter((g) => g.is_active && g.monthly_contribution)
-                          .reduce((s, g) => s + (g.monthly_contribution || 0), 0),
-                    )}
-                  />
+                  <SavingsGoalsManager language={language} availableForSavings={Math.max(0, totalIncome - totalExpenses - savingsGoalsData.filter(g => g.is_active && g.monthly_contribution).reduce((s, g) => s + (g.monthly_contribution || 0), 0))} availableBudget={Math.max(0, totalIncome - totalExpenses - savingsGoalsData.filter(g => g.is_active && g.monthly_contribution).reduce((s, g) => s + (g.monthly_contribution || 0), 0))} />
                 </div>
               </div>
             </TabsContent>
@@ -2162,15 +1807,14 @@ const Index = () => {
           </footer>
         </div>
       </div>
-    </>
-  );
+    </>;
 };
 const DebtPlanner = ({
   language,
   monthlySavings,
   setMonthlySavings,
   debtMethod,
-  setDebtMethod,
+  setDebtMethod
 }: {
   language: Language;
   monthlySavings: number;
@@ -2179,56 +1823,70 @@ const DebtPlanner = ({
   setDebtMethod: (v: DebtMethod) => void;
 }) => {
   const t = translations[language];
-  const { data: debtData = [] } = useDebts();
-  const { data: incomeData = [] } = useIncomeSources();
-  const { data: fixedExpensesData = [] } = useFixedExpenses();
-  const { data: variableExpensesData = [] } = useVariableExpenses();
-  const { data: savings } = useSavings();
-  const { totalIncome, totalFixed, totalVariable, totalDebtPayment, totalExpenses, cashFlow, savingsTotal } =
-    useMemo(() => {
-      const totalIncome = incomeData.reduce((s, i) => s + i.amount, 0);
-      const totalFixed = fixedExpensesData.reduce((s, e) => s + e.amount, 0);
-      const totalVariable = variableExpensesData.reduce((s, e) => s + e.amount, 0);
-      const activeDebts = debtData.filter((d) => d.balance > 0 && d.minimum_payment > 0);
-      const totalDebtPayment = activeDebts.reduce((s, d) => s + d.minimum_payment, 0);
-      const totalExpenses = totalFixed + totalVariable + totalDebtPayment;
-      const cashFlow = totalIncome - totalExpenses;
-      const savingsTotal = savings?.emergency_fund || 0;
-      return {
-        totalIncome,
-        totalFixed,
-        totalVariable,
-        totalDebtPayment,
-        totalExpenses,
-        cashFlow,
-        savingsTotal,
-      };
-    }, [incomeData, debtData, fixedExpensesData, variableExpensesData, savings]);
+  const {
+    data: debtData = []
+  } = useDebts();
+  const {
+    data: incomeData = []
+  } = useIncomeSources();
+  const {
+    data: fixedExpensesData = []
+  } = useFixedExpenses();
+  const {
+    data: variableExpensesData = []
+  } = useVariableExpenses();
+  const {
+    data: savings
+  } = useSavings();
+  const {
+    totalIncome,
+    totalFixed,
+    totalVariable,
+    totalDebtPayment,
+    totalExpenses,
+    cashFlow,
+    savingsTotal
+  } = useMemo(() => {
+    const totalIncome = incomeData.reduce((s, i) => s + i.amount, 0);
+    const totalFixed = fixedExpensesData.reduce((s, e) => s + e.amount, 0);
+    const totalVariable = variableExpensesData.reduce((s, e) => s + e.amount, 0);
+    const activeDebts = debtData.filter(d => d.balance > 0 && d.minimum_payment > 0);
+    const totalDebtPayment = activeDebts.reduce((s, d) => s + d.minimum_payment, 0);
+    const totalExpenses = totalFixed + totalVariable + totalDebtPayment;
+    const cashFlow = totalIncome - totalExpenses;
+    const savingsTotal = savings?.emergency_fund || 0;
+    return {
+      totalIncome,
+      totalFixed,
+      totalVariable,
+      totalDebtPayment,
+      totalExpenses,
+      cashFlow,
+      savingsTotal
+    };
+  }, [incomeData, debtData, fixedExpensesData, variableExpensesData, savings]);
   const debtStrategy = useMemo(() => {
-    const activeDebts = debtData.filter((d) => d.balance > 0 && d.minimum_payment > 0);
+    const activeDebts = debtData.filter(d => d.balance > 0 && d.minimum_payment > 0);
     if (activeDebts.length === 0) return null;
 
     // NO aplicar automáticamente el excedente del cashflow a las deudas
     // Solo usar pagos mínimos
     const extraForDebt = 0;
-
-    const sortFn =
-      debtMethod === "avalanche"
-        ? (a, b) => b.apr - a.apr
-        : debtMethod === "snowball"
-          ? (a, b) => a.balance - b.balance
-          : (a, b) => b.apr * 0.6 + (b.balance / 1000) * 0.4 - (a.apr * 0.6 + (a.balance / 1000) * 0.4);
+    const sortFn = debtMethod === "avalanche" ? (a, b) => b.apr - a.apr : debtMethod === "snowball" ? (a, b) => a.balance - b.balance : (a, b) => b.apr * 0.6 + b.balance / 1000 * 0.4 - (a.apr * 0.6 + a.balance / 1000 * 0.4);
     const sortedDebts = [...activeDebts].sort(sortFn);
-    let remainingBalances = sortedDebts.map((d) => ({ ...d, balance: d.balance }));
+    let remainingBalances = sortedDebts.map(d => ({
+      ...d,
+      balance: d.balance
+    }));
     let months = 0;
     let totalInterest = 0;
-    let allocation = sortedDebts.map((d) => ({
+    let allocation = sortedDebts.map(d => ({
       name: d.name,
       minPayment: d.minimum_payment,
       extra: 0,
-      totalPayment: d.minimum_payment,
+      totalPayment: d.minimum_payment
     }));
-    while (remainingBalances.some((d) => d.balance > 0) && months < 120) {
+    while (remainingBalances.some(d => d.balance > 0) && months < 120) {
       let monthlyInterest = 0;
       remainingBalances.forEach((debt, index) => {
         if (debt.balance <= 0) return;
@@ -2242,44 +1900,33 @@ const DebtPlanner = ({
       totalInterest += monthlyInterest;
       months++;
     }
-    const monthsToEmergency =
-      monthlySavings > 0 ? ((totalExpenses * 3 - savingsTotal) / monthlySavings).toFixed(1) : "N/A";
+    const monthsToEmergency = monthlySavings > 0 ? ((totalExpenses * 3 - savingsTotal) / monthlySavings).toFixed(1) : "N/A";
     return {
       sortedDebts,
       allocation,
       months,
       totalInterest: Math.round(totalInterest),
       monthsToEmergency,
-      extraForDebt,
+      extraForDebt
     };
   }, [debtData, cashFlow, monthlySavings, debtMethod, totalExpenses, savingsTotal]);
-  if (!debtStrategy)
-    return (
-      <Card>
+  if (!debtStrategy) return <Card>
         <CardHeader>
           <CardTitle>{t.debtPlanner}</CardTitle>
         </CardHeader>
         <CardContent>
           <p className="text-center text-muted-foreground py-6">No debts to plan</p>
         </CardContent>
-      </Card>
-    );
-  return (
-    <div className="space-y-6">
+      </Card>;
+  return <div className="space-y-6">
       {/* Monthly Payment Proposal */}
-      <MonthlyPaymentProposal
-        cashFlow={cashFlow}
-        monthlySavings={monthlySavings}
-        totalFixed={totalFixed}
-        totalVariable={totalVariable}
-        debts={debtData.filter((d) => d.balance > 0)}
-      />
+      <MonthlyPaymentProposal cashFlow={cashFlow} monthlySavings={monthlySavings} totalFixed={totalFixed} totalVariable={totalVariable} debts={debtData.filter(d => d.balance > 0)} />
 
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center justify-between">
             <span className="text-lg font-semibold">Debt Priority Order</span>
-            <Select value={debtMethod} onValueChange={(value) => setDebtMethod(value as DebtMethod)}>
+            <Select value={debtMethod} onValueChange={value => setDebtMethod(value as DebtMethod)}>
               <SelectTrigger className="w-[200px]">
                 <SelectValue />
               </SelectTrigger>
@@ -2310,7 +1957,6 @@ const DebtPlanner = ({
           <SimplifiedDebtPriority debts={debtStrategy.sortedDebts} method={debtMethod} />
         </CardContent>
       </Card>
-    </div>
-  );
+    </div>;
 };
 export default Index;
