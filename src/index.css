@@ -1,180 +1,69 @@
+/* src/index.css */
 @tailwind base;
 @tailwind components;
 @tailwind utilities;
 
-/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
-All colors MUST be HSL.
-*/
-
-@layer base {
-  :root {
-    --background: 220 25% 97%;
-    --foreground: 220 15% 15%;
-
-    --card: 0 0% 100%;
-    --card-foreground: 220 15% 15%;
-
-    --popover: 0 0% 100%;
-    --popover-foreground: 220 15% 15%;
-
-    --primary: 45 100% 51%;
-    --primary-foreground: 220 15% 15%;
-    --primary-glow: 45 100% 65%;
-
-    --secondary: 220 20% 94%;
-    --secondary-foreground: 220 15% 15%;
-
-    --muted: 220 20% 94%;
-    --muted-foreground: 220 10% 45%;
-
-    --accent: 217 91% 60%;
-    --accent-foreground: 0 0% 100%;
-
-    --destructive: 0 84% 60%;
-    --destructive-foreground: 0 0% 100%;
-
-    --border: 220 15% 88%;
-    --input: 220 15% 88%;
-    --ring: 45 100% 51%;
-
-    --radius: 0.75rem;
-
-    --income: 142 76% 36%;
-    --income-foreground: 0 0% 100%;
-    
-    --debt: 0 84% 60%;
-    --debt-foreground: 0 0% 100%;
-
-    --expenses: 270 60% 55%;
-    --expenses-foreground: 0 0% 100%;
-
-    --success: 142 76% 36%;
-    --warning: 38 92% 50%;
-    --warning-foreground: 0 0% 100%;
-    
-    --gradient-primary: linear-gradient(135deg, hsl(45 100% 51%), hsl(45 100% 65%));
-    --gradient-gold: linear-gradient(135deg, hsl(45 100% 51%), hsl(38 92% 50%));
-    --gradient-income: linear-gradient(135deg, hsl(142 76% 36%), hsl(142 76% 46%));
-    --gradient-debt: linear-gradient(135deg, hsl(0 84% 60%), hsl(0 84% 70%));
-    --gradient-accent: linear-gradient(135deg, hsl(217 91% 60%), hsl(217 91% 70%));
-    --gradient-expenses: linear-gradient(135deg, hsl(270 60% 55%), hsl(270 60% 65%));
-    --gradient-warning: linear-gradient(135deg, hsl(38 92% 50%), hsl(38 92% 60%));
-
-    --shadow-soft: 0 2px 8px -2px hsl(220 15% 15% / 0.08);
-    --shadow-medium: 0 4px 16px -4px hsl(220 15% 15% / 0.12);
-    --shadow-gold: 0 8px 24px -4px hsl(45 100% 51% / 0.25);
-    --shadow-premium: 0 12px 32px -8px hsl(45 100% 51% / 0.3);
-  }
-
-  /* Sober Theme */
-  [data-theme="sober"] {
-    --primary: 220 15% 40%;
-    --primary-foreground: 0 0% 100%;
-    --primary-glow: 220 15% 50%;
-    --gradient-primary: linear-gradient(135deg, hsl(220 15% 25%), hsl(220 15% 40%));
-    --gradient-gold: linear-gradient(135deg, hsl(220 15% 30%), hsl(220 15% 45%));
-  }
-
-  /* Ocean Theme */
-  [data-theme="ocean"] {
-    --primary: 200 90% 50%;
-    --primary-foreground: 0 0% 100%;
-    --primary-glow: 220 85% 60%;
-    --gradient-primary: linear-gradient(135deg, hsl(200 90% 50%), hsl(220 85% 60%));
-    --gradient-gold: linear-gradient(135deg, hsl(200 90% 45%), hsl(220 85% 55%));
-  }
-
-  /* Forest Theme */
-  [data-theme="forest"] {
-    --primary: 140 70% 40%;
-    --primary-foreground: 0 0% 100%;
-    --primary-glow: 160 65% 50%;
-    --gradient-primary: linear-gradient(135deg, hsl(140 70% 40%), hsl(160 65% 50%));
-    --gradient-gold: linear-gradient(135deg, hsl(140 70% 35%), hsl(160 65% 45%));
-  }
-
-  /* Sunset Theme */
-  [data-theme="sunset"] {
-    --primary: 25 95% 55%;
-    --primary-foreground: 0 0% 100%;
-    --primary-glow: 340 85% 60%;
-    --gradient-primary: linear-gradient(135deg, hsl(25 95% 55%), hsl(340 85% 60%));
-    --gradient-gold: linear-gradient(135deg, hsl(25 95% 50%), hsl(340 85% 55%));
-  }
-
-  /* Royal Theme */
-  [data-theme="royal"] {
-    --primary: 270 70% 50%;
-    --primary-foreground: 0 0% 100%;
-    --primary-glow: 290 65% 60%;
-    --gradient-primary: linear-gradient(135deg, hsl(270 70% 50%), hsl(290 65% 60%));
-    --gradient-gold: linear-gradient(135deg, hsl(270 70% 45%), hsl(290 65% 55%));
-  }
-
-  .dark {
-    --background: 220 20% 8%;
-    --foreground: 220 10% 95%;
-
-    --card: 220 18% 11%;
-    --card-foreground: 220 10% 95%;
-
-    --popover: 220 18% 11%;
-    --popover-foreground: 220 10% 95%;
-
-    --primary: 45 100% 51%;
-    --primary-foreground: 220 15% 15%;
-    --primary-glow: 45 100% 65%;
-
-    --secondary: 220 15% 16%;
-    --secondary-foreground: 220 10% 95%;
-
-    --muted: 220 15% 16%;
-    --muted-foreground: 220 10% 65%;
-
-    --accent: 217 91% 60%;
-    --accent-foreground: 0 0% 100%;
-
-    --destructive: 0 84% 60%;
-    --destructive-foreground: 0 0% 100%;
-
-    --border: 220 15% 20%;
-    --input: 220 15% 20%;
-    --ring: 45 100% 51%;
-    
-    --income: 142 76% 36%;
-    --income-foreground: 0 0% 100%;
-    
-    --debt: 0 84% 60%;
-    --debt-foreground: 0 0% 100%;
-
-    --expenses: 270 60% 55%;
-    --expenses-foreground: 0 0% 100%;
-
-    --success: 142 76% 36%;
-    --warning: 38 92% 50%;
-    --warning-foreground: 0 0% 100%;
-    
-    --gradient-primary: linear-gradient(135deg, hsl(45 100% 51%), hsl(45 100% 65%));
-    --gradient-gold: linear-gradient(135deg, hsl(45 100% 51%), hsl(38 92% 50%));
-    --gradient-income: linear-gradient(135deg, hsl(142 76% 36%), hsl(142 76% 46%));
-    --gradient-debt: linear-gradient(135deg, hsl(0 84% 60%), hsl(0 84% 70%));
-    --gradient-accent: linear-gradient(135deg, hsl(217 91% 60%), hsl(217 91% 70%));
-    --gradient-expenses: linear-gradient(135deg, hsl(270 60% 55%), hsl(270 60% 65%));
-    --gradient-warning: linear-gradient(135deg, hsl(38 92% 50%), hsl(38 92% 60%));
-
-    --shadow-soft: 0 2px 8px -2px hsl(0 0% 0% / 0.3);
-    --shadow-medium: 0 4px 16px -4px hsl(0 0% 0% / 0.4);
-    --shadow-gold: 0 8px 24px -4px hsl(45 100% 51% / 0.35);
-    --shadow-premium: 0 12px 32px -8px hsl(45 100% 51% / 0.4);
-  }
+body {
+  margin: 0;
+  font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', 'Roboto', 'Oxygen',
+    'Ubuntu', 'Cantarell', 'Fira Sans', 'Droid Sans', 'Helvetica Neue',
+    sans-serif;
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  min-height: 100vh;
 }
 
-@layer base {
-  * {
-    @apply border-border;
-  }
+#root {
+  min-height: 100vh;
+}
 
-  body {
-    @apply bg-background text-foreground;
-  }
+.card {
+  @apply bg-white rounded-xl shadow-xl p-6 text-center transition-all hover:shadow-2xl;
+}
+
+.card h3 {
+  @apply text-gray-600 text-sm uppercase tracking-wider mb-2;
+}
+
+.card p {
+  @apply text-3xl font-bold;
+}
+
+/* Botones bonitos */
+button {
+  @apply transition-all duration-200 font-medium;
+}
+
+/* Fondo de secciones */
+section {
+  background: white;
+  border-radius: 1rem;
+  box-shadow: 0 20px 40px rgba(0,0,0,0.1);
+  overflow: hidden;
+}
+
+/* Títulos */
+h1 {
+  @apply text-5xl font-extrabold text-white drop-shadow-lg;
+}
+
+h2 {
+  @apply text-3xl font-bold text-gray-800 mb-6;
+}
+
+/* Overview cards con colores */
+.grid {
+  display: grid;
+  gap: 1.5rem;
+}
+
+@media (min-width: 768px) {
+  .grid-cols-2 { grid-template-columns: repeat(2, 1fr); }
+  .md\\:grid-cols-4 { grid-template-columns: repeat(4, 1fr); }
+}
+
+/* Responsive fix */
+* {
+  box-sizing: border-box;
 }
