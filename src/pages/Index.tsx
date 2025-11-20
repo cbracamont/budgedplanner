@@ -1669,12 +1669,8 @@ const Index = () => {
                 </TabsContent>
                 <TabsContent value="variable">
                   <Card className="">
-                    <CardHeader>
-                      <CardTitle className="flex items-center gap-2">
-                        <Receipt className="h-5 w-5" /> Variable Expenses
-                      </CardTitle>
-                    </CardHeader>
-                    <CardContent>
+                    
+                    <CardContent className="bg-[#000a00]/0">
                       <MonthlyVariableExpensesTracker />
                     </CardContent>
                   </Card>
