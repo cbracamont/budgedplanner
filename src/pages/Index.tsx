@@ -2234,6 +2234,21 @@ const DebtPlanner = ({
         </CardContent>
       </Card>
     );
+ 
+  {/* Mensaje de bienvenida la primera vez */}
+{!incomeData.length && !fixedExpensesData.length && !debtData.length && (
+  <Card className="border-dashed border-2 border-blue-300 bg-blue-50">
+    <CardContent className="pt-6 text-center">
+      <p className="text-lg text-blue-700">
+        Welcome! Start by adding your income and monthly expenses ↓
+      </p>
+      <Button className="mt-4" onClick={() => setActiveTab("income")}>
+        Let's configure your budget
+      </Button>
+    </CardContent>
+  </Card>
+)}
+  
   return (
     <div className="space-y-6">
       {/* Monthly Payment Proposal */}
