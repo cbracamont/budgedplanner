@@ -1,6 +1,6 @@
 // src/components/FixedExpensesManager.tsx
 import { useState, useEffect } from "react";
-import { Trash2, Plus, Edit2 } from "lucide-react"; // NUEVO: Importamos Edit2 para el botón de editar
+import { Trash2, Plus } from "lucide-react";
 
 type Frequency = "weekly" | "bi-weekly" | "monthly" | "quarterly" | "annually";
 
@@ -11,8 +11,7 @@ interface Expense {
   frequency: Frequency;
 }
 
-// Multiplicadores exactos para convertir cualquier frecuencia a mensual
-const frequencyMultiplier: Record<string, number> = {
+const multiplier: Record<Frequency, number> = {
   weekly: 4.333,
   "bi-weekly": 2,
   monthly: 1,
@@ -21,129 +20,46 @@ const frequencyMultiplier: Record<string, number> = {
 };
 
 export const FixedExpensesManager = () => {
-  // Persistencia con localStorage – se guarda para siempre
-  const [expenses, setExpenses] = useState(() => {
+  const [expenses, setExpenses] = useState<Expense[]>(() => {
     const saved = localStorage.getItem("fixed-expenses-2025");
     if (saved) return JSON.parse(saved);
     return [
-      {
-        id: "1",
-        name: "Mortgage/Rent",
-        amount: 950,
-        frequency: "monthly",
-      },
-      {
-        id: "2",
-        name: "Council Tax",
-        amount: 150,
-        frequency: "monthly",
-      },
-      {
-        id: "3",
-        name: "Utilities",
-        amount: 180,
-        frequency: "monthly",
-      },
-      {
-        id: "4",
-        name: "Car Insurance",
-        amount: 85,
-        frequency: "monthly",
-      },
+      { id: "1", name: "Mortgage/Rent", amount: 950, frequency: "monthly" },
+      { id: "2", name: "Council Tax", amount: 150, frequency: "monthly" },
+      { id: "3", name: "Utilities", amount: 180, frequency: "monthly" },
+      { id: "4", name: "Car Insurance", amount: 85, frequency: "monthly" },
     ];
   });
 
-  // Guarda automáticamente cada cambio
   useEffect(() => {
     localStorage.setItem("fixed-expenses-2025", JSON.stringify(expenses));
   }, [expenses]);
 
   const [isAdding, setIsAdding] = useState(false);
-  // NUEVO: Estados para edición
-  const [editingId, setEditingId] = useState<string | null>(null);
-  const [editExpense, setEditExpense] = useState({
-    name: "",
-    amount: 0,
-    frequency: "monthly" as Frequency,
-  });
-  // NUEVO: Usamos editExpense en lugar de newExpense para unificar (funciona para add y edit)
-  const [currentExpense, setCurrentExpense] = useState({
+  const [newExpense, setNewExpense] = useState({
     name: "",
     amount: 0,
     frequency: "monthly" as Frequency,
   });
 
-  const monthlyTotal = expenses
-    .reduce(
-      (total, expense) =>
-        total + expense.amount * frequencyMultiplier[expense.frequency],
-      0
-    )
-    .toFixed(0);
-
-  // NUEVO: Función para manejar edición (prefillea el form)
-  const handleEdit = (expense: Expense) => {
-    setEditingId(expense.id);
-    setCurrentExpense({
-      name: expense.name,
-      amount: expense.amount,
-      frequency: expense.frequency,
-    });
-    setIsAdding(true);
-  };
-
-  // NUEVO: Función para actualizar gasto existente
-  const handleUpdate = () => {
-    if (editingId && currentExpense.name && currentExpense.amount > 0) {
-      setExpenses(
-        expenses.map((expense) =>
-          expense.id === editingId
-            ? {
-                ...expense,
-                name: currentExpense.name,
-                amount: currentExpense.amount,
-                frequency: currentExpense.frequency,
-              }
-            : expense
-        )
-      );
-      // Resetear estados
-      setEditingId(null);
-      setCurrentExpense({ name: "", amount: 0, frequency: "monthly" });
-      setIsAdding(false);
-    }
-  };
+  const monthlyTotal = expenses.reduce((total, expense) => {
+    return total + expense.amount * multiplier[expense.frequency];
+  }, 0).toFixed(0);
 
   const handleAdd = () => {
-    if (currentExpense.name && currentExpense.amount > 0 && !editingId) {
+    if (newExpense.name && newExpense.amount > 0) {
       setExpenses([
         ...expenses,
         {
           id: Date.now().toString(),
-          name: currentExpense.name,
-          amount: currentExpense.amount,
-          frequency: currentExpense.frequency,
+          name: newExpense.name,
+          amount: newExpense.amount,
+          frequency: newExpense.frequency,
         },
       ]);
-      setCurrentExpense({ name: "", amount: 0, frequency: "monthly" });
+      setNewExpense({ name: "", amount: 0, frequency: "monthly" });
       setIsAdding(false);
     }
-  };
-
-  // NUEVO: Función unificada para guardar (add o update)
-  const handleSave = () => {
-    if (editingId) {
-      handleUpdate();
-    } else {
-      handleAdd();
-    }
-  };
-
-  // NUEVO: Función para cancelar (resetear form y estados)
-  const handleCancel = () => {
-    setIsAdding(false);
-    setEditingId(null);
-    setCurrentExpense({ name: "", amount: 0, frequency: "monthly" });
   };
 
   const handleDelete = (id: string) => {
@@ -151,64 +67,69 @@ export const FixedExpensesManager = () => {
   };
 
   return (
-    <>
-      <div className="fixed-expenses-manager">
-        <h2>Fixed Expenses</h2>
-        <div className="expenses-list">
-          {expenses.map((expense) => (
-            <div key={expense.id} className="expense-item">
-              <span>{expense.name}</span>
-              <span>
-                {expense.frequency === "bi-weekly"
-                  ? "Bi-weekly"
-                  : expense.frequency}
+    <div className="bg-white dark:bg-gray-800 p-8 rounded-3xl shadow-2xl">
+      <div className="flex justify-between items-center mb-8">
+        <h2 className="text-3xl font-bold text-gray-800 dark:text-white">
+          Fixed Expenses
+        </h2>
+        <button
+          onClick={() => setIsAdding(true)}
+          className="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-xl flex items-center gap-2 transition font-medium"
+        >
+          <Plus className="w-5 h-5" />
+          Add Expense
+        </button>
+      </div>
+
+      <div className="space-y-4 mb-8">
+        {expenses.map((expense) => (
+          <div
+            key={expense.id}
+            className="flex justify-between items-center p-4 bg-gray-50 dark:bg-gray-700 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-600 transition"
+          >
+            <div>
+              <p className="font-semibold text-lg">{expense.name}</p>
+              <p className="text-sm text-gray-500 capitalize">
+                {expense.frequency === "bi-weekly" ? "Bi-weekly" : expense.frequency}
+              </p>
+            </div>
+            <div className="flex items-center gap-4">
+              <span className="text-2xl font-bold text-indigo-600">
+                £{expense.amount}
               </span>
-              <span>£{expense.amount}</span>
-              {/* NUEVO: Botón de editar */}
-              <button onClick={() => handleEdit(expense)}>
-                <Edit2 size={16} />
-              </button>
-              <button onClick={() => handleDelete(expense.id)}>
-                <Trash2 size={16} />
+              <button
+                onClick={() => handleDelete(expense.id)}
+                className="text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 p-2 rounded-lg transition"
+              >
+                <Trash2 className="w-5 h-5" />
               </button>
             </div>
-          ))}
-        </div>
-        <div className="monthly-total">
-          <strong>Monthly Total: £{monthlyTotal}</strong>
-        </div>
-        <button onClick={() => setIsAdding(true)}>
-          <Plus size={20} /> Add Expense
-        </button>
-        {isAdding && (
-          <div className="add-expense-form">
+          </div>
+        ))}
+      </div>
+
+      {isAdding && (
+        <div className="bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20 p-6 rounded-2xl border-2 border-indigo-200 dark:border-indigo-700">
+          <h3 className="text-xl font-bold mb-4">New Fixed Expense</h3>
+          <div className="grid md:grid-cols-3 gap-4">
             <input
               type="text"
-              placeholder="Expense name"
-              value={currentExpense.name}
-              onChange={(e) =>
-                setCurrentExpense({ ...currentExpense, name: e.target.value })
-              }
+              placeholder="e.g. Gym membership"
+              value={newExpense.name}
+              onChange={(e) => setNewExpense({ ...newExpense, name: e.target.value })}
+              className="px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500"
             />
             <input
               type="number"
               placeholder="Amount"
-              value={currentExpense.amount || ""}
-              onChange={(e) =>
-                setCurrentExpense({
-                  ...currentExpense,
-                  amount: parseFloat(e.target.value) || 0,
-                })
-              }
+              value={newExpense.amount || ""}
+              onChange={(e) => setNewExpense({ ...newExpense, amount: Number(e.target.value) })}
+              className="px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500"
             />
             <select
-              value={currentExpense.frequency}
-              onChange={(e) =>
-                setCurrentExpense({
-                  ...currentExpense,
-                  frequency: e.target.value as Frequency,
-                })
-              }
+              value={newExpense.frequency}
+              onChange={(e) => setNewExpense({ ...newExpense, frequency: e.target.value as Frequency })}
+              className="px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500"
             >
               <option value="weekly">Weekly</option>
               <option value="bi-weekly">Bi-weekly</option>
@@ -216,14 +137,28 @@ export const FixedExpensesManager = () => {
               <option value="quarterly">Quarterly</option>
               <option value="annually">Annually</option>
             </select>
-            {/* NUEVO: Botón dinámico para save (Add o Update) */}
-            <button onClick={handleSave}>
-              {editingId ? "Actualizar" : "Add"}
-            </button>
-            <button onClick={handleCancel}>Cancel</button>
           </div>
-        )}
+          <div className="flex gap-3 mt-4">
+            <button
+              onClick={handleAdd}
+              className="bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-3 rounded-xl font-bold transition"
+            >
+              Save Expense
+            </button>
+            <button
+              onClick={() => setIsAdding(false)}
+              className="bg-gray-400 hover:bg-gray-500 text-white px-6 py-3 rounded-xl font-bold transition"
+            >
+              Cancel
+            </button>
+          </div>
+        </div>
+      )}
+
+      <div className="mt-10 p-8 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-3xl text-center">
+        <p className="text-2xl opacity-90">Total fixed expenses per month</p>
+        <p className="text-6xl font-black mt-2">£{monthlyTotal}</p>
       </div>
-    </>
+    </div>
   );
 };
