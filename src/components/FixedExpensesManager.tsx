@@ -12,16 +12,16 @@ interface FixedExpense {
   name: string;
   amount: number;
   frequency: Frequency;
-  day_of_month?: number; // para mensual/quincenal
-  start_date: string; // ISO string
+  day_of_month?: number;
+  start_date: string;
 }
 
 const frequencyMultiplier: Record<Frequency, number> = {
-  weekly: 4.333, // promedio semanas por mes
-  "bi-weekly": 2, // dos veces al mes
+  weekly: 4.333,
+  "bi-weekly": 2,
   monthly: 1,
-  quarterly: 0.333, // 1/3 por mes
-  annually: 0.0833, // 1/12 por mes
+  quarterly: 0.333,
+  annually: 0.0833,
 };
 
 export const FixedExpensesManager = () => {
@@ -44,13 +44,12 @@ export const FixedExpensesManager = () => {
 
   const mutation = useMutation({
     mutationFn: async (expense: FixedExpense) => {
-      // Aquí iría Supabase: supabase.from('fixed_expenses').upsert(...)
-      // Simulamos por ahora
+      // Replace with real Supabase call
       return expense;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["fixed_expenses"] });
-      toast.success("Gasto fijo guardado");
+      toast.success("Fixed expense saved");
       setIsAdding(false);
       setEditingId(null);
       setForm({
@@ -65,16 +64,15 @@ export const FixedExpensesManager = () => {
 
   const deleteMutation = useMutation({
     mutationFn: async (id: string) => {
-      // supabase.from('fixed_expenses').delete().eq('id', id)
       return id;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["fixed_expenses"] });
-      toast.success("Gasto eliminado");
+      toast.success("Expense deleted");
     },
   });
 
-  // CÁLCULO MENSUAL CORRECTO SEGÚN FRECUENCIA
+  // ACCURATE MONTHLY TOTAL BY FREQUENCY
   const getMonthlyTotal = () => {
     const today = new Date();
     const currentMonth = getMonth(today);
@@ -82,7 +80,7 @@ export const FixedExpensesManager = () => {
 
     return expenses.reduce((total, expense) => {
       const startDate = new Date(expense.start_date);
-      if (startDate > today) return total; // aún no empezó
+      if (startDate > today) return total;
 
       let monthlyAmount = 0;
 
@@ -121,9 +119,9 @@ export const FixedExpensesManager = () => {
     <div className="space-y-6">
       <div className="flex justify-between items-center">
         <div>
-          <h2 className="text-2xl font-bold">Gastos Fijos</h2>
+          <h2 className="text-2xl font-bold">Fixed Expenses</h2>
           <p className="text-gray-600">
-            Total mensual estimado:{" "}
+            Estimated monthly total:{" "}
             <span className="text-3xl font-black text-emerald-600">£{monthlyTotal.toFixed(0)}</span>
           </p>
         </div>
@@ -131,17 +129,17 @@ export const FixedExpensesManager = () => {
           onClick={() => setIsAdding(true)}
           className="bg-blue-600 text-white px-6 py-3 rounded-xl flex items-center gap-2 hover:bg-blue-700 transition"
         >
-          <Plus className="w-5 h-5" /> Añadir gasto
+          <Plus className="w-5 h-5" /> Add expense
         </button>
       </div>
 
       {(isAdding || editingId) && (
         <div className="bg-gray-50 dark:bg-gray-900 p-6 rounded-2xl border">
-          <h3 className="text-xl font-semibold mb-4">{editingId ? "Editar" : "Nuevo"} gasto fijo</h3>
+          <h3 className="text-xl font-semibold mb-4">{editingId ? "Edit" : "New"} fixed expense</h3>
           <div className="grid md:grid-cols-2 gap-4">
             <input
               type="text"
-              placeholder="Nombre (ej. Hipoteca)"
+              placeholder="Name (e.g. Mortgage)"
               value={form.name}
               onChange={(e) => setForm({ ...form, name: e.target.value })}
               className="px-4 py-3 border rounded-xl"
@@ -150,7 +148,7 @@ export const FixedExpensesManager = () => {
               <PoundSterling className="w-5 h-5 text-gray-500" />
               <input
                 type="number"
-                placeholder="Cantidad"
+                placeholder="Amount"
                 value={form.amount}
                 onChange={(e) => setForm({ ...form, amount: Number(e.target.value) })}
                 className="px-4 py-3 border rounded-xl flex-1"
@@ -161,11 +159,11 @@ export const FixedExpensesManager = () => {
               onChange={(e) => setForm({ ...form, frequency: e.target.value as Frequency })}
               className="px-4 py-3 border rounded-xl"
             >
-              <option value="weekly">Semanal</option>
-              <option value="bi-weekly">Quincenal</option>
-              <option value="monthly">Mensual</option>
-              <option value="quarterly">Trimestral</option>
-              <option value="annually">Anual</option>
+              <option value="weekly">Weekly</option>
+              <option value="bi-weekly">Bi-weekly</option>
+              <option value="monthly">Monthly</option>
+              <option value="quarterly">Quarterly</option>
+              <option value="annually">Annually</option>
             </select>
             <input
               type="date"
@@ -179,7 +177,7 @@ export const FixedExpensesManager = () => {
               onClick={() => mutation.mutate(form as FixedExpense)}
               className="bg-emerald-600 text-white px-6 py-3 rounded-xl hover:bg-emerald-700"
             >
-              Guardar
+              Save
             </button>
             <button
               onClick={() => {
@@ -188,7 +186,7 @@ export const FixedExpensesManager = () => {
               }}
               className="bg-gray-300 px-6 py-3 rounded-xl hover:bg-gray-400"
             >
-              Cancelar
+              Cancel
             </button>
           </div>
         </div>
@@ -196,7 +194,7 @@ export const FixedExpensesManager = () => {
 
       <div className="space-y-3">
         {expenses.length === 0 ? (
-          <p className="text-center text-gray-500 py-12">No tienes gastos fijos aún</p>
+          <p className="text-center text-gray-500 py-12">You have no fixed expenses yet</p>
         ) : (
           expenses.map((expense) => (
             <div
@@ -208,14 +206,14 @@ export const FixedExpensesManager = () => {
                 <p className="text-gray-600">
                   £{expense.amount.toFixed(0)} •{" "}
                   {expense.frequency === "bi-weekly"
-                    ? "Quincenal"
+                    ? "Bi-weekly"
                     : expense.frequency === "weekly"
-                      ? "Semanal"
+                      ? "Weekly"
                       : expense.frequency === "quarterly"
-                        ? "Trimestral"
+                        ? "Quarterly"
                         : expense.frequency === "annually"
-                          ? "Anual"
-                          : "Mensual"}
+                          ? "Annually"
+                          : "Monthly"}
                 </p>
               </div>
               <div className="flex gap-3">
