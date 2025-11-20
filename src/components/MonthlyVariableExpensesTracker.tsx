@@ -13,19 +13,19 @@ interface VariableExpense {
 
 // Multiplicadores exactos para convertir cualquier frecuencia a mensual
 const frequencyMultiplier: Record<Frequency, number> = {
-  weekly: 4.333,      // promedio de semanas en un mes
-  "bi-weekly": 2,     // dos veces al mes
+  weekly: 4.333,
+  "bi-weekly": 2,
   monthly: 1,
-  quarterly: 0.333,   // 1/3 por mes
-  annually: 0.0833,   // 1/12 por mes
+  quarterly: 0.333,
+  annually: 0.0833,
 };
 
 export const VariableExpensesTracker = () => {
   const [expenses, setExpenses] = useState<VariableExpense[]>([
     { id: "1", name: "Groceries", amount: 320, frequency: "monthly" },
     { id: "2", name: "Eating Out & Coffee", amount: 180, frequency: "monthly" },
-    { id: "3", name: "Entertainment (Netflix, etc.)", amount: 80, frequency: "monthly" },
-    { id: "4", name: "Fuel / Public Transport", amount: 120, frequency: "monthly" },
+    { id: "3", name: "Entertainment", amount: 80, frequency: "monthly" },
+    { id: "4", name: "Fuel / Transport", amount: 120, frequency: "monthly" },
     { id: "5", name: "Shopping & Clothes", amount: 150, frequency: "monthly" },
   ]);
 
@@ -36,13 +36,13 @@ export const VariableExpensesTracker = () => {
     frequency: "monthly" as Frequency,
   });
 
-  // Cálculo mensual preciso con frecuencias
+  // CÁLCULO CORREGIDO — ¡AQUÍ ESTABA EL ERROR!
   const monthlyTotal = expenses.reduce((total, expense) => {
-    return total + expense.amount * frequencyMultiplier expense.frequency];
+    return total + expense.amount * frequencyMultiplier[expense.frequency];
   }, 0);
 
   const handleAdd = () => {
-    if (newExpense.name && newExpense.amount > 0) {
+    if (newExpense.name.trim() && newExpense.amount > 0) {
       setExpenses([
         ...expenses,
         {
@@ -65,8 +65,12 @@ export const VariableExpensesTracker = () => {
     <div className="bg-white dark:bg-gray-800 p-8 rounded-3xl shadow-2xl">
       <div className="flex justify-between items-center mb-8">
         <div>
-          <h2 className="text-3xl font-bold text-gray-800 dark:text-white">Variable Expenses</h2>
-          <p className="text-gray-600 dark:text-gray-400">Monthly average based on your habits</p>
+          <h2 className="text-3xl font-bold text-gray-800 dark:text-white">
+            Variable Expenses
+          </h2>
+          <p className="text-gray-600 dark:text-gray-400">
+            Monthly average based on your habits
+          </p>
         </div>
         <button
           onClick={() => setIsAdding(true)}
@@ -90,7 +94,9 @@ export const VariableExpensesTracker = () => {
               </p>
             </div>
             <div className="flex items-center gap-4">
-              <span className="text-2xl font-bold text-indigo-600">£{expense.amount}</span>
+              <span className="text-2xl font-bold text-indigo-600">
+                £{expense.amount}
+              </span>
               <button
                 onClick={() => handleDelete(expense.id)}
                 className="text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 p-2 rounded-lg transition"
@@ -102,7 +108,6 @@ export const VariableExpensesTracker = () => {
         ))}
       </div>
 
-      {/* Formulario para añadir nuevo gasto */}
       {isAdding && (
         <div className="bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20 p-6 rounded-2xl border-2 border-indigo-200 dark:border-indigo-700">
           <h3 className="text-xl font-bold mb-4">New Variable Expense</h3>
@@ -150,7 +155,6 @@ export const VariableExpensesTracker = () => {
         </div>
       )}
 
-      {/* Total mensual final */}
       <div className="mt-10 p-8 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-3xl text-center">
         <p className="text-2xl opacity-90">Average monthly variable spending</p>
         <p className="text-6xl font-black mt-2">£{monthlyTotal.toFixed(0)}</p>
