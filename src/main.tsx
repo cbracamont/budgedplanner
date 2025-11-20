@@ -1,8 +1,9 @@
-// src/main.tsx  (o donde esté el ReactDOM.createRoot)
+// src/main.tsx
 import React from "react";
 import ReactDOM from "react-dom/client";
-import App from "./App";
-import { BudgetProvider } from "./contexts/BudgetContext";  // ← NUEVO
+import App from "./App.tsx";
+import "./index.css";
+import { BudgetProvider } from "./contexts/BudgetContext.tsx";
 
 ReactDOM.createRoot(document.getElementById("root")!).render(
   <React.StrictMode>
