@@ -1,124 +1,180 @@
-/* src/index.css */
-* {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+/* Definition of the design system. All colors, gradients, fonts, etc should be defined here. 
+All colors MUST be HSL.
+*/
+
+@layer base {
+  :root {
+    --background: 220 25% 97%;
+    --foreground: 220 15% 15%;
+
+    --card: 0 0% 100%;
+    --card-foreground: 220 15% 15%;
+
+    --popover: 0 0% 100%;
+    --popover-foreground: 220 15% 15%;
+
+    --primary: 45 100% 51%;
+    --primary-foreground: 220 15% 15%;
+    --primary-glow: 45 100% 65%;
+
+    --secondary: 220 20% 94%;
+    --secondary-foreground: 220 15% 15%;
+
+    --muted: 220 20% 94%;
+    --muted-foreground: 220 10% 45%;
+
+    --accent: 217 91% 60%;
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 220 15% 88%;
+    --input: 220 15% 88%;
+    --ring: 45 100% 51%;
+
+    --radius: 0.75rem;
+
+    --income: 142 76% 36%;
+    --income-foreground: 0 0% 100%;
+    
+    --debt: 0 84% 60%;
+    --debt-foreground: 0 0% 100%;
+
+    --expenses: 270 60% 55%;
+    --expenses-foreground: 0 0% 100%;
+
+    --success: 142 76% 36%;
+    --warning: 38 92% 50%;
+    --warning-foreground: 0 0% 100%;
+    
+    --gradient-primary: linear-gradient(135deg, hsl(45 100% 51%), hsl(45 100% 65%));
+    --gradient-gold: linear-gradient(135deg, hsl(45 100% 51%), hsl(38 92% 50%));
+    --gradient-income: linear-gradient(135deg, hsl(142 76% 36%), hsl(142 76% 46%));
+    --gradient-debt: linear-gradient(135deg, hsl(0 84% 60%), hsl(0 84% 70%));
+    --gradient-accent: linear-gradient(135deg, hsl(217 91% 60%), hsl(217 91% 70%));
+    --gradient-expenses: linear-gradient(135deg, hsl(270 60% 55%), hsl(270 60% 65%));
+    --gradient-warning: linear-gradient(135deg, hsl(38 92% 50%), hsl(38 92% 60%));
+
+    --shadow-soft: 0 2px 8px -2px hsl(220 15% 15% / 0.08);
+    --shadow-medium: 0 4px 16px -4px hsl(220 15% 15% / 0.12);
+    --shadow-gold: 0 8px 24px -4px hsl(45 100% 51% / 0.25);
+    --shadow-premium: 0 12px 32px -8px hsl(45 100% 51% / 0.3);
+  }
+
+  /* Sober Theme */
+  [data-theme="sober"] {
+    --primary: 220 15% 40%;
+    --primary-foreground: 0 0% 100%;
+    --primary-glow: 220 15% 50%;
+    --gradient-primary: linear-gradient(135deg, hsl(220 15% 25%), hsl(220 15% 40%));
+    --gradient-gold: linear-gradient(135deg, hsl(220 15% 30%), hsl(220 15% 45%));
+  }
+
+  /* Ocean Theme */
+  [data-theme="ocean"] {
+    --primary: 200 90% 50%;
+    --primary-foreground: 0 0% 100%;
+    --primary-glow: 220 85% 60%;
+    --gradient-primary: linear-gradient(135deg, hsl(200 90% 50%), hsl(220 85% 60%));
+    --gradient-gold: linear-gradient(135deg, hsl(200 90% 45%), hsl(220 85% 55%));
+  }
+
+  /* Forest Theme */
+  [data-theme="forest"] {
+    --primary: 140 70% 40%;
+    --primary-foreground: 0 0% 100%;
+    --primary-glow: 160 65% 50%;
+    --gradient-primary: linear-gradient(135deg, hsl(140 70% 40%), hsl(160 65% 50%));
+    --gradient-gold: linear-gradient(135deg, hsl(140 70% 35%), hsl(160 65% 45%));
+  }
+
+  /* Sunset Theme */
+  [data-theme="sunset"] {
+    --primary: 25 95% 55%;
+    --primary-foreground: 0 0% 100%;
+    --primary-glow: 340 85% 60%;
+    --gradient-primary: linear-gradient(135deg, hsl(25 95% 55%), hsl(340 85% 60%));
+    --gradient-gold: linear-gradient(135deg, hsl(25 95% 50%), hsl(340 85% 55%));
+  }
+
+  /* Royal Theme */
+  [data-theme="royal"] {
+    --primary: 270 70% 50%;
+    --primary-foreground: 0 0% 100%;
+    --primary-glow: 290 65% 60%;
+    --gradient-primary: linear-gradient(135deg, hsl(270 70% 50%), hsl(290 65% 60%));
+    --gradient-gold: linear-gradient(135deg, hsl(270 70% 45%), hsl(290 65% 55%));
+  }
+
+  .dark {
+    --background: 220 20% 8%;
+    --foreground: 220 10% 95%;
+
+    --card: 220 18% 11%;
+    --card-foreground: 220 10% 95%;
+
+    --popover: 220 18% 11%;
+    --popover-foreground: 220 10% 95%;
+
+    --primary: 45 100% 51%;
+    --primary-foreground: 220 15% 15%;
+    --primary-glow: 45 100% 65%;
+
+    --secondary: 220 15% 16%;
+    --secondary-foreground: 220 10% 95%;
+
+    --muted: 220 15% 16%;
+    --muted-foreground: 220 10% 65%;
+
+    --accent: 217 91% 60%;
+    --accent-foreground: 0 0% 100%;
+
+    --destructive: 0 84% 60%;
+    --destructive-foreground: 0 0% 100%;
+
+    --border: 220 15% 20%;
+    --input: 220 15% 20%;
+    --ring: 45 100% 51%;
+    
+    --income: 142 76% 36%;
+    --income-foreground: 0 0% 100%;
+    
+    --debt: 0 84% 60%;
+    --debt-foreground: 0 0% 100%;
+
+    --expenses: 270 60% 55%;
+    --expenses-foreground: 0 0% 100%;
+
+    --success: 142 76% 36%;
+    --warning: 38 92% 50%;
+    --warning-foreground: 0 0% 100%;
+    
+    --gradient-primary: linear-gradient(135deg, hsl(45 100% 51%), hsl(45 100% 65%));
+    --gradient-gold: linear-gradient(135deg, hsl(45 100% 51%), hsl(38 92% 50%));
+    --gradient-income: linear-gradient(135deg, hsl(142 76% 36%), hsl(142 76% 46%));
+    --gradient-debt: linear-gradient(135deg, hsl(0 84% 60%), hsl(0 84% 70%));
+    --gradient-accent: linear-gradient(135deg, hsl(217 91% 60%), hsl(217 91% 70%));
+    --gradient-expenses: linear-gradient(135deg, hsl(270 60% 55%), hsl(270 60% 65%));
+    --gradient-warning: linear-gradient(135deg, hsl(38 92% 50%), hsl(38 92% 60%));
+
+    --shadow-soft: 0 2px 8px -2px hsl(0 0% 0% / 0.3);
+    --shadow-medium: 0 4px 16px -4px hsl(0 0% 0% / 0.4);
+    --shadow-gold: 0 8px 24px -4px hsl(45 100% 51% / 0.35);
+    --shadow-premium: 0 12px 32px -8px hsl(45 100% 51% / 0.4);
+  }
 }
 
-body {
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-  min-height: 100vh;
-  color: #333;
-}
+@layer base {
+  * {
+    @apply border-border;
+  }
 
-#root {
-  min-height: 100vh;
-}
-
-.container {
-  max-width: 1200px;
-  margin: 0 auto;
-  padding: 2rem;
-}
-
-header {
-  text-align: center;
-  padding: 3rem 0;
-  color: white;
-}
-
-header h1 {
-  font-size: 3.5rem;
-  font-weight: 800;
-  text-shadow: 0 4px 10px rgba(0,0,0,0.3);
-}
-
-header p {
-  font-size: 1.3rem;
-  opacity: 0.9;
-  margin-top: 0.5rem;
-}
-
-.card {
-  background: white;
-  border-radius: 20px;
-  padding: 2rem;
-  margin: 2rem 0;
-  box-shadow: 0 20px 40px rgba(0,0,0,0.15);
-  transition: transform 0.3s;
-}
-
-.card:hover {
-  transform: translateY(-10px);
-}
-
-.grid {
-  display: grid;
-  grid-template-columns: repeat(auto-fit, minmax(250px, 1fr));
-  gap: 2rem;
-  margin: 2rem 0;
-}
-
-.summary-item {
-  background: white;
-  padding: 1.5rem;
-  border-radius: 16px;
-  text-align: center;
-  box-shadow: 0 10px 30px rgba(0,0,0,0.1);
-}
-
-.summary-item h3 {
-  font-size: 0.9rem;
-  text-transform: uppercase;
-  letter-spacing: 1px;
-  color: #666;
-  margin-bottom: 0.5rem;
-}
-
-.summary-item p {
-  font-size: 2.2rem;
-  font-weight: 800;
-  margin: 0;
-}
-
-.income { color: #10b981; }
-.fixed { color: #ef4444; }
-.variable { color: #f59e0b; }
-.remaining { color: #10b981; font-size: 2.8rem !important; }
-
-/* Botones */
-button {
-  background: #6366f1;
-  color: white;
-  border: none;
-  padding: 0.8rem 1.5rem;
-  border-radius: 12px;
-  font-weight: 600;
-  cursor: pointer;
-  transition: all 0.3s;
-}
-
-button:hover {
-  background: #4f46e5;
-  transform: translateY(-2px);
-}
-
-.expense-item {
-  display: flex;
-  justify-content: space-between;
-  align-items: center;
-  padding: 1rem;
-  background: #f8fafc;
-  border-radius: 12px;
-  margin: 0.5rem 0;
-}
-
-.expense-item button {
-  background: none;
-  color: #94a3b8;
-}
-
-.expense-item button:hover {
-  color: #ef4444;
+  body {
+    @apply bg-background text-foreground;
+  }
 }

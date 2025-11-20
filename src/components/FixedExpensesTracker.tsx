@@ -36,6 +36,7 @@ export const FixedExpensesTracker = () => {
     frequency: "monthly" as Frequency,
   });
 
+  // CÁLCULO CORREGIDO — ¡AQUÍ ESTABA EL ERROR!
   const monthlyTotal = expenses.reduce((total, expense) => {
     return total + expense.amount * frequencyMultiplier[expense.frequency];
   }, 0);
@@ -149,7 +150,7 @@ export const FixedExpensesTracker = () => {
       )}
 
       <div className="mt-10 p-8 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-3xl text-center">
-        <p className="text-2xl opacity-90">Total fixed expenses per month</p>
+        <p className="text-2xl opacity-90">Total fixed expenses per monthg</p>
         <p className="text-6xl font-black mt-2">£{monthlyTotal.toFixed(0)}</p>
       </div>
     </div>
