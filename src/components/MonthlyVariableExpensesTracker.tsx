@@ -1,377 +1,160 @@
-import { useState, useMemo } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
-import { Input } from "@/components/ui/input";
-import { Label } from "@/components/ui/label";
-import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
-import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { ChevronLeft, ChevronRight, Plus, Edit2, Trash2, ShoppingCart } from "lucide-react";
-import { format, addMonths, subMonths, startOfMonth } from "date-fns";
-import { formatCurrency, Language } from "@/lib/i18n";
-import {
-  useMonthlyVariableExpenses,
-  useAddMonthlyVariableExpense,
-  useUpdateMonthlyVariableExpense,
-  useDeleteMonthlyVariableExpense,
-  type MonthlyVariableExpense,
-} from "@/hooks/useMonthlyVariableExpenses";
+// src/components/VariableExpensesTracker.tsx
+import { useState } from "react";
+import { Trash2, Plus } from "lucide-react";
 
-interface MonthlyVariableExpensesTrackerProps {
-  language: Language;
-  onExpensesChange?: (total: number) => void;
+type Frequency = "weekly" | "bi-weekly" | "monthly" | "quarterly" | "annually";
+
+interface VariableExpense {
+  id: string;
+  name: string;
+  amount: number;
+  frequency: Frequency;
 }
 
-export const MonthlyVariableExpensesTracker = ({ language, onExpensesChange }: MonthlyVariableExpensesTrackerProps) => {
-  const [currentMonth, setCurrentMonth] = useState(startOfMonth(new Date()));
-  const [isAddDialogOpen, setIsAddDialogOpen] = useState(false);
-  const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
-  const [deleteId, setDeleteId] = useState<string | null>(null);
-  const [editingExpense, setEditingExpense] = useState<MonthlyVariableExpense | null>(null);
+// Multiplicadores exactos para convertir cualquier frecuencia a mensual
+const frequencyMultiplier: Record<Frequency, number> = {
+  weekly: 4.333,      // promedio de semanas en un mes
+  "bi-weekly": 2,     // dos veces al mes
+  monthly: 1,
+  quarterly: 0.333,   // 1/3 por mes
+  annually: 0.0833,   // 1/12 por mes
+};
 
-  const [formData, setFormData] = useState({
-    amount: "",
-    date: format(new Date(), "yyyy-MM-dd"),
+export const VariableExpensesTracker = () => {
+  const [expenses, setExpenses] = useState<VariableExpense[]>([
+    { id: "1", name: "Groceries", amount: 320, frequency: "monthly" },
+    { id: "2", name: "Eating Out & Coffee", amount: 180, frequency: "monthly" },
+    { id: "3", name: "Entertainment (Netflix, etc.)", amount: 80, frequency: "monthly" },
+    { id: "4", name: "Fuel / Public Transport", amount: 120, frequency: "monthly" },
+    { id: "5", name: "Shopping & Clothes", amount: 150, frequency: "monthly" },
+  ]);
+
+  const [isAdding, setIsAdding] = useState(false);
+  const [newExpense, setNewExpense] = useState({
     name: "",
+    amount: 0,
+    frequency: "monthly" as Frequency,
   });
 
-  const { data: expenses = [], isLoading } = useMonthlyVariableExpenses(currentMonth);
-  const addMutation = useAddMonthlyVariableExpense();
-  const updateMutation = useUpdateMonthlyVariableExpense();
-  const deleteMutation = useDeleteMonthlyVariableExpense();
-
-  const monthTotal = useMemo(() => {
-    const total = expenses.reduce((sum, expense) => sum + Number(expense.amount), 0);
-    if (onExpensesChange) {
-      onExpensesChange(total);
-    }
-    return total;
-  }, [expenses, onExpensesChange]);
-
-  const handlePrevMonth = () => {
-    setCurrentMonth(prev => subMonths(prev, 1));
-  };
-
-  const handleNextMonth = () => {
-    setCurrentMonth(prev => addMonths(prev, 1));
-  };
+  // Cálculo mensual preciso con frecuencias
+  const monthlyTotal = expenses.reduce((total, expense) => {
+    return total + expense.amount * frequencyMultiplier expense.frequency];
+  }, 0);
 
   const handleAdd = () => {
-    setFormData({
-      amount: "",
-      date: format(currentMonth, "yyyy-MM-dd"),
-      name: "",
-    });
-    setIsAddDialogOpen(true);
-  };
-
-  const handleSaveNew = () => {
-    const amount = parseFloat(formData.amount);
-    if (isNaN(amount) || amount <= 0 || !formData.name.trim()) {
-      return;
+    if (newExpense.name && newExpense.amount > 0) {
+      setExpenses([
+        ...expenses,
+        {
+          id: Date.now().toString(),
+          name: newExpense.name,
+          amount: newExpense.amount,
+          frequency: newExpense.frequency,
+        },
+      ]);
+      setNewExpense({ name: "", amount: 0, frequency: "monthly" });
+      setIsAdding(false);
     }
-
-    addMutation.mutate({
-      amount,
-      date: formData.date,
-      name: formData.name.trim(),
-    });
-
-    setIsAddDialogOpen(false);
-    setFormData({ amount: "", date: format(currentMonth, "yyyy-MM-dd"), name: "" });
-  };
-
-  const handleEdit = (expense: MonthlyVariableExpense) => {
-    setEditingExpense(expense);
-    setFormData({
-      amount: expense.amount.toString(),
-      date: expense.date,
-      name: expense.name || "",
-    });
-    setIsEditDialogOpen(true);
-  };
-
-  const handleSaveEdit = () => {
-    if (!editingExpense) return;
-
-    const amount = parseFloat(formData.amount);
-    if (isNaN(amount) || amount <= 0 || !formData.name.trim()) {
-      return;
-    }
-
-    updateMutation.mutate({
-      id: editingExpense.id,
-      amount,
-      date: formData.date,
-      name: formData.name.trim(),
-    });
-
-    setIsEditDialogOpen(false);
-    setEditingExpense(null);
-    setFormData({ amount: "", date: format(currentMonth, "yyyy-MM-dd"), name: "" });
   };
 
   const handleDelete = (id: string) => {
-    setDeleteId(id);
+    setExpenses(expenses.filter((e) => e.id !== id));
   };
-
-  const confirmDelete = () => {
-    if (deleteId) {
-      deleteMutation.mutate(deleteId);
-      setDeleteId(null);
-    }
-  };
-
-  const t = {
-    en: {
-      title: "Monthly Variable Expenses",
-      addExpense: "Add Expense",
-      amount: "Amount",
-      date: "Date",
-      name: "Name",
-      save: "Save",
-      cancel: "Cancel",
-      edit: "Edit",
-      delete: "Delete",
-      deleteConfirm: "Are you sure you want to delete this expense entry?",
-      monthTotal: "Month Total",
-      noEntries: "No variable expenses for this month",
-    },
-    es: {
-      title: "Gastos Variables Mensuales",
-      addExpense: "Agregar Gasto",
-      amount: "Monto",
-      date: "Fecha",
-      name: "Nombre",
-      save: "Guardar",
-      cancel: "Cancelar",
-      edit: "Editar",
-      delete: "Eliminar",
-      deleteConfirm: "¿Está seguro de eliminar este gasto?",
-      monthTotal: "Total del Mes",
-      noEntries: "No hay gastos variables para este mes",
-    },
-    pl: {
-      title: "Miesięczne Zmienne Wydatki",
-      addExpense: "Dodaj Wydatek",
-      amount: "Kwota",
-      date: "Data",
-      name: "Nazwa",
-      save: "Zapisz",
-      cancel: "Anuluj",
-      edit: "Edytuj",
-      delete: "Usuń",
-      deleteConfirm: "Czy na pewno chcesz usunąć ten wpis wydatku?",
-      monthTotal: "Suma Miesiąca",
-      noEntries: "Brak zmiennych wydatków w tym miesiącu",
-    },
-  };
-
-  const translations = t[language];
 
   return (
-    <>
-      <Card className="shadow-medium bg-card/50 backdrop-blur-sm border-border/50">
-        <CardHeader className="bg-destructive/10 border-b border-border/30">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <ShoppingCart className="h-5 w-5" />
-              <CardTitle className="text-lg">{translations.title}</CardTitle>
-            </div>
-            <Button
-              onClick={handleAdd}
-              size="sm"
-              variant="secondary"
-              className="gap-2"
-            >
-              <Plus className="h-4 w-4" />
-              {translations.addExpense}
-            </Button>
-          </div>
-        </CardHeader>
+    <div className="bg-white dark:bg-gray-800 p-8 rounded-3xl shadow-2xl">
+      <div className="flex justify-between items-center mb-8">
+        <div>
+          <h2 className="text-3xl font-bold text-gray-800 dark:text-white">Variable Expenses</h2>
+          <p className="text-gray-600 dark:text-gray-400">Monthly average based on your habits</p>
+        </div>
+        <button
+          onClick={() => setIsAdding(true)}
+          className="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-xl flex items-center gap-2 transition font-medium"
+        >
+          <Plus className="w-5 h-5" />
+          Add Category
+        </button>
+      </div>
 
-        <CardContent className="pt-6">
-          {/* Month Navigation */}
-          <div className="flex items-center justify-between mb-6">
-            <Button
-              onClick={handlePrevMonth}
-              variant="outline"
-              size="icon"
-              className="h-8 w-8"
-            >
-              <ChevronLeft className="h-4 w-4" />
-            </Button>
-            
-            <div className="text-center">
-              <h3 className="text-lg font-semibold">
-                {format(currentMonth, "MMMM yyyy")}
-              </h3>
-              <p className="text-sm text-muted-foreground">
-                {translations.monthTotal}: <span className="font-bold text-destructive">{formatCurrency(monthTotal)}</span>
+      <div className="space-y-4 mb-8">
+        {expenses.map((expense) => (
+          <div
+            key={expense.id}
+            className="flex justify-between items-center p-4 bg-gray-50 dark:bg-gray-700 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-600 transition"
+          >
+            <div>
+              <p className="font-semibold text-lg">{expense.name}</p>
+              <p className="text-sm text-gray-500 capitalize">
+                {expense.frequency === "bi-weekly" ? "Bi-weekly" : expense.frequency}
               </p>
             </div>
+            <div className="flex items-center gap-4">
+              <span className="text-2xl font-bold text-indigo-600">£{expense.amount}</span>
+              <button
+                onClick={() => handleDelete(expense.id)}
+                className="text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 p-2 rounded-lg transition"
+              >
+                <Trash2 className="w-5 h-5" />
+              </button>
+            </div>
+          </div>
+        ))}
+      </div>
 
-            <Button
-              onClick={handleNextMonth}
-              variant="outline"
-              size="icon"
-              className="h-8 w-8"
+      {/* Formulario para añadir nuevo gasto */}
+      {isAdding && (
+        <div className="bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20 p-6 rounded-2xl border-2 border-indigo-200 dark:border-indigo-700">
+          <h3 className="text-xl font-bold mb-4">New Variable Expense</h3>
+          <div className="grid md:grid-cols-3 gap-4">
+            <input
+              type="text"
+              placeholder="e.g. Gym membership"
+              value={newExpense.name}
+              onChange={(e) => setNewExpense({ ...newExpense, name: e.target.value })}
+              className="px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            />
+            <input
+              type="number"
+              placeholder="Amount"
+              value={newExpense.amount || ""}
+              onChange={(e) => setNewExpense({ ...newExpense, amount: Number(e.target.value) })}
+              className="px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500"
+            />
+            <select
+              value={newExpense.frequency}
+              onChange={(e) => setNewExpense({ ...newExpense, frequency: e.target.value as Frequency })}
+              className="px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500"
             >
-              <ChevronRight className="h-4 w-4" />
-            </Button>
+              <option value="weekly">Weekly</option>
+              <option value="bi-weekly">Bi-weekly</option>
+              <option value="monthly">Monthly</option>
+              <option value="quarterly">Quarterly</option>
+              <option value="annually">Annually</option>
+            </select>
           </div>
-
-          {/* Expenses List */}
-          <div className="space-y-3">
-            {isLoading ? (
-              <p className="text-center text-muted-foreground py-4">Cargando...</p>
-            ) : expenses.length === 0 ? (
-              <p className="text-center text-muted-foreground py-4">{translations.noEntries}</p>
-            ) : (
-              expenses.map((expense) => (
-                <div
-                  key={expense.id}
-                  className="flex items-center justify-between p-4 bg-card border border-border rounded-lg hover:shadow-sm transition-shadow"
-                >
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2">
-                      <p className="font-semibold text-destructive">{formatCurrency(expense.amount)}</p>
-                      <span className="text-xs text-muted-foreground">
-                        {format(new Date(expense.date), "dd/MM/yyyy")}
-                      </span>
-                    </div>
-                    {expense.name && (
-                      <p className="text-sm text-muted-foreground mt-1">{expense.name}</p>
-                    )}
-                  </div>
-                  <div className="flex gap-2">
-                    <Button
-                      onClick={() => handleEdit(expense)}
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8"
-                    >
-                      <Edit2 className="h-4 w-4" />
-                    </Button>
-                    <Button
-                      onClick={() => handleDelete(expense.id)}
-                      variant="ghost"
-                      size="icon"
-                      className="h-8 w-8 text-destructive hover:text-destructive"
-                    >
-                      <Trash2 className="h-4 w-4" />
-                    </Button>
-                  </div>
-                </div>
-              ))
-            )}
+          <div className="flex gap-3 mt-4">
+            <button
+              onClick={handleAdd}
+              className="bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-3 rounded-xl font-bold transition"
+            >
+              Save Expense
+            </button>
+            <button
+              onClick={() => setIsAdding(false)}
+              className="bg-gray-400 hover:bg-gray-500 text-white px-6 py-3 rounded-xl font-bold transition"
+            >
+              Cancel
+            </button>
           </div>
-        </CardContent>
-      </Card>
+        </div>
+      )}
 
-      {/* Add Dialog */}
-      <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>{translations.addExpense}</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div>
-              <Label htmlFor="add-name">{translations.name}</Label>
-              <Input
-                id="add-name"
-                type="text"
-                value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-                placeholder={translations.name}
-              />
-            </div>
-            <div>
-              <Label htmlFor="add-amount">{translations.amount}</Label>
-              <Input
-                id="add-amount"
-                type="number"
-                step="0.01"
-                value={formData.amount}
-                onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
-              />
-            </div>
-            <div>
-              <Label htmlFor="add-date">{translations.date}</Label>
-              <Input
-                id="add-date"
-                type="date"
-                value={formData.date}
-                onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-              />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsAddDialogOpen(false)}>
-              {translations.cancel}
-            </Button>
-            <Button onClick={handleSaveNew}>{translations.save}</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Edit Dialog */}
-      <Dialog open={isEditDialogOpen} onOpenChange={setIsEditDialogOpen}>
-        <DialogContent>
-          <DialogHeader>
-            <DialogTitle>{translations.edit}</DialogTitle>
-          </DialogHeader>
-          <div className="space-y-4">
-            <div>
-              <Label htmlFor="edit-name">{translations.name}</Label>
-              <Input
-                id="edit-name"
-                type="text"
-                value={formData.name}
-                onChange={(e) => setFormData({ ...formData, name: e.target.value })}
-              />
-            </div>
-            <div>
-              <Label htmlFor="edit-amount">{translations.amount}</Label>
-              <Input
-                id="edit-amount"
-                type="number"
-                step="0.01"
-                value={formData.amount}
-                onChange={(e) => setFormData({ ...formData, amount: e.target.value })}
-              />
-            </div>
-            <div>
-              <Label htmlFor="edit-date">{translations.date}</Label>
-              <Input
-                id="edit-date"
-                type="date"
-                value={formData.date}
-                onChange={(e) => setFormData({ ...formData, date: e.target.value })}
-              />
-            </div>
-          </div>
-          <DialogFooter>
-            <Button variant="outline" onClick={() => setIsEditDialogOpen(false)}>
-              {translations.cancel}
-            </Button>
-            <Button onClick={handleSaveEdit}>{translations.save}</Button>
-          </DialogFooter>
-        </DialogContent>
-      </Dialog>
-
-      {/* Delete Confirmation */}
-      <AlertDialog open={!!deleteId} onOpenChange={() => setDeleteId(null)}>
-        <AlertDialogContent>
-          <AlertDialogHeader>
-            <AlertDialogTitle>{translations.delete}</AlertDialogTitle>
-            <AlertDialogDescription>{translations.deleteConfirm}</AlertDialogDescription>
-          </AlertDialogHeader>
-          <AlertDialogFooter>
-            <AlertDialogCancel>{translations.cancel}</AlertDialogCancel>
-            <AlertDialogAction onClick={confirmDelete}>{translations.delete}</AlertDialogAction>
-          </AlertDialogFooter>
-        </AlertDialogContent>
-      </AlertDialog>
-    </>
+      {/* Total mensual final */}
+      <div className="mt-10 p-8 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-3xl text-center">
+        <p className="text-2xl opacity-90">Average monthly variable spending</p>
+        <p className="text-6xl font-black mt-2">£{monthlyTotal.toFixed(0)}</p>
+      </div>
+    </div>
   );
 };
