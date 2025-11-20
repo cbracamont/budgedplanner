@@ -1,59 +1,39 @@
-// src/App.tsx
-import { useEffect, useState } from "react";
-import { DebtPlannerPro } from "./components/DebtPlannerPro";
-import { SavingsEngine } from "./components/SavingsEngine";
-import { OnboardingFlow } from "./components/OnboardingFlow";
+import { StrictMode } from "react";
+import { createRoot } from "react-dom/client";
+import "./index.css";
+import { Toaster } from "@/components/ui/toaster";
+import { Toaster as Sonner } from "@/components/ui/sonner";
+import { TooltipProvider } from "@/components/ui/tooltip";
+import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
+import { BrowserRouter, Routes, Route } from "react-router-dom";
+import Index from "./pages/Index";
+import NotFound from "./pages/NotFound";
+import Privacy from "./pages/Privacy";
+import Terms from "./pages/Terms";
+import ResetPassword from "./pages/ResetPassword";
 
-function App() {
-  const [showOnboarding, setShowOnboarding] = useState(true);
+const queryClient = new QueryClient();
 
-  // Simula que el onboarding ya se completó después de 3 pasos
-  const handleCompleteOnboarding = () => {
-    setShowOnboarding(false);
-  };
+const App = () => (
+  <QueryClientProvider client={queryClient}>
+    <TooltipProvider>
+      <Toaster />
+      <Sonner />
+      <BrowserRouter>
+        <Routes>
+          <Route path="/" element={<Index />} />
+          <Route path="/privacy" element={<Privacy />} />
+          <Route path="/terms" element={<Terms />} />
+          <Route path="/reset-password" element={<ResetPassword />} />
+          <Route path="*" element={<NotFound />} />
+        </Routes>
+      </BrowserRouter>
+    </TooltipProvider>
+  </QueryClientProvider>
+);
 
-  return (
-    <>
-      {/* Fondo bonito */}
-      <div className="min-h-screen bg-gradient-to-br from-indigo-50 via-white to-purple-50 dark:from-gray-900 dark:to-gray-800">
-        
-        {/* Onboarding (solo aparece la primera vez) */}
-        {showOnboarding && <OnboardingFlow onComplete={handleCompleteOnboarding} />}
-
-        {/* Contenido principal */}
-        <div className="max-w-6xl mx-auto px-6 py-12">
-          {/* Título épico */}
-          <header className="text-center mb-16">
-            <h1 className="text-5xl md:text-7xl font-black bg-gradient-to-r from-blue-600 via-purple-600 to-pink-600 bg-clip-text text-transparent leading-tight">
-              Family Budget Planner UK
-            </h1>
-            <p className="text-xl md:text-2xl text-gray-600 dark:text-gray-300 mt-6 font-medium">
-              La app financiera más precisa del 2025
-            </p>
-            <p className="text-lg text-gray-500 dark:text-gray-400 mt-2">
-              0% promos • Klarna • Student Loan • Lifetime ISA • Notificaciones
-            </p>
-          </header>
-
-          {/* Componentes principales */}
-          <div className="space-y-16">
-            <DebtPlannerPro />
-            <SavingsEngine />
-          </div>
-
-          {/* Footer */}
-          <footer className="text-center mt-20 text-gray-500 dark:text-gray-400">
-            <p className="text-sm">
-              Hecho con amor y precisión quirúrgica en 2025
-            </p>
-            <p className="text-xs mt-2">
-              Open Source • 100% gratis • Para siempre
-            </p>
-          </footer>
-        </div>
-      </div>
-    </>
-  );
-}
-
-export default App;
+createRoot(document.getElementById("root")!).render(
+  <StrictMode>
+    <App />
+  </StrictMode>
+);
