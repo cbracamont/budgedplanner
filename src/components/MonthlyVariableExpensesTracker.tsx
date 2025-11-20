@@ -1,18 +1,17 @@
 // src/components/VariableExpensesTracker.tsx
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Trash2, Plus } from "lucide-react";
 
 type Frequency = "weekly" | "bi-weekly" | "monthly" | "quarterly" | "annually";
 
-interface VariableExpense {
+interface Expense {
   id: string;
   name: string;
   amount: number;
   frequency: Frequency;
 }
 
-// Multiplicadores exactos para convertir cualquier frecuencia a mensual
-const frequencyMultiplier: Record<Frequency, number> = {
+const multiplier: Record<Frequency, number> = {
   weekly: 4.333,
   "bi-weekly": 2,
   monthly: 1,
@@ -20,14 +19,23 @@ const frequencyMultiplier: Record<Frequency, number> = {
   annually: 0.0833,
 };
 
-export const MonthlyVariableExpensesTracker = () => {
-  const [expenses, setExpenses] = useState<VariableExpense[]>([
-    { id: "1", name: "Groceries", amount: 320, frequency: "monthly" },
-    { id: "2", name: "Eating Out & Coffee", amount: 180, frequency: "monthly" },
-    { id: "3", name: "Entertainment", amount: 80, frequency: "monthly" },
-    { id: "4", name: "Fuel / Transport", amount: 120, frequency: "monthly" },
-    { id: "5", name: "Shopping & Clothes", amount: 150, frequency: "monthly" },
-  ]);
+export const VariableExpensesTracker = () => {
+  // ← AQUÍ ESTÁ LA CLAVE: ahora se guarda para siempre
+  const [expenses, setExpenses] = useState<Expense[]>(() => {
+    const saved = localStorage.getItem("variable-expenses-2025");
+    if (saved) return JSON.parse(saved);
+    return [
+      { id: "v1", name: "Groceries", amount: 320, frequency: "monthly" },
+      { id: "v2", name: "Eating out", amount: 180, frequency: "monthly" },
+      { id: "v3", name: "Fuel / Transport", amount: 140, frequency: "monthly" },
+      { id: "v4", name: "Entertainment", amount: 120, frequency: "monthly" },
+    ];
+  });
+
+  // Guarda cada cambio automáticamente
+  useEffect(() => {
+    localStorage.setItem("variable-expenses-2025", JSON.stringify(expenses));
+  }, [expenses]);
 
   const [isAdding, setIsAdding] = useState(false);
   const [newExpense, setNewExpense] = useState({
@@ -36,100 +44,76 @@ export const MonthlyVariableExpensesTracker = () => {
     frequency: "monthly" as Frequency,
   });
 
-  // CÁLCULO CORREGIDO — ¡AQUÍ ESTABA EL ERROR!
-  const monthlyTotal = expenses.reduce((total, expense) => {
-    return total + expense.amount * frequencyMultiplier[expense.frequency];
-  }, 0);
+  const monthlyTotal = expenses
+    .reduce((t, e) => t + e.amount * multiplier[e.frequency], 0)
+    .toFixed(0);
 
-  const handleAdd = () => {
-    if (newExpense.name.trim() && newExpense.amount > 0) {
-      setExpenses([
-        ...expenses,
-        {
-          id: Date.now().toString(),
-          name: newExpense.name,
-          amount: newExpense.amount,
-          frequency: newExpense.frequency,
-        },
-      ]);
+  const add = () => {
+    if (newExpense.name && newExpense.amount > 0) {
+      setExpenses([...expenses, { id: Date.now().toString(), ...newExpense }]);
       setNewExpense({ name: "", amount: 0, frequency: "monthly" });
       setIsAdding(false);
     }
   };
 
-  const handleDelete = (id: string) => {
-    setExpenses(expenses.filter((e) => e.id !== id));
-  };
+  const remove = (id: string) => setExpenses(expenses.filter((e) => e.id !== id));
 
   return (
-    <div className="bg-white dark:bg-gray-800 p-8 rounded-3xl shadow-2xl">
+    <div className="bg-white dark:bg-gray-800 p-10 rounded-3xl shadow-2xl">
       <div className="flex justify-between items-center mb-8">
-        <div>
-          <h2 className="text-3xl font-bold text-gray-800 dark:text-white">
-            Variable Expenses
-          </h2>
-          <p className="text-gray-600 dark:text-gray-400">
-            Monthly average based on your habits
-          </p>
-        </div>
+        <h2 className="text-4xl font-black text-emerald-800 dark:text-emerald-300">
+          Variable Expenses
+        </h2>
         <button
           onClick={() => setIsAdding(true)}
-          className="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-xl flex items-center gap-2 transition font-medium"
+          className="bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-4 rounded-xl flex items-center gap-3 font-bold"
         >
-          <Plus className="w-5 h-5" />
-          Add Category
+          <Plus className="w-6 h-6" /> Add Expense
         </button>
       </div>
 
       <div className="space-y-4 mb-8">
-        {expenses.map((expense) => (
+        {expenses.map((e) => (
           <div
-            key={expense.id}
-            className="flex justify-between items-center p-4 bg-gray-50 dark:bg-gray-700 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-600 transition"
+            key={e.id}
+            className="bg-gray-50 dark:bg-gray-700 p-6 rounded-xl flex justify-between items-center"
           >
             <div>
-              <p className="font-semibold text-lg">{expense.name}</p>
-              <p className="text-sm text-gray-500 capitalize">
-                {expense.frequency === "bi-weekly" ? "Bi-weekly" : expense.frequency}
-              </p>
+              <p className="text-xl font-bold">{e.name}</p>
+              <p className="text-gray-600">£{e.amount} – {e.frequency}</p>
             </div>
-            <div className="flex items-center gap-4">
-              <span className="text-2xl font-bold text-indigo-600">
-                £{expense.amount}
-              </span>
-              <button
-                onClick={() => handleDelete(expense.id)}
-                className="text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 p-2 rounded-lg transition"
-              >
-                <Trash2 className="w-5 h-5" />
-              </button>
-            </div>
+            <button
+              onClick={() => remove(e.id)}
+              className="text-red-600 hover:bg-red-100 p-3 rounded-lg"
+            >
+              <Trash2 className="w-6 h-6" />
+            </button>
           </div>
         ))}
       </div>
 
       {isAdding && (
-        <div className="bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20 p-6 rounded-2xl border-2 border-indigo-200 dark:border-indigo-700">
-          <h3 className="text-xl font-bold mb-4">New Variable Expense</h3>
-          <div className="grid md:grid-cols-3 gap-4">
-            <input
-              type="text"
-              placeholder="e.g. Gym membership"
-              value={newExpense.name}
-              onChange={(e) => setNewExpense({ ...newExpense, name: e.target.value })}
-              className="px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500"
-            />
+        <div className="bg-emerald-50 dark:bg-gray-700 p-8 rounded-3xl border-4 border-emerald-300">
+          <input
+            className="w-full px-5 py-4 border rounded-xl mb-4 text-lg"
+            placeholder="e.g. Netflix, Gym, Coffee"
+            value={newExpense.name}
+            onChange={(e) => setNewExpense({ ...newExpense, name: e.target.value })}
+          />
+          <div className="flex gap-4">
             <input
               type="number"
+              className="flex-1 px-5 py-4 border rounded-xl text-lg"
               placeholder="Amount"
               value={newExpense.amount || ""}
               onChange={(e) => setNewExpense({ ...newExpense, amount: Number(e.target.value) })}
-              className="px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500"
             />
             <select
+              className="px-5 py-4 border rounded-xl text-lg"
               value={newExpense.frequency}
-              onChange={(e) => setNewExpense({ ...newExpense, frequency: e.target.value as Frequency })}
-              className="px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500"
+              onChange={(e) =>
+                setNewExpense({ ...newExpense, frequency: e.target.value as Frequency })
+              }
             >
               <option value="weekly">Weekly</option>
               <option value="bi-weekly">Bi-weekly</option>
@@ -138,16 +122,16 @@ export const MonthlyVariableExpensesTracker = () => {
               <option value="annually">Annually</option>
             </select>
           </div>
-          <div className="flex gap-3 mt-4">
+          <div className="flex gap-4 mt-6">
             <button
-              onClick={handleAdd}
-              className="bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-3 rounded-xl font-bold transition"
+              onClick={add}
+              className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white py-4 rounded-xl font-bold text-xl"
             >
-              Save Expense
+              Save
             </button>
             <button
               onClick={() => setIsAdding(false)}
-              className="bg-gray-400 hover:bg-gray-500 text-white px-6 py-3 rounded-xl font-bold transition"
+              className="flex-1 bg-gray-500 text-white py-4 rounded-xl font-bold text-xl"
             >
               Cancel
             </button>
@@ -155,9 +139,9 @@ export const MonthlyVariableExpensesTracker = () => {
         </div>
       )}
 
-      <div className="mt-10 p-8 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-3xl text-center">
-        <p className="text-2xl opacity-90">Average monthly variable spending</p>
-        <p className="text-6xl font-black mt-2">£{monthlyTotal.toFixed(0)}</p>
+      <div className="mt-12 p-10 bg-gradient-to-r from-emerald-600 to-teal-700 text-white rounded-3xl text-center">
+        <p className="text-3xl">Average monthly variable spending</p>
+        <p className="text-8xl font-black">£{monthlyTotal}</p>
       </div>
     </div>
   );
