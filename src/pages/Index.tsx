@@ -414,7 +414,8 @@ const Index = () => {
     const totalDebt = debtData.reduce((s, d) => s + d.balance, 0);
     const idealMonthlyReduction = totalDebt > 0 ? monthlyPay : 0;
     const idealRemainingDebt = Math.max(0, totalDebt - idealMonthlyReduction * Math.abs(monthsSinceStart));
-    const idealProgressPercent = totalDebt > 0 ? Math.min(100, ((totalDebt - idealRemainingDebt) / totalDebt) * 100) : 0;
+    const idealProgressPercent =
+      totalDebt > 0 ? Math.min(100, ((totalDebt - idealRemainingDebt) / totalDebt) * 100) : 0;
 
     // Calculate actual debt free months
     while (remaining > 0 && months < 120) {
@@ -969,11 +970,7 @@ const Index = () => {
                     <TabsContent value="settings" className="mt-4">
                       <SettingsTab />
                       <div className="mt-6 pt-6 border-t">
-                        <Button
-                          variant="outline"
-                          onClick={() => window.print()}
-                          className="w-full"
-                        >
+                        <Button variant="outline" onClick={() => window.print()} className="w-full">
                           <Download className="h-4 w-4 mr-2" />
                           Exportar datos
                         </Button>
@@ -1980,7 +1977,7 @@ const Index = () => {
                   <TabsTrigger value="variable">Variable</TabsTrigger>
                 </TabsList>
                 <TabsContent value="fixed">
-                  <FixedExpensesManager />
+                  <FixedExpensestracker />
                 </TabsContent>
                 <TabsContent value="variable">
                   <Card className="rounded-lg shadow-sm border border-slate-200 dark:border-slate-700 bg-gradient-to-r from-slate-50 to-slate-100 dark:from-slate-800 dark:to-slate-900 hover:from-slate-100 hover:to-slate-200 dark:hover:from-slate-700 dark:hover:to-slate-800 transition-colors">
