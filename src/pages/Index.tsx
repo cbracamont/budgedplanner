@@ -1980,7 +1980,7 @@ const Index = () => {
                   <TabsTrigger value="variable">Variable</TabsTrigger>
                 </TabsList>
                 <TabsContent value="fixed">
-                  <FixedExpensesManager language={language} />
+                  <FixedExpensesManager />
                 </TabsContent>
                 <TabsContent value="variable">
                   <Card className="rounded-lg shadow-sm border border-slate-200 dark:border-slate-700 bg-gradient-to-r from-slate-50 to-slate-100 dark:from-slate-800 dark:to-slate-900 hover:from-slate-100 hover:to-slate-200 dark:hover:from-slate-700 dark:hover:to-slate-800 transition-colors">
@@ -1990,7 +1990,7 @@ const Index = () => {
                       </CardTitle>
                     </CardHeader>
                     <CardContent>
-                      <MonthlyVariableExpensesTracker language={language} />
+                      <MonthlyVariableExpensesTracker />
                     </CardContent>
                   </Card>
                 </TabsContent>
