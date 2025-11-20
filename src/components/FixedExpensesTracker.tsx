@@ -65,12 +65,8 @@ export const FixedExpensesTracker = () => {
     <div className="bg-white dark:bg-gray-800 p-8 rounded-3xl shadow-2xl">
       <div className="flex justify-between items-center mb-8">
         <div>
-          <h2 className="text-3xl font-bold text-gray-800 dark:text-white">
-            Fixed Expenses
-          </h2>
-          <p className="text-gray-600 dark:text-gray-400">
-            Monthly average based on your habits
-          </p>
+          <h2 className="text-3xl font-bold text-gray-800 dark:text-white">Fixed Expenses</h2>
+          <p className="text-gray-600 dark:text-gray-400">Committed monthly expenses:</p>
         </div>
         <button
           onClick={() => setIsAdding(true)}
@@ -94,9 +90,7 @@ export const FixedExpensesTracker = () => {
               </p>
             </div>
             <div className="flex items-center gap-4">
-              <span className="text-2xl font-bold text-indigo-600">
-                £{expense.amount}
-              </span>
+              <span className="text-2xl font-bold text-indigo-600">£{expense.amount}</span>
               <button
                 onClick={() => handleDelete(expense.id)}
                 className="text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 p-2 rounded-lg transition"
