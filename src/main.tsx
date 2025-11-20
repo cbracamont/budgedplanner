@@ -1,3 +1,4 @@
+// src/main.tsx (o src/index.tsx)
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
 import "./index.css";
@@ -12,6 +13,9 @@ import Privacy from "./pages/Privacy";
 import Terms from "./pages/Terms";
 import ResetPassword from "./pages/ResetPassword";
 
+// ← LÍNEA NUEVA: Importamos el BudgetProvider
+import { BudgetProvider } from "./contexts/BudgetContext";
+
 const queryClient = new QueryClient();
 
 const App = () => (
@@ -19,15 +23,18 @@ const App = () => (
     <TooltipProvider>
       <Toaster />
       <Sonner />
-      <BrowserRouter>
-        <Routes>
-          <Route path="/" element={<Index />} />
-          <Route path="/privacy" element={<Privacy />} />
-          <Route path="/terms" element={<Terms />} />
-          <Route path="/reset-password" element={<ResetPassword />} />
-          <Route path="*" element={<NotFound />} />
-        </Routes>
-      </BrowserRouter>
+      {/* ← AQUÍ ENVOLVEMOS TODO CON BudgetProvider */}
+      <BudgetProvider>
+        <BrowserRouter>
+          <Routes>
+            <Route path="/" element={<Index />} />
+            <Route path="/privacy" element={<Privacy />} />
+            <Route path="/terms" element={<Terms />} />
+            <Route path="/reset-password" element={<ResetPassword />} />
+            <Route path="*" element={<NotFound />} />
+          </Routes>
+        </BrowserRouter>
+      </BudgetProvider>
     </TooltipProvider>
   </QueryClientProvider>
 );
