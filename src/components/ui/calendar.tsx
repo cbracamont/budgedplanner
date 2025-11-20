@@ -1,107 +1,54 @@
-// src/components/Calendar.tsx
-import { format, startOfMonth, endOfMonth, eachDayOfInterval, isSameDay, addMonths, subMonths } from "date-fns";
-import { useState } from "react";
+import * as React from "react";
 import { ChevronLeft, ChevronRight } from "lucide-react";
-import { useBudget } from "@/contexts/BudgetContext";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
-import { Button } from "@/components/ui/button";
+import { DayPicker } from "react-day-picker";
 
-export const Calendar = () => {
-  const { variable } = useBudget();
-  const [currentMonth, setCurrentMonth] = useState(new Date());
-  const [selectedDate, setSelectedDate] = useState<Date | null>(null);
+import { cn } from "@/lib/utils";
+import { buttonVariants } from "@/components/ui/button";
 
-  const monthStart = startOfMonth(currentMonth);
-  const monthEnd = endOfMonth(currentMonth);
-  const days = eachDayOfInterval({ start: monthStart, end: monthEnd });
+export type CalendarProps = React.ComponentProps<typeof DayPicker>;
 
-  const expensesOnDate = (date: Date) =>
-    variable.filter((v) => isSameDay(new Date(v.date), date));
-
-  const totalOnDate = (date: Date) =>
-    expensesOnDate(date).reduce((sum, v) => sum + v.amount, 0);
-
-  const selectedExpenses = selectedDate ? expensesOnDate(selectedDate) : [];
-
+function Calendar({ className, classNames, showOutsideDays = true, ...props }: CalendarProps) {
   return (
-    <Card>
-      <CardHeader>
-        <div className="flex items-center justify-between">
-          <CardTitle className="text-2xl">Spending Calendar</CardTitle>
-          <div className="flex items-center gap-2">
-            <Button
-              size="icon"
-              variant="outline"
-              onClick={() => setCurrentMonth(subMonths(currentMonth, 1))}
-            >
-              <ChevronLeft className="h-4 w-4" />
-            </Button>
-            <span className="font-medium w-32 text-center">
-              {format(currentMonth, "MMMM yyyy")}
-            </span>
-            <Button
-              size="icon"
-              variant="outline"
-              onClick={() => setCurrentMonth(addMonths(currentMonth, 1))}
-            >
-              <ChevronRight className="h-4 w-4" />
-            </Button>
-          </div>
-        </div>
-      </CardHeader>
-
-      <CardContent>
-        <div className="grid grid-cols-7 gap-1 text-center text-sm font-medium text-muted-foreground mb-2">
-          {["Sun", "Mon", "Tue", "Wed", "Thu", "Fri", "Sat"].map((d) => (
-            <div key={d}>{d}</div>
-          ))}
-        </div>
-
-        <div className="grid grid-cols-7 gap-1">
-          {/* Espacios vacíos antes del primer día */}
-          {Array.from({ length: monthStart.getDay() }).map((_, i) => (
-            <div key={`empty-${i}`} />
-          ))}
-
-          {days.map((day) => {
-            const total = totalOnDate(day);
-            const isToday = isSameDay(day, new Date());
-            const isSelected = selectedDate && isSameDay(day, selectedDate);
-
-            return (
-              <button
-                key={day.toString()}
-                onClick={() => setSelectedDate(day)}
-                className={`aspect-square rounded-lg border transition-all ${
-                  isToday
-                    ? "border-blue-500 ring-2 ring-blue-500 ring-offset-2"
-                    : isSelected
-                    ? "bg-primary text-primary-foreground"
-                    : "hover:bg-accent"
-                } ${total > 0 ? "font-bold" : ""}`}
-              >
-                <div className="text-sm">{format(day, "d")}</div>
-                {total > 0 && <div className="text-xs">£{total}</div>}
-              </button>
-            );
-          })}
-        </div>
-
-        {selectedExpenses.length > 0 && (
-          <div className="mt-6 p-4 bg-muted rounded-lg">
-            <h4 className="font-semibold mb-2">
-              {format(selectedDate!, "EEEE, MMMM d, yyyy")} – £
-              {totalOnDate(selectedDate!).toFixed(0)}
-            </h4>
-            {selectedExpenses.map((exp) => (
-              <div key={exp.id} className="flex justify-between text-sm">
-                <span>{exp.category}</span>
-                <span className="font-medium">£{exp.amount}</span>
-              </div>
-            ))}
-          </div>
-        )}
-      </CardContent>
-    </Card>
+    <DayPicker
+      showOutsideDays={showOutsideDays}
+      className={cn("p-3", className)}
+      classNames={{
+        months: "flex flex-col sm:flex-row space-y-4 sm:space-x-4 sm:space-y-0",
+        month: "space-y-4",
+        caption: "flex justify-center pt-1 relative items-center",
+        caption_label: "text-sm font-medium",
+        nav: "space-x-1 flex items-center",
+        nav_button: cn(
+          buttonVariants({ variant: "outline" }),
+          "h-7 w-7 bg-transparent p-0 opacity-50 hover:opacity-100",
+        ),
+        nav_button_previous: "absolute left-1",
+        nav_button_next: "absolute right-1",
+        table: "w-full border-collapse space-y-1",
+        head_row: "flex",
+        head_cell: "text-muted-foreground rounded-md w-9 font-normal text-[0.8rem]",
+        row: "flex w-full mt-2",
+        cell: "h-9 w-9 text-center text-sm p-0 relative [&:has([aria-selected].day-range-end)]:rounded-r-md [&:has([aria-selected].day-outside)]:bg-accent/50 [&:has([aria-selected])]:bg-accent first:[&:has([aria-selected])]:rounded-l-md last:[&:has([aria-selected])]:rounded-r-md focus-within:relative focus-within:z-20",
+        day: cn(buttonVariants({ variant: "ghost" }), "h-9 w-9 p-0 font-normal aria-selected:opacity-100"),
+        day_range_end: "day-range-end",
+        day_selected:
+          "bg-primary text-primary-foreground hover:bg-primary hover:text-primary-foreground focus:bg-primary focus:text-primary-foreground",
+        day_today: "bg-accent text-accent-foreground",
+        day_outside:
+          "day-outside text-muted-foreground opacity-50 aria-selected:bg-accent/50 aria-selected:text-muted-foreground aria-selected:opacity-30",
+        day_disabled: "text-muted-foreground opacity-50",
+        day_range_middle: "aria-selected:bg-accent aria-selected:text-accent-foreground",
+        day_hidden: "invisible",
+        ...classNames,
+      }}
+      components={{
+        IconLeft: ({ ..._props }) => <ChevronLeft className="h-4 w-4" />,
+        IconRight: ({ ..._props }) => <ChevronRight className="h-4 w-4" />,
+      }}
+      {...props}
+    />
   );
-};
+}
+Calendar.displayName = "Calendar";
+
+export { Calendar };

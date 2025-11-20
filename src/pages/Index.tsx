@@ -125,8 +125,6 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import type { Language } from "@/lib/i18n";
-import { VariableExpensesManager } from "@/components/VariableExpensesManager";
-import { Calendar } from "@/components/Calendar";
 type DebtMethod = "avalanche" | "snowball" | "hybrid";
 type Event = {
   id: string;
@@ -442,13 +440,7 @@ const Index = () => {
         color: "#ef4444",
       },
     ].filter((d) => d.value > 0);
-// Dentro del return de Index.tsx
-<div className="space-y-12">
-  <Overview />
-  <FixedExpensesManager />
-  <VariableExpensesManager />
-  <Calendar />
-</div>
+
     // CALENDARIO CON EVENTOS EN TODOS LOS MESES
     const allEvents: CalendarEvent[] = [];
     const startYear = currentMonth.getFullYear() - 1;
