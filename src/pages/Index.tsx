@@ -72,7 +72,7 @@ import { FixedExpensesTracker } from "@/components/FixedExpensesTracker";
 import { VariableExpensesManager } from "@/components/VariableExpensesManager";
 import { VariableIncomeManager } from "@/components/VariableIncomeManager";
 import { MonthlyVariableIncomeTracker } from "@/components/MonthlyVariableIncomeTracker";
-import { MonthlyVariableExpensesTracker } from "@/components/MonthlyVariableExpensesTracker";
+import { VariableExpensesTracker } from "@/components/MonthlyVariableExpensesTracker";
 import { SavingsManager } from "@/components/SavingsManager";
 import { SavingsGoalsManager } from "@/components/SavingsGoalsManager";
 import { MonthlyPaymentTracker } from "@/components/MonthlyPaymentTracker";
@@ -1958,7 +1958,7 @@ const Index = () => {
                   <FixedExpensesTracker />
                 </TabsContent>
                 <TabsContent value="variable">
-                  <MonthlyVariableExpensesTracker />
+                  <VariableExpensesTracker />
                 </TabsContent>
               </Tabs>
             </TabsContent>
