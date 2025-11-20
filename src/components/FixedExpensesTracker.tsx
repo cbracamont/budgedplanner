@@ -1,6 +1,8 @@
 // src/components/FixedExpensesTracker.tsx
-import { useState } from "react";
 import { Trash2, Plus } from "lucide-react";
+import { useFixedExpenses, useAddFixedExpense, useDeleteFixedExpense } from "@/hooks/useFinancialData";
+import { useToast } from "@/hooks/use-toast";
+import { useState } from "react";
 
 type Frequency = "weekly" | "bi-weekly" | "monthly" | "quarterly" | "annually";
 
@@ -21,13 +23,10 @@ const frequencyMultiplier: Record<Frequency, number> = {
 };
 
 export const FixedExpensesTracker = () => {
-  const [expenses, setExpenses] = useState<VariableExpense[]>([
-    { id: "1", name: "Groceries", amount: 320, frequency: "monthly" },
-    { id: "2", name: "Eating Out & Coffee", amount: 180, frequency: "monthly" },
-    { id: "3", name: "Entertainment", amount: 80, frequency: "monthly" },
-    { id: "4", name: "Fuel / Transport", amount: 120, frequency: "monthly" },
-    { id: "5", name: "Shopping & Clothes", amount: 150, frequency: "monthly" },
-  ]);
+  const { toast } = useToast();
+  const { data: expenses = [] } = useFixedExpenses();
+  const addExpenseMutation = useAddFixedExpense();
+  const deleteExpenseMutation = useDeleteFixedExpense();
 
   const [isAdding, setIsAdding] = useState(false);
   const [newExpense, setNewExpense] = useState({
@@ -36,29 +35,51 @@ export const FixedExpensesTracker = () => {
     frequency: "monthly" as Frequency,
   });
 
-  // CÁLCULO CORREGIDO — ¡AQUÍ ESTABA EL ERROR!
+  // Calculate monthly total from database expenses
   const monthlyTotal = expenses.reduce((total, expense) => {
-    return total + expense.amount * frequencyMultiplier[expense.frequency];
+    const frequency = expense.frequency_type as Frequency;
+    return total + expense.amount * (frequencyMultiplier[frequency] || 1);
   }, 0);
 
-  const handleAdd = () => {
+  const handleAdd = async () => {
     if (newExpense.name.trim() && newExpense.amount > 0) {
-      setExpenses([
-        ...expenses,
-        {
-          id: Date.now().toString(),
+      try {
+        await addExpenseMutation.mutateAsync({
           name: newExpense.name,
           amount: newExpense.amount,
-          frequency: newExpense.frequency,
-        },
-      ]);
-      setNewExpense({ name: "", amount: 0, frequency: "monthly" });
-      setIsAdding(false);
+          payment_day: 1,
+          frequency_type: newExpense.frequency,
+        });
+        setNewExpense({ name: "", amount: 0, frequency: "monthly" });
+        setIsAdding(false);
+        toast({
+          title: "Expense Added",
+          description: "Fixed expense has been added successfully",
+        });
+      } catch (error) {
+        toast({
+          title: "Error",
+          description: "Failed to add expense",
+          variant: "destructive",
+        });
+      }
     }
   };
 
-  const handleDelete = (id: string) => {
-    setExpenses(expenses.filter((e) => e.id !== id));
+  const handleDelete = async (id: string) => {
+    try {
+      await deleteExpenseMutation.mutateAsync(id);
+      toast({
+        title: "Expense Deleted",
+        description: "Fixed expense has been deleted successfully",
+      });
+    } catch (error) {
+      toast({
+        title: "Error",
+        description: "Failed to delete expense",
+        variant: "destructive",
+      });
+    }
   };
 
   return (
@@ -86,7 +107,7 @@ export const FixedExpensesTracker = () => {
             <div>
               <p className="font-semibold text-lg">{expense.name}</p>
               <p className="text-sm text-gray-500 capitalize">
-                {expense.frequency === "bi-weekly" ? "Bi-weekly" : expense.frequency}
+                {expense.frequency_type === "bi-weekly" ? "Bi-weekly" : expense.frequency_type}
               </p>
             </div>
             <div className="flex items-center gap-4">
