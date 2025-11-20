@@ -1,62 +1,56 @@
 // src/components/VariableExpensesTracker.tsx
-import { useState, useEffect } from "react";
+import { useState } from "react";
 import { Trash2, Plus } from "lucide-react";
-
-type Frequency = "weekly" | "bi-weekly" | "monthly" | "quarterly" | "annually";
-
-interface Expense {
-  id: string;
-  name: string;
-  amount: number;
-  frequency: Frequency;
-}
-
-const multiplier: Record<Frequency, number> = {
-  weekly: 4.333,
-  "bi-weekly": 2,
-  monthly: 1,
-  quarterly: 0.333,
-  annually: 0.0833,
-};
+import { useVariableExpenses, useAddVariableExpense, useDeleteVariableExpense } from "@/hooks/useFinancialData";
+import { useToast } from "@/hooks/use-toast";
+import { format } from "date-fns";
 
 export const VariableExpensesTracker = () => {
-  // ← AQUÍ ESTÁ LA CLAVE: ahora se guarda para siempre
-  const [expenses, setExpenses] = useState<Expense[]>(() => {
-    const saved = localStorage.getItem("variable-expenses-2025");
-    if (saved) return JSON.parse(saved);
-    return [
-      { id: "v1", name: "Groceries", amount: 320, frequency: "monthly" },
-      { id: "v2", name: "Eating out", amount: 180, frequency: "monthly" },
-      { id: "v3", name: "Fuel / Transport", amount: 140, frequency: "monthly" },
-      { id: "v4", name: "Entertainment", amount: 120, frequency: "monthly" },
-    ];
-  });
-
-  // Guarda cada cambio automáticamente
-  useEffect(() => {
-    localStorage.setItem("variable-expenses-2025", JSON.stringify(expenses));
-  }, [expenses]);
+  const { data: expenses = [], isLoading } = useVariableExpenses();
+  const addExpenseMutation = useAddVariableExpense();
+  const deleteExpenseMutation = useDeleteVariableExpense();
+  const { toast } = useToast();
 
   const [isAdding, setIsAdding] = useState(false);
   const [newExpense, setNewExpense] = useState({
     name: "",
     amount: 0,
-    frequency: "monthly" as Frequency,
+    date: format(new Date(), "yyyy-MM-dd"),
   });
 
+  // Calculate current month total
+  const currentMonth = format(new Date(), "yyyy-MM");
   const monthlyTotal = expenses
-    .reduce((t, e) => t + e.amount * multiplier[e.frequency], 0)
+    .filter((e) => e.date?.startsWith(currentMonth))
+    .reduce((t, e) => t + Number(e.amount), 0)
     .toFixed(0);
 
-  const add = () => {
+  const handleAdd = async () => {
     if (newExpense.name && newExpense.amount > 0) {
-      setExpenses([...expenses, { id: Date.now().toString(), ...newExpense }]);
-      setNewExpense({ name: "", amount: 0, frequency: "monthly" });
-      setIsAdding(false);
+      try {
+        await addExpenseMutation.mutateAsync({
+          name: newExpense.name,
+          amount: newExpense.amount,
+        });
+        setNewExpense({ name: "", amount: 0, date: format(new Date(), "yyyy-MM-dd") });
+        setIsAdding(false);
+      } catch (error) {
+        console.error("Error adding expense:", error);
+      }
     }
   };
 
-  const remove = (id: string) => setExpenses(expenses.filter((e) => e.id !== id));
+  const handleDelete = async (id: string) => {
+    try {
+      await deleteExpenseMutation.mutateAsync(id);
+    } catch (error) {
+      console.error("Error deleting expense:", error);
+    }
+  };
+
+  if (isLoading) {
+    return <div className="text-center p-8">Loading...</div>;
+  }
 
   return (
     <div className="bg-white dark:bg-gray-800 p-10 rounded-3xl shadow-2xl">
@@ -73,30 +67,35 @@ export const VariableExpensesTracker = () => {
       </div>
 
       <div className="space-y-4 mb-8">
-        {expenses.map((e) => (
-          <div
-            key={e.id}
-            className="bg-gray-50 dark:bg-gray-700 p-6 rounded-xl flex justify-between items-center"
-          >
-            <div>
-              <p className="text-xl font-bold">{e.name}</p>
-              <p className="text-gray-600">£{e.amount} – {e.frequency}</p>
-            </div>
-            <button
-              onClick={() => remove(e.id)}
-              className="text-red-600 hover:bg-red-100 p-3 rounded-lg"
+        {expenses.length === 0 ? (
+          <p className="text-center text-gray-500 py-8">No variable expenses yet. Add one to get started!</p>
+        ) : (
+          expenses.map((e) => (
+            <div
+              key={e.id}
+              className="bg-gray-50 dark:bg-gray-700 p-6 rounded-xl flex justify-between items-center"
             >
-              <Trash2 className="w-6 h-6" />
-            </button>
-          </div>
-        ))}
+              <div>
+                <p className="text-xl font-bold">{e.name || "Unnamed expense"}</p>
+                <p className="text-gray-600">£{Number(e.amount).toFixed(2)} – {e.date ? format(new Date(e.date), "MMM dd, yyyy") : "No date"}</p>
+              </div>
+              <button
+                onClick={() => handleDelete(e.id)}
+                className="text-red-600 hover:bg-red-100 p-3 rounded-lg"
+                disabled={deleteExpenseMutation.isPending}
+              >
+                <Trash2 className="w-6 h-6" />
+              </button>
+            </div>
+          ))
+        )}
       </div>
 
       {isAdding && (
         <div className="bg-emerald-50 dark:bg-gray-700 p-8 rounded-3xl border-4 border-emerald-300">
           <input
             className="w-full px-5 py-4 border rounded-xl mb-4 text-lg"
-            placeholder="e.g. Netflix, Gym, Coffee"
+            placeholder="e.g. Groceries, Gas, Restaurant"
             value={newExpense.name}
             onChange={(e) => setNewExpense({ ...newExpense, name: e.target.value })}
           />
@@ -108,26 +107,20 @@ export const VariableExpensesTracker = () => {
               value={newExpense.amount || ""}
               onChange={(e) => setNewExpense({ ...newExpense, amount: Number(e.target.value) })}
             />
-            <select
+            <input
+              type="date"
               className="px-5 py-4 border rounded-xl text-lg"
-              value={newExpense.frequency}
-              onChange={(e) =>
-                setNewExpense({ ...newExpense, frequency: e.target.value as Frequency })
-              }
-            >
-              <option value="weekly">Weekly</option>
-              <option value="bi-weekly">Bi-weekly</option>
-              <option value="monthly">Monthly</option>
-              <option value="quarterly">Quarterly</option>
-              <option value="annually">Annually</option>
-            </select>
+              value={newExpense.date}
+              onChange={(e) => setNewExpense({ ...newExpense, date: e.target.value })}
+            />
           </div>
           <div className="flex gap-4 mt-6">
             <button
-              onClick={add}
-              className="flex-1 bg-emerald-600 hover:bg-emerald-700 text-white py-4 rounded-xl font-bold text-xl"
+              onClick={handleAdd}
+              disabled={addExpenseMutation.isPending}
+              className="flex-1 bg-emerald-600 hover:bg-emerald-700 disabled:bg-gray-400 text-white py-4 rounded-xl font-bold text-xl"
             >
-              Save
+              {addExpenseMutation.isPending ? "Saving..." : "Save"}
             </button>
             <button
               onClick={() => setIsAdding(false)}
@@ -140,7 +133,7 @@ export const VariableExpensesTracker = () => {
       )}
 
       <div className="mt-12 p-10 bg-gradient-to-r from-emerald-600 to-teal-700 text-white rounded-3xl text-center">
-        <p className="text-3xl">Average monthly variable spending</p>
+        <p className="text-3xl">Current month variable spending</p>
         <p className="text-8xl font-black">£{monthlyTotal}</p>
       </div>
     </div>
