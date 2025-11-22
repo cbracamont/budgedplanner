@@ -115,6 +115,22 @@ export const InvitationsManager = () => {
     }
   };
 
+  if (loadingSent || loadingReceived) {
+    return (
+      <div className="space-y-6">
+        <Card>
+          <CardContent className="py-12 text-center">
+            <Loader2 className="h-12 w-12 mx-auto text-muted-foreground mb-4 animate-spin" />
+            <h3 className="text-lg font-semibold mb-2">Loading...</h3>
+            <p className="text-sm text-muted-foreground">
+              Checking for invitations and household information
+            </p>
+          </CardContent>
+        </Card>
+      </div>
+    );
+  }
+
   return (
     <div className="space-y-6">
       {/* Join by Code Section - Always visible when NOT in a household */}
@@ -346,7 +362,7 @@ export const InvitationsManager = () => {
         </>
       )}
 
-      {/* Empty State */}
+      {/* Empty State - Show when user has no household and no received invitations */}
       {!myHousehold && (!receivedInvitations || receivedInvitations.length === 0) && (
         <Card>
           <CardContent className="py-12 text-center">
@@ -354,6 +370,19 @@ export const InvitationsManager = () => {
             <h3 className="text-lg font-semibold mb-2">No Invitations</h3>
             <p className="text-sm text-muted-foreground">
               Enter a code above to join a household or wait for an invitation
+            </p>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Info for household members who are not owners */}
+      {myHousehold && !isOwner && (!sentInvitations || sentInvitations.length === 0) && (!receivedInvitations || receivedInvitations.length === 0) && (
+        <Card>
+          <CardContent className="py-12 text-center">
+            <Shield className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
+            <h3 className="text-lg font-semibold mb-2">You're a Household Member</h3>
+            <p className="text-sm text-muted-foreground">
+              Only the household owner can send invitations to new members
             </p>
           </CardContent>
         </Card>
