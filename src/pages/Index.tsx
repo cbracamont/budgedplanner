@@ -77,7 +77,7 @@ import { SavingsManager } from "@/components/SavingsManager";
 import { SavingsGoalsManager } from "@/components/SavingsGoalsManager";
 import { MonthlyPaymentTracker } from "@/components/MonthlyPaymentTracker";
 import { GeneralSavingsTracker } from "@/components/GeneralSavingsTracker";
-import { BudgetBuddyRecommendations } from "@/components/BudgetBuddyRecommendations";
+
 
 import { MonthlyPaymentProposal } from "@/components/MonthlyPaymentProposal";
 import { SimplifiedDebtPriority } from "@/components/SimplifiedDebtPriority";
@@ -1102,14 +1102,6 @@ const Index = () => {
                 </Card>
               </div>
 
-              {/* Budget Buddy Recommendations */}
-              <BudgetBuddyRecommendations
-                language={language}
-                profileId={'id' in activeProfile ? activeProfile.id : undefined}
-                onAccept={async (recommendation) => {
-                  console.log("Applying recommendation:", recommendation);
-                }}
-              />
 
               {/* Main Status - Multi-Stage */}
               <div className="text-center py-8">
