@@ -21,7 +21,20 @@ serve(async (req: Request): Promise<Response> => {
   try {
     console.log("Starting weekly feedback report generation...");
 
-    // Get feedback data from localStorage (would be passed in request body from frontend cron)
+    // Verify authentication
+    const authHeader = req.headers.get('Authorization');
+    if (!authHeader) {
+      console.error("No authorization header");
+      return new Response(
+        JSON.stringify({ error: "Unauthorized" }),
+        {
+          status: 401,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        }
+      );
+    }
+
+    // Get feedback data from request body
     const { feedbacks } = await req.json();
     
     if (!feedbacks || feedbacks.length === 0) {
@@ -35,12 +48,25 @@ serve(async (req: Request): Promise<Response> => {
       );
     }
 
+    // Validate feedback data
+    if (!Array.isArray(feedbacks)) {
+      console.error("Invalid feedback format");
+      return new Response(
+        JSON.stringify({ error: "Invalid feedback format" }),
+        {
+          status: 400,
+          headers: { ...corsHeaders, "Content-Type": "application/json" },
+        }
+      );
+    }
+
     // Get date range for the week
     const now = new Date();
     const weekAgo = new Date(now.getTime() - 7 * 24 * 60 * 60 * 1000);
     
-    // Filter feedbacks from last 7 days
+    // Filter feedbacks from last 7 days with validation
     const recentFeedbacks = feedbacks.filter((f: any) => {
+      if (!f.timestamp || !f.text) return false;
       const feedbackDate = new Date(f.timestamp);
       return feedbackDate >= weekAgo && feedbackDate <= now;
     });
@@ -55,12 +81,14 @@ serve(async (req: Request): Promise<Response> => {
       );
     }
 
-    // Generate email content
+    // Generate email content with sanitized data
     const weekOf = `${weekAgo.toLocaleDateString()} - ${now.toLocaleDateString()}`;
     const feedbackList = recentFeedbacks
-      .map((f: any, index: number) => 
-        `${index + 1}. ${new Date(f.timestamp).toLocaleString()}\n   ${f.text}`
-      )
+      .slice(0, 100) // Limit to 100 items max
+      .map((f: any, index: number) => {
+        const text = String(f.text).substring(0, 500); // Limit text length
+        return `${index + 1}. ${new Date(f.timestamp).toLocaleString()}\n   ${text}`;
+      })
       .join('\n\n');
 
     const emailHtml = `
