@@ -172,7 +172,133 @@ export const InvitationsManager = () => {
         </Card>
       )}
 
-      {/* Current Household Code - Show when user IS in a household */}
+      {/* Received Invitations */}
+      {receivedInvitations && receivedInvitations.length > 0 && (
+        <Card className="border-primary/20 bg-primary/5">
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Mail className="h-5 w-5" />
+              Received Invitations
+            </CardTitle>
+            <CardDescription>
+              You have pending invitations to join households
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            {receivedInvitations.map((invitation) => (
+              <div key={invitation.id} className="flex items-center justify-between p-4 bg-card rounded-lg border">
+                <div className="space-y-1">
+                  <div className="flex items-center gap-2">
+                    <p className="font-medium">Code: {invitation.invitation_code}</p>
+                    <Badge className={getRoleBadgeColor(invitation.role)}>
+                      {getRoleLabel(invitation.role)}
+                    </Badge>
+                  </div>
+                  <p className="text-sm text-muted-foreground">
+                    Expires: {format(new Date(invitation.expires_at), "PPp")}
+                  </p>
+                </div>
+                <div className="flex gap-2">
+                  <Button
+                    size="sm"
+                    onClick={() => acceptInvitation.mutate(invitation.id)}
+                    disabled={acceptInvitation.isPending}
+                  >
+                    {acceptInvitation.isPending ? (
+                      <Loader2 className="h-4 w-4 animate-spin" />
+                    ) : (
+                      <>
+                        <Check className="h-4 w-4 mr-1" />
+                        Accept
+                      </>
+                    )}
+                  </Button>
+                  <Button
+                    size="sm"
+                    variant="outline"
+                    onClick={() => rejectInvitation.mutate(invitation.id)}
+                    disabled={rejectInvitation.isPending}
+                  >
+                    <X className="h-4 w-4 mr-1" />
+                    Reject
+                  </Button>
+                </div>
+              </div>
+            ))}
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Create Invitation - Show for owners FIRST */}
+      {isOwner && myHousehold && (
+        <Card>
+          <CardHeader>
+            <CardTitle className="flex items-center gap-2">
+              <Mail className="h-5 w-5" />
+              Send New Invitation
+            </CardTitle>
+            <CardDescription>
+              Invite family members to join your household
+            </CardDescription>
+          </CardHeader>
+          <CardContent className="space-y-4">
+            <div className="space-y-2">
+              <Label htmlFor="email">Email Address</Label>
+              <Input
+                id="email"
+                type="email"
+                value={email}
+                onChange={(e) => setEmail(e.target.value)}
+                placeholder="member@example.com"
+              />
+            </div>
+
+            <div className="space-y-2">
+              <Label htmlFor="role">Role</Label>
+              <Select value={role} onValueChange={setRole}>
+                <SelectTrigger id="role">
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="viewer">
+                    <div className="flex items-center gap-2">
+                      <div className="w-2 h-2 rounded-full bg-gray-500" />
+                      Viewer - Can only view data
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="contributor">
+                    <div className="flex items-center gap-2">
+                      <div className="w-2 h-2 rounded-full bg-green-500" />
+                      Contributor - Can add their own data
+                    </div>
+                  </SelectItem>
+                  <SelectItem value="editor">
+                    <div className="flex items-center gap-2">
+                      <div className="w-2 h-2 rounded-full bg-blue-500" />
+                      Editor - Can edit all data
+                    </div>
+                  </SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+
+            <Button 
+              onClick={handleSendInvitation}
+              disabled={createInvitation.isPending || !email}
+              className="w-full"
+            >
+              {createInvitation.isPending ? (
+                <Loader2 className="h-4 w-4 animate-spin mr-2" />
+              ) : (
+                <Mail className="h-4 w-4 mr-2" />
+              )}
+              Send Invitation
+            </Button>
+          </CardContent>
+        </Card>
+      )}
+
+      {/* Sent Invitations - Show existing invitations if any */}
       {myHousehold && sentInvitations && sentInvitations.length > 0 && (
         <Card className="border-green-500/20 bg-green-500/5">
           <CardHeader>
@@ -231,135 +357,6 @@ export const InvitationsManager = () => {
             ))}
           </CardContent>
         </Card>
-      )}
-
-      {/* Received Invitations */}
-      {receivedInvitations && receivedInvitations.length > 0 && (
-        <Card className="border-primary/20 bg-primary/5">
-          <CardHeader>
-            <CardTitle className="flex items-center gap-2">
-              <Mail className="h-5 w-5" />
-              Received Invitations
-            </CardTitle>
-            <CardDescription>
-              You have pending invitations to join households
-            </CardDescription>
-          </CardHeader>
-          <CardContent className="space-y-4">
-            {receivedInvitations.map((invitation) => (
-              <div key={invitation.id} className="flex items-center justify-between p-4 bg-card rounded-lg border">
-                <div className="space-y-1">
-                  <div className="flex items-center gap-2">
-                    <p className="font-medium">Code: {invitation.invitation_code}</p>
-                    <Badge className={getRoleBadgeColor(invitation.role)}>
-                      {getRoleLabel(invitation.role)}
-                    </Badge>
-                  </div>
-                  <p className="text-sm text-muted-foreground">
-                    Expires: {format(new Date(invitation.expires_at), "PPp")}
-                  </p>
-                </div>
-                <div className="flex gap-2">
-                  <Button
-                    size="sm"
-                    onClick={() => acceptInvitation.mutate(invitation.id)}
-                    disabled={acceptInvitation.isPending}
-                  >
-                    {acceptInvitation.isPending ? (
-                      <Loader2 className="h-4 w-4 animate-spin" />
-                    ) : (
-                      <>
-                        <Check className="h-4 w-4 mr-1" />
-                        Accept
-                      </>
-                    )}
-                  </Button>
-                  <Button
-                    size="sm"
-                    variant="outline"
-                    onClick={() => rejectInvitation.mutate(invitation.id)}
-                    disabled={rejectInvitation.isPending}
-                  >
-                    <X className="h-4 w-4 mr-1" />
-                    Reject
-                  </Button>
-                </div>
-              </div>
-            ))}
-          </CardContent>
-        </Card>
-      )}
-
-      {/* Create Invitation - Only for owners */}
-      {isOwner && myHousehold && (
-        <>
-          <Separator />
-          <Card>
-            <CardHeader>
-              <CardTitle className="flex items-center gap-2">
-                <Mail className="h-5 w-5" />
-                Send New Invitation
-              </CardTitle>
-              <CardDescription>
-                Invite family members to join your household
-              </CardDescription>
-            </CardHeader>
-            <CardContent className="space-y-4">
-              <div className="space-y-2">
-                <Label htmlFor="email">Email Address</Label>
-                <Input
-                  id="email"
-                  type="email"
-                  value={email}
-                  onChange={(e) => setEmail(e.target.value)}
-                  placeholder="member@example.com"
-                />
-              </div>
-
-              <div className="space-y-2">
-                <Label htmlFor="role">Role</Label>
-                <Select value={role} onValueChange={setRole}>
-                  <SelectTrigger id="role">
-                    <SelectValue />
-                  </SelectTrigger>
-                  <SelectContent>
-                    <SelectItem value="viewer">
-                      <div className="flex items-center gap-2">
-                        <div className="w-2 h-2 rounded-full bg-gray-500" />
-                        Viewer - Can only view data
-                      </div>
-                    </SelectItem>
-                    <SelectItem value="contributor">
-                      <div className="flex items-center gap-2">
-                        <div className="w-2 h-2 rounded-full bg-green-500" />
-                        Contributor - Can add their own data
-                      </div>
-                    </SelectItem>
-                    <SelectItem value="editor">
-                      <div className="flex items-center gap-2">
-                        <div className="w-2 h-2 rounded-full bg-blue-500" />
-                        Editor - Can edit all data
-                      </div>
-                    </SelectItem>
-                  </SelectContent>
-                </Select>
-              </div>
-
-              <Button 
-                onClick={handleSendInvitation}
-                disabled={createInvitation.isPending || !email}
-                className="w-full"
-              >
-                {createInvitation.isPending ? (
-                  <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                ) : (
-                  <Mail className="h-4 w-4 mr-2" />
-                )}
-                Send Invitation
-              </Button>
-            </CardContent>
-          </Card>
-        </>
       )}
 
       {/* Empty State - Show when user has no household and no received invitations */}
