@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { ChevronLeft, ChevronRight, Plus, Edit2, Trash2, DollarSign } from "lucide-react";
+import { ChevronLeft, ChevronRight, Plus, Edit2, Trash2, PoundSterling } from "lucide-react";
 import { format, addMonths, subMonths, startOfMonth } from "date-fns";
 import { formatCurrency, Language } from "@/lib/i18n";
 import { useMonthlyVariableIncome, useAddMonthlyVariableIncome, useUpdateMonthlyVariableIncome, useDeleteMonthlyVariableIncome, type MonthlyVariableIncome } from "@/hooks/useMonthlyVariableIncome";
@@ -157,14 +157,16 @@ export const MonthlyVariableIncomeTracker = ({
   };
   const translations = t[language];
   return <>
-      <Card className="shadow-medium bg-card/50 backdrop-blur-sm border-border/50">
-        <CardHeader className="bg-primary/10 border-b border-border/30">
+      <Card className="shadow-lg bg-gradient-to-br from-card to-card/95 backdrop-blur-md border-border/60 hover:shadow-xl transition-shadow">
+        <CardHeader className="bg-gradient-to-r from-income/20 via-income/15 to-income/10 border-b border-border/40">
           <div className="flex items-center justify-between">
-            <div className="flex items-center gap-2">
-              <DollarSign className="h-5 w-5" />
-              <CardTitle className="text-lg">{translations.title}</CardTitle>
+            <div className="flex items-center gap-3">
+              <div className="p-2 rounded-lg bg-income/20 text-income">
+                <PoundSterling className="h-5 w-5" />
+              </div>
+              <CardTitle className="text-lg font-semibold">{translations.title}</CardTitle>
             </div>
-            <Button onClick={handleAdd} size="sm" variant="secondary" className="gap-2">
+            <Button onClick={handleAdd} size="sm" variant="secondary" className="gap-2 shadow-sm">
               <Plus className="h-4 w-4" />
               {translations.addIncome}
             </Button>
@@ -192,7 +194,7 @@ export const MonthlyVariableIncomeTracker = ({
 
           {/* Income List */}
           <div className="space-y-3">
-            {isLoading ? <p className="text-center text-muted-foreground py-4">Cargando...</p> : incomes.length === 0 ? <p className="text-center text-muted-foreground py-4">{translations.noEntries}</p> : incomes.map(income => <div key={income.id} className="flex items-center justify-between p-4 bg-card border border-border rounded-lg hover:shadow-sm transition-shadow">
+            {isLoading ? <p className="text-center text-muted-foreground py-4">Cargando...</p> : incomes.length === 0 ? <p className="text-center text-muted-foreground py-4">{translations.noEntries}</p> : incomes.map(income => <div key={income.id} className="flex items-center justify-between p-4 bg-gradient-to-r from-card to-card/90 border border-border/50 rounded-lg hover:shadow-md hover:border-income/30 transition-all">
                   <div className="flex-1">
                     <div className="flex items-center gap-2">
                       <p className="font-semibold text-income">{formatCurrency(income.amount)}</p>
