@@ -89,6 +89,7 @@ import { SettingsTab } from "@/components/SettingsTab";
 import { HouseholdManager } from "@/components/HouseholdManager";
 import { InvitationsManager } from "@/components/InvitationsManager";
 import { AuditLogViewer } from "@/components/AuditLogViewer";
+import { FloatingChatWidget } from "@/components/FloatingChatWidget";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -2289,6 +2290,7 @@ const DebtPlanner = ({
           <SimplifiedDebtPriority debts={debtStrategy.sortedDebts} method={debtMethod} />
         </CardContent>
       </Card>
+      <FloatingChatWidget language={language} />
     </div>
   );
 };
