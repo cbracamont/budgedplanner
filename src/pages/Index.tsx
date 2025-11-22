@@ -77,7 +77,8 @@ import { SavingsManager } from "@/components/SavingsManager";
 import { SavingsGoalsManager } from "@/components/SavingsGoalsManager";
 import { MonthlyPaymentTracker } from "@/components/MonthlyPaymentTracker";
 import { GeneralSavingsTracker } from "@/components/GeneralSavingsTracker";
-import { FeedbackButton } from "@/components/FeedbackButton";
+import { BudgetBuddyRecommendations } from "@/components/BudgetBuddyRecommendations";
+
 import { MonthlyPaymentProposal } from "@/components/MonthlyPaymentProposal";
 import { SimplifiedDebtPriority } from "@/components/SimplifiedDebtPriority";
 import { LanguageToggle } from "@/components/LanguageToggle";
@@ -923,8 +924,6 @@ const Index = () => {
     <>
       <style>{`@media print { .no-print { display: none !important; } }`}</style>
 
-      {/* Feedback Button - only visible when logged in */}
-      <FeedbackButton />
 
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-slate-900 dark:to-slate-800">
         <ScrollToTop />
@@ -1102,6 +1101,15 @@ const Index = () => {
                   </CardContent>
                 </Card>
               </div>
+
+              {/* Budget Buddy Recommendations */}
+              <BudgetBuddyRecommendations
+                language={language}
+                profileId={'id' in activeProfile ? activeProfile.id : undefined}
+                onAccept={async (recommendation) => {
+                  console.log("Applying recommendation:", recommendation);
+                }}
+              />
 
               {/* Main Status - Multi-Stage */}
               <div className="text-center py-8">

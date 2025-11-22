@@ -2,6 +2,7 @@ import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { formatCurrency } from "@/lib/i18n";
 import { AlertCircle, TrendingDown } from "lucide-react";
+import { useDebtPayments } from "@/hooks/useDebtPayments";
 
 interface Debt {
   id: string;
@@ -23,6 +24,7 @@ interface SimplifiedDebtPriorityProps {
  * Color-coded by priority: Green (low) to Red (high)
  */
 export const SimplifiedDebtPriority = ({ debts, method }: SimplifiedDebtPriorityProps) => {
+  const { data: payments = [] } = useDebtPayments();
   if (debts.length === 0) {
     return (
       <div className="text-center p-8 text-muted-foreground">
@@ -58,13 +60,20 @@ export const SimplifiedDebtPriority = ({ debts, method }: SimplifiedDebtPriority
     return scoreB - scoreA; // Higher score first
   });
 
-  // Calculate payoff progress for each debt
+  // Calculate payoff progress based on actual payments made
   const getPayoffProgress = (debt: Debt): number => {
-    if (debt.minimum_payment === 0 || debt.balance === 0) return 0;
-    const monthsToPayoff = debt.balance / debt.minimum_payment;
-    // Progress inversely related to months (fewer months = more progress)
-    // Cap at 100% to avoid over-100% values
-    return Math.min(100, Math.max(0, (12 / monthsToPayoff) * 100));
+    // Calculate total payments made for this debt
+    const totalPayments = payments
+      .filter(p => p.debt_id === debt.id)
+      .reduce((sum, p) => sum + p.amount, 0);
+    
+    // Original balance was current balance + all payments made
+    const originalBalance = debt.balance + totalPayments;
+    
+    if (originalBalance === 0) return 0;
+    
+    // Progress is percentage of debt paid off
+    return Math.min(100, (totalPayments / originalBalance) * 100);
   };
 
   // Get color based on priority score
