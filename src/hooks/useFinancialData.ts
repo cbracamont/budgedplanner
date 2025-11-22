@@ -2,6 +2,14 @@ import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
 import { useActiveProfile } from './useFinancialProfiles';
+import {
+  incomeSourceSchema,
+  debtInputSchema,
+  fixedExpenseInputSchema,
+  variableExpenseInputSchema,
+  savingsGoalInputSchema,
+  debtPaymentInputSchema
+} from '@/components/validation/schemas';
 
 // Income hooks
 export const useIncomeSources = () => {
@@ -60,11 +68,18 @@ export const useAddIncome = () => {
       if (!user) throw new Error('No user');
       if (!activeProfile) throw new Error('No active profile');
       
-      const { error } = await supabase.from('income_sources').insert({
+      // Validate input
+      const validated = incomeSourceSchema.parse(income);
+      
+      const { error } = await supabase.from('income_sources').insert([{
         user_id: user.id,
         profile_id: activeProfile.id,
-        ...income
-      });
+        name: validated.name,
+        amount: validated.amount,
+        payment_day: validated.payment_day,
+        ...(validated.frequency && { frequency: validated.frequency }),
+        ...(validated.income_type && { income_type: validated.income_type }),
+      }]);
       
       if (error) throw error;
     },
@@ -84,9 +99,12 @@ export const useUpdateIncome = () => {
   
   return useMutation({
     mutationFn: async ({ id, ...updates }: { id: string; name: string; amount: number; payment_day: number }) => {
+      // Validate input
+      const validated = incomeSourceSchema.parse(updates);
+      
       const { error } = await supabase
         .from('income_sources')
-        .update(updates)
+        .update(validated)
         .eq('id', id);
       
       if (error) throw error;
@@ -153,11 +171,19 @@ export const useAddDebt = () => {
       if (!user) throw new Error('No user');
       if (!activeProfile) throw new Error('No active profile');
       
-      const { error } = await supabase.from('debts').insert({
+      // Validate input
+      const validated = debtInputSchema.parse(debt);
+      
+      const { error } = await supabase.from('debts').insert([{
         user_id: user.id,
         profile_id: activeProfile.id,
-        ...debt
-      });
+        name: validated.name,
+        balance: validated.balance,
+        apr: validated.apr,
+        minimum_payment: validated.minimum_payment,
+        payment_day: validated.payment_day,
+        ...(validated.bank && { bank: validated.bank }),
+      }]);
       
       if (error) throw error;
     },
@@ -180,9 +206,12 @@ export const useUpdateDebt = () => {
   
   return useMutation({
     mutationFn: async ({ id, ...updates }: any) => {
+      // Validate input
+      const validated = debtInputSchema.partial().parse(updates);
+      
       const { error } = await supabase
         .from('debts')
-        .update(updates)
+        .update(validated)
         .eq('id', id);
       
       if (error) throw error;
@@ -255,11 +284,18 @@ export const useAddFixedExpense = () => {
       if (!user) throw new Error('No user');
       if (!activeProfile) throw new Error('No active profile');
       
-      const { error } = await supabase.from('fixed_expenses').insert({
+      // Validate input
+      const validated = fixedExpenseInputSchema.parse(expense);
+      
+      const { error } = await supabase.from('fixed_expenses').insert([{
         user_id: user.id,
         profile_id: activeProfile.id,
-        ...expense
-      });
+        name: validated.name,
+        amount: validated.amount,
+        payment_day: validated.payment_day,
+        ...(validated.frequency && { frequency: validated.frequency }),
+        ...(validated.frequency_type && { frequency_type: validated.frequency_type }),
+      }]);
       
       if (error) throw error;
     },
@@ -279,9 +315,12 @@ export const useUpdateFixedExpense = () => {
   
   return useMutation({
     mutationFn: async ({ id, ...updates }: any) => {
+      // Validate input
+      const validated = fixedExpenseInputSchema.partial().parse(updates);
+      
       const { error } = await supabase
         .from('fixed_expenses')
-        .update(updates)
+        .update(validated)
         .eq('id', id);
       
       if (error) throw error;
@@ -347,11 +386,17 @@ export const useAddVariableExpense = () => {
       if (!user) throw new Error('No user');
       if (!activeProfile) throw new Error('No active profile');
       
-      const { error } = await supabase.from('variable_expenses').insert({
+      // Validate input
+      const validated = variableExpenseInputSchema.parse(expense);
+      
+      const { error } = await supabase.from('variable_expenses').insert([{
         user_id: user.id,
         profile_id: activeProfile.id,
-        ...expense
-      });
+        amount: validated.amount,
+        ...(validated.name && { name: validated.name }),
+        ...(validated.date && { date: validated.date }),
+        ...(validated.category_id && { category_id: validated.category_id }),
+      }]);
       
       if (error) throw error;
     },
@@ -371,9 +416,12 @@ export const useUpdateVariableExpense = () => {
   
   return useMutation({
     mutationFn: async ({ id, ...updates }: { id: string; name: string; amount: number }) => {
+      // Validate input
+      const validated = variableExpenseInputSchema.partial().parse(updates);
+      
       const { error } = await supabase
         .from('variable_expenses')
-        .update(updates)
+        .update(validated)
         .eq('id', id);
       
       if (error) throw error;
@@ -440,11 +488,19 @@ export const useAddSavingsGoal = () => {
       if (!user) throw new Error('No user');
       if (!activeProfile) throw new Error('No active profile');
       
-      const { error } = await supabase.from('savings_goals').insert({
+      // Validate input
+      const validated = savingsGoalInputSchema.parse(goal);
+      
+      const { error } = await supabase.from('savings_goals').insert([{
         user_id: user.id,
         profile_id: activeProfile.id,
-        ...goal
-      });
+        goal_name: validated.goal_name,
+        target_amount: validated.target_amount,
+        ...(validated.goal_description && { goal_description: validated.goal_description }),
+        ...(validated.current_amount !== undefined && { current_amount: validated.current_amount }),
+        ...(validated.monthly_contribution && { monthly_contribution: validated.monthly_contribution }),
+        ...(validated.target_date && { target_date: validated.target_date }),
+      }]);
       
       if (error) throw error;
     },
@@ -464,9 +520,12 @@ export const useUpdateSavingsGoal = () => {
   
   return useMutation({
     mutationFn: async ({ id, ...updates }: any) => {
+      // Validate input
+      const validated = savingsGoalInputSchema.partial().parse(updates);
+      
       const { error } = await supabase
         .from('savings_goals')
-        .update(updates)
+        .update(validated)
         .eq('id', id);
       
       if (error) throw error;
