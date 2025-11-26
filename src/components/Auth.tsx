@@ -14,7 +14,7 @@ import { AlertCircle, Mail, Lock, User, Chrome, Phone } from "lucide-react";
 import { useTheme } from "@/hooks/useTheme";
 
 // NUEVO: Tipo ampliado para LanguageToggle
-type Language = "en" | "es" | "pl";
+type Language = "en" | "es" | "pt";
 type AuthMethod = "email" | "phone";
 
 export const Auth = () => {

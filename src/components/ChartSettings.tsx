@@ -45,18 +45,18 @@ export const ChartSettings = ({ language, selectedChart, onChartChange }: ChartS
   const chartOptions = [
     { 
       value: 'bar' as ChartType, 
-      label: { en: 'Bar Chart by Category', es: 'Gráfico de Barras por Categoría', pt: 'Gráfico de Barras por Categoria', pl: 'Wykres Słupkowy według Kategorii', ro: 'Grafic cu Bare pe Categorii' }[language],
-      description: { en: 'Compare income vs expenses', es: 'Compara ingresos vs gastos', pt: 'Compare receitas vs despesas', pl: 'Porównaj dochody z wydatkami', ro: 'Comparați venituri vs cheltuieli' }[language]
+      label: { en: 'Bar Chart by Category', es: 'Gráfico de Barras por Categoría', pt: 'Gráfico de Barras por Categoria' }[language],
+      description: { en: 'Compare income vs expenses', es: 'Compara ingresos vs gastos', pt: 'Compare receitas vs despesas' }[language]
     },
     { 
       value: 'pie' as ChartType, 
-      label: { en: 'Pie Chart (Income vs Expenses)', es: 'Gráfico de Pastel (Ingresos vs Egresos)', pt: 'Gráfico de Pizza (Receitas vs Despesas)', pl: 'Wykres Kołowy (Dochody vs Wydatki)', ro: 'Grafic Circular (Venituri vs Cheltuieli)' }[language],
-      description: { en: 'View expense distribution', es: 'Ver distribución de gastos', pt: 'Ver distribuição de despesas', pl: 'Zobacz rozkład wydatków', ro: 'Vizualizați distribuția cheltuielilor' }[language]
+      label: { en: 'Pie Chart (Income vs Expenses)', es: 'Gráfico de Pastel (Ingresos vs Egresos)', pt: 'Gráfico de Pizza (Receitas vs Despesas)' }[language],
+      description: { en: 'View expense distribution', es: 'Ver distribución de gastos', pt: 'Ver distribuição de despesas' }[language]
     },
     { 
       value: 'timeline' as ChartType, 
-      label: { en: 'Cash Flow Timeline', es: 'Línea de Tiempo de Flujo de Caja', pt: 'Linha do Tempo de Fluxo de Caixa', pl: 'Oś Czasu Przepływów Pieniężnych', ro: 'Cronologia Fluxului de Numerar' }[language],
-      description: { en: 'Track monthly cash flow', es: 'Seguimiento del flujo mensual', pt: 'Acompanhe o fluxo mensal', pl: 'Śledź miesięczny przepływ gotówki', ro: 'Urmăriți fluxul lunar de numerar' }[language]
+      label: { en: 'Cash Flow Timeline', es: 'Línea de Tiempo de Flujo de Caja', pt: 'Linha do Tempo de Fluxo de Caixa' }[language],
+      description: { en: 'Track monthly cash flow', es: 'Seguimiento del flujo mensual', pt: 'Acompanhe o fluxo mensal' }[language]
     }
   ];
 
@@ -66,16 +66,14 @@ export const ChartSettings = ({ language, selectedChart, onChartChange }: ChartS
         <div className="flex items-center gap-2">
           <BarChart3 className="h-5 w-5 text-primary" />
           <CardTitle>
-            {{ en: 'Chart Visualization', es: 'Visualización Financiera', pt: 'Visualização de Gráficos', pl: 'Wizualizacja Wykresów', ro: 'Vizualizare Grafice' }[language]}
+            {{ en: 'Chart Visualization', es: 'Visualización Financiera', pt: 'Visualização de Gráficos' }[language]}
           </CardTitle>
         </div>
         <CardDescription>
           {{
             en: 'Choose how to display your financial data',
             es: 'Elige cómo mostrar tus datos financieros',
-            pt: 'Escolha como exibir seus dados financeiros',
-            pl: 'Wybierz sposób wyświetlania danych finansowych',
-            ro: 'Alegeți cum să afișați datele financiare'
+            pt: 'Escolha como exibir seus dados financeiros'
           }[language]}
         </CardDescription>
       </CardHeader>

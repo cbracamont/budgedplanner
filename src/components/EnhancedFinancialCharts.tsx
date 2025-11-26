@@ -44,18 +44,6 @@ export const EnhancedFinancialCharts = ({
       { icon: Heart, text: "Seu eu do futuro agradecerá pelas decisões de hoje", color: "text-pink-600" },
       { icon: Target, text: "Pequenos passos levam a grandes conquistas", color: "text-blue-600" },
       { icon: TrendingUp, text: "Você está construindo um futuro financeiro mais forte", color: "text-purple-600" }
-    ],
-    pl: [
-      { icon: Smile, text: "Każdy zaoszczędzony grosz to krok w kierunku Twoich marzeń!", color: "text-green-600" },
-      { icon: Heart, text: "Twoje przyszłe ja podziękuje Ci za dzisiejsze decyzje", color: "text-pink-600" },
-      { icon: Target, text: "Małe kroki prowadzą do wielkich osiągnięć", color: "text-blue-600" },
-      { icon: TrendingUp, text: "Budujesz silniejszą przyszłość finansową", color: "text-purple-600" }
-    ],
-    ro: [
-      { icon: Smile, text: "Fiecare ban economisit este un pas către visele tale!", color: "text-green-600" },
-      { icon: Heart, text: "Sinele tău viitor îți va mulțumi pentru deciziile de astăzi", color: "text-pink-600" },
-      { icon: Target, text: "Pașii mici duc la realizări mari", color: "text-blue-600" },
-      { icon: TrendingUp, text: "Construiești un viitor financiar mai puternic", color: "text-purple-600" }
     ]
   };
 
@@ -63,31 +51,31 @@ export const EnhancedFinancialCharts = ({
   const MessageIcon = randomMessage.icon;
 
   const pieData = [
-    { name: { en: 'Debts', es: 'Deudas', pt: 'Dívidas', pl: 'Długi', ro: 'Datorii' }[language], value: totalDebts, color: 'hsl(var(--primary))' },
-    { name: { en: 'Fixed Expenses', es: 'Gastos Fijos', pt: 'Despesas Fixas', pl: 'Stałe Wydatki', ro: 'Cheltuieli Fixe' }[language], value: totalFixedExpenses, color: 'hsl(var(--primary) / 0.7)' },
-    { name: { en: 'Variable Expenses', es: 'Gastos Variables', pt: 'Despesas Variáveis', pl: 'Zmienne Wydatki', ro: 'Cheltuieli Variabile' }[language], value: totalVariableExpenses, color: 'hsl(var(--primary) / 0.5)' },
-    { name: { en: 'Accumulated Savings', es: 'Ahorros Acumulados', pt: 'Poupanças Acumuladas', pl: 'Zgromadzone Oszczędności', ro: 'Economii Acumulate' }[language], value: totalSavingsAccumulated, color: 'hsl(var(--primary) / 0.3)' },
-    { name: { en: 'Available', es: 'Disponible', pt: 'Disponível', pl: 'Dostępne', ro: 'Disponibil' }[language], value: Math.max(0, availableForSavings), color: 'hsl(var(--primary-glow))' }
+    { name: { en: 'Debts', es: 'Deudas', pt: 'Dívidas' }[language], value: totalDebts, color: 'hsl(var(--primary))' },
+    { name: { en: 'Fixed Expenses', es: 'Gastos Fijos', pt: 'Despesas Fixas' }[language], value: totalFixedExpenses, color: 'hsl(var(--primary) / 0.7)' },
+    { name: { en: 'Variable Expenses', es: 'Gastos Variables', pt: 'Despesas Variáveis' }[language], value: totalVariableExpenses, color: 'hsl(var(--primary) / 0.5)' },
+    { name: { en: 'Accumulated Savings', es: 'Ahorros Acumulados', pt: 'Poupanças Acumuladas' }[language], value: totalSavingsAccumulated, color: 'hsl(var(--primary) / 0.3)' },
+    { name: { en: 'Available', es: 'Disponible', pt: 'Disponível' }[language], value: Math.max(0, availableForSavings), color: 'hsl(var(--primary-glow))' }
   ].filter(item => item.value > 0);
 
   const barData = [
     {
-      name: { en: 'Income', es: 'Ingresos', pt: 'Receitas', pl: 'Dochody', ro: 'Venituri' }[language],
+      name: { en: 'Income', es: 'Ingresos', pt: 'Receitas' }[language],
       value: totalIncome,
       fill: 'hsl(var(--primary))'
     },
     {
-      name: { en: 'Expenses', es: 'Gastos', pt: 'Despesas', pl: 'Wydatki', ro: 'Cheltuieli' }[language],
+      name: { en: 'Expenses', es: 'Gastos', pt: 'Despesas' }[language],
       value: totalDebts + totalFixedExpenses + totalVariableExpenses,
       fill: 'hsl(var(--primary) / 0.6)'
     },
     {
-      name: { en: 'Accumulated Savings', es: 'Ahorros Acumulados', pt: 'Poupanças Acumuladas', pl: 'Zgromadzone Oszczędności', ro: 'Economii Acumulate' }[language],
+      name: { en: 'Accumulated Savings', es: 'Ahorros Acumulados', pt: 'Poupanças Acumuladas' }[language],
       value: totalSavingsAccumulated,
       fill: 'hsl(var(--primary-glow))'
     },
     {
-      name: { en: 'Available', es: 'Disponible', pt: 'Disponível', pl: 'Dostępne', ro: 'Disponibil' }[language],
+      name: { en: 'Available', es: 'Disponible', pt: 'Disponível' }[language],
       value: Math.max(0, availableForSavings),
       fill: 'hsl(var(--primary) / 0.3)'
     }
@@ -97,7 +85,7 @@ export const EnhancedFinancialCharts = ({
     const date = new Date();
     date.setMonth(date.getMonth() - (5 - i));
     return {
-      month: date.toLocaleDateString(language === 'en' ? 'en-GB' : language === 'es' ? 'es-ES' : language === 'pt' ? 'pt-PT' : language === 'pl' ? 'pl-PL' : 'ro-RO', { month: 'short' }),
+      month: date.toLocaleDateString(language === 'en' ? 'en-GB' : language === 'es' ? 'es-ES' : 'pt-PT', { month: 'short' }),
       income: totalIncome * (0.9 + Math.random() * 0.2),
       expenses: (totalDebts + totalFixedExpenses + totalVariableExpenses) * (0.9 + Math.random() * 0.2),
     };
@@ -114,11 +102,11 @@ export const EnhancedFinancialCharts = ({
                 <div className="flex items-center gap-2">
                   <TrendingUp className="h-5 w-5 text-primary" />
                   <CardTitle className="text-2xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
-                    {{ en: 'Financial Overview', es: 'Resumen Financiero', pt: 'Resumo Financeiro', pl: 'Przegląd Finansowy', ro: 'Prezentare Financiară' }[language]}
+                    {{ en: 'Financial Overview', es: 'Resumen Financiero', pt: 'Resumo Financeiro' }[language]}
                   </CardTitle>
                 </div>
                 <CardDescription>
-                  {{ en: 'Income, expenses, and available balance', es: 'Ingresos, gastos y saldo disponible', pt: 'Receitas, despesas e saldo disponível', pl: 'Dochody, wydatki i dostępne saldo', ro: 'Venituri, cheltuieli și sold disponibil' }[language]}
+                  {{ en: 'Income, expenses, and available balance', es: 'Ingresos, gastos y saldo disponible', pt: 'Receitas, despesas e saldo disponível' }[language]}
                 </CardDescription>
               </CardHeader>
               <CardContent className="pt-6">
@@ -165,7 +153,7 @@ export const EnhancedFinancialCharts = ({
               <Card className="bg-gradient-to-br from-primary/10 to-primary/5 border-primary/20">
                 <CardHeader className="pb-3">
                   <CardTitle className="text-sm font-medium text-muted-foreground">
-                    {{ en: 'Total Income', es: 'Ingresos Totales', pt: 'Receita Total', pl: 'Całkowity Dochód', ro: 'Venit Total' }[language]}
+                    {{ en: 'Total Income', es: 'Ingresos Totales', pt: 'Receita Total' }[language]}
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
@@ -176,7 +164,7 @@ export const EnhancedFinancialCharts = ({
               <Card className="bg-gradient-to-br from-primary/10 to-primary/5 border-primary/20">
                 <CardHeader className="pb-3">
                   <CardTitle className="text-sm font-medium text-muted-foreground">
-                    {{ en: 'Total Expenses', es: 'Gastos Totales', pt: 'Despesas Totais', pl: 'Całkowite Wydatki', ro: 'Cheltuieli Totale' }[language]}
+                    {{ en: 'Total Expenses', es: 'Gastos Totales', pt: 'Despesas Totais' }[language]}
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
@@ -189,7 +177,7 @@ export const EnhancedFinancialCharts = ({
               <Card className="bg-gradient-to-br from-primary-glow/10 to-primary-glow/5 border-primary-glow/20">
                 <CardHeader className="pb-3">
                   <CardTitle className="text-sm font-medium text-muted-foreground">
-                    {{ en: 'Available to Save', es: 'Disponible para Ahorrar', pt: 'Disponível para Poupar', pl: 'Dostępne do Oszczędzenia', ro: 'Disponibil pentru Economii' }[language]}
+                    {{ en: 'Available to Save', es: 'Disponible para Ahorrar', pt: 'Disponível para Poupar' }[language]}
                   </CardTitle>
                 </CardHeader>
                 <CardContent>
@@ -209,10 +197,10 @@ export const EnhancedFinancialCharts = ({
             <Card className="shadow-medium border-primary/20 bg-gradient-to-br from-background via-background to-primary/5">
               <CardHeader className="bg-primary/10 border-b border-primary/20 backdrop-blur-sm">
                 <CardTitle className="text-2xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
-                  {{ en: 'Expense Distribution', es: 'Distribución de Gastos', pt: 'Distribuição de Despesas', pl: 'Rozkład Wydatków', ro: 'Distribuția Cheltuielilor' }[language]}
+                  {{ en: 'Expense Distribution', es: 'Distribución de Gastos', pt: 'Distribuição de Despesas' }[language]}
                 </CardTitle>
                 <CardDescription>
-                  {{ en: 'How your income is allocated', es: 'Cómo se distribuyen tus ingresos', pt: 'Como sua receita está alocada', pl: 'Jak rozdzielony jest Twój dochód', ro: 'Cum sunt alocate veniturile' }[language]}
+                  {{ en: 'How your income is allocated', es: 'Cómo se distribuyen tus ingresos', pt: 'Como sua receita está alocada' }[language]}
                 </CardDescription>
               </CardHeader>
               <CardContent className="pt-6">
@@ -263,10 +251,10 @@ export const EnhancedFinancialCharts = ({
             <Card className="shadow-medium border-primary/20 bg-gradient-to-br from-background via-background to-primary/5">
               <CardHeader className="bg-primary/10 border-b border-primary/20 backdrop-blur-sm">
                 <CardTitle className="text-2xl font-bold bg-gradient-to-r from-primary to-primary/60 bg-clip-text text-transparent">
-                  {{ en: 'Cash Flow Timeline', es: 'Línea de Tiempo de Flujo de Caja', pt: 'Linha do Tempo de Fluxo de Caixa', pl: 'Oś Czasu Przepływów Pieniężnych', ro: 'Cronologia Fluxului de Numerar' }[language]}
+                  {{ en: 'Cash Flow Timeline', es: 'Línea de Tiempo de Flujo de Caja', pt: 'Linha do Tempo de Fluxo de Caixa' }[language]}
                 </CardTitle>
                 <CardDescription>
-                  {{ en: '6-month cash flow trend', es: 'Tendencia de flujo de caja de 6 meses', pt: 'Tendência de fluxo de caixa de 6 meses', pl: 'Trend przepływów pieniężnych z 6 miesięcy', ro: 'Tendința fluxului de numerar pe 6 luni' }[language]}
+                  {{ en: '6-month cash flow trend', es: 'Tendencia de flujo de caja de 6 meses', pt: 'Tendência de fluxo de caixa de 6 meses' }[language]}
                 </CardDescription>
               </CardHeader>
               <CardContent className="pt-6">
@@ -300,7 +288,7 @@ export const EnhancedFinancialCharts = ({
                       strokeWidth={3}
                       dot={{ fill: 'hsl(var(--primary))', r: 5 }}
                       animationDuration={800}
-                      name={{ en: 'Income', es: 'Ingresos', pt: 'Receitas', pl: 'Dochody', ro: 'Venituri' }[language]}
+                      name={{ en: 'Income', es: 'Ingresos', pt: 'Receitas' }[language]}
                     />
                     <Line 
                       type="monotone" 
@@ -309,7 +297,7 @@ export const EnhancedFinancialCharts = ({
                       strokeWidth={3}
                       dot={{ fill: 'hsl(var(--primary) / 0.5)', r: 5 }}
                       animationDuration={800}
-                      name={{ en: 'Expenses', es: 'Gastos', pt: 'Despesas', pl: 'Wydatki', ro: 'Cheltuieli' }[language]}
+                      name={{ en: 'Expenses', es: 'Gastos', pt: 'Despesas' }[language]}
                     />
                   </LineChart>
                 </ResponsiveContainer>

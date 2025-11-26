@@ -15,38 +15,38 @@ interface ThemeSettingsProps {
 const themes = [
   {
     id: 'sober',
-    name: { en: 'Sober & Professional', es: 'Sobrio y Profesional', pt: 'Sóbrio e Profissional', pl: 'Stonowany i Profesjonalny', ro: 'Sobru și Profesional' },
-    description: { en: 'Clean and minimalist design', es: 'Diseño limpio y minimalista', pt: 'Design limpo e minimalista', pl: 'Czysty i minimalistyczny projekt', ro: 'Design curat și minimalist' },
+    name: { en: 'Sober & Professional', es: 'Sobrio y Profesional', pt: 'Sóbrio e Profissional' },
+    description: { en: 'Clean and minimalist design', es: 'Diseño limpio y minimalista', pt: 'Design limpo e minimalista' },
     preview: 'linear-gradient(135deg, hsl(220 15% 25%) 0%, hsl(220 15% 40%) 100%)',
   },
   {
     id: 'gold',
-    name: { en: 'Premium Gold', es: 'Oro Premium', pt: 'Ouro Premium', pl: 'Złoto Premium', ro: 'Aur Premium' },
-    description: { en: 'Luxurious golden theme', es: 'Tema dorado lujoso', pt: 'Tema dourado luxuoso', pl: 'Luksusowy złoty motyw', ro: 'Temă aurie luxoasă' },
+    name: { en: 'Premium Gold', es: 'Oro Premium', pt: 'Ouro Premium' },
+    description: { en: 'Luxurious golden theme', es: 'Tema dorado lujoso', pt: 'Tema dourado luxuoso' },
     preview: 'linear-gradient(135deg, hsl(45 100% 51%) 0%, hsl(38 92% 50%) 100%)',
   },
   {
     id: 'ocean',
-    name: { en: 'Ocean Blue', es: 'Azul Océano', pt: 'Azul Oceano', pl: 'Niebieski Oceaniczny', ro: 'Albastru Ocean' },
-    description: { en: 'Calm and serene design', es: 'Diseño calmado y sereno', pt: 'Design calmo e sereno', pl: 'Spokojny i pogodny projekt', ro: 'Design calm și liniștit' },
+    name: { en: 'Ocean Blue', es: 'Azul Océano', pt: 'Azul Oceano' },
+    description: { en: 'Calm and serene design', es: 'Diseño calmado y sereno', pt: 'Design calmo e sereno' },
     preview: 'linear-gradient(135deg, hsl(200 90% 50%) 0%, hsl(220 85% 60%) 100%)',
   },
   {
     id: 'forest',
-    name: { en: 'Forest Green', es: 'Verde Bosque', pt: 'Verde Floresta', pl: 'Zielony Las', ro: 'Verde Pădure' },
-    description: { en: 'Natural and balanced', es: 'Natural y equilibrado', pt: 'Natural e equilibrado', pl: 'Naturalny i zrównoważony', ro: 'Natural și echilibrat' },
+    name: { en: 'Forest Green', es: 'Verde Bosque', pt: 'Verde Floresta' },
+    description: { en: 'Natural and balanced', es: 'Natural y equilibrado', pt: 'Natural e equilibrado' },
     preview: 'linear-gradient(135deg, hsl(140 70% 40%) 0%, hsl(160 65% 50%) 100%)',
   },
   {
     id: 'sunset',
-    name: { en: 'Sunset Orange', es: 'Naranja Atardecer', pt: 'Laranja Pôr do Sol', pl: 'Pomarańczowy Zachód', ro: 'Portocaliu Apus' },
-    description: { en: 'Warm and energetic', es: 'Cálido y energético', pt: 'Quente e energético', pl: 'Ciepły i energiczny', ro: 'Cald și energic' },
+    name: { en: 'Sunset Orange', es: 'Naranja Atardecer', pt: 'Laranja Pôr do Sol' },
+    description: { en: 'Warm and energetic', es: 'Cálido y energético', pt: 'Quente e energético' },
     preview: 'linear-gradient(135deg, hsl(25 95% 55%) 0%, hsl(340 85% 60%) 100%)',
   },
   {
     id: 'royal',
-    name: { en: 'Royal Purple', es: 'Púrpura Real', pt: 'Roxo Real', pl: 'Królewski Fiolet', ro: 'Mov Regal' },
-    description: { en: 'Elegant and sophisticated', es: 'Elegante y sofisticado', pt: 'Elegante e sofisticado', pl: 'Elegancki i wyrafinowany', ro: 'Elegant și sofisticat' },
+    name: { en: 'Royal Purple', es: 'Púrpura Real', pt: 'Roxo Real' },
+    description: { en: 'Elegant and sophisticated', es: 'Elegante y sofisticado', pt: 'Elegante e sofisticado' },
     preview: 'linear-gradient(135deg, hsl(270 70% 50%) 0%, hsl(290 65% 60%) 100%)',
   },
 ];
@@ -88,9 +88,7 @@ export const ThemeSettings = ({ language, onThemeChange }: ThemeSettingsProps) =
       const errorMessages = {
         en: 'You must be logged in',
         es: 'Debes estar conectado',
-        pt: 'Você deve estar conectado',
-        pl: 'Musisz być zalogowany',
-        ro: 'Trebuie să fiți conectat'
+        pt: 'Você deve estar conectado'
       };
       toast({
         title: 'Error',
@@ -120,16 +118,12 @@ export const ThemeSettings = ({ language, onThemeChange }: ThemeSettingsProps) =
       const successTitles = {
         en: 'Theme Updated',
         es: 'Tema Actualizado',
-        pt: 'Tema Atualizado',
-        pl: 'Motyw Zaktualizowany',
-        ro: 'Temă Actualizată'
+        pt: 'Tema Atualizado'
       };
       const successMessages = {
         en: 'Your theme has been changed successfully',
         es: 'Tu tema ha sido cambiado exitosamente',
-        pt: 'Seu tema foi alterado com sucesso',
-        pl: 'Twój motyw został zmieniony pomyślnie',
-        ro: 'Tema dvs. a fost schimbată cu succes'
+        pt: 'Seu tema foi alterado com sucesso'
       };
       toast({
         title: successTitles[language],
@@ -140,9 +134,7 @@ export const ThemeSettings = ({ language, onThemeChange }: ThemeSettingsProps) =
       const errorTitles = {
         en: 'Failed to update theme',
         es: 'Error al actualizar el tema',
-        pt: 'Falha ao atualizar o tema',
-        pl: 'Nie udało się zaktualizować motywu',
-        ro: 'Nu s-a putut actualiza tema'
+        pt: 'Falha ao atualizar o tema'
       };
       toast({
         title: 'Error',
@@ -158,16 +150,14 @@ export const ThemeSettings = ({ language, onThemeChange }: ThemeSettingsProps) =
         <div className="flex items-center gap-2">
           <Palette className="h-5 w-5 text-primary" />
           <CardTitle>
-            {{ en: 'Color Theme', es: 'Tema de Color', pt: 'Tema de Cores', pl: 'Motyw Kolorystyczny', ro: 'Temă Culori' }[language]}
+            {{ en: 'Color Theme', es: 'Tema de Color', pt: 'Tema de Cores' }[language]}
           </CardTitle>
         </div>
         <CardDescription>
           {{ 
             en: 'Customize your planner with different color schemes',
             es: 'Personaliza tu planificador con diferentes esquemas de color',
-            pt: 'Personalize seu planejador com diferentes esquemas de cores',
-            pl: 'Dostosuj swój planer za pomocą różnych schematów kolorów',
-            ro: 'Personalizați-vă planificatorul cu diferite scheme de culori'
+            pt: 'Personalize seu planejador com diferentes esquemas de cores'
           }[language]}
         </CardDescription>
       </CardHeader>
