@@ -90,6 +90,7 @@ import { HouseholdManager } from "@/components/HouseholdManager";
 import { InvitationsManager } from "@/components/InvitationsManager";
 import { AuditLogViewer } from "@/components/AuditLogViewer";
 import { FloatingChatWidget } from "@/components/FloatingChatWidget";
+import { FloatingBudgetBuddy } from "@/components/FloatingBudgetBuddy";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -2137,6 +2138,15 @@ const Index = () => {
             <p className="mt-2">© 2025 Family Budget Planner UK</p>
           </footer>
         </div>
+        <FloatingChatWidget language={language} />
+        <FloatingBudgetBuddy 
+          language={language} 
+          profileId={"id" in activeProfile ? activeProfile.id : undefined}
+          onAccept={async (recommendation) => {
+            // Handle recommendation acceptance
+            console.log('Accepting recommendation:', recommendation);
+          }}
+        />
       </div>
     </>
   );
@@ -2290,7 +2300,6 @@ const DebtPlanner = ({
           <SimplifiedDebtPriority debts={debtStrategy.sortedDebts} method={debtMethod} />
         </CardContent>
       </Card>
-      <FloatingChatWidget language={language} />
     </div>
   );
 };
