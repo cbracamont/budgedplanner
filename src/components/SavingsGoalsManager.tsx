@@ -70,8 +70,8 @@ export const SavingsGoalsManager = ({
     es: {
       title: "Metas de Ahorro",
     },
-    pl: {
-      title: "Cele Oszczędnościowe",
+    pt: {
+      title: "Metas de Poupança",
     },
   }[language];
 

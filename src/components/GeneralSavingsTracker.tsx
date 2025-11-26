@@ -54,17 +54,17 @@ export const GeneralSavingsTracker = ({ language }: GeneralSavingsTrackerProps) 
       add: "Añadir",
       remove: "Retirar",
     },
-    pl: {
-      title: "Ogólne Oszczędności",
-      description: "Śledź swoje miesięczne oszczędności i zgromadzoną kwotę",
-      totalSaved: "Całkowite Oszczędności",
-      monthlyGoal: "Miesięczny Cel",
-      progress: "Postęp w tym miesiącu",
-      addMoney: "Dodaj Pieniądze",
-      withdraw: "Wypłać",
-      updateGoal: "Aktualizuj Cel",
-      add: "Dodaj",
-      remove: "Usuń",
+    pt: {
+      title: "Poupanças Gerais",
+      description: "Acompanhe as suas poupanças mensais gerais e o valor acumulado",
+      totalSaved: "Total Poupado",
+      monthlyGoal: "Meta Mensal",
+      progress: "Progresso deste Mês",
+      addMoney: "Adicionar Dinheiro",
+      withdraw: "Levantar",
+      updateGoal: "Atualizar Meta",
+      add: "Adicionar",
+      remove: "Remover",
     },
   }[language];
 

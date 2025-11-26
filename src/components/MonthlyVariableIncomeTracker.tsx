@@ -140,19 +140,19 @@ export const MonthlyVariableIncomeTracker = ({
       monthTotal: "Total del Mes",
       noEntries: "No hay ingresos variables para este mes"
     },
-    pl: {
-      title: "Miesięczne Zmienne Dochody",
-      addIncome: "Dodaj Dochód",
-      amount: "Kwota",
+    pt: {
+      title: "Rendimento Variável Mensal",
+      addIncome: "Adicionar Rendimento",
+      amount: "Valor",
       date: "Data",
-      description: "Opis",
-      save: "Zapisz",
-      cancel: "Anuluj",
-      edit: "Edytuj",
-      delete: "Usuń",
-      deleteConfirm: "Czy na pewno chcesz usunąć ten wpis dochodu?",
-      monthTotal: "Suma Miesiąca",
-      noEntries: "Brak zmiennych dochodów w tym miesiącu"
+      description: "Descrição",
+      save: "Guardar",
+      cancel: "Cancelar",
+      edit: "Editar",
+      delete: "Eliminar",
+      deleteConfirm: "Tem certeza que deseja eliminar este rendimento?",
+      monthTotal: "Total do Mês",
+      noEntries: "Nenhum rendimento variável neste mês"
     }
   };
   const translations = t[language];
