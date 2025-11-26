@@ -1,85 +1,56 @@
-import { useState } from "react";
-import { Lightbulb, X, Check, RefreshCw, ArrowRight } from "lucide-react";
+import { useState, useEffect } from "react";
+import { TrendingUp, X, RefreshCw, Calendar, AlertCircle, CheckCircle } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Badge } from "@/components/ui/badge";
 import { Language } from "@/lib/i18n";
-import { useBudgetRecommendations } from "@/hooks/useBudgetRecommendations";
-import { useToast } from "@/hooks/use-toast";
+import { useFinancialInsights } from "@/hooks/useFinancialInsights";
 import { Skeleton } from "@/components/ui/skeleton";
-
-interface BudgetAllocation {
-  category: string;
-  amount: number;
-  target_id?: string;
-  target_type?: 'debt' | 'savings_goal' | 'emergency_fund';
-}
-
-export interface Recommendation {
-  id: string;
-  title: string;
-  description: string;
-  allocations: BudgetAllocation[];
-  total_amount: number;
-}
 
 interface FloatingBudgetBuddyProps {
   language: Language;
   profileId: string | undefined;
-  onAccept: (recommendation: Recommendation) => Promise<void>;
 }
 
 export const FloatingBudgetBuddy = ({
   language,
   profileId,
-  onAccept
 }: FloatingBudgetBuddyProps) => {
   const [isOpen, setIsOpen] = useState(false);
-  const [processingId, setProcessingId] = useState<string | null>(null);
-  const [dismissedIds, setDismissedIds] = useState<Set<string>>(new Set());
-  const { toast } = useToast();
   
   const {
-    recommendations,
+    insights,
     isLoading,
     error,
     refetch
-  } = useBudgetRecommendations(profileId, language);
-
-  const visibleRecommendations = recommendations.filter(r => !dismissedIds.has(r.id));
-
-  const handleAccept = async (recommendation: Recommendation) => {
-    setProcessingId(recommendation.id);
-    try {
-      await onAccept(recommendation);
-      setDismissedIds(prev => new Set([...prev, recommendation.id]));
-      toast({
-        title: language === 'en' ? 'Recommendation Applied' : 'Recomendación Aplicada',
-        description: language === 'en' ? 'The budget allocation has been applied successfully' : 'La distribución del presupuesto se ha aplicado correctamente'
-      });
-    } catch (error) {
-      console.error('Error applying recommendation:', error);
-      toast({
-        title: 'Error',
-        description: language === 'en' ? 'Failed to apply recommendation' : 'Error al aplicar la recomendación',
-        variant: 'destructive'
-      });
-    } finally {
-      setProcessingId(null);
-    }
-  };
-
-  const handleDismiss = (id: string) => {
-    setDismissedIds(prev => new Set([...prev, id]));
-  };
+  } = useFinancialInsights(profileId, language);
 
   const handleRefresh = () => {
-    setDismissedIds(new Set());
     refetch();
   };
 
-  // Don't show the button if there are no recommendations and not loading
-  if (!isLoading && visibleRecommendations.length === 0 && !error) {
+  const getStatusColor = () => {
+    if (!insights) return 'default';
+    switch (insights.status) {
+      case 'healthy': return 'default';
+      case 'concern': return 'secondary';
+      case 'critical': return 'destructive';
+      default: return 'default';
+    }
+  };
+
+  const getStatusIcon = () => {
+    if (!insights) return <TrendingUp className="h-6 w-6" />;
+    switch (insights.status) {
+      case 'healthy': return <CheckCircle className="h-6 w-6" />;
+      case 'concern': return <AlertCircle className="h-6 w-6" />;
+      case 'critical': return <AlertCircle className="h-6 w-6" />;
+      default: return <TrendingUp className="h-6 w-6" />;
+    }
+  };
+
+  if (!profileId) {
     return null;
   }
 
@@ -91,10 +62,10 @@ export const FloatingBudgetBuddy = ({
         className="fixed bottom-24 right-6 h-14 w-14 rounded-full shadow-elegant hover:shadow-glow transition-all z-50 bg-gradient-primary"
         size="icon"
       >
-        <Lightbulb className="h-6 w-6" />
-        {visibleRecommendations.length > 0 && (
+        {getStatusIcon()}
+        {insights && insights.upcomingPayments.length > 0 && (
           <span className="absolute -top-1 -right-1 h-5 w-5 rounded-full bg-destructive text-destructive-foreground text-xs flex items-center justify-center">
-            {visibleRecommendations.length}
+            {insights.upcomingPayments.length}
           </span>
         )}
       </Button>
@@ -105,9 +76,9 @@ export const FloatingBudgetBuddy = ({
           <CardHeader className="bg-gradient-primary text-primary-foreground">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">
-                <Lightbulb className="h-5 w-5" />
+                <TrendingUp className="h-5 w-5" />
                 <CardTitle className="text-lg">
-                  {language === 'en' ? 'Budget Buddy' : 'Asistente de Presupuesto'}
+                  {language === 'en' ? 'Financial Insights' : language === 'es' ? 'Información Financiera' : 'Insights Financeiros'}
                 </CardTitle>
               </div>
               <Button
@@ -121,8 +92,10 @@ export const FloatingBudgetBuddy = ({
             </div>
             <CardDescription className="text-primary-foreground/80">
               {language === 'en' 
-                ? 'Smart recommendations for your budget' 
-                : 'Recomendaciones inteligentes para tu presupuesto'}
+                ? 'Your financial status and upcoming payments' 
+                : language === 'es'
+                ? 'Tu estado financiero y próximos pagos'
+                : 'Seu status financeiro e pagamentos futuros'}
             </CardDescription>
           </CardHeader>
           
@@ -130,6 +103,7 @@ export const FloatingBudgetBuddy = ({
             <CardContent className="pt-6 space-y-4">
               {isLoading && (
                 <div className="space-y-4">
+                  <Skeleton className="h-24 w-full" />
                   <Skeleton className="h-32 w-full" />
                   <Skeleton className="h-32 w-full" />
                 </div>
@@ -140,75 +114,84 @@ export const FloatingBudgetBuddy = ({
                   <p className="text-sm text-muted-foreground mb-4">{error}</p>
                   <Button onClick={handleRefresh} variant="outline" size="sm">
                     <RefreshCw className="h-4 w-4 mr-2" />
-                    {language === 'en' ? 'Try Again' : 'Intentar de nuevo'}
+                    {language === 'en' ? 'Try Again' : language === 'es' ? 'Intentar de nuevo' : 'Tentar novamente'}
                   </Button>
                 </div>
               )}
 
-              {!isLoading && !error && visibleRecommendations.length === 0 && (
-                <div className="text-center py-8">
-                  <Lightbulb className="h-12 w-12 mx-auto mb-4 text-muted-foreground" />
-                  <p className="text-sm text-muted-foreground">
-                    {language === 'en' 
-                      ? 'No recommendations available at the moment' 
-                      : 'No hay recomendaciones disponibles en este momento'}
-                  </p>
-                  <Button onClick={handleRefresh} variant="outline" size="sm" className="mt-4">
-                    <RefreshCw className="h-4 w-4 mr-2" />
-                    {language === 'en' ? 'Refresh' : 'Actualizar'}
-                  </Button>
-                </div>
-              )}
+              {!isLoading && !error && insights && (
+                <>
+                  {/* Status Overview */}
+                  <Card className="border-border/50">
+                    <CardContent className="pt-6">
+                      <div className="flex items-center gap-2 mb-4">
+                        <Badge variant={getStatusColor()}>
+                          {insights.status === 'healthy' 
+                            ? (language === 'en' ? 'Healthy' : language === 'es' ? 'Saludable' : 'Saudável')
+                            : insights.status === 'concern'
+                            ? (language === 'en' ? 'Attention Needed' : language === 'es' ? 'Atención Requerida' : 'Atenção Necessária')
+                            : (language === 'en' ? 'Critical' : language === 'es' ? 'Crítico' : 'Crítico')}
+                        </Badge>
+                      </div>
+                      <p className="text-sm text-muted-foreground">
+                        {insights.statusMessage}
+                      </p>
+                    </CardContent>
+                  </Card>
 
-              {!isLoading && !error && visibleRecommendations.map((recommendation) => (
-                <Card key={recommendation.id} className="border-border/50">
-                  <CardHeader className="pb-3">
-                    <CardTitle className="text-base">{recommendation.title}</CardTitle>
-                    <CardDescription className="text-sm">
-                      {recommendation.description}
-                    </CardDescription>
-                  </CardHeader>
-                  <CardContent className="space-y-3">
-                    <div className="space-y-2">
-                      {recommendation.allocations.map((allocation, idx) => (
+                  {/* Key Metrics */}
+                  <Card className="border-border/50">
+                    <CardHeader className="pb-3">
+                      <CardTitle className="text-base">
+                        {language === 'en' ? 'Key Metrics' : language === 'es' ? 'Métricas Clave' : 'Métricas Principais'}
+                      </CardTitle>
+                    </CardHeader>
+                    <CardContent className="space-y-3">
+                      {insights.metrics.map((metric, idx) => (
                         <div key={idx} className="flex justify-between text-sm">
-                          <span className="text-muted-foreground">{allocation.category}</span>
-                          <span className="font-medium">
-                            ${allocation.amount.toLocaleString()}
+                          <span className="text-muted-foreground">
+                            {metric.label}
+                            {metric.count !== undefined && ` (${metric.count})`}
                           </span>
+                          <span className="font-medium">{metric.value}</span>
                         </div>
                       ))}
-                      <div className="flex justify-between text-sm font-semibold pt-2 border-t">
-                        <span>{language === 'en' ? 'Total' : 'Total'}</span>
-                        <span>${recommendation.total_amount.toLocaleString()}</span>
-                      </div>
-                    </div>
-                    
-                    <div className="flex gap-2 pt-2">
-                      <Button
-                        onClick={() => handleAccept(recommendation)}
-                        disabled={processingId === recommendation.id}
-                        size="sm"
-                        className="flex-1"
-                      >
-                        {processingId === recommendation.id ? (
-                          <RefreshCw className="h-4 w-4 mr-2 animate-spin" />
-                        ) : (
-                          <Check className="h-4 w-4 mr-2" />
-                        )}
-                        {language === 'en' ? 'Accept' : 'Aceptar'}
-                      </Button>
-                      <Button
-                        onClick={() => handleDismiss(recommendation.id)}
-                        variant="outline"
-                        size="sm"
-                      >
-                        <X className="h-4 w-4" />
-                      </Button>
-                    </div>
-                  </CardContent>
-                </Card>
-              ))}
+                    </CardContent>
+                  </Card>
+
+                  {/* Upcoming Payments */}
+                  {insights.upcomingPayments.length > 0 && (
+                    <Card className="border-border/50">
+                      <CardHeader className="pb-3">
+                        <div className="flex items-center gap-2">
+                          <Calendar className="h-4 w-4" />
+                          <CardTitle className="text-base">
+                            {language === 'en' ? 'Upcoming Payments' : language === 'es' ? 'Próximos Pagos' : 'Pagamentos Futuros'}
+                          </CardTitle>
+                        </div>
+                      </CardHeader>
+                      <CardContent className="space-y-3">
+                        {insights.upcomingPayments.map((payment, idx) => (
+                          <div key={idx} className="flex justify-between items-center text-sm p-2 bg-muted/50 rounded">
+                            <div>
+                              <p className="font-medium">{payment.name}</p>
+                              <p className="text-xs text-muted-foreground">
+                                {language === 'en' ? 'Day' : language === 'es' ? 'Día' : 'Dia'} {payment.date}
+                              </p>
+                            </div>
+                            <span className="font-medium">${payment.amount.toLocaleString()}</span>
+                          </div>
+                        ))}
+                      </CardContent>
+                    </Card>
+                  )}
+
+                  <Button onClick={handleRefresh} variant="outline" size="sm" className="w-full">
+                    <RefreshCw className="h-4 w-4 mr-2" />
+                    {language === 'en' ? 'Refresh' : language === 'es' ? 'Actualizar' : 'Atualizar'}
+                  </Button>
+                </>
+              )}
             </CardContent>
           </ScrollArea>
         </Card>

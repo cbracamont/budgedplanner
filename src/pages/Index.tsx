@@ -2144,10 +2144,6 @@ const Index = () => {
         <FloatingBudgetBuddy 
           language={language} 
           profileId={"id" in activeProfile ? activeProfile.id : undefined}
-          onAccept={async (recommendation) => {
-            // Handle recommendation acceptance
-            console.log('Accepting recommendation:', recommendation);
-          }}
         />
       </div>
     </>
