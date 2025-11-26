@@ -91,6 +91,7 @@ import { InvitationsManager } from "@/components/InvitationsManager";
 import { AuditLogViewer } from "@/components/AuditLogViewer";
 import { FloatingChatWidget } from "@/components/FloatingChatWidget";
 import { FloatingBudgetBuddy } from "@/components/FloatingBudgetBuddy";
+import { OnboardingGuide } from "@/components/OnboardingGuide";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
@@ -925,7 +926,8 @@ const Index = () => {
   return (
     <>
       <style>{`@media print { .no-print { display: none !important; } }`}</style>
-
+      
+      <OnboardingGuide language={language} onComplete={() => {}} />
 
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-slate-900 dark:to-slate-800">
         <ScrollToTop />
