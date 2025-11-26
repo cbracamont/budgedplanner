@@ -44,7 +44,7 @@ export const FloatingBudgetBuddy = ({
     isLoading,
     error,
     refetch
-  } = useBudgetRecommendations(profileId);
+  } = useBudgetRecommendations(profileId, language);
 
   const visibleRecommendations = recommendations.filter(r => !dismissedIds.has(r.id));
 
