@@ -33,14 +33,14 @@ export const AutoPaymentsGenerator = ({ language }: AutoPaymentsGeneratorProps) 
       error: "Error al generar pagos",
       info: "Esto creará automáticamente entradas de pago para todas tus deudas activas para 3 meses anteriores y 6 meses posteriores al mes actual según sus fechas de pago."
     },
-    pl: {
-      title: "Automatyczne Płatności Długów",
-      description: "Wygeneruj automatyczne harmonogramy płatności dla swoich długów",
-      generate: "Generuj Płatności",
-      generating: "Generowanie...",
-      success: "Płatności wygenerowane pomyślnie",
-      error: "Nie udało się wygenerować płatności",
-      info: "Spowoduje to automatyczne utworzenie wpisów płatności dla wszystkich aktywnych długów na 3 miesiące przed i 6 miesięcy po bieżącym miesiącu na podstawie ich dat płatności."
+    pt: {
+      title: "Pagamentos Automáticos de Dívidas",
+      description: "Gere calendários de pagamento automáticos para as suas dívidas",
+      generate: "Gerar Pagamentos",
+      generating: "Gerando...",
+      success: "Pagamentos gerados com sucesso",
+      error: "Falha ao gerar pagamentos",
+      info: "Isto criará automaticamente entradas de pagamento para todas as suas dívidas ativas para 3 meses antes e 6 meses após o mês atual com base nas suas datas de pagamento."
     }
   }[language];
 
@@ -48,7 +48,10 @@ export const AutoPaymentsGenerator = ({ language }: AutoPaymentsGeneratorProps) 
     setIsGenerating(true);
     try {
       const { data, error } = await supabase.functions.invoke('auto-generate-debt-payments', {
-        body: { time: new Date().toISOString() }
+        body: { 
+          time: new Date().toISOString(),
+          language: language
+        }
       });
 
       if (error) throw error;

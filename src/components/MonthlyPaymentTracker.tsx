@@ -123,26 +123,26 @@ export const MonthlyPaymentTracker = ({ language }: MonthlyPaymentTrackerProps) 
       remaining: "Restante",
       confirmDelete: "¿Estás seguro de que quieres eliminar este pago?",
     },
-    pl: {
-      title: "Miesięczny Tracker Płatności",
-      description: "Śledź, co zapłaciłeś w tym miesiącu",
-      addPayment: "Dodaj Płatność",
-      editPayment: "Edytuj Płatność",
-      selectDebt: "Wybierz Dług",
-      amount: "Kwota",
+    pt: {
+      title: "Rastreador de Pagamentos Mensais",
+      description: "Acompanhe o que pagou este mês",
+      addPayment: "Adicionar Pagamento",
+      editPayment: "Editar Pagamento",
+      selectDebt: "Selecionar Dívida",
+      amount: "Valor",
       date: "Data",
-      notes: "Notatki",
-      noPayments: "Brak płatności w tym miesiącu",
-      save: "Zapisz",
-      cancel: "Anuluj",
-      delete: "Usuń",
-      edit: "Edytuj",
-      totalPaid: "Razem Zapłacone W Tym Miesiącu",
-      expectedThisMonth: "Oczekiwane W Tym Miesiącu",
-      totalDebtBalance: "Całkowite Saldo Długów",
-      remaining: "Pozostało",
-      confirmDelete: "Czy na pewno chcesz usunąć tę płatność?",
-    },
+      notes: "Notas",
+      noPayments: "Nenhum pagamento registado este mês",
+      save: "Guardar",
+      cancel: "Cancelar",
+      delete: "Eliminar",
+      edit: "Editar",
+      totalPaid: "Total Pago Este Mês",
+      expectedThisMonth: "Esperado Este Mês",
+      totalDebtBalance: "Saldo Total de Dívidas",
+      remaining: "Restante",
+      confirmDelete: "Tem certeza que deseja eliminar este pagamento?",
+    }
   }[language];
 
   // Monthly totals - exhaustive calculations with projections
@@ -422,7 +422,7 @@ export const MonthlyPaymentTracker = ({ language }: MonthlyPaymentTrackerProps) 
                               ? "Choose a debt..."
                               : language === "es"
                                 ? "Elige una deuda..."
-                                : "Wybierz dług..."
+                                : "Escolha uma dívida..."
                           }
                         />
                       </SelectTrigger>
@@ -460,7 +460,7 @@ export const MonthlyPaymentTracker = ({ language }: MonthlyPaymentTrackerProps) 
                     <Textarea
                       value={formData.notes}
                       onChange={(e) => setFormData({ ...formData, notes: e.target.value })}
-                      placeholder={language === "en" ? "Optional notes..." : "Notas opcionales..."}
+                      placeholder={language === "en" ? "Optional notes..." : language === "es" ? "Notas opcionales..." : "Notas opcionais..."}
                     />
                   </div>
                 </div>
@@ -597,14 +597,14 @@ export const MonthlyPaymentTracker = ({ language }: MonthlyPaymentTrackerProps) 
                                     ? "Delete manual payment?"
                                     : language === "es"
                                       ? "¿Eliminar pago manual?"
-                                      : "Usunąć płatność ręczną?"}
+                                      : "Eliminar pagamento manual?"}
                                 </AlertDialogTitle>
                                 <AlertDialogDescription>
                                   {language === "en"
                                     ? "This action cannot be undone. The debt balance will be restored."
                                     : language === "es"
                                       ? "Esta acción no se puede deshacer. El balance de la deuda se restaurará."
-                                      : "Tej operacji nie można cofnąć. Saldo długu zostanie przywrócone."}
+                                      : "Esta ação não pode ser desfeita. O saldo da dívida será restaurado."}
                                 </AlertDialogDescription>
                               </AlertDialogHeader>
                               <AlertDialogFooter>

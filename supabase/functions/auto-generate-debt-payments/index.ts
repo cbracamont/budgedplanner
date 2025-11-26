@@ -37,6 +37,9 @@ Deno.serve(async (req) => {
       },
     );
 
+    // Get language from request body
+    const { language = 'en' } = await req.json();
+
     console.log("Starting automatic debt payment generation...");
 
     // Get all active debts (balance > 0)
@@ -64,6 +67,16 @@ Deno.serve(async (req) => {
     const today = new Date();
     const currentMonth = new Date(today.getFullYear(), today.getMonth(), 1);
     const monthYearStr = currentMonth.toISOString().split("T")[0];
+    
+    // Translation helper
+    const getTranslation = (lang: string, debtName: string): string => {
+      const translations: Record<string, string> = {
+        'en': `Auto-generated payment for ${debtName}`,
+        'es': `Pago automático generado para ${debtName}`,
+        'pt': `Pagamento automático gerado para ${debtName}`,
+      };
+      return translations[lang] || translations['en'];
+    };
 
     // Generate payments for 3 months before and 6 months after current month
     const monthsToGenerate = [-3, -2, -1, 0, 1, 2, 3, 4, 5, 6];
@@ -200,7 +213,7 @@ Deno.serve(async (req) => {
           amount,
           payment_status: paymentStatus,
           payment_date: paymentDateStr,
-          notes: `Auto-generated payment for ${debt.name}`,
+          notes: getTranslation(language, debt.name),
         });
 
         if (insertError) {
