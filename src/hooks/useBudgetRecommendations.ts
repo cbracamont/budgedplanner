@@ -16,7 +16,7 @@ export interface Recommendation {
   total_amount: number;
 }
 
-export const useBudgetRecommendations = (profileId: string | undefined) => {
+export const useBudgetRecommendations = (profileId: string | undefined, language: string = 'en') => {
   const [recommendations, setRecommendations] = useState<Recommendation[]>([]);
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
@@ -32,7 +32,7 @@ export const useBudgetRecommendations = (profileId: string | undefined) => {
 
     try {
       const { data, error: functionError } = await supabase.functions.invoke('budget-recommendations', {
-        body: {}
+        body: { language }
       });
 
       if (functionError) {
@@ -55,7 +55,7 @@ export const useBudgetRecommendations = (profileId: string | undefined) => {
 
   useEffect(() => {
     fetchRecommendations();
-  }, [profileId]);
+  }, [profileId, language]);
 
   return {
     recommendations,
