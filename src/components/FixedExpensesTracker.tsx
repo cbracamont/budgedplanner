@@ -1,6 +1,6 @@
 // src/components/FixedExpensesTracker.tsx
-import { Trash2, Plus, CalendarIcon } from "lucide-react";
-import { useFixedExpenses, useAddFixedExpense, useDeleteFixedExpense } from "@/hooks/useFinancialData";
+import { Trash2, Plus, CalendarIcon, Pencil, Check, X } from "lucide-react";
+import { useFixedExpenses, useAddFixedExpense, useDeleteFixedExpense, useUpdateFixedExpense } from "@/hooks/useFinancialData";
 import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
 import { format } from "date-fns";
@@ -33,6 +33,9 @@ export const FixedExpensesTracker = () => {
   } = useFixedExpenses();
   const addExpenseMutation = useAddFixedExpense();
   const deleteExpenseMutation = useDeleteFixedExpense();
+  const updateExpenseMutation = useUpdateFixedExpense();
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editAmount, setEditAmount] = useState<number>(0);
   const [isAdding, setIsAdding] = useState(false);
   const [newExpense, setNewExpense] = useState({
     name: "",
@@ -78,17 +81,30 @@ export const FixedExpensesTracker = () => {
   const handleDelete = async (id: string) => {
     try {
       await deleteExpenseMutation.mutateAsync(id);
-      toast({
-        title: "Expense Deleted",
-        description: "Fixed expense has been deleted successfully"
-      });
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to delete expense",
-        variant: "destructive"
-      });
+      toast({ title: "Expense Deleted", description: "Fixed expense has been deleted successfully" });
+    } catch {
+      toast({ title: "Error", description: "Failed to delete expense", variant: "destructive" });
     }
+  };
+  const handleStartEdit = (expense: { id: string; amount: number }) => {
+    setEditingId(expense.id);
+    setEditAmount(expense.amount);
+  };
+
+  const handleSaveEdit = async (id: string) => {
+    if (editAmount > 0) {
+      try {
+        await updateExpenseMutation.mutateAsync({ id, amount: editAmount });
+        setEditingId(null);
+        toast({ title: "Expense Updated", description: "Amount has been updated successfully" });
+      } catch {
+        toast({ title: "Error", description: "Failed to update expense", variant: "destructive" });
+      }
+    }
+  };
+
+  const handleCancelEdit = () => {
+    setEditingId(null);
   };
   return <div className="bg-white dark:bg-gray-800 p-8 rounded-3xl shadow-2xl">
       <div className="flex justify-between items-center mb-8">
@@ -110,11 +126,38 @@ export const FixedExpensesTracker = () => {
                 {expense.frequency_type === "bi-weekly" ? "Bi-weekly" : expense.frequency_type} - Day {expense.payment_day}
               </p>
             </div>
-            <div className="flex items-center gap-4">
-              <span className="text-2xl font-bold text-indigo-600">£{expense.amount}</span>
-              <button onClick={() => handleDelete(expense.id)} className="text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 p-2 rounded-lg transition">
-                <Trash2 className="w-5 h-5" />
-              </button>
+            <div className="flex items-center gap-3">
+              {editingId === expense.id ? (
+                <>
+                  <input
+                    type="number"
+                    value={editAmount || ""}
+                    onChange={(e) => setEditAmount(Number(e.target.value))}
+                    className="w-24 px-2 py-1 border rounded-lg text-lg font-bold text-center focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    autoFocus
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") handleSaveEdit(expense.id);
+                      if (e.key === "Escape") handleCancelEdit();
+                    }}
+                  />
+                  <button onClick={() => handleSaveEdit(expense.id)} className="text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 p-2 rounded-lg transition">
+                    <Check className="w-5 h-5" />
+                  </button>
+                  <button onClick={handleCancelEdit} className="text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-600 p-2 rounded-lg transition">
+                    <X className="w-5 h-5" />
+                  </button>
+                </>
+              ) : (
+                <>
+                  <span className="text-2xl font-bold text-indigo-600">£{expense.amount}</span>
+                  <button onClick={() => handleStartEdit(expense)} className="text-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 p-2 rounded-lg transition">
+                    <Pencil className="w-4 h-4" />
+                  </button>
+                  <button onClick={() => handleDelete(expense.id)} className="text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 p-2 rounded-lg transition">
+                    <Trash2 className="w-5 h-5" />
+                  </button>
+                </>
+              )}
             </div>
           </div>)}
       </div>
