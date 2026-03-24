@@ -78,7 +78,14 @@ export const FixedExpensesTracker = () => {
       }
     }
   };
-  const handleStartEdit = (expense: { id: string; amount: number }) => {
+  const handleDelete = async (id: string) => {
+    try {
+      await deleteExpenseMutation.mutateAsync(id);
+      toast({ title: "Expense Deleted", description: "Fixed expense has been deleted successfully" });
+    } catch {
+      toast({ title: "Error", description: "Failed to delete expense", variant: "destructive" });
+    }
+  };
     setEditingId(expense.id);
     setEditAmount(expense.amount);
   };
