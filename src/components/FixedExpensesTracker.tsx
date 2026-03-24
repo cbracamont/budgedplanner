@@ -86,6 +86,7 @@ export const FixedExpensesTracker = () => {
       toast({ title: "Error", description: "Failed to delete expense", variant: "destructive" });
     }
   };
+  const handleStartEdit = (expense: { id: string; amount: number }) => {
     setEditingId(expense.id);
     setEditAmount(expense.amount);
   };
@@ -125,11 +126,38 @@ export const FixedExpensesTracker = () => {
                 {expense.frequency_type === "bi-weekly" ? "Bi-weekly" : expense.frequency_type} - Day {expense.payment_day}
               </p>
             </div>
-            <div className="flex items-center gap-4">
-              <span className="text-2xl font-bold text-indigo-600">£{expense.amount}</span>
-              <button onClick={() => handleDelete(expense.id)} className="text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 p-2 rounded-lg transition">
-                <Trash2 className="w-5 h-5" />
-              </button>
+            <div className="flex items-center gap-3">
+              {editingId === expense.id ? (
+                <>
+                  <input
+                    type="number"
+                    value={editAmount || ""}
+                    onChange={(e) => setEditAmount(Number(e.target.value))}
+                    className="w-24 px-2 py-1 border rounded-lg text-lg font-bold text-center focus:outline-none focus:ring-2 focus:ring-indigo-500"
+                    autoFocus
+                    onKeyDown={(e) => {
+                      if (e.key === "Enter") handleSaveEdit(expense.id);
+                      if (e.key === "Escape") handleCancelEdit();
+                    }}
+                  />
+                  <button onClick={() => handleSaveEdit(expense.id)} className="text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 p-2 rounded-lg transition">
+                    <Check className="w-5 h-5" />
+                  </button>
+                  <button onClick={handleCancelEdit} className="text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-600 p-2 rounded-lg transition">
+                    <X className="w-5 h-5" />
+                  </button>
+                </>
+              ) : (
+                <>
+                  <span className="text-2xl font-bold text-indigo-600">£{expense.amount}</span>
+                  <button onClick={() => handleStartEdit(expense)} className="text-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 p-2 rounded-lg transition">
+                    <Pencil className="w-4 h-4" />
+                  </button>
+                  <button onClick={() => handleDelete(expense.id)} className="text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 p-2 rounded-lg transition">
+                    <Trash2 className="w-5 h-5" />
+                  </button>
+                </>
+              )}
             </div>
           </div>)}
       </div>
