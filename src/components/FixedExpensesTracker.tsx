@@ -78,20 +78,25 @@ export const FixedExpensesTracker = () => {
       }
     }
   };
-  const handleDelete = async (id: string) => {
-    try {
-      await deleteExpenseMutation.mutateAsync(id);
-      toast({
-        title: "Expense Deleted",
-        description: "Fixed expense has been deleted successfully"
-      });
-    } catch (error) {
-      toast({
-        title: "Error",
-        description: "Failed to delete expense",
-        variant: "destructive"
-      });
+  const handleStartEdit = (expense: { id: string; amount: number }) => {
+    setEditingId(expense.id);
+    setEditAmount(expense.amount);
+  };
+
+  const handleSaveEdit = async (id: string) => {
+    if (editAmount > 0) {
+      try {
+        await updateExpenseMutation.mutateAsync({ id, amount: editAmount });
+        setEditingId(null);
+        toast({ title: "Expense Updated", description: "Amount has been updated successfully" });
+      } catch {
+        toast({ title: "Error", description: "Failed to update expense", variant: "destructive" });
+      }
     }
+  };
+
+  const handleCancelEdit = () => {
+    setEditingId(null);
   };
   return <div className="bg-white dark:bg-gray-800 p-8 rounded-3xl shadow-2xl">
       <div className="flex justify-between items-center mb-8">
