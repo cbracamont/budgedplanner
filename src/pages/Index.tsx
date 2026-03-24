@@ -2295,7 +2295,7 @@ const DebtPlanner = ({
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <SimplifiedDebtPriority debts={debtStrategy.sortedDebts} method={debtMethod} language={language} currentMonth={currentMonth} />
+          <SimplifiedDebtPriority debts={debtStrategy.sortedDebts} method={debtMethod} language={language} />
         </CardContent>
       </Card>
     </div>
