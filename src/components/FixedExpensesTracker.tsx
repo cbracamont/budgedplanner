@@ -1,6 +1,6 @@
 // src/components/FixedExpensesTracker.tsx
-import { Trash2, Plus, CalendarIcon } from "lucide-react";
-import { useFixedExpenses, useAddFixedExpense, useDeleteFixedExpense } from "@/hooks/useFinancialData";
+import { Trash2, Plus, CalendarIcon, Pencil, Check, X } from "lucide-react";
+import { useFixedExpenses, useAddFixedExpense, useDeleteFixedExpense, useUpdateFixedExpense } from "@/hooks/useFinancialData";
 import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
 import { format } from "date-fns";
