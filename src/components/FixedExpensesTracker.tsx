@@ -33,6 +33,9 @@ export const FixedExpensesTracker = () => {
   } = useFixedExpenses();
   const addExpenseMutation = useAddFixedExpense();
   const deleteExpenseMutation = useDeleteFixedExpense();
+  const updateExpenseMutation = useUpdateFixedExpense();
+  const [editingId, setEditingId] = useState<string | null>(null);
+  const [editAmount, setEditAmount] = useState<number>(0);
   const [isAdding, setIsAdding] = useState(false);
   const [newExpense, setNewExpense] = useState({
     name: "",
