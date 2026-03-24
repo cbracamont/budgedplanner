@@ -522,25 +522,46 @@ export const MonthlyPaymentTracker = ({ language }: MonthlyPaymentTrackerProps) 
                 // Calculate projected balance for this debt in the viewing month
                 const projectedBalance = linkedDebt
                   ? (() => {
-                      const currentMonthStart = startOfMonth(currentMonth);
-                      const currentMonthEnd = new Date(
-                        currentMonthStart.getFullYear(),
-                        currentMonthStart.getMonth() + 1,
-                        0,
-                      );
+                      const today = new Date();
+                      const viewingMonthStart = startOfMonth(currentMonth);
+                      const todayMonthStart = startOfMonth(today);
+                      const isFutureMonth = viewingMonthStart > todayMonthStart;
+                      const isPastMonth = viewingMonthStart < todayMonthStart;
 
-                      const debtPaymentsThisMonth = payments
+                      let balance = linkedDebt.balance; // Current real balance
+
+                      if (isFutureMonth) {
+                        // Future: subtract scheduled payments from now until viewing month
+                        const paymentsUntilViewing = allPayments.filter((p) => {
+                          if (p.source_id !== linkedDebt.id) return false;
+                          const pMonth = new Date(p.month_year);
+                          return pMonth >= todayMonthStart && pMonth <= viewingMonthStart;
+                        });
+                        balance -= paymentsUntilViewing.reduce((s, p) => s + p.amount, 0);
+                      } else if (isPastMonth) {
+                        // Past: add back payments made after viewing month
+                        const paymentsAfterViewing = allPayments.filter((p) => {
+                          if (p.source_id !== linkedDebt.id) return false;
+                          const pMonth = new Date(p.month_year);
+                          return pMonth > viewingMonthStart && pMonth <= todayMonthStart;
+                        });
+                        balance += paymentsAfterViewing.reduce((s, p) => s + p.amount, 0);
+                      }
+
+                      // Also subtract payments made this specific viewing month
+                      const viewingMonthEnd = new Date(viewingMonthStart.getFullYear(), viewingMonthStart.getMonth() + 1, 0);
+                      const paidThisMonth = payments
                         .filter((p) => {
-                          const paymentDate = p.payment_date ? new Date(p.payment_date) : null;
+                          const pd = p.payment_date ? new Date(p.payment_date) : null;
                           return (
                             p.source_id === linkedDebt.id &&
                             (p.payment_status === "paid" ||
-                              (paymentDate && paymentDate >= currentMonthStart && paymentDate <= currentMonthEnd))
+                              (pd && pd >= viewingMonthStart && pd <= viewingMonthEnd))
                           );
                         })
-                        .reduce((sum, p) => sum + p.amount, 0);
+                        .reduce((s, p) => s + p.amount, 0);
 
-                      return Math.max(0, linkedDebt.balance - debtPaymentsThisMonth);
+                      return Math.max(0, balance - paidThisMonth);
                     })()
                   : 0;
 
@@ -563,7 +584,7 @@ export const MonthlyPaymentTracker = ({ language }: MonthlyPaymentTrackerProps) 
                           </Badge>
                           {linkedDebt && (
                             <span className="text-sm text-muted-foreground">
-                              Projected Balance: {formatCurrency(projectedBalance)}
+                              {language === "en" ? "Projected Balance" : language === "es" ? "Saldo Proyectado" : "Saldo Projetado"}: {formatCurrency(projectedBalance)}
                             </span>
                           )}
                         </div>
