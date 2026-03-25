@@ -128,7 +128,7 @@ export const VariableExpensesTracker = () => {
                   </div>
                 ) : (
                   <p className="text-muted-foreground">
-                    £{Number(e.amount).toFixed(2)} · Added {e.date ? format(new Date(e.date), "MMM dd, yyyy") : format(new Date(e.created_at), "MMM dd, yyyy")}
+                    £{Number(e.amount).toFixed(2)} · Last updated {format(new Date(e.updated_at), "MMM dd, yyyy")}
                   </p>
                 )}
               </div>
