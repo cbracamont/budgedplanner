@@ -15,12 +15,10 @@ export const VariableExpensesTracker = () => {
   const [newExpense, setNewExpense] = useState({
     name: "",
     amount: 0,
-    date: format(new Date(), "yyyy-MM-dd"),
   });
 
-  const currentMonth = format(new Date(), "yyyy-MM");
-  const currentMonthExpenses = expenses.filter((e) => e.date?.startsWith(currentMonth));
-  const monthlyTotal = currentMonthExpenses
+  // Total = sum of ALL variable expenses (they persist month to month)
+  const monthlyTotal = expenses
     .reduce((t, e) => t + Number(e.amount), 0)
     .toFixed(0);
 
@@ -31,7 +29,7 @@ export const VariableExpensesTracker = () => {
           name: newExpense.name,
           amount: newExpense.amount,
         });
-        setNewExpense({ name: "", amount: 0, date: format(new Date(), "yyyy-MM-dd") });
+        setNewExpense({ name: "", amount: 0 });
         setIsAdding(false);
       } catch (error) {
         console.error("Error adding expense:", error);
@@ -129,7 +127,9 @@ export const VariableExpensesTracker = () => {
                     </button>
                   </div>
                 ) : (
-                  <p className="text-muted-foreground">£{Number(e.amount).toFixed(2)} – {e.date ? format(new Date(e.date), "MMM dd, yyyy") : "No date"}</p>
+                  <p className="text-muted-foreground">
+                    £{Number(e.amount).toFixed(2)} · Added {e.date ? format(new Date(e.date), "MMM dd, yyyy") : format(new Date(e.created_at), "MMM dd, yyyy")}
+                  </p>
                 )}
               </div>
               <div className="flex gap-1">
@@ -166,15 +166,9 @@ export const VariableExpensesTracker = () => {
             <input
               type="number"
               className="flex-1 px-5 py-4 border rounded-xl text-lg bg-background"
-              placeholder="Amount"
+              placeholder="Monthly amount"
               value={newExpense.amount || ""}
               onChange={(e) => setNewExpense({ ...newExpense, amount: Number(e.target.value) })}
-            />
-            <input
-              type="date"
-              className="px-5 py-4 border rounded-xl text-lg bg-background"
-              value={newExpense.date}
-              onChange={(e) => setNewExpense({ ...newExpense, date: e.target.value })}
             />
           </div>
           <div className="flex gap-4 mt-6">
@@ -196,7 +190,7 @@ export const VariableExpensesTracker = () => {
       )}
 
       <div className="mt-12 p-10 bg-gradient-to-r from-primary to-primary/80 text-primary-foreground rounded-3xl text-center">
-        <p className="text-3xl">Current month variable spending</p>
+        <p className="text-3xl">Monthly variable spending</p>
         <p className="text-8xl font-black">£{monthlyTotal}</p>
       </div>
     </div>
