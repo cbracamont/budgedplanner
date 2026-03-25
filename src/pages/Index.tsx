@@ -1969,7 +1969,7 @@ const Index = () => {
                   <FixedExpensesTracker />
                 </TabsContent>
                 <TabsContent value="variable">
-                  <VariableExpensesTracker />
+                  <VariableExpensesTracker language={language} />
                 </TabsContent>
               </Tabs>
             </TabsContent>
