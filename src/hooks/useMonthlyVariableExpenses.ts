@@ -23,28 +23,24 @@ export interface NewMonthlyVariableExpense {
   category_id?: string;
 }
 
-// Fetch variable expenses for a specific month
-export const useMonthlyVariableExpenses = (monthYear?: Date) => {
+// Fetch all variable expenses (persistent, not filtered by month)
+// Variable expenses carry over month to month until changed or deleted.
+// The 'date' field records when the expense was added (for history).
+export const useMonthlyVariableExpenses = (_monthYear?: Date) => {
   const { data: profiles = [] } = useFinancialProfiles();
   const activeProfile = profiles.find(p => p.is_active);
 
   return useQuery({
-    queryKey: ['monthly_variable_expenses', monthYear?.toISOString(), activeProfile?.id],
+    queryKey: ['monthly_variable_expenses', activeProfile?.id],
     queryFn: async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('Not authenticated');
-
-      const currentMonth = monthYear || new Date();
-      const start = format(startOfMonth(currentMonth), 'yyyy-MM-dd');
-      const end = format(endOfMonth(currentMonth), 'yyyy-MM-dd');
 
       let query = supabase
         .from('variable_expenses')
         .select('*')
         .eq('user_id', user.id)
-        .gte('date', start)
-        .lte('date', end)
-        .order('date', { ascending: false });
+        .order('created_at', { ascending: false });
 
       if (activeProfile?.id) {
         query = query.eq('profile_id', activeProfile.id);
@@ -54,13 +50,13 @@ export const useMonthlyVariableExpenses = (monthYear?: Date) => {
       if (error) throw error;
       return data as MonthlyVariableExpense[];
     },
-    enabled: !!monthYear,
+    enabled: true,
   });
 };
 
-// Calculate total variable expenses for a specific month
-export const useMonthlyVariableExpensesTotal = (monthYear?: Date) => {
-  const { data: expenses = [] } = useMonthlyVariableExpenses(monthYear);
+// Calculate total variable expenses (all persistent expenses sum)
+export const useMonthlyVariableExpensesTotal = (_monthYear?: Date) => {
+  const { data: expenses = [] } = useMonthlyVariableExpenses();
   
   return expenses.reduce((sum, expense) => sum + Number(expense.amount), 0);
 };
