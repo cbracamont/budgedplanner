@@ -70,7 +70,7 @@ export const FinancialAdvisor = ({ language }: FinancialAdvisorProps) => {
         .from('chat_conversations')
         .insert([{ 
           user_id: (await supabase.auth.getUser()).data.user?.id,
-          title: `Conversación del ${new Date().toLocaleDateString()}`
+          title: language === 'en' ? `Conversation of ${new Date().toLocaleDateString()}` : language === 'es' ? `Conversación del ${new Date().toLocaleDateString()}` : `Conversa de ${new Date().toLocaleDateString()}`
         }])
         .select()
         .single();
@@ -82,14 +82,14 @@ export const FinancialAdvisor = ({ language }: FinancialAdvisorProps) => {
       loadConversations();
       
       toast({
-        title: language === 'en' ? "New Conversation" : "Nueva Conversación",
-        description: language === 'en' ? "Started a new conversation" : "Se inició una nueva conversación"
+        title: language === 'en' ? "New Conversation" : language === 'es' ? "Nueva Conversación" : "Nova Conversa",
+        description: language === 'en' ? "Started a new conversation" : language === 'es' ? "Se inició una nueva conversación" : "Nova conversa iniciada"
       });
     } catch (error) {
       console.error('Error creating conversation:', error);
       toast({
         title: "Error",
-        description: language === 'en' ? "Failed to create conversation" : "Error al crear conversación",
+        description: language === 'en' ? "Failed to create conversation" : language === 'es' ? "Error al crear conversación" : "Erro ao criar conversa",
         variant: "destructive"
       });
     }
@@ -133,8 +133,8 @@ export const FinancialAdvisor = ({ language }: FinancialAdvisorProps) => {
       loadConversations();
       
       toast({
-        title: language === 'en' ? "Conversation Deleted" : "Conversación Eliminada",
-        description: language === 'en' ? "The conversation has been deleted" : "La conversación ha sido eliminada"
+        title: language === 'en' ? "Conversation Deleted" : language === 'es' ? "Conversación Eliminada" : "Conversa Eliminada",
+        description: language === 'en' ? "The conversation has been deleted" : language === 'es' ? "La conversación ha sido eliminada" : "A conversa foi eliminada"
       });
     } catch (error) {
       console.error('Error deleting conversation:', error);
@@ -167,8 +167,8 @@ export const FinancialAdvisor = ({ language }: FinancialAdvisorProps) => {
     const validation = messageSchema.safeParse({ content: messageContent });
     if (!validation.success) {
       toast({
-        title: language === 'en' ? "Message too long" : "Mensaje muy largo",
-        description: language === 'en' ? "Maximum 2000 characters allowed" : "Máximo 2000 caracteres permitidos",
+        title: language === 'en' ? "Message too long" : language === 'es' ? "Mensaje muy largo" : "Mensagem muito longa",
+        description: language === 'en' ? "Maximum 2000 characters allowed" : language === 'es' ? "Máximo 2000 caracteres permitidos" : "Máximo de 2000 caracteres permitidos",
         variant: "destructive"
       });
       return;
@@ -210,8 +210,10 @@ export const FinancialAdvisor = ({ language }: FinancialAdvisorProps) => {
       toast({
         title: "Error",
         description: language === 'en' 
-          ? "Failed to get advice. Please try again." 
-          : "Error al obtener consejo. Intenta de nuevo.",
+          ? "Failed to get response. Please try again." 
+          : language === 'es'
+          ? "Error al obtener respuesta. Intenta de nuevo."
+          : "Erro ao obter resposta. Tente novamente.",
         variant: "destructive"
       });
     } finally {
@@ -222,7 +224,9 @@ export const FinancialAdvisor = ({ language }: FinancialAdvisorProps) => {
   const generateActionPlan = (e: React.FormEvent) => {
     const prompt = language === 'en'
       ? "Based on my financial data, please generate a detailed action plan document with the following sections:\n\n1. **Executive Summary**: Brief overview of my current financial situation\n2. **Short-term Goals (1-3 months)**: Specific actions I should take immediately\n3. **Medium-term Goals (3-6 months)**: Steps to improve my financial health\n4. **Long-term Goals (6-12 months)**: Strategic financial objectives\n5. **Debt Management Strategy**: Specific plan for managing and reducing debts\n6. **Savings Strategy**: Plan for building emergency fund and savings goals\n7. **Budget Optimization**: Recommendations for reducing expenses and increasing savings\n8. **Action Items Checklist**: A prioritized list of concrete steps to take\n\nPlease format this as a professional document that I can save and reference."
-      : "Basándote en mis datos financieros, genera un documento detallado de plan de acción con las siguientes secciones:\n\n1. **Resumen Ejecutivo**: Breve descripción de mi situación financiera actual\n2. **Objetivos a Corto Plazo (1-3 meses)**: Acciones específicas que debo tomar inmediatamente\n3. **Objetivos a Mediano Plazo (3-6 meses)**: Pasos para mejorar mi salud financiera\n4. **Objetivos a Largo Plazo (6-12 meses)**: Objetivos financieros estratégicos\n5. **Estrategia de Manejo de Deudas**: Plan específico para gestionar y reducir deudas\n6. **Estrategia de Ahorro**: Plan para construir fondo de emergencia y metas de ahorro\n7. **Optimización de Presupuesto**: Recomendaciones para reducir gastos y aumentar ahorros\n8. **Lista de Acciones**: Una lista priorizada de pasos concretos a seguir\n\nPor favor, formatea esto como un documento profesional que pueda guardar y consultar.";
+      : language === 'es'
+      ? "Basándote en mis datos financieros, genera un documento detallado de plan de acción con las siguientes secciones:\n\n1. **Resumen Ejecutivo**: Breve descripción de mi situación financiera actual\n2. **Objetivos a Corto Plazo (1-3 meses)**: Acciones específicas que debo tomar inmediatamente\n3. **Objetivos a Mediano Plazo (3-6 meses)**: Pasos para mejorar mi salud financiera\n4. **Objetivos a Largo Plazo (6-12 meses)**: Objetivos financieros estratégicos\n5. **Estrategia de Manejo de Deudas**: Plan específico para gestionar y reducir deudas\n6. **Estrategia de Ahorro**: Plan para construir fondo de emergencia y metas de ahorro\n7. **Optimización de Presupuesto**: Recomendaciones para reducir gastos y aumentar ahorros\n8. **Lista de Acciones**: Una lista priorizada de pasos concretos a seguir\n\nPor favor, formatea esto como un documento profesional que pueda guardar y consultar."
+      : "Com base nos meus dados financeiros, gere um documento detalhado de plano de ação com as seguintes secções:\n\n1. **Resumo Executivo**: Breve visão geral da minha situação financeira atual\n2. **Objetivos de Curto Prazo (1-3 meses)**: Ações específicas a tomar imediatamente\n3. **Objetivos de Médio Prazo (3-6 meses)**: Passos para melhorar a saúde financeira\n4. **Objetivos de Longo Prazo (6-12 meses)**: Objetivos financeiros estratégicos\n5. **Estratégia de Gestão de Dívidas**: Plano específico para gerir e reduzir dívidas\n6. **Estratégia de Poupança**: Plano para construir fundo de emergência e metas de poupança\n7. **Otimização de Orçamento**: Recomendações para reduzir despesas e aumentar poupanças\n8. **Lista de Ações**: Uma lista priorizada de passos concretos a seguir\n\nPor favor, formate isto como um documento profissional que possa guardar e consultar.";
 
     sendMessage(e, prompt);
   };
@@ -234,7 +238,7 @@ export const FinancialAdvisor = ({ language }: FinancialAdvisorProps) => {
           <div className="flex items-center gap-2">
             <Brain className="h-5 w-5 text-primary" />
             <CardTitle>
-              {language === 'en' ? 'AI Financial Chat' : 'Chat Financiero AI'}
+              {language === 'en' ? 'AI Financial Chat' : language === 'es' ? 'Chat Financiero AI' : 'Chat Financeiro AI'}
             </CardTitle>
           </div>
           <div className="flex items-center gap-2">
@@ -242,13 +246,13 @@ export const FinancialAdvisor = ({ language }: FinancialAdvisorProps) => {
               <DialogTrigger asChild>
                 <Button variant="outline" size="sm">
                   <MessageSquare className="h-4 w-4 mr-2" />
-                  {language === 'en' ? 'Conversations' : 'Conversaciones'}
+                  {language === 'en' ? 'Conversations' : language === 'es' ? 'Conversaciones' : 'Conversas'}
                 </Button>
               </DialogTrigger>
               <DialogContent className="max-w-md">
                 <DialogHeader>
                   <DialogTitle>
-                    {language === 'en' ? 'Chat Conversations' : 'Conversaciones del Chat'}
+                    {language === 'en' ? 'Chat Conversations' : language === 'es' ? 'Conversaciones del Chat' : 'Conversas do Chat'}
                   </DialogTitle>
                 </DialogHeader>
                 <div className="space-y-2">
@@ -258,7 +262,7 @@ export const FinancialAdvisor = ({ language }: FinancialAdvisorProps) => {
                     variant="outline"
                   >
                     <Plus className="h-4 w-4 mr-2" />
-                    {language === 'en' ? 'New Conversation' : 'Nueva Conversación'}
+                    {language === 'en' ? 'New Conversation' : language === 'es' ? 'Nueva Conversación' : 'Nova Conversa'}
                   </Button>
                   <ScrollArea className="h-[300px]">
                     <div className="space-y-1">
@@ -270,7 +274,7 @@ export const FinancialAdvisor = ({ language }: FinancialAdvisorProps) => {
                             className="flex-1 justify-start truncate"
                             onClick={() => loadConversation(conv.id)}
                           >
-                            {conv.title || `${language === 'en' ? 'Conversation' : 'Conversación'} ${new Date(conv.created_at).toLocaleDateString()}`}
+                            {conv.title || `${language === 'en' ? 'Conversation' : language === 'es' ? 'Conversación' : 'Conversa'} ${new Date(conv.created_at).toLocaleDateString()}`}
                           </Button>
                           <Button
                             variant="ghost"
@@ -288,14 +292,16 @@ export const FinancialAdvisor = ({ language }: FinancialAdvisorProps) => {
             </Dialog>
             <Button onClick={createNewConversation} variant="outline" size="sm">
               <Plus className="h-4 w-4 mr-2" />
-              {language === 'en' ? 'New' : 'Nuevo'}
+              {language === 'en' ? 'New' : language === 'es' ? 'Nuevo' : 'Novo'}
             </Button>
           </div>
         </div>
         <CardDescription>
           {language === 'en' 
-            ? 'Smart money moves and ask for guidance based on your data' 
-            : 'Movimientos inteligentes de dinero y pide orientación basada en tus datos'}
+            ? 'Smart money moves and guidance based on your data' 
+            : language === 'es'
+            ? 'Movimientos inteligentes de dinero y orientación basada en tus datos'
+            : 'Movimentos inteligentes de dinheiro e orientação baseada nos seus dados'}
         </CardDescription>
       </CardHeader>
       <CardContent className="space-y-4">
@@ -307,7 +313,7 @@ export const FinancialAdvisor = ({ language }: FinancialAdvisorProps) => {
             className="w-full"
           >
             <FileText className="h-4 w-4 mr-2" />
-            {language === 'en' ? 'Generate Action Plan' : 'Generar Plan de Acción'}
+            {language === 'en' ? 'Generate Action Plan' : language === 'es' ? 'Generar Plan de Acción' : 'Gerar Plano de Ação'}
           </Button>
         </div>
         <ScrollArea className="h-[400px] w-full rounded-md border p-4" ref={scrollRef}>
@@ -317,7 +323,9 @@ export const FinancialAdvisor = ({ language }: FinancialAdvisorProps) => {
                 <div className="text-4xl mb-2">🤖💰</div>
                 {language === 'en' 
                   ? 'Ask me anything about your finances!' 
-                  : '¡Pregúntame lo que quieras sobre tus finanzas!'}
+                  : language === 'es'
+                  ? '¡Pregúntame lo que quieras sobre tus finanzas!'
+                  : 'Pergunte-me o que quiser sobre suas finanças!'}
               </div>
             )}
             {messages.map((msg, idx) => (
@@ -360,7 +368,7 @@ export const FinancialAdvisor = ({ language }: FinancialAdvisorProps) => {
           <Input
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder={language === 'en' ? 'Ask for guidance...' : 'Pide orientación...'}
+            placeholder={language === 'en' ? 'Ask for guidance...' : language === 'es' ? 'Pide orientación...' : 'Peça orientação...'}
             disabled={isLoading}
           />
           <Button type="submit" disabled={isLoading || !input.trim()}>

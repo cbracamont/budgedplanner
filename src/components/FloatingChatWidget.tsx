@@ -343,15 +343,21 @@ export const FloatingChatWidget = ({ language = 'en' as Language }: FloatingChat
               {/* Not logged in message */}
               <div className="flex-1 flex flex-col items-center justify-center p-6 text-center">
                 <Bot className="h-16 w-16 text-muted-foreground mb-4" />
-                <h3 className="text-lg font-semibold mb-2">Inicia sesión para chatear</h3>
+                <h3 className="text-lg font-semibold mb-2">
+                  {language === 'en' ? 'Sign in to chat' : language === 'es' ? 'Inicia sesión para chatear' : 'Inicie sessão para conversar'}
+                </h3>
                 <p className="text-sm text-muted-foreground mb-4">
-                  Necesitas iniciar sesión para poder hablar con Budget Buddy sobre tus finanzas.
+                  {language === 'en' 
+                    ? 'You need to sign in to talk with Budget Buddy about your finances.' 
+                    : language === 'es'
+                    ? 'Necesitas iniciar sesión para poder hablar con Budget Buddy sobre tus finanzas.'
+                    : 'Precisa iniciar sessão para falar com o Budget Buddy sobre suas finanças.'}
                 </p>
                 <Button onClick={() => {
                   setIsOpen(false);
                   window.location.href = '/';
                 }}>
-                  Ir a iniciar sesión
+                  {language === 'en' ? 'Go to sign in' : language === 'es' ? 'Ir a iniciar sesión' : 'Ir para login'}
                 </Button>
               </div>
             </>
@@ -365,10 +371,10 @@ export const FloatingChatWidget = ({ language = 'en' as Language }: FloatingChat
               </div>
               <div>
                 <h3 className="font-semibold text-sm">
-                  {language === 'en' ? 'AI Financial Assistant' : 'Asistente Financiero AI'}
+                  {language === 'en' ? 'AI Financial Assistant' : language === 'es' ? 'Asistente Financiero AI' : 'Assistente Financeiro AI'}
                 </h3>
                 <p className="text-xs text-muted-foreground">
-                  {language === 'en' ? 'Your active profile data' : 'Datos de tu perfil activo'}
+                  {language === 'en' ? 'Your active profile data' : language === 'es' ? 'Datos de tu perfil activo' : 'Dados do seu perfil ativo'}
                 </p>
               </div>
             </div>
@@ -399,7 +405,7 @@ export const FloatingChatWidget = ({ language = 'en' as Language }: FloatingChat
             <div className="flex-1 flex flex-col p-4">
               <div className="flex items-center justify-between mb-3">
                 <h4 className="font-medium text-sm">
-                  {language === 'en' ? 'Conversations' : 'Conversaciones'}
+                  {language === 'en' ? 'Conversations' : language === 'es' ? 'Conversaciones' : 'Conversas'}
                 </h4>
                 <Button
                   variant="ghost"
@@ -416,7 +422,7 @@ export const FloatingChatWidget = ({ language = 'en' as Language }: FloatingChat
                 size="sm"
               >
                 <Plus className="h-4 w-4 mr-2" />
-                {language === 'en' ? 'New Chat' : 'Nuevo Chat'}
+                {language === 'en' ? 'New Chat' : language === 'es' ? 'Nuevo Chat' : 'Novo Chat'}
               </Button>
               <ScrollArea className="flex-1">
                 <div className="space-y-1">
@@ -453,16 +459,20 @@ export const FloatingChatWidget = ({ language = 'en' as Language }: FloatingChat
                   {messages.length === 0 && (
                     <div className="text-center text-muted-foreground py-12">
                       <div className="text-4xl mb-3">💡</div>
-                      <p className="text-sm">
+                       <p className="text-sm">
                         {language === 'en' 
                           ? 'Ask me about your finances!' 
-                          : '¡Pregúntame sobre tus finanzas!'}
-                      </p>
-                      <p className="text-xs mt-2 opacity-70">
+                          : language === 'es'
+                          ? '¡Pregúntame sobre tus finanzas!'
+                          : 'Pergunte-me sobre suas finanças!'}
+                       </p>
+                       <p className="text-xs mt-2 opacity-70">
                         {language === 'en' 
                           ? 'I can analyze your active profile data' 
-                          : 'Puedo analizar los datos de tu perfil activo'}
-                      </p>
+                          : language === 'es'
+                          ? 'Puedo analizar los datos de tu perfil activo'
+                          : 'Posso analisar os dados do seu perfil ativo'}
+                       </p>
                     </div>
                   )}
                   {messages.map((msg, idx) => (
@@ -508,7 +518,7 @@ export const FloatingChatWidget = ({ language = 'en' as Language }: FloatingChat
                       </div>
                       {msg.role === 'user' && (
                         <div className="h-7 w-7 rounded-full bg-secondary flex items-center justify-center flex-shrink-0 text-xs font-medium">
-                          {language === 'en' ? 'You' : 'Tú'}
+                          {language === 'en' ? 'You' : language === 'es' ? 'Tú' : 'Você'}
                         </div>
                       )}
                     </div>
@@ -534,7 +544,7 @@ export const FloatingChatWidget = ({ language = 'en' as Language }: FloatingChat
                     ref={inputRef}
                     value={input}
                     onChange={(e) => setInput(e.target.value)}
-                    placeholder={language === 'en' ? 'Ask me anything...' : 'Pregúntame lo que sea...'}
+                    placeholder={language === 'en' ? 'Ask me anything...' : language === 'es' ? 'Pregúntame lo que sea...' : 'Pergunte-me qualquer coisa...'}
                     disabled={isLoading}
                     className="flex-1"
                   />
