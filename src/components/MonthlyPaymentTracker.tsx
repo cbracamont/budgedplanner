@@ -145,6 +145,27 @@ export const MonthlyPaymentTracker = ({ language }: MonthlyPaymentTrackerProps) 
     }
   }[language];
 
+  // Translate auto-generated notes to the selected language
+  const translateNote = (note: string): string => {
+    const patterns = [
+      /^Auto-generated payment for (.+)$/,
+      /^Pago automático generado para (.+)$/,
+      /^Pagamento automático gerado para (.+)$/,
+    ];
+    for (const pattern of patterns) {
+      const match = note.match(pattern);
+      if (match) {
+        const debtName = match[1];
+        return language === "en"
+          ? `Auto-generated payment for ${debtName}`
+          : language === "es"
+            ? `Pago automático generado para ${debtName}`
+            : `Pagamento automático gerado para ${debtName}`;
+      }
+    }
+    return note;
+  };
+
   // Monthly totals - exhaustive calculations with projections
   const monthlyTotals = useMemo(() => {
     const today = new Date();
