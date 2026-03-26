@@ -590,7 +590,7 @@ export const MonthlyPaymentTracker = ({ language }: MonthlyPaymentTrackerProps) 
                             </span>
                           )}
                         </div>
-                        {payment.notes && <p className="text-sm text-muted-foreground mt-1">{payment.notes}</p>}
+                        {payment.notes && <p className="text-sm text-muted-foreground mt-1">{translateNote(payment.notes)}</p>}
                         {payment.payment_date && (
                           <p className="text-xs text-muted-foreground mt-1">
                             {format(new Date(payment.payment_date), "dd MMM yyyy")}
