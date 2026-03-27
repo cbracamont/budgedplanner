@@ -43,11 +43,32 @@ export const DebtsManager = ({ language, onDebtsChange }: DebtsManagerProps) => 
   const t = (key: string) => getTranslation(language, key);
   const { toast } = useToast();
   const { data: allDebts = [] } = useDebts();
+  const { data: activeProfile } = useActiveProfile();
+  const { data: allPaymentHistory = [] } = useAllPaymentHistory(activeProfile?.id);
   
-  // Filter out paid debts (balance = 0)
-  const debts = allDebts.filter(debt => debt.balance > 0);
-  const paidDebts = allDebts.filter(debt => debt.balance === 0);
-  
+  // Calculate adjusted balance for a debt by subtracting auto-generated payment_tracker entries
+  // that haven't been reflected in the actual balance (which only updates via debt_payments trigger)
+  const getAdjustedBalance = useCallback((debt: Debt) => {
+    const today = new Date();
+    const currentMonthStart = startOfMonth(today);
+    
+    // Get all payment_tracker entries for this debt up to current month
+    const autoPayments = allPaymentHistory.filter(p => {
+      if (p.source_id !== debt.id) return false;
+      const pMonth = new Date(p.month_year);
+      return pMonth <= currentMonthStart;
+    });
+    
+    // Sum of auto-generated payments (these are NOT reflected in debt.balance)
+    const totalAutoPayments = autoPayments.reduce((sum, p) => sum + p.amount, 0);
+    
+    return Math.max(0, debt.balance - totalAutoPayments);
+  }, [allPaymentHistory]);
+
+  // Filter out paid debts (adjusted balance = 0)
+  const debts = allDebts.filter(debt => getAdjustedBalance(debt) > 0);
+  const paidDebts = allDebts.filter(debt => getAdjustedBalance(debt) === 0);
+
   const addDebtMutation = useAddDebt();
   const updateDebtMutation = useUpdateDebt();
   const deleteDebtMutation = useDeleteDebt();
