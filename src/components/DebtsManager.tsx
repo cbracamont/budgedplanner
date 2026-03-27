@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo, useCallback } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -11,7 +11,9 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { getTranslation, Language, ukBanks } from "@/lib/i18n";
 import { useDebts, useAddDebt, useUpdateDebt, useDeleteDebt } from "@/hooks/useFinancialData";
 import { useDebtPayments } from "@/hooks/useDebtPayments";
-import { format } from "date-fns";
+import { useAllPaymentHistory } from "@/hooks/usePaymentTracker";
+import { useActiveProfile } from "@/hooks/useFinancialProfiles";
+import { format, startOfMonth } from "date-fns";
 
 interface Debt {
   id: string;
@@ -41,11 +43,32 @@ export const DebtsManager = ({ language, onDebtsChange }: DebtsManagerProps) => 
   const t = (key: string) => getTranslation(language, key);
   const { toast } = useToast();
   const { data: allDebts = [] } = useDebts();
+  const { data: activeProfile } = useActiveProfile();
+  const { data: allPaymentHistory = [] } = useAllPaymentHistory(activeProfile?.id);
   
-  // Filter out paid debts (balance = 0)
-  const debts = allDebts.filter(debt => debt.balance > 0);
-  const paidDebts = allDebts.filter(debt => debt.balance === 0);
-  
+  // Calculate adjusted balance for a debt by subtracting auto-generated payment_tracker entries
+  // that haven't been reflected in the actual balance (which only updates via debt_payments trigger)
+  const getAdjustedBalance = useCallback((debt: Debt) => {
+    const today = new Date();
+    const currentMonthStart = startOfMonth(today);
+    
+    // Get all payment_tracker entries for this debt up to current month
+    const autoPayments = allPaymentHistory.filter(p => {
+      if (p.source_id !== debt.id) return false;
+      const pMonth = new Date(p.month_year);
+      return pMonth <= currentMonthStart;
+    });
+    
+    // Sum of auto-generated payments (these are NOT reflected in debt.balance)
+    const totalAutoPayments = autoPayments.reduce((sum, p) => sum + p.amount, 0);
+    
+    return Math.max(0, debt.balance - totalAutoPayments);
+  }, [allPaymentHistory]);
+
+  // Filter out paid debts (adjusted balance = 0)
+  const debts = allDebts.filter(debt => getAdjustedBalance(debt) > 0);
+  const paidDebts = allDebts.filter(debt => getAdjustedBalance(debt) === 0);
+
   const addDebtMutation = useAddDebt();
   const updateDebtMutation = useUpdateDebt();
   const deleteDebtMutation = useDeleteDebt();
@@ -447,7 +470,7 @@ export const DebtsManager = ({ language, onDebtsChange }: DebtsManagerProps) => 
                     {debt.promotional_apr && debt.promotional_apr_end_date ? (
                       <>
                         <p className="text-xs text-muted-foreground">
-                          {language === 'en' ? 'Balance:' : 'Balance:'} £{debt.balance.toFixed(2)}
+                          {language === 'en' ? 'Balance:' : 'Balance:'} £{getAdjustedBalance(debt).toFixed(2)}
                         </p>
                         <p className="text-xs text-blue-600 dark:text-blue-400 font-medium">
                           {language === 'en' ? '🎯 Promotional APR:' : '🎯 APR Promocional:'} {debt.promotional_apr}% 
@@ -460,7 +483,7 @@ export const DebtsManager = ({ language, onDebtsChange }: DebtsManagerProps) => 
                       </>
                     ) : (
                       <p className="text-xs text-muted-foreground">
-                        {language === 'en' ? 'Balance:' : 'Balance:'} £{debt.balance.toFixed(2)} • APR: {debt.apr}%
+                        {language === 'en' ? 'Balance:' : 'Balance:'} £{getAdjustedBalance(debt).toFixed(2)} • APR: {debt.apr}%
                       </p>
                     )}
                     {debt.promotional_apr && debt.promotional_apr_end_date && (
