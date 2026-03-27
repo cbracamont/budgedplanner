@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useState, useMemo, useCallback } from "react";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -11,7 +11,9 @@ import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, 
 import { getTranslation, Language, ukBanks } from "@/lib/i18n";
 import { useDebts, useAddDebt, useUpdateDebt, useDeleteDebt } from "@/hooks/useFinancialData";
 import { useDebtPayments } from "@/hooks/useDebtPayments";
-import { format } from "date-fns";
+import { useAllPaymentHistory } from "@/hooks/usePaymentTracker";
+import { useActiveProfile } from "@/hooks/useFinancialProfiles";
+import { format, startOfMonth } from "date-fns";
 
 interface Debt {
   id: string;
