@@ -470,7 +470,7 @@ export const DebtsManager = ({ language, onDebtsChange }: DebtsManagerProps) => 
                     {debt.promotional_apr && debt.promotional_apr_end_date ? (
                       <>
                         <p className="text-xs text-muted-foreground">
-                          {language === 'en' ? 'Balance:' : 'Balance:'} £{debt.balance.toFixed(2)}
+                          {language === 'en' ? 'Balance:' : 'Balance:'} £{getAdjustedBalance(debt).toFixed(2)}
                         </p>
                         <p className="text-xs text-blue-600 dark:text-blue-400 font-medium">
                           {language === 'en' ? '🎯 Promotional APR:' : '🎯 APR Promocional:'} {debt.promotional_apr}% 
@@ -483,7 +483,7 @@ export const DebtsManager = ({ language, onDebtsChange }: DebtsManagerProps) => 
                       </>
                     ) : (
                       <p className="text-xs text-muted-foreground">
-                        {language === 'en' ? 'Balance:' : 'Balance:'} £{debt.balance.toFixed(2)} • APR: {debt.apr}%
+                        {language === 'en' ? 'Balance:' : 'Balance:'} £{getAdjustedBalance(debt).toFixed(2)} • APR: {debt.apr}%
                       </p>
                     )}
                     {debt.promotional_apr && debt.promotional_apr_end_date && (
