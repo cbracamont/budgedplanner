@@ -779,7 +779,7 @@ export const DebtsManager = ({ language, onDebtsChange }: DebtsManagerProps) => 
               {language === 'en' ? 'Remaining Balance' : language === 'es' ? 'Saldo Restante' : 'Pozostałe Saldo'}
             </p>
             <p className="text-2xl font-bold text-orange-600 dark:text-orange-400">
-              £{viewingDebtHistory ? getAdjustedBalance(viewingDebtHistory).toFixed(2) : '0.00'}
+              £{remainingBalance.toFixed(2)}
             </p>
           </div>
 
