@@ -1,5 +1,7 @@
 "use client";
 
+import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from "recharts";
+
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { useQueryClient, useQuery } from "@tanstack/react-query";
 import {
