@@ -1360,14 +1360,8 @@ const Index = () => {
                             const isPast = eventDate < today;
                             const isPaid = event.payment_status === "paid"; // Assume event has payment_status
 
-                            // Opacity logic: Full for paid, semi for pending/future, low for past unpaid
-                            const opacityClass = isPaid
-                              ? "opacity-100" // Full opacity for paid
-                              : isPast
-                                ? "opacity-30" // Low opacity for past unpaid
-                                : isToday
-                                  ? "opacity-100" // Full for today
-                                  : "opacity-70"; // Semi for future pending
+                            // All items at full opacity
+                            const opacityClass = "opacity-100";
 
                             return (
                               <div key={event.id} className={`relative pl-8 ${opacityClass}`}>
