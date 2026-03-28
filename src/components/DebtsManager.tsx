@@ -133,14 +133,27 @@ export const DebtsManager = ({ language, onDebtsChange }: DebtsManagerProps) => 
     [combinedPaymentHistory]
   );
 
+  // Manual payments sum (these already reduced debt.balance via DB trigger)
+  const manualPaymentsSum = useMemo(() => 
+    debtPayments.reduce((sum, p) => sum + p.amount, 0),
+    [debtPayments]
+  );
+
   const originalAmount = useMemo(() => {
     if (!viewingDebtHistory) return 0;
-    // For installments use total_amount, otherwise use balance + total paid
     if (viewingDebtHistory.is_installment && viewingDebtHistory.total_amount) {
       return viewingDebtHistory.total_amount;
     }
-    return viewingDebtHistory.balance + totalPaidCombined;
-  }, [viewingDebtHistory, totalPaidCombined]);
+    // debt.balance was already reduced by manual payments via trigger,
+    // so original = current DB balance + manual payments only
+    return viewingDebtHistory.balance + manualPaymentsSum;
+  }, [viewingDebtHistory, manualPaymentsSum]);
+
+  // Remaining = original - everything paid (manual + auto)
+  const remainingBalance = useMemo(() => 
+    Math.max(0, originalAmount - totalPaidCombined),
+    [originalAmount, totalPaidCombined]
+  );
 
   useEffect(() => {
     const total = debts.reduce((sum, debt) => sum + debt.minimum_payment, 0);
