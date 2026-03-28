@@ -98,6 +98,50 @@ export const DebtsManager = ({ language, onDebtsChange }: DebtsManagerProps) => 
   
   const { data: debtPayments = [] } = useDebtPayments(viewingDebtHistory?.id);
 
+  // Combine manual debt_payments + auto-generated payment_tracker entries for the viewed debt
+  const combinedPaymentHistory = useMemo(() => {
+    if (!viewingDebtHistory) return [];
+
+    // Manual payments from debt_payments table
+    const manualPayments = debtPayments.map(p => ({
+      id: p.id,
+      amount: p.amount,
+      payment_date: p.payment_date,
+      notes: p.notes,
+      source: 'manual' as const,
+    }));
+
+    // Auto-generated payments from payment_tracker
+    const autoPayments = allPaymentHistory
+      .filter(p => p.source_id === viewingDebtHistory.id)
+      .map(p => ({
+        id: p.id,
+        amount: p.amount,
+        payment_date: p.payment_date || p.month_year,
+        notes: p.notes,
+        source: 'auto' as const,
+      }));
+
+    // Combine and sort by date descending
+    return [...manualPayments, ...autoPayments].sort((a, b) => 
+      new Date(b.payment_date).getTime() - new Date(a.payment_date).getTime()
+    );
+  }, [viewingDebtHistory, debtPayments, allPaymentHistory]);
+
+  const totalPaidCombined = useMemo(() => 
+    combinedPaymentHistory.reduce((sum, p) => sum + p.amount, 0),
+    [combinedPaymentHistory]
+  );
+
+  const originalAmount = useMemo(() => {
+    if (!viewingDebtHistory) return 0;
+    // For installments use total_amount, otherwise use balance + total paid
+    if (viewingDebtHistory.is_installment && viewingDebtHistory.total_amount) {
+      return viewingDebtHistory.total_amount;
+    }
+    return viewingDebtHistory.balance + totalPaidCombined;
+  }, [viewingDebtHistory, totalPaidCombined]);
+
   useEffect(() => {
     const total = debts.reduce((sum, debt) => sum + debt.minimum_payment, 0);
     onDebtsChange?.(total);
