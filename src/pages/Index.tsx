@@ -1,5 +1,7 @@
 "use client";
 
+import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from "recharts";
+
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { useQueryClient, useQuery } from "@tanstack/react-query";
 import {
@@ -1183,13 +1185,34 @@ const Index = () => {
                   <CardContent className="p-6">
                     <div className="grid md:grid-cols-2 gap-6">
                       <div className="relative flex items-center justify-center">
-                        <div className="relative w-56 h-56 md:w-64 md:h-64">
-                          <div className="absolute inset-0 rounded-full bg-gradient-to-br from-slate-100 to-slate-50 dark:from-slate-800 dark:to-slate-900 shadow-inner"></div>
+                        <div className="w-56 h-56 md:w-64 md:h-64">
+                          <ResponsiveContainer width="100%" height="100%">
+                            <PieChart>
+                              <Pie
+                                data={pieData}
+                                cx="50%"
+                                cy="50%"
+                                innerRadius="55%"
+                                outerRadius="85%"
+                                dataKey="value"
+                                stroke="none"
+                                paddingAngle={3}
+                              >
+                                {pieData.map((entry, index) => (
+                                  <Cell key={`cell-${index}`} fill={entry.color} />
+                                ))}
+                              </Pie>
+                              <Tooltip
+                                formatter={(value: number) => formatCurrency(value)}
+                                contentStyle={{ borderRadius: '8px', fontSize: '12px' }}
+                              />
+                            </PieChart>
+                          </ResponsiveContainer>
                           <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                            <div className="text-2xl md:text-3xl font-bold bg-gradient-to-r from-slate-800 to-slate-600 bg-clip-text text-transparent dark:from-slate-100 dark:to-slate-300">
+                            <div className="text-xl md:text-2xl font-bold text-foreground">
                               {formatCurrency(totalExpenses)}
                             </div>
-                            <div className="text-xs text-slate-500 dark:text-slate-400 mt-1">Monthly Total</div>
+                            <div className="text-xs text-muted-foreground mt-1">Monthly Total</div>
                           </div>
                         </div>
                       </div>
