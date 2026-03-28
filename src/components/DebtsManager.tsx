@@ -98,6 +98,50 @@ export const DebtsManager = ({ language, onDebtsChange }: DebtsManagerProps) => 
   
   const { data: debtPayments = [] } = useDebtPayments(viewingDebtHistory?.id);
 
+  // Combine manual debt_payments + auto-generated payment_tracker entries for the viewed debt
+  const combinedPaymentHistory = useMemo(() => {
+    if (!viewingDebtHistory) return [];
+
+    // Manual payments from debt_payments table
+    const manualPayments = debtPayments.map(p => ({
+      id: p.id,
+      amount: p.amount,
+      payment_date: p.payment_date,
+      notes: p.notes,
+      source: 'manual' as const,
+    }));
+
+    // Auto-generated payments from payment_tracker
+    const autoPayments = allPaymentHistory
+      .filter(p => p.source_id === viewingDebtHistory.id)
+      .map(p => ({
+        id: p.id,
+        amount: p.amount,
+        payment_date: p.payment_date || p.month_year,
+        notes: p.notes,
+        source: 'auto' as const,
+      }));
+
+    // Combine and sort by date descending
+    return [...manualPayments, ...autoPayments].sort((a, b) => 
+      new Date(b.payment_date).getTime() - new Date(a.payment_date).getTime()
+    );
+  }, [viewingDebtHistory, debtPayments, allPaymentHistory]);
+
+  const totalPaidCombined = useMemo(() => 
+    combinedPaymentHistory.reduce((sum, p) => sum + p.amount, 0),
+    [combinedPaymentHistory]
+  );
+
+  const originalAmount = useMemo(() => {
+    if (!viewingDebtHistory) return 0;
+    // For installments use total_amount, otherwise use balance + total paid
+    if (viewingDebtHistory.is_installment && viewingDebtHistory.total_amount) {
+      return viewingDebtHistory.total_amount;
+    }
+    return viewingDebtHistory.balance + totalPaidCombined;
+  }, [viewingDebtHistory, totalPaidCombined]);
+
   useEffect(() => {
     const total = debts.reduce((sum, debt) => sum + debt.minimum_payment, 0);
     onDebtsChange?.(total);
@@ -702,7 +746,7 @@ export const DebtsManager = ({ language, onDebtsChange }: DebtsManagerProps) => 
               {language === 'en' ? 'Original Amount' : language === 'es' ? 'Monto Original' : 'Pierwotna Kwota'}
             </p>
             <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">
-              £{((viewingDebtHistory?.total_amount || 0) + debtPayments.reduce((sum, p) => sum + p.amount, 0)).toFixed(2)}
+              £{originalAmount.toFixed(2)}
             </p>
           </div>
 
@@ -712,25 +756,46 @@ export const DebtsManager = ({ language, onDebtsChange }: DebtsManagerProps) => 
               {language === 'en' ? 'Total Paid' : language === 'es' ? 'Total Pagado' : 'Razem Zapłacono'}
             </p>
             <p className="text-2xl font-bold text-green-600 dark:text-green-400">
-              £{debtPayments.reduce((sum, p) => sum + p.amount, 0).toFixed(2)}
+              £{totalPaidCombined.toFixed(2)}
+            </p>
+          </div>
+
+          {/* Remaining Balance */}
+          <div className="p-4 bg-orange-50 dark:bg-orange-950/20 rounded-lg border border-orange-200 dark:border-orange-900">
+            <p className="text-sm text-muted-foreground mb-1">
+              {language === 'en' ? 'Remaining Balance' : language === 'es' ? 'Saldo Restante' : 'Pozostałe Saldo'}
+            </p>
+            <p className="text-2xl font-bold text-orange-600 dark:text-orange-400">
+              £{viewingDebtHistory ? getAdjustedBalance(viewingDebtHistory).toFixed(2) : '0.00'}
             </p>
           </div>
 
           {/* Payment History */}
           <div>
             <h4 className="font-semibold mb-3">
-              {language === 'en' ? 'Payments' : language === 'es' ? 'Pagos' : 'Płatności'} ({debtPayments.length})
+              {language === 'en' ? 'Payments' : language === 'es' ? 'Pagos' : 'Płatności'} ({combinedPaymentHistory.length})
             </h4>
-            {debtPayments.length === 0 ? (
+            {combinedPaymentHistory.length === 0 ? (
               <p className="text-center text-muted-foreground py-8">
                 {language === 'en' ? 'No payment records found' : language === 'es' ? 'No se encontraron registros de pago' : 'Nie znaleziono płatności'}
               </p>
             ) : (
               <div className="space-y-2">
-                {debtPayments.map((payment) => (
-                  <div key={payment.id} className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/50 transition-colors">
+                {combinedPaymentHistory.map((payment) => (
+                  <div key={`${payment.source}-${payment.id}`} className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/50 transition-colors">
                     <div className="flex-1">
-                      <p className="font-medium">£{payment.amount.toFixed(2)}</p>
+                      <div className="flex items-center gap-2">
+                        <p className="font-medium">£{payment.amount.toFixed(2)}</p>
+                        <span className={`text-xs px-2 py-0.5 rounded-full ${
+                          payment.source === 'auto' 
+                            ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300' 
+                            : 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-300'
+                        }`}>
+                          {payment.source === 'auto' 
+                            ? (language === 'es' ? 'Automático' : 'Auto') 
+                            : (language === 'es' ? 'Manual' : 'Manual')}
+                        </span>
+                      </div>
                       <p className="text-sm text-muted-foreground">
                         {format(new Date(payment.payment_date), "dd MMM yyyy")}
                       </p>
