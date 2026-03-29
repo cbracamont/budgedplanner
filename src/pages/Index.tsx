@@ -422,7 +422,7 @@ const Index = () => {
       totalDebt > 0 ? Math.min(100, ((totalDebt - idealRemainingDebt) / totalDebt) * 100) : 0;
 
     // Calculate actual debt free months using per-debt amortization
-    const simDebts = debtData.map(d => ({ balance: d.balance, apr: d.apr, minPay: d.minimumPayment }));
+    const simDebts = debtData.map(d => ({ balance: d.balance, apr: d.apr, minPay: d.minimum_payment }));
     while (simDebts.some(d => d.balance > 0) && months < 360) {
       months++;
       let extraAvailable = monthlyPay - simDebts.reduce((s, d) => s + (d.balance > 0 ? d.minPay : 0), 0);
