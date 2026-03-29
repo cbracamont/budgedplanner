@@ -16,9 +16,12 @@ export const useHouseholdRole = (householdId?: string) => {
         .select("*")
         .eq("household_id", householdId)
         .eq("user_id", user.id)
-        .single();
+        .maybeSingle();
 
-      if (error) throw error;
+      if (error) {
+        console.error("Error fetching household role:", error);
+        return null;
+      }
       return data as HouseholdUserRole;
     },
     enabled: !!householdId,
