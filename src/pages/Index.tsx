@@ -403,29 +403,29 @@ const Index = () => {
       (savings?.total_accumulated || 0) +
       savingsGoalsData.reduce((s, g) => s + (g.current_amount || 0), 0);
 
-    // Calculate ideal projection based on offset
+    // Calculate debt projection based on offset using the same amortization logic
     const projectionDate = addMonths(new Date(), projectionMonthOffset);
-    const currentDate = new Date();
-    const monthsSinceStart = projectionMonthOffset;
+    const projectionMonths = Math.max(0, projectionMonthOffset);
     let remaining = debtData.reduce((s, d) => s + d.balance, 0);
     let months = 0;
 
     // NO aplicar automáticamente el excedente del cashflow a las deudas
     // Solo usar los pagos mínimos para el cálculo
     const monthlyPay = totalDebtPayment;
-
-    // Calculate ideal progression
     const totalDebt = debtData.reduce((s, d) => s + d.balance, 0);
-    const idealMonthlyReduction = totalDebt > 0 ? monthlyPay : 0;
-    const idealRemainingDebt = Math.max(0, totalDebt - idealMonthlyReduction * Math.abs(monthsSinceStart));
-    const idealProgressPercent =
-      totalDebt > 0 ? Math.min(100, ((totalDebt - idealRemainingDebt) / totalDebt) * 100) : 0;
 
-    // Calculate actual debt free months using per-debt amortization
-    const simDebts = debtData.map(d => ({ balance: d.balance, apr: d.apr, minPay: d.minimum_payment }));
-    while (simDebts.some(d => d.balance > 0) && months < 360) {
-      months++;
-      let extraAvailable = monthlyPay - simDebts.reduce((s, d) => s + (d.balance > 0 ? d.minPay : 0), 0);
+    const buildSimDebts = () => debtData.map(d => ({
+      balance: d.balance,
+      apr: d.apr,
+      minPay: d.minimum_payment,
+    }));
+
+    const applyDebtMonth = (simDebts: Array<{ balance: number; apr: number; minPay: number }>) => {
+      let extraAvailable = Math.max(
+        0,
+        monthlyPay - simDebts.reduce((s, d) => s + (d.balance > 0 ? d.minPay : 0), 0)
+      );
+
       simDebts.forEach(d => {
         if (d.balance <= 0) return;
         const interest = d.balance * (d.apr / 100 / 12);
@@ -433,7 +433,7 @@ const Index = () => {
         d.balance = d.balance + interest - payment;
         if (d.balance < 0.01) d.balance = 0;
       });
-      // Apply extra to highest APR first (avalanche)
+
       const sorted = [...simDebts].sort((a, b) => b.apr - a.apr);
       for (const d of sorted) {
         if (d.balance > 0 && extraAvailable > 0) {
@@ -443,7 +443,24 @@ const Index = () => {
           if (d.balance < 0.01) d.balance = 0;
         }
       }
-      remaining = simDebts.reduce((s, d) => s + d.balance, 0);
+
+      return simDebts.reduce((s, d) => s + d.balance, 0);
+    };
+
+    const projectedDebts = buildSimDebts();
+    for (let i = 0; i < projectionMonths && projectedDebts.some(d => d.balance > 0); i++) {
+      applyDebtMonth(projectedDebts);
+    }
+
+    const idealRemainingDebt = projectedDebts.reduce((s, d) => s + d.balance, 0);
+    const idealProgressPercent =
+      totalDebt > 0 ? Math.min(100, ((totalDebt - idealRemainingDebt) / totalDebt) * 100) : 0;
+
+    // Calculate actual debt free months
+    const simDebts = buildSimDebts();
+    while (simDebts.some(d => d.balance > 0) && months < 360) {
+      months++;
+      remaining = applyDebtMonth(simDebts);
     }
     const monthsToDebtFree = months;
     const debtFreeDate = addMonths(new Date(), months);
