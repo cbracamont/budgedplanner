@@ -145,21 +145,21 @@ export const InvitationsManager = ({ language = 'en' }: InvitationsManagerProps)
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <UserPlus className="h-5 w-5" />
-              Join a Household
+              {t('joinHousehold')}
             </CardTitle>
             <CardDescription>
-              Enter an invitation code to join an existing household
+              {t('joinHouseholdDesc')}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="join-code">Invitation Code</Label>
+              <Label htmlFor="join-code">{t('invitationCode')}</Label>
               <div className="flex gap-2">
                 <Input
                   id="join-code"
                   value={joinCode}
                   onChange={(e) => setJoinCode(e.target.value)}
-                  placeholder="Enter invitation code"
+                  placeholder={t('enterInvitationCode')}
                   className="flex-1"
                 />
                 <Button 
@@ -169,7 +169,7 @@ export const InvitationsManager = ({ language = 'en' }: InvitationsManagerProps)
                   {joinByCode.isPending ? (
                     <Loader2 className="h-4 w-4 animate-spin" />
                   ) : (
-                    "Join"
+                    t('join')
                   )}
                 </Button>
               </div>
