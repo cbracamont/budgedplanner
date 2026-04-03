@@ -226,7 +226,7 @@ export const InvitationsManager = ({ language = 'en' }: InvitationsManagerProps)
                     disabled={rejectInvitation.isPending}
                   >
                     <X className="h-4 w-4 mr-1" />
-                    Reject
+                    {t('reject')}
                   </Button>
                 </div>
               </div>
