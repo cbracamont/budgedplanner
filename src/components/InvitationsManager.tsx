@@ -215,7 +215,7 @@ export const InvitationsManager = ({ language = 'en' }: InvitationsManagerProps)
                     ) : (
                       <>
                         <Check className="h-4 w-4 mr-1" />
-                        Accept
+                        {t('accept')}
                       </>
                     )}
                   </Button>
