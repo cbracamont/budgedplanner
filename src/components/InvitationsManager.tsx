@@ -370,9 +370,9 @@ export const InvitationsManager = ({ language = 'en' }: InvitationsManagerProps)
         <Card>
           <CardContent className="py-12 text-center">
             <Mail className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-            <h3 className="text-lg font-semibold mb-2">No Invitations</h3>
+            <h3 className="text-lg font-semibold mb-2">{t('noInvitations')}</h3>
             <p className="text-sm text-muted-foreground">
-              Enter a code above to join a household or wait for an invitation
+              {t('noInvitationsDesc')}
             </p>
           </CardContent>
         </Card>
