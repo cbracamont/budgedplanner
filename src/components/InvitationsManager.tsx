@@ -383,9 +383,9 @@ export const InvitationsManager = ({ language = 'en' }: InvitationsManagerProps)
         <Card>
           <CardContent className="py-12 text-center">
             <Shield className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-            <h3 className="text-lg font-semibold mb-2">You're a Household Member</h3>
+            <h3 className="text-lg font-semibold mb-2">{t('householdMemberInfo')}</h3>
             <p className="text-sm text-muted-foreground">
-              Only the household owner can send invitations to new members
+              {t('householdMemberInfoDesc')}
             </p>
           </CardContent>
         </Card>
