@@ -260,7 +260,7 @@ export const InvitationsManager = ({ language = 'en' }: InvitationsManagerProps)
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="role">Role</Label>
+              <Label htmlFor="role">{t('role')}</Label>
               <Select value={role} onValueChange={setRole}>
                 <SelectTrigger id="role">
                   <SelectValue />
@@ -269,19 +269,19 @@ export const InvitationsManager = ({ language = 'en' }: InvitationsManagerProps)
                   <SelectItem value="viewer">
                     <div className="flex items-center gap-2">
                       <div className="w-2 h-2 rounded-full bg-gray-500" />
-                      Viewer - Can only view data
+                      {t('viewerRole')}
                     </div>
                   </SelectItem>
                   <SelectItem value="contributor">
                     <div className="flex items-center gap-2">
                       <div className="w-2 h-2 rounded-full bg-green-500" />
-                      Contributor - Can add their own data
+                      {t('contributorRole')}
                     </div>
                   </SelectItem>
                   <SelectItem value="editor">
                     <div className="flex items-center gap-2">
                       <div className="w-2 h-2 rounded-full bg-blue-500" />
-                      Editor - Can edit all data
+                      {t('editorRole')}
                     </div>
                   </SelectItem>
                 </SelectContent>
