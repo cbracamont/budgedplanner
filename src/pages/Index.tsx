@@ -176,6 +176,12 @@ const translations = {
     debtPayment: "Available for Debt Payment",
     monthsToEmergency: "Months to Emergency Fund Goal",
     monthlyDebtAllocation: "Monthly Debt Allocation",
+    settingsTitle: "Settings",
+    settingsDescription: "Manage your currency, household invitations and change log",
+    generalTab: "General",
+    invitationsTab: "Invitations",
+    auditTab: "Log",
+    exportData: "Export Data",
   },
   es: {
     overview: "Resumen",
