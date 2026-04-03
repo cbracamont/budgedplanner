@@ -3,21 +3,27 @@ import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { useUserSettings, useUpdateCurrency } from "@/hooks/useUserSettings";
 import { Loader2 } from "lucide-react";
+import { translations, type Language } from "@/lib/i18n";
 
 const currencies = [
-  { code: "USD", name: "Dólar estadounidense", symbol: "$" },
+  { code: "USD", name: "US Dollar", symbol: "$" },
   { code: "EUR", name: "Euro", symbol: "€" },
-  { code: "MXN", name: "Peso mexicano", symbol: "$" },
-  { code: "COP", name: "Peso colombiano", symbol: "$" },
-  { code: "ARS", name: "Peso argentino", symbol: "$" },
-  { code: "CLP", name: "Peso chileno", symbol: "$" },
-  { code: "PEN", name: "Sol peruano", symbol: "S/" },
-  { code: "BRL", name: "Real brasileño", symbol: "R$" },
-  { code: "GBP", name: "Libra esterlina", symbol: "£" },
-  { code: "JPY", name: "Yen japonés", symbol: "¥" },
+  { code: "GBP", name: "British Pound", symbol: "£" },
+  { code: "MXN", name: "Mexican Peso", symbol: "$" },
+  { code: "COP", name: "Colombian Peso", symbol: "$" },
+  { code: "ARS", name: "Argentine Peso", symbol: "$" },
+  { code: "CLP", name: "Chilean Peso", symbol: "$" },
+  { code: "PEN", name: "Peruvian Sol", symbol: "S/" },
+  { code: "BRL", name: "Brazilian Real", symbol: "R$" },
+  { code: "JPY", name: "Japanese Yen", symbol: "¥" },
 ];
 
-export const SettingsTab = () => {
+interface SettingsTabProps {
+  language?: Language;
+}
+
+export const SettingsTab = ({ language = 'en' }: SettingsTabProps) => {
+  const t = translations[language];
   const { data: settings, isLoading } = useUserSettings();
   const updateCurrency = useUpdateCurrency();
 
@@ -33,20 +39,18 @@ export const SettingsTab = () => {
     <div className="space-y-6">
       <Card>
         <CardHeader>
-          <CardTitle>Configuración General</CardTitle>
-          <CardDescription>
-            Personaliza tu experiencia en la aplicación
-          </CardDescription>
+          <CardTitle>{t.generalSettings}</CardTitle>
+          <CardDescription>{t.generalSettingsDesc}</CardDescription>
         </CardHeader>
         <CardContent className="space-y-4">
           <div className="space-y-2">
-            <Label htmlFor="currency">Moneda</Label>
+            <Label htmlFor="currency">{t.currencyLabel}</Label>
             <Select
               value={settings?.currency || "USD"}
               onValueChange={(value) => updateCurrency.mutate(value)}
             >
               <SelectTrigger id="currency">
-                <SelectValue placeholder="Selecciona una moneda" />
+                <SelectValue placeholder={t.selectCurrency} />
               </SelectTrigger>
               <SelectContent>
                 {currencies.map((currency) => (
@@ -56,9 +60,7 @@ export const SettingsTab = () => {
                 ))}
               </SelectContent>
             </Select>
-            <p className="text-sm text-muted-foreground">
-              Esta será la moneda utilizada para mostrar todos los valores monetarios
-            </p>
+            <p className="text-sm text-muted-foreground">{t.currencyHelp}</p>
           </div>
         </CardContent>
       </Card>

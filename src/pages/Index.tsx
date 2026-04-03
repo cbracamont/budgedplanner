@@ -1022,7 +1022,7 @@ const Index = () => {
                       <InvitationsManager language={language} />
                     </TabsContent>
                     <TabsContent value="audit" className="mt-4">
-                      <AuditLogViewer />
+                      <AuditLogViewer language={language} />
                     </TabsContent>
                   </Tabs>
                 </SheetContent>

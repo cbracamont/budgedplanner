@@ -4,10 +4,18 @@ import { useAuditLog } from "@/hooks/useAuditLog";
 import { useMyHousehold } from "@/hooks/useHousehold";
 import { Loader2, FileText, Trash2, Edit, Plus } from "lucide-react";
 import { format } from "date-fns";
-import { es } from "date-fns/locale";
+import { enUS, es, ptBR } from "date-fns/locale";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { translations, type Language } from "@/lib/i18n";
 
-export const AuditLogViewer = () => {
+interface AuditLogViewerProps {
+  language?: Language;
+}
+
+const dateLocales = { en: enUS, es: es, pt: ptBR };
+
+export const AuditLogViewer = ({ language = 'en' }: AuditLogViewerProps) => {
+  const t = translations[language];
   const { data: myHousehold } = useMyHousehold();
   const { data: logs, isLoading } = useAuditLog(myHousehold?.household_id);
 
@@ -30,12 +38,12 @@ export const AuditLogViewer = () => {
     switch (action.toLowerCase()) {
       case "insert":
       case "create":
-        return "Creó";
+        return t.created;
       case "update":
       case "edit":
-        return "Editó";
+        return t.edited;
       case "delete":
-        return "Eliminó";
+        return t.deleted;
       default:
         return action;
     }
@@ -43,12 +51,12 @@ export const AuditLogViewer = () => {
 
   const getTableLabel = (tableName: string) => {
     const labels: Record<string, string> = {
-      debts: "deuda",
-      income_sources: "ingreso",
-      fixed_expenses: "gasto fijo",
-      variable_expenses: "gasto variable",
-      savings_goals: "meta de ahorro",
-      debt_payments: "pago de deuda",
+      debts: t.debt,
+      income_sources: t.incomeSource,
+      fixed_expenses: t.fixedExpense,
+      variable_expenses: t.variableExpense,
+      savings_goals: t.savingsGoal,
+      debt_payments: t.debtPayment,
     };
     return labels[tableName] || tableName;
   };
@@ -64,16 +72,14 @@ export const AuditLogViewer = () => {
   return (
     <Card>
       <CardHeader>
-        <CardTitle>Historial de Cambios</CardTitle>
-        <CardDescription>
-          Registro de todas las modificaciones realizadas
-        </CardDescription>
+        <CardTitle>{t.changeHistory}</CardTitle>
+        <CardDescription>{t.changeHistoryDesc}</CardDescription>
       </CardHeader>
       <CardContent>
         <ScrollArea className="h-[600px] pr-4">
           {!logs || logs.length === 0 ? (
             <div className="text-center py-8 text-muted-foreground">
-              No hay cambios registrados aún
+              {t.noChangesYet}
             </div>
           ) : (
             <div className="space-y-4">
@@ -86,7 +92,7 @@ export const AuditLogViewer = () => {
                     <div className="flex items-center justify-between">
                       <div className="flex items-center gap-2">
                         <p className="font-medium">
-                          {log.user_display_name || "Usuario"}
+                          {log.user_display_name || t.user}
                         </p>
                         <Badge variant="outline">
                           {getActionLabel(log.action)}
@@ -96,13 +102,13 @@ export const AuditLogViewer = () => {
                         </span>
                       </div>
                       <p className="text-xs text-muted-foreground">
-                        {format(new Date(log.created_at), "PPp", { locale: es })}
+                        {format(new Date(log.created_at), "PPp", { locale: dateLocales[language] })}
                       </p>
                     </div>
                     
                     {log.new_values && (
                       <div className="text-sm">
-                        <p className="text-muted-foreground mb-1">Cambios:</p>
+                        <p className="text-muted-foreground mb-1">{t.changes}:</p>
                         <div className="bg-background p-2 rounded border">
                           {Object.entries(log.new_values).map(([key, value]) => {
                             const oldValue = log.old_values?.[key];
