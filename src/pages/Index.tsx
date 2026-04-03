@@ -218,6 +218,12 @@ const translations = {
     debtPayment: "Disponible para Pago de Deuda",
     monthsToEmergency: "Meses para Meta de Fondo de Emergencia",
     monthlyDebtAllocation: "Asignación Mensual de Deuda",
+    settingsTitle: "Configuración",
+    settingsDescription: "Gestiona tu moneda, invitaciones al grupo familiar y registro de cambios",
+    generalTab: "General",
+    invitationsTab: "Invitaciones",
+    auditTab: "Registro",
+    exportData: "Exportar datos",
   },
   pt: {
     overview: "Visão Geral",
