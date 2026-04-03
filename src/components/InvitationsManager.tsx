@@ -249,7 +249,7 @@ export const InvitationsManager = ({ language = 'en' }: InvitationsManagerProps)
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="email">Email Address</Label>
+              <Label htmlFor="email">{t('emailAddress')}</Label>
               <Input
                 id="email"
                 type="email"
