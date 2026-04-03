@@ -184,10 +184,10 @@ export const InvitationsManager = ({ language = 'en' }: InvitationsManagerProps)
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Mail className="h-5 w-5" />
-              Received Invitations
+              {t('receivedInvitations')}
             </CardTitle>
             <CardDescription>
-              You have pending invitations to join households
+              {t('receivedInvitationsDesc')}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
