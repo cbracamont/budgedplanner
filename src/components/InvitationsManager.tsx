@@ -241,10 +241,10 @@ export const InvitationsManager = ({ language = 'en' }: InvitationsManagerProps)
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Mail className="h-5 w-5" />
-              Send New Invitation
+              {t('sendNewInvitation')}
             </CardTitle>
             <CardDescription>
-              Invite family members to join your household
+              {t('inviteFamilyMembers')}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
