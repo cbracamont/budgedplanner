@@ -260,6 +260,12 @@ const translations = {
     debtPayment: "Disponível para Pagamento de Dívida",
     monthsToEmergency: "Meses para Meta de Fundo de Emergência",
     monthlyDebtAllocation: "Alocação Mensal de Dívida",
+    settingsTitle: "Configurações",
+    settingsDescription: "Gerencie sua moeda, convites do lar e registro de alterações",
+    generalTab: "Geral",
+    invitationsTab: "Convites",
+    auditTab: "Registro",
+    exportData: "Exportar dados",
   },
 };
 // Variable income hook moved to src/hooks/useVariableIncome.ts for security
