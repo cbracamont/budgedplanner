@@ -992,29 +992,29 @@ const Index = () => {
               </Button>
               <Sheet>
                 <SheetTrigger asChild>
-                  <Button variant="outline" size="icon" title="Configuración">
+                  <Button variant="outline" size="icon" title={t.settingsTitle}>
                     <SettingsIcon className="h-4 w-4" />
                   </Button>
                 </SheetTrigger>
                 <SheetContent className="w-full sm:max-w-2xl overflow-y-auto">
                   <SheetHeader>
-                    <SheetTitle>Configuración</SheetTitle>
+                    <SheetTitle>{t.settingsTitle}</SheetTitle>
                     <SheetDescription>
-                      Gestiona tu moneda, invitaciones al grupo familiar y registro de cambios
+                      {t.settingsDescription}
                     </SheetDescription>
                   </SheetHeader>
                   <Tabs defaultValue="settings" className="mt-6">
                     <TabsList className="grid w-full grid-cols-3">
-                      <TabsTrigger value="settings">General</TabsTrigger>
-                      <TabsTrigger value="invitations">Invitaciones</TabsTrigger>
-                      <TabsTrigger value="audit">Registro</TabsTrigger>
+                      <TabsTrigger value="settings">{t.generalTab}</TabsTrigger>
+                      <TabsTrigger value="invitations">{t.invitationsTab}</TabsTrigger>
+                      <TabsTrigger value="audit">{t.auditTab}</TabsTrigger>
                     </TabsList>
                     <TabsContent value="settings" className="mt-4">
-                      <SettingsTab />
+                      <SettingsTab language={language} />
                       <div className="mt-6 pt-6 border-t">
                         <Button variant="outline" onClick={() => window.print()} className="w-full">
                           <Download className="h-4 w-4 mr-2" />
-                          Exportar datos
+                          {t.exportData}
                         </Button>
                       </div>
                     </TabsContent>
