@@ -298,7 +298,7 @@ export const InvitationsManager = ({ language = 'en' }: InvitationsManagerProps)
               ) : (
                 <Mail className="h-4 w-4 mr-2" />
               )}
-              Send Invitation
+              {t('sendInvitation')}
             </Button>
           </CardContent>
         </Card>
