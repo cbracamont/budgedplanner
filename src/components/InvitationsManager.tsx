@@ -310,10 +310,10 @@ export const InvitationsManager = ({ language = 'en' }: InvitationsManagerProps)
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Shield className="h-5 w-5 text-green-600" />
-              Your Household Invitations
+              {t('yourHouseholdInvitations')}
             </CardTitle>
             <CardDescription>
-              Share these codes with family members to invite them
+              {t('shareCodesDesc')}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
