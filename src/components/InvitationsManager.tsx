@@ -20,8 +20,14 @@ import { useIsHouseholdOwner } from "@/hooks/useHouseholdRole";
 import { Mail, Loader2, Copy, Check, X, Clock, UserPlus, Shield } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
+import { getTranslation, Language } from "@/lib/i18n";
 
-export const InvitationsManager = () => {
+interface InvitationsManagerProps {
+  language?: Language;
+}
+
+export const InvitationsManager = ({ language = 'en' }: InvitationsManagerProps) => {
+  const t = (key: string) => getTranslation(language, key);
   const [email, setEmail] = useState("");
   const [role, setRole] = useState<string>("viewer");
   const [joinCode, setJoinCode] = useState("");
@@ -139,21 +145,21 @@ export const InvitationsManager = () => {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <UserPlus className="h-5 w-5" />
-              Join a Household
+              {t('joinHousehold')}
             </CardTitle>
             <CardDescription>
-              Enter an invitation code to join an existing household
+              {t('joinHouseholdDesc')}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="join-code">Invitation Code</Label>
+              <Label htmlFor="join-code">{t('invitationCode')}</Label>
               <div className="flex gap-2">
                 <Input
                   id="join-code"
                   value={joinCode}
                   onChange={(e) => setJoinCode(e.target.value)}
-                  placeholder="Enter invitation code"
+                  placeholder={t('enterInvitationCode')}
                   className="flex-1"
                 />
                 <Button 
@@ -163,7 +169,7 @@ export const InvitationsManager = () => {
                   {joinByCode.isPending ? (
                     <Loader2 className="h-4 w-4 animate-spin" />
                   ) : (
-                    "Join"
+                    t('join')
                   )}
                 </Button>
               </div>
@@ -178,10 +184,10 @@ export const InvitationsManager = () => {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Mail className="h-5 w-5" />
-              Received Invitations
+              {t('receivedInvitations')}
             </CardTitle>
             <CardDescription>
-              You have pending invitations to join households
+              {t('receivedInvitationsDesc')}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -209,7 +215,7 @@ export const InvitationsManager = () => {
                     ) : (
                       <>
                         <Check className="h-4 w-4 mr-1" />
-                        Accept
+                        {t('accept')}
                       </>
                     )}
                   </Button>
@@ -220,7 +226,7 @@ export const InvitationsManager = () => {
                     disabled={rejectInvitation.isPending}
                   >
                     <X className="h-4 w-4 mr-1" />
-                    Reject
+                    {t('reject')}
                   </Button>
                 </div>
               </div>
@@ -235,15 +241,15 @@ export const InvitationsManager = () => {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Mail className="h-5 w-5" />
-              Send New Invitation
+              {t('sendNewInvitation')}
             </CardTitle>
             <CardDescription>
-              Invite family members to join your household
+              {t('inviteFamilyMembers')}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
             <div className="space-y-2">
-              <Label htmlFor="email">Email Address</Label>
+              <Label htmlFor="email">{t('emailAddress')}</Label>
               <Input
                 id="email"
                 type="email"
@@ -254,7 +260,7 @@ export const InvitationsManager = () => {
             </div>
 
             <div className="space-y-2">
-              <Label htmlFor="role">Role</Label>
+              <Label htmlFor="role">{t('role')}</Label>
               <Select value={role} onValueChange={setRole}>
                 <SelectTrigger id="role">
                   <SelectValue />
@@ -263,19 +269,19 @@ export const InvitationsManager = () => {
                   <SelectItem value="viewer">
                     <div className="flex items-center gap-2">
                       <div className="w-2 h-2 rounded-full bg-gray-500" />
-                      Viewer - Can only view data
+                      {t('viewerRole')}
                     </div>
                   </SelectItem>
                   <SelectItem value="contributor">
                     <div className="flex items-center gap-2">
                       <div className="w-2 h-2 rounded-full bg-green-500" />
-                      Contributor - Can add their own data
+                      {t('contributorRole')}
                     </div>
                   </SelectItem>
                   <SelectItem value="editor">
                     <div className="flex items-center gap-2">
                       <div className="w-2 h-2 rounded-full bg-blue-500" />
-                      Editor - Can edit all data
+                      {t('editorRole')}
                     </div>
                   </SelectItem>
                 </SelectContent>
@@ -292,7 +298,7 @@ export const InvitationsManager = () => {
               ) : (
                 <Mail className="h-4 w-4 mr-2" />
               )}
-              Send Invitation
+              {t('sendInvitation')}
             </Button>
           </CardContent>
         </Card>
@@ -304,10 +310,10 @@ export const InvitationsManager = () => {
           <CardHeader>
             <CardTitle className="flex items-center gap-2">
               <Shield className="h-5 w-5 text-green-600" />
-              Your Household Invitations
+              {t('yourHouseholdInvitations')}
             </CardTitle>
             <CardDescription>
-              Share these codes with family members to invite them
+              {t('shareCodesDesc')}
             </CardDescription>
           </CardHeader>
           <CardContent className="space-y-4">
@@ -364,9 +370,9 @@ export const InvitationsManager = () => {
         <Card>
           <CardContent className="py-12 text-center">
             <Mail className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-            <h3 className="text-lg font-semibold mb-2">No Invitations</h3>
+            <h3 className="text-lg font-semibold mb-2">{t('noInvitations')}</h3>
             <p className="text-sm text-muted-foreground">
-              Enter a code above to join a household or wait for an invitation
+              {t('noInvitationsDesc')}
             </p>
           </CardContent>
         </Card>
@@ -377,9 +383,9 @@ export const InvitationsManager = () => {
         <Card>
           <CardContent className="py-12 text-center">
             <Shield className="h-12 w-12 mx-auto text-muted-foreground mb-4" />
-            <h3 className="text-lg font-semibold mb-2">You're a Household Member</h3>
+            <h3 className="text-lg font-semibold mb-2">{t('householdMemberInfo')}</h3>
             <p className="text-sm text-muted-foreground">
-              Only the household owner can send invitations to new members
+              {t('householdMemberInfoDesc')}
             </p>
           </CardContent>
         </Card>

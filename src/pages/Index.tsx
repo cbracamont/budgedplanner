@@ -1019,7 +1019,7 @@ const Index = () => {
                       </div>
                     </TabsContent>
                     <TabsContent value="invitations" className="mt-4">
-                      <InvitationsManager />
+                      <InvitationsManager language={language} />
                     </TabsContent>
                     <TabsContent value="audit" className="mt-4">
                       <AuditLogViewer />
@@ -2177,7 +2177,7 @@ const Index = () => {
             <TabsContent value="household">
               <div className="space-y-6">
                 <HouseholdManager language={language} />
-                <InvitationsManager />
+                <InvitationsManager language={language} />
               </div>
             </TabsContent>
 
