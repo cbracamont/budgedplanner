@@ -602,6 +602,31 @@ export const translations = {
     helpSavingsGoal: "Defina uma meta específica e prazo para o seu objetivo de poupança",
     helpFixedExpenses: "Despesas que se mantêm iguais todos os meses",
     helpVariableExpenses: "Despesas que mudam de mês para mês com base na utilização",
+
+    // Invitations
+    joinHousehold: "Juntar-se a um Lar",
+    joinHouseholdDesc: "Introduza um código de convite para se juntar a um lar existente",
+    invitationCode: "Código de Convite",
+    enterInvitationCode: "Introduza código de convite",
+    join: "Juntar-se",
+    receivedInvitations: "Convites Recebidos",
+    receivedInvitationsDesc: "Tem convites pendentes para se juntar a lares",
+    accept: "Aceitar",
+    reject: "Rejeitar",
+    sendNewInvitation: "Enviar Novo Convite",
+    inviteFamilyMembers: "Convide familiares para se juntarem ao seu lar",
+    emailAddress: "Endereço de Email",
+    role: "Função",
+    viewerRole: "Visualizador - Só pode ver dados",
+    contributorRole: "Contribuidor - Pode adicionar os seus próprios dados",
+    editorRole: "Editor - Pode editar todos os dados",
+    sendInvitation: "Enviar Convite",
+    yourHouseholdInvitations: "Convites do Seu Lar",
+    shareCodesDesc: "Partilhe estes códigos com familiares para os convidar",
+    noInvitations: "Sem Convites",
+    noInvitationsDesc: "Introduza um código acima para se juntar a um lar ou aguarde um convite",
+    householdMemberInfo: "É Membro do Lar",
+    householdMemberInfoDesc: "Apenas o proprietário do lar pode enviar convites a novos membros",
   }
 };
 
