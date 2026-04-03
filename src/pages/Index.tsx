@@ -176,6 +176,12 @@ const translations = {
     debtPayment: "Available for Debt Payment",
     monthsToEmergency: "Months to Emergency Fund Goal",
     monthlyDebtAllocation: "Monthly Debt Allocation",
+    settingsTitle: "Settings",
+    settingsDescription: "Manage your currency, household invitations and change log",
+    generalTab: "General",
+    invitationsTab: "Invitations",
+    auditTab: "Log",
+    exportData: "Export Data",
   },
   es: {
     overview: "Resumen",
@@ -212,6 +218,12 @@ const translations = {
     debtPayment: "Disponible para Pago de Deuda",
     monthsToEmergency: "Meses para Meta de Fondo de Emergencia",
     monthlyDebtAllocation: "Asignación Mensual de Deuda",
+    settingsTitle: "Configuración",
+    settingsDescription: "Gestiona tu moneda, invitaciones al grupo familiar y registro de cambios",
+    generalTab: "General",
+    invitationsTab: "Invitaciones",
+    auditTab: "Registro",
+    exportData: "Exportar datos",
   },
   pt: {
     overview: "Visão Geral",
@@ -248,6 +260,12 @@ const translations = {
     debtPayment: "Disponível para Pagamento de Dívida",
     monthsToEmergency: "Meses para Meta de Fundo de Emergência",
     monthlyDebtAllocation: "Alocação Mensal de Dívida",
+    settingsTitle: "Configurações",
+    settingsDescription: "Gerencie sua moeda, convites do lar e registro de alterações",
+    generalTab: "Geral",
+    invitationsTab: "Convites",
+    auditTab: "Registro",
+    exportData: "Exportar dados",
   },
 };
 // Variable income hook moved to src/hooks/useVariableIncome.ts for security
@@ -992,29 +1010,29 @@ const Index = () => {
               </Button>
               <Sheet>
                 <SheetTrigger asChild>
-                  <Button variant="outline" size="icon" title="Configuración">
+                  <Button variant="outline" size="icon" title={t.settingsTitle}>
                     <SettingsIcon className="h-4 w-4" />
                   </Button>
                 </SheetTrigger>
                 <SheetContent className="w-full sm:max-w-2xl overflow-y-auto">
                   <SheetHeader>
-                    <SheetTitle>Configuración</SheetTitle>
+                    <SheetTitle>{t.settingsTitle}</SheetTitle>
                     <SheetDescription>
-                      Gestiona tu moneda, invitaciones al grupo familiar y registro de cambios
+                      {t.settingsDescription}
                     </SheetDescription>
                   </SheetHeader>
                   <Tabs defaultValue="settings" className="mt-6">
                     <TabsList className="grid w-full grid-cols-3">
-                      <TabsTrigger value="settings">General</TabsTrigger>
-                      <TabsTrigger value="invitations">Invitaciones</TabsTrigger>
-                      <TabsTrigger value="audit">Registro</TabsTrigger>
+                      <TabsTrigger value="settings">{t.generalTab}</TabsTrigger>
+                      <TabsTrigger value="invitations">{t.invitationsTab}</TabsTrigger>
+                      <TabsTrigger value="audit">{t.auditTab}</TabsTrigger>
                     </TabsList>
                     <TabsContent value="settings" className="mt-4">
-                      <SettingsTab />
+                      <SettingsTab language={language} />
                       <div className="mt-6 pt-6 border-t">
                         <Button variant="outline" onClick={() => window.print()} className="w-full">
                           <Download className="h-4 w-4 mr-2" />
-                          Exportar datos
+                          {t.exportData}
                         </Button>
                       </div>
                     </TabsContent>
@@ -1022,7 +1040,7 @@ const Index = () => {
                       <InvitationsManager language={language} />
                     </TabsContent>
                     <TabsContent value="audit" className="mt-4">
-                      <AuditLogViewer />
+                      <AuditLogViewer language={language} />
                     </TabsContent>
                   </Tabs>
                 </SheetContent>
