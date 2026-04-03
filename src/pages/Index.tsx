@@ -2177,7 +2177,7 @@ const Index = () => {
             <TabsContent value="household">
               <div className="space-y-6">
                 <HouseholdManager language={language} />
-                <InvitationsManager />
+                <InvitationsManager language={language} />
               </div>
             </TabsContent>
 
