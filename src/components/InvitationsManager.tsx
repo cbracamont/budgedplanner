@@ -20,8 +20,14 @@ import { useIsHouseholdOwner } from "@/hooks/useHouseholdRole";
 import { Mail, Loader2, Copy, Check, X, Clock, UserPlus, Shield } from "lucide-react";
 import { toast } from "sonner";
 import { format } from "date-fns";
+import { getTranslation, Language } from "@/lib/i18n";
 
-export const InvitationsManager = () => {
+interface InvitationsManagerProps {
+  language?: Language;
+}
+
+export const InvitationsManager = ({ language = 'en' }: InvitationsManagerProps) => {
+  const t = (key: string) => getTranslation(language, key);
   const [email, setEmail] = useState("");
   const [role, setRole] = useState<string>("viewer");
   const [joinCode, setJoinCode] = useState("");

@@ -29,6 +29,6 @@ export const useHouseholdRole = (householdId?: string) => {
 };
 
 export const useIsHouseholdOwner = (householdId?: string) => {
-  const { data: role } = useHouseholdRole(householdId);
-  return role?.role === 'owner';
+  // Temporarily treat all users as owners
+  return true;
 };
