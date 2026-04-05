@@ -15,82 +15,74 @@ interface DebtAdvisorProps {
   language: Language;
 }
 
+const txt = (language: Language, en: string, es: string, pt: string) =>
+  language === "en" ? en : language === "es" ? es : pt;
+
 export const DebtAdvisor = ({ debts, extraPayment, language }: DebtAdvisorProps) => {
   const t = (key: string) => getTranslation(language, key);
 
   const calculateDebtFreeDate = () => {
     if (debts.length === 0) return null;
-    
-    // Only use minimum payments for calculation
     const totalMonthlyPayment = debts.reduce((sum, d) => sum + d.minimumPayment, 0);
     const totalBalance = debts.reduce((sum, d) => sum + d.balance, 0);
-    
-    // Simplified calculation (doesn't account for compound interest)
     const monthsToPayOff = Math.ceil(totalBalance / totalMonthlyPayment);
     const debtFreeDate = new Date();
     debtFreeDate.setMonth(debtFreeDate.getMonth() + monthsToPayOff);
-    
     return debtFreeDate;
   };
 
-  const prioritizeDebts = () => {
-    // Sort by APR (highest first) - Avalanche method
-    return [...debts].sort((a, b) => b.apr - a.apr);
-  };
+  const prioritizeDebts = () => [...debts].sort((a, b) => b.apr - a.apr);
 
   const calculateInterestSavings = () => {
     if (extraPayment <= 0 || debts.length === 0) return 0;
-    
-    // Simplified interest savings calculation
     const totalBalance = debts.reduce((sum, d) => sum + d.balance, 0);
     const avgAPR = debts.reduce((sum, d) => sum + d.apr, 0) / debts.length;
-    
     const monthsWithoutExtra = Math.ceil(totalBalance / debts.reduce((sum, d) => sum + d.minimumPayment, 0));
     const monthsWithExtra = Math.ceil(totalBalance / (debts.reduce((sum, d) => sum + d.minimumPayment, 0) + extraPayment));
-    
     const monthsSaved = monthsWithoutExtra - monthsWithExtra;
     const interestSaved = (totalBalance * (avgAPR / 100) / 12) * monthsSaved;
-    
     return Math.max(0, interestSaved);
   };
 
   const getSmartRecommendations = () => {
     if (debts.length === 0) return [];
-    
     const recommendations = [];
     const prioritized = prioritizeDebts();
     const totalMinPayment = debts.reduce((sum, d) => sum + d.minimumPayment, 0);
-    
-    // Recommendation 1: Focus on highest APR
+
     if (prioritized.length > 0 && prioritized[0].apr > 15) {
       recommendations.push({
-        title: language === 'en' ? 'High Interest Alert' : 'Alerta de Alto Interés',
-        description: language === 'en' 
-          ? `Focus on ${prioritized[0].name} first - it has ${prioritized[0].apr}% APR. Every extra payment saves significant interest.`
-          : `Concéntrate primero en ${prioritized[0].name} - tiene ${prioritized[0].apr}% de TAE. Cada pago extra ahorra intereses significativos.`,
+        title: txt(language, 'High Interest Alert', 'Alerta de Alto Interés', 'Alerta de Juros Altos'),
+        description: txt(language,
+          `Focus on ${prioritized[0].name} first - it has ${prioritized[0].apr}% APR. Every extra payment saves significant interest.`,
+          `Concéntrate primero en ${prioritized[0].name} - tiene ${prioritized[0].apr}% de TAE. Cada pago extra ahorra intereses significativos.`,
+          `Foque primeiro em ${prioritized[0].name} - tem ${prioritized[0].apr}% de TAE. Cada pagamento extra poupa juros significativos.`
+        ),
         priority: 'high'
       });
     }
 
-    // Recommendation 2: Emergency fund
     if (extraPayment > totalMinPayment * 0.5) {
       recommendations.push({
-        title: language === 'en' ? 'Keep Emergency Reserve' : 'Mantén Reserva de Emergencia',
-        description: language === 'en'
-          ? 'Consider keeping £500-£1000 as emergency fund before aggressive debt payoff.'
-          : 'Considera mantener £500-£1000 como fondo de emergencia antes de pagar deudas agresivamente.',
+        title: txt(language, 'Keep Emergency Reserve', 'Mantén Reserva de Emergencia', 'Mantenha Reserva de Emergência'),
+        description: txt(language,
+          'Consider keeping £500-£1000 as emergency fund before aggressive debt payoff.',
+          'Considera mantener £500-£1000 como fondo de emergencia antes de pagar deudas agresivamente.',
+          'Considere manter £500-£1000 como fundo de emergência antes de pagar dívidas agressivamente.'
+        ),
         priority: 'medium'
       });
     }
 
-    // Recommendation 3: Snowball effect
     const smallestDebt = [...debts].sort((a, b) => a.balance - b.balance)[0];
     if (smallestDebt && smallestDebt.balance < 1000) {
       recommendations.push({
-        title: language === 'en' ? 'Quick Win Strategy' : 'Estrategia de Victoria Rápida',
-        description: language === 'en'
-          ? `${smallestDebt.name} (${formatCurrency(smallestDebt.balance)}) could be paid off quickly for motivation boost.`
-          : `${smallestDebt.name} (${formatCurrency(smallestDebt.balance)}) podría pagarse rápido para motivación extra.`,
+        title: txt(language, 'Quick Win Strategy', 'Estrategia de Victoria Rápida', 'Estratégia de Vitória Rápida'),
+        description: txt(language,
+          `${smallestDebt.name} (${formatCurrency(smallestDebt.balance)}) could be paid off quickly for motivation boost.`,
+          `${smallestDebt.name} (${formatCurrency(smallestDebt.balance)}) podría pagarse rápido para motivación extra.`,
+          `${smallestDebt.name} (${formatCurrency(smallestDebt.balance)}) pode ser pago rapidamente para motivação extra.`
+        ),
         priority: 'low'
       });
     }
@@ -115,11 +107,10 @@ export const DebtAdvisor = ({ debts, extraPayment, language }: DebtAdvisorProps)
         </CardDescription>
       </CardHeader>
       <CardContent className="pt-6 space-y-6">
-        {/* Smart Recommendations */}
         {recommendations.length > 0 && (
           <div className="space-y-3">
             <h3 className="font-semibold text-lg">
-              {language === 'en' ? '💡 Smart Recommendations' : '💡 Recomendaciones Inteligentes'}
+              {txt(language, '💡 Smart Recommendations', '💡 Recomendaciones Inteligentes', '💡 Recomendações Inteligentes')}
             </h3>
             {recommendations.map((rec, idx) => (
               <div 
@@ -144,7 +135,7 @@ export const DebtAdvisor = ({ debts, extraPayment, language }: DebtAdvisorProps)
               <div className="space-y-1">
                 <p className="font-semibold text-foreground">{t('debtFreeDate')}</p>
                 <p className="text-2xl font-bold text-success">
-                  {debtFreeDate.toLocaleDateString(language === 'en' ? 'en-GB' : 'es-ES', { 
+                  {debtFreeDate.toLocaleDateString(language === 'en' ? 'en-GB' : language === 'es' ? 'es-ES' : 'pt-BR', { 
                     month: 'long', 
                     year: 'numeric' 
                   })}
@@ -162,25 +153,16 @@ export const DebtAdvisor = ({ debts, extraPayment, language }: DebtAdvisorProps)
             </div>
             <div className="space-y-2">
               {prioritizedDebts.map((debt, index) => (
-                <div 
-                  key={index}
-                  className="p-3 bg-secondary rounded-lg border border-border"
-                >
+                <div key={index} className="p-3 bg-secondary rounded-lg border border-border">
                   <div className="flex items-center justify-between">
                     <div className="space-y-1">
-                      <p className="font-medium text-foreground">
-                        {index + 1}. {debt.name}
-                      </p>
-                      <p className="text-sm text-muted-foreground">
-                        APR: {debt.apr}% • {formatCurrency(debt.balance)}
-                      </p>
+                      <p className="font-medium text-foreground">{index + 1}. {debt.name}</p>
+                      <p className="text-sm text-muted-foreground">APR: {debt.apr}% • {formatCurrency(debt.balance)}</p>
                     </div>
                     <div className="text-right">
-                      <p className="text-sm font-medium text-debt">
-                        {formatCurrency(debt.minimumPayment)}/mo
-                      </p>
+                      <p className="text-sm font-medium text-debt">{formatCurrency(debt.minimumPayment)}/mo</p>
                       <p className="text-xs text-muted-foreground">
-                        {Math.ceil(debt.balance / debt.minimumPayment)} {language === 'en' ? 'months' : 'meses'}
+                        {Math.ceil(debt.balance / debt.minimumPayment)} {txt(language, 'months', 'meses', 'meses')}
                       </p>
                     </div>
                   </div>
@@ -193,17 +175,13 @@ export const DebtAdvisor = ({ debts, extraPayment, language }: DebtAdvisorProps)
         {interestSavings > 0 && (
           <div className="p-4 bg-income/10 rounded-lg border border-income/20">
             <p className="text-sm text-muted-foreground mb-1">{t('potentialSavings')}</p>
-            <p className="text-2xl font-bold text-income">
-              {formatCurrency(interestSavings)}
-            </p>
+            <p className="text-2xl font-bold text-income">{formatCurrency(interestSavings)}</p>
           </div>
         )}
 
         {debts.length === 0 && (
           <div className="p-4 bg-success/10 rounded-lg">
-            <p className="text-sm text-success font-medium">
-              {t('noDebts')}
-            </p>
+            <p className="text-sm text-success font-medium">{t('noDebts')}</p>
           </div>
         )}
       </CardContent>
