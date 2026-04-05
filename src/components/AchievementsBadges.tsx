@@ -24,6 +24,9 @@ interface Achievement {
   category: "payments" | "amount" | "streak";
 }
 
+const txt = (language: Language, en: string, es: string, pt: string) =>
+  language === "en" ? en : language === "es" ? es : pt;
+
 export const AchievementsBadges = ({ language }: AchievementsBadgesProps) => {
   const { data: earnedAchievements = [] } = useAchievements();
   const { data: paymentHistory = [] } = useDebtPaymentHistory();
@@ -32,21 +35,17 @@ export const AchievementsBadges = ({ language }: AchievementsBadgesProps) => {
   const totalPayments = paymentHistory.length;
   const totalPaid = paymentHistory.reduce((sum, p) => sum + Number(p.amount), 0);
 
-  // Calculate streak (consecutive months with payments)
   const calculateStreak = () => {
     if (paymentHistory.length === 0) return 0;
-    
     const monthsWithPayments = new Set(
       paymentHistory.map(p => {
         const date = new Date(p.payment_date);
         return `${date.getFullYear()}-${date.getMonth()}`;
       })
     );
-    
     const today = new Date();
     let streak = 0;
     let checkDate = new Date(today.getFullYear(), today.getMonth(), 1);
-    
     for (let i = 0; i < 12; i++) {
       const key = `${checkDate.getFullYear()}-${checkDate.getMonth()}`;
       if (monthsWithPayments.has(key)) {
@@ -56,136 +55,88 @@ export const AchievementsBadges = ({ language }: AchievementsBadgesProps) => {
       }
       checkDate.setMonth(checkDate.getMonth() - 1);
     }
-    
     return streak;
   };
 
   const currentStreak = calculateStreak();
 
   const allAchievements: Achievement[] = useMemo(() => [
-    // Payments milestones
     {
-      id: "first_payment",
-      type: "first_payment",
-      title: language === "es" ? "🎯 Primer Paso" : "🎯 First Step",
-      description: language === "es" ? "Realiza tu primer pago" : "Make your first payment",
-      icon: "🎯",
-      target: 1,
-      current: totalPayments,
-      unlocked: earnedAchievements.some(a => a.achievement_type === "first_payment"),
-      category: "payments"
+      id: "first_payment", type: "first_payment",
+      title: txt(language, "🎯 First Step", "🎯 Primer Paso", "🎯 Primeiro Passo"),
+      description: txt(language, "Make your first payment", "Realiza tu primer pago", "Faça o seu primeiro pagamento"),
+      icon: "🎯", target: 1, current: totalPayments,
+      unlocked: earnedAchievements.some(a => a.achievement_type === "first_payment"), category: "payments"
     },
     {
-      id: "five_payments",
-      type: "five_payments",
-      title: language === "es" ? "⚡ Constante" : "⚡ Consistent",
-      description: language === "es" ? "Realiza 5 pagos" : "Make 5 payments",
-      icon: "⚡",
-      target: 5,
-      current: totalPayments,
-      unlocked: earnedAchievements.some(a => a.achievement_type === "five_payments"),
-      category: "payments"
+      id: "five_payments", type: "five_payments",
+      title: txt(language, "⚡ Consistent", "⚡ Constante", "⚡ Consistente"),
+      description: txt(language, "Make 5 payments", "Realiza 5 pagos", "Faça 5 pagamentos"),
+      icon: "⚡", target: 5, current: totalPayments,
+      unlocked: earnedAchievements.some(a => a.achievement_type === "five_payments"), category: "payments"
     },
     {
-      id: "ten_payments",
-      type: "ten_payments",
-      title: language === "es" ? "🌟 Disciplinado" : "🌟 Disciplined",
-      description: language === "es" ? "Realiza 10 pagos" : "Make 10 payments",
-      icon: "🌟",
-      target: 10,
-      current: totalPayments,
-      unlocked: earnedAchievements.some(a => a.achievement_type === "ten_payments"),
-      category: "payments"
+      id: "ten_payments", type: "ten_payments",
+      title: txt(language, "🌟 Disciplined", "🌟 Disciplinado", "🌟 Disciplinado"),
+      description: txt(language, "Make 10 payments", "Realiza 10 pagos", "Faça 10 pagamentos"),
+      icon: "🌟", target: 10, current: totalPayments,
+      unlocked: earnedAchievements.some(a => a.achievement_type === "ten_payments"), category: "payments"
     },
     {
-      id: "twenty_payments",
-      type: "twenty_payments",
-      title: language === "es" ? "🔥 Imparable" : "🔥 Unstoppable",
-      description: language === "es" ? "Realiza 20 pagos" : "Make 20 payments",
-      icon: "🔥",
-      target: 20,
-      current: totalPayments,
-      unlocked: earnedAchievements.some(a => a.achievement_type === "twenty_payments"),
-      category: "payments"
-    },
-    // Amount milestones
-    {
-      id: "hundred_paid",
-      type: "hundred_paid",
-      title: language === "es" ? "💵 Ahorrista" : "💵 Saver",
-      description: language === "es" ? "Paga £100 en total" : "Pay £100 total",
-      icon: "💵",
-      target: 100,
-      current: totalPaid,
-      unlocked: earnedAchievements.some(a => a.achievement_type === "hundred_paid"),
-      category: "amount"
+      id: "twenty_payments", type: "twenty_payments",
+      title: txt(language, "🔥 Unstoppable", "🔥 Imparable", "🔥 Imparável"),
+      description: txt(language, "Make 20 payments", "Realiza 20 pagos", "Faça 20 pagamentos"),
+      icon: "🔥", target: 20, current: totalPayments,
+      unlocked: earnedAchievements.some(a => a.achievement_type === "twenty_payments"), category: "payments"
     },
     {
-      id: "five_hundred_paid",
-      type: "five_hundred_paid",
-      title: language === "es" ? "💰 Comprometido" : "💰 Committed",
-      description: language === "es" ? "Paga £500 en total" : "Pay £500 total",
-      icon: "💰",
-      target: 500,
-      current: totalPaid,
-      unlocked: earnedAchievements.some(a => a.achievement_type === "five_hundred_paid"),
-      category: "amount"
+      id: "hundred_paid", type: "hundred_paid",
+      title: txt(language, "💵 Saver", "💵 Ahorrista", "💵 Poupador"),
+      description: txt(language, "Pay £100 total", "Paga £100 en total", "Pague £100 no total"),
+      icon: "💵", target: 100, current: totalPaid,
+      unlocked: earnedAchievements.some(a => a.achievement_type === "hundred_paid"), category: "amount"
     },
     {
-      id: "thousand_paid",
-      type: "thousand_paid",
-      title: language === "es" ? "💪 Guerrero" : "💪 Warrior",
-      description: language === "es" ? "Paga £1,000 en total" : "Pay £1,000 total",
-      icon: "💪",
-      target: 1000,
-      current: totalPaid,
-      unlocked: earnedAchievements.some(a => a.achievement_type === "thousand_paid"),
-      category: "amount"
+      id: "five_hundred_paid", type: "five_hundred_paid",
+      title: txt(language, "💰 Committed", "💰 Comprometido", "💰 Comprometido"),
+      description: txt(language, "Pay £500 total", "Paga £500 en total", "Pague £500 no total"),
+      icon: "💰", target: 500, current: totalPaid,
+      unlocked: earnedAchievements.some(a => a.achievement_type === "five_hundred_paid"), category: "amount"
     },
     {
-      id: "five_thousand_paid",
-      type: "five_thousand_paid",
-      title: language === "es" ? "👑 Leyenda" : "👑 Legend",
-      description: language === "es" ? "Paga £5,000 en total" : "Pay £5,000 total",
-      icon: "👑",
-      target: 5000,
-      current: totalPaid,
-      unlocked: earnedAchievements.some(a => a.achievement_type === "five_thousand_paid"),
-      category: "amount"
-    },
-    // Streak achievements
-    {
-      id: "three_month_streak",
-      type: "three_month_streak",
-      title: language === "es" ? "🔄 Ritmo" : "🔄 Rhythm",
-      description: language === "es" ? "3 meses consecutivos" : "3 consecutive months",
-      icon: "🔄",
-      target: 3,
-      current: currentStreak,
-      unlocked: earnedAchievements.some(a => a.achievement_type === "three_month_streak"),
-      category: "streak"
+      id: "thousand_paid", type: "thousand_paid",
+      title: txt(language, "💪 Warrior", "💪 Guerrero", "💪 Guerreiro"),
+      description: txt(language, "Pay £1,000 total", "Paga £1,000 en total", "Pague £1.000 no total"),
+      icon: "💪", target: 1000, current: totalPaid,
+      unlocked: earnedAchievements.some(a => a.achievement_type === "thousand_paid"), category: "amount"
     },
     {
-      id: "six_month_streak",
-      type: "six_month_streak",
-      title: language === "es" ? "🎖️ Dedicado" : "🎖️ Dedicated",
-      description: language === "es" ? "6 meses consecutivos" : "6 consecutive months",
-      icon: "🎖️",
-      target: 6,
-      current: currentStreak,
-      unlocked: earnedAchievements.some(a => a.achievement_type === "six_month_streak"),
-      category: "streak"
+      id: "five_thousand_paid", type: "five_thousand_paid",
+      title: txt(language, "👑 Legend", "👑 Leyenda", "👑 Lenda"),
+      description: txt(language, "Pay £5,000 total", "Paga £5,000 en total", "Pague £5.000 no total"),
+      icon: "👑", target: 5000, current: totalPaid,
+      unlocked: earnedAchievements.some(a => a.achievement_type === "five_thousand_paid"), category: "amount"
     },
     {
-      id: "year_streak",
-      type: "year_streak",
-      title: language === "es" ? "🏆 Maestro" : "🏆 Master",
-      description: language === "es" ? "12 meses consecutivos" : "12 consecutive months",
-      icon: "🏆",
-      target: 12,
-      current: currentStreak,
-      unlocked: earnedAchievements.some(a => a.achievement_type === "year_streak"),
-      category: "streak"
+      id: "three_month_streak", type: "three_month_streak",
+      title: txt(language, "🔄 Rhythm", "🔄 Ritmo", "🔄 Ritmo"),
+      description: txt(language, "3 consecutive months", "3 meses consecutivos", "3 meses consecutivos"),
+      icon: "🔄", target: 3, current: currentStreak,
+      unlocked: earnedAchievements.some(a => a.achievement_type === "three_month_streak"), category: "streak"
+    },
+    {
+      id: "six_month_streak", type: "six_month_streak",
+      title: txt(language, "🎖️ Dedicated", "🎖️ Dedicado", "🎖️ Dedicado"),
+      description: txt(language, "6 consecutive months", "6 meses consecutivos", "6 meses consecutivos"),
+      icon: "🎖️", target: 6, current: currentStreak,
+      unlocked: earnedAchievements.some(a => a.achievement_type === "six_month_streak"), category: "streak"
+    },
+    {
+      id: "year_streak", type: "year_streak",
+      title: txt(language, "🏆 Master", "🏆 Maestro", "🏆 Mestre"),
+      description: txt(language, "12 consecutive months", "12 meses consecutivos", "12 meses consecutivos"),
+      icon: "🏆", target: 12, current: currentStreak,
+      unlocked: earnedAchievements.some(a => a.achievement_type === "year_streak"), category: "streak"
     },
   ], [totalPayments, totalPaid, currentStreak, earnedAchievements, language]);
 
@@ -199,21 +150,16 @@ export const AchievementsBadges = ({ language }: AchievementsBadgesProps) => {
               title: achievement.title,
               description: achievement.description,
               icon: achievement.icon,
-              metadata: { 
-                target: achievement.target, 
-                current: achievement.current,
-                category: achievement.category 
-              },
+              metadata: { target: achievement.target, current: achievement.current, category: achievement.category },
               profile_id: null,
             });
-            toast.success(`${language === "es" ? "¡Logro desbloqueado!" : "Achievement unlocked!"} ${achievement.title}`);
+            toast.success(`${txt(language, "Achievement unlocked!", "¡Logro desbloqueado!", "Conquista desbloqueada!")} ${achievement.title}`);
           } catch (error) {
             console.error("Error unlocking achievement:", error);
           }
         }
       }
     };
-
     if (paymentHistory.length > 0) {
       checkAndUnlock();
     }
@@ -233,7 +179,7 @@ export const AchievementsBadges = ({ language }: AchievementsBadgesProps) => {
         <div className="flex items-center justify-between">
           <CardTitle className="flex items-center gap-2">
             <Trophy className="h-5 w-5" />
-            {language === "es" ? "Logros" : "Achievements"}
+            {txt(language, "Achievements", "Logros", "Conquistas")}
           </CardTitle>
           <Badge variant="secondary" className="text-lg px-3 py-1">
             {totalUnlocked}/{allAchievements.length}
@@ -241,10 +187,9 @@ export const AchievementsBadges = ({ language }: AchievementsBadgesProps) => {
         </div>
       </CardHeader>
       <CardContent className="space-y-6">
-        {/* Payments Category */}
         <div>
           <h3 className="font-semibold mb-3 text-sm text-muted-foreground">
-            {language === "es" ? "💳 Pagos Realizados" : "💳 Payments Made"}
+            {txt(language, "💳 Payments Made", "💳 Pagos Realizados", "💳 Pagamentos Feitos")}
           </h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {categorizedAchievements.payments.map((achievement) => (
@@ -252,11 +197,9 @@ export const AchievementsBadges = ({ language }: AchievementsBadgesProps) => {
             ))}
           </div>
         </div>
-
-        {/* Amount Category */}
         <div>
           <h3 className="font-semibold mb-3 text-sm text-muted-foreground">
-            {language === "es" ? "💰 Dinero Pagado" : "💰 Money Paid"}
+            {txt(language, "💰 Money Paid", "💰 Dinero Pagado", "💰 Dinheiro Pago")}
           </h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {categorizedAchievements.amount.map((achievement) => (
@@ -264,11 +207,9 @@ export const AchievementsBadges = ({ language }: AchievementsBadgesProps) => {
             ))}
           </div>
         </div>
-
-        {/* Streak Category */}
         <div>
           <h3 className="font-semibold mb-3 text-sm text-muted-foreground">
-            {language === "es" ? "🔥 Racha de Pagos" : "🔥 Payment Streak"}
+            {txt(language, "🔥 Payment Streak", "🔥 Racha de Pagos", "🔥 Sequência de Pagamentos")}
           </h3>
           <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             {categorizedAchievements.streak.map((achievement) => (
@@ -305,7 +246,6 @@ const AchievementCard = ({ achievement, language }: { achievement: Achievement; 
           </p>
         </div>
       </div>
-      
       <div className="space-y-2">
         <Progress value={progress} className="h-2" />
         <div className="flex items-center justify-between text-xs">
@@ -317,7 +257,7 @@ const AchievementCard = ({ achievement, language }: { achievement: Achievement; 
           </span>
           {achievement.unlocked ? (
             <Badge variant="default" className="text-xs">
-              {language === "es" ? "✓ Desbloqueado" : "✓ Unlocked"}
+              {language === "en" ? "✓ Unlocked" : language === "es" ? "✓ Desbloqueado" : "✓ Desbloqueado"}
             </Badge>
           ) : (
             <span className="text-muted-foreground">

@@ -261,10 +261,10 @@ export const FloatingChatWidget = ({ language = 'en' as Language }: FloatingChat
 
       if (error) {
         if (error.message?.includes('429')) {
-          throw new Error(language === 'en' ? 'Rate limit exceeded. Please try again later.' : 'Límite de solicitudes excedido. Intenta más tarde.');
+          throw new Error(language === 'en' ? 'Rate limit exceeded. Please try again later.' : language === 'es' ? 'Límite de solicitudes excedido. Intenta más tarde.' : 'Limite de pedidos excedido. Tente mais tarde.');
         }
         if (error.message?.includes('402')) {
-          throw new Error(language === 'en' ? 'AI credits depleted. Please add credits in Settings.' : 'Créditos de IA agotados. Añade créditos en Configuración.');
+          throw new Error(language === 'en' ? 'AI credits depleted. Please add credits in Settings.' : language === 'es' ? 'Créditos de IA agotados. Añade créditos en Configuración.' : 'Créditos de IA esgotados. Adicione créditos nas Configurações.');
         }
         throw error;
       }
@@ -282,7 +282,9 @@ export const FloatingChatWidget = ({ language = 'en' as Language }: FloatingChat
         title: "Error",
         description: error.message || (language === 'en' 
           ? "Failed to get advice. Please try again." 
-          : "Error al obtener consejo. Intenta de nuevo."),
+          : language === 'es'
+          ? "Error al obtener consejo. Intenta de nuevo."
+          : "Erro ao obter conselho. Tente novamente."),
         variant: "destructive"
       });
     } finally {

@@ -13,6 +13,9 @@ interface DebtRiskMonitorProps {
   language: Language;
 }
 
+const txt = (lang: Language, en: string, es: string, pt: string) =>
+  lang === "en" ? en : lang === "es" ? es : pt;
+
 export const DebtRiskMonitor = ({ totalIncome, totalDebts, language }: DebtRiskMonitorProps) => {
   const { data: alerts } = useUnacknowledgedAlerts();
   const acknowledgeAlert = useAcknowledgeAlert();
@@ -25,11 +28,10 @@ export const DebtRiskMonitor = ({ totalIncome, totalDebts, language }: DebtRiskM
 
       const debtToIncomeRatio = (totalDebts / totalIncome) * 100;
 
-      // Solo crear alerta si supera el 35% y no hay alertas recientes similares
       if (debtToIncomeRatio > 35) {
         const recentAlerts = alerts?.filter(
           a => a.alert_type === "high_debt_ratio" && 
-          new Date(a.created_at) > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000) // últimos 7 días
+          new Date(a.created_at) > new Date(Date.now() - 7 * 24 * 60 * 60 * 1000)
         );
 
         if (!recentAlerts || recentAlerts.length === 0) {
@@ -40,13 +42,17 @@ export const DebtRiskMonitor = ({ totalIncome, totalDebts, language }: DebtRiskM
 
           if (debtToIncomeRatio >= 40) {
             riskLevel = "high";
-            message = language === "es" 
-              ? `⚠️ ALERTA CRÍTICA: Tu ratio deuda/ingresos es del ${debtToIncomeRatio.toFixed(1)}%. Se recomienda mantenerlo por debajo del 40%. Considera consolidar deudas o buscar asesoría financiera.`
-              : `⚠️ CRITICAL ALERT: Your debt-to-income ratio is ${debtToIncomeRatio.toFixed(1)}%. It's recommended to keep it below 40%. Consider debt consolidation or financial counseling.`;
+            message = txt(language,
+              `⚠️ CRITICAL ALERT: Your debt-to-income ratio is ${debtToIncomeRatio.toFixed(1)}%. It's recommended to keep it below 40%. Consider debt consolidation or financial counseling.`,
+              `⚠️ ALERTA CRÍTICA: Tu ratio deuda/ingresos es del ${debtToIncomeRatio.toFixed(1)}%. Se recomienda mantenerlo por debajo del 40%. Considera consolidar deudas o buscar asesoría financiera.`,
+              `⚠️ ALERTA CRÍTICO: O seu rácio dívida/rendimento é de ${debtToIncomeRatio.toFixed(1)}%. Recomenda-se mantê-lo abaixo de 40%. Considere consolidar dívidas ou procurar aconselhamento financeiro.`
+            );
           } else {
-            message = language === "es"
-              ? `⚠️ Advertencia: Tu ratio deuda/ingresos es del ${debtToIncomeRatio.toFixed(1)}%. Se acerca al límite recomendado del 35%. Considera reducir gastos o aumentar pagos de deudas.`
-              : `⚠️ Warning: Your debt-to-income ratio is ${debtToIncomeRatio.toFixed(1)}%. It's approaching the recommended limit of 35%. Consider reducing expenses or increasing debt payments.`;
+            message = txt(language,
+              `⚠️ Warning: Your debt-to-income ratio is ${debtToIncomeRatio.toFixed(1)}%. It's approaching the recommended limit of 35%. Consider reducing expenses or increasing debt payments.`,
+              `⚠️ Advertencia: Tu ratio deuda/ingresos es del ${debtToIncomeRatio.toFixed(1)}%. Se acerca al límite recomendado del 35%. Considera reducir gastos o aumentar pagos de deudas.`,
+              `⚠️ Aviso: O seu rácio dívida/rendimento é de ${debtToIncomeRatio.toFixed(1)}%. Está a aproximar-se do limite recomendado de 35%. Considere reduzir despesas ou aumentar pagamentos de dívidas.`
+            );
           }
 
           try {
@@ -58,19 +64,17 @@ export const DebtRiskMonitor = ({ totalIncome, totalDebts, language }: DebtRiskM
               profile_id: null,
             });
 
-            // También crear notificación
             const { data: { user } } = await supabase.auth.getUser();
             if (user) {
               await supabase.from("notifications").insert([{
                 user_id: user.id,
-                title: language === "es" ? "⚠️ Alerta de Sobreendeudamiento" : "⚠️ Over-Indebtedness Alert",
+                title: txt(language, "⚠️ Over-Indebtedness Alert", "⚠️ Alerta de Sobreendeudamiento", "⚠️ Alerta de Sobreendividamento"),
                 message,
                 type: "debt_alert",
                 is_read: false,
               }]);
             }
           } finally {
-            // Reset después de 5 segundos para permitir nuevas alertas si cambian significativamente los valores
             setTimeout(() => {
               isCreatingAlert.current = false;
             }, 5000);
@@ -86,23 +90,16 @@ export const DebtRiskMonitor = ({ totalIncome, totalDebts, language }: DebtRiskM
 
   const getRiskColor = (level: string) => {
     switch (level) {
-      case "high":
-        return "destructive";
-      case "medium":
-        return "default";
-      default:
-        return "default";
+      case "high": return "destructive";
+      default: return "default";
     }
   };
 
   const getRiskIcon = (level: string) => {
     switch (level) {
-      case "high":
-        return <AlertTriangle className="h-5 w-5" />;
-      case "medium":
-        return <TrendingDown className="h-5 w-5" />;
-      default:
-        return <CheckCircle2 className="h-5 w-5" />;
+      case "high": return <AlertTriangle className="h-5 w-5" />;
+      case "medium": return <TrendingDown className="h-5 w-5" />;
+      default: return <CheckCircle2 className="h-5 w-5" />;
     }
   };
 
@@ -114,7 +111,7 @@ export const DebtRiskMonitor = ({ totalIncome, totalDebts, language }: DebtRiskM
             {getRiskIcon(alert.risk_level)}
             <div className="flex-1">
               <AlertTitle className="mb-2">
-                {language === "es" ? "Alerta de Riesgo Financiero" : "Financial Risk Alert"}
+                {txt(language, "Financial Risk Alert", "Alerta de Riesgo Financiero", "Alerta de Risco Financeiro")}
               </AlertTitle>
               <AlertDescription className="mb-3">
                 {alert.message}
@@ -125,10 +122,10 @@ export const DebtRiskMonitor = ({ totalIncome, totalDebts, language }: DebtRiskM
                   variant="outline"
                   onClick={() => {
                     acknowledgeAlert.mutate(alert.id);
-                    toast.success(language === "es" ? "Alerta reconocida" : "Alert acknowledged");
+                    toast.success(txt(language, "Alert acknowledged", "Alerta reconocida", "Alerta reconhecido"));
                   }}
                 >
-                  {language === "es" ? "Entendido" : "Acknowledge"}
+                  {txt(language, "Acknowledge", "Entendido", "Entendido")}
                 </Button>
               </div>
             </div>
