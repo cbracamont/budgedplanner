@@ -51,6 +51,7 @@ export const InvitationsManager = ({ language = 'en' }: InvitationsManagerProps)
       householdId: myHousehold.household_id,
       email,
       role,
+      language,
     }, {
       onSuccess: () => {
         setEmail("");

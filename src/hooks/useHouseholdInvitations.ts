@@ -61,11 +61,13 @@ export const useCreateInvitation = () => {
     mutationFn: async ({ 
       householdId, 
       email, 
-      role 
+      role,
+      language = "en",
     }: { 
       householdId: string; 
       email: string; 
       role: string;
+      language?: string;
     }) => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("User not authenticated");
@@ -87,6 +89,23 @@ export const useCreateInvitation = () => {
         .single();
 
       if (error) throw error;
+
+      // Send invitation email
+      try {
+        await supabase.functions.invoke("send-invitation-email", {
+          body: {
+            recipientEmail: email,
+            invitationCode,
+            role,
+            senderEmail: user.email,
+            language,
+          },
+        });
+      } catch (emailError) {
+        console.error("Failed to send invitation email:", emailError);
+        // Don't fail the whole mutation - invitation was created successfully
+      }
+
       return data;
     },
     onSuccess: () => {
@@ -94,7 +113,7 @@ export const useCreateInvitation = () => {
       toast.success("Invitation sent successfully");
     },
     onError: (error: any) => {
-      if (error.message.includes("duplicate")) {
+      if (error.message?.includes("duplicate")) {
         toast.error("An invitation already exists for this email");
       } else {
         toast.error("Error sending invitation");
@@ -108,61 +127,11 @@ export const useAcceptInvitation = () => {
 
   return useMutation({
     mutationFn: async (invitationId: string) => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("User not authenticated");
+      const { error } = await supabase.rpc("accept_household_invitation", {
+        _invitation_id: invitationId,
+      });
 
-      // Get the invitation
-      const { data: invitation, error: invError } = await supabase
-        .from("household_invitations")
-        .select("*")
-        .eq("id", invitationId)
-        .single();
-
-      if (invError) throw invError;
-
-      // Verify invitation is for this user
-      if (invitation.invited_email !== user.email) {
-        throw new Error("This invitation is not for you");
-      }
-
-      // Verify not expired
-      if (new Date(invitation.expires_at) < new Date()) {
-        throw new Error("This invitation has expired");
-      }
-
-      // Get user email for display name
-      const displayName = user.email?.split('@')[0] || 'User';
-
-      // Create membership
-      const { error: memberError } = await supabase
-        .from("household_members")
-        .insert({
-          household_id: invitation.household_id,
-          user_id: user.id,
-          display_name: displayName,
-          status: "approved",
-        });
-
-      if (memberError) throw memberError;
-
-      // Create role
-      const { error: roleError } = await supabase
-        .from("household_user_roles")
-        .insert({
-          household_id: invitation.household_id,
-          user_id: user.id,
-          role: invitation.role as "owner" | "member" | "viewer" | "contributor" | "editor",
-        });
-
-      if (roleError) throw roleError;
-
-      // Update invitation
-      const { error: updateError } = await supabase
-        .from("household_invitations")
-        .update({ status: "accepted" })
-        .eq("id", invitationId);
-
-      if (updateError) throw updateError;
+      if (error) throw new Error(error.message);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["my-invitations"] });
@@ -225,69 +194,11 @@ export const useJoinByCode = () => {
 
   return useMutation({
     mutationFn: async (invitationCode: string) => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("User not authenticated");
+      const { error } = await supabase.rpc("join_household_by_code", {
+        _invitation_code: invitationCode,
+      });
 
-      // Find invitation by code
-      const { data: invitation, error: invError } = await supabase
-        .from("household_invitations")
-        .select("*")
-        .eq("invitation_code", invitationCode)
-        .eq("status", "pending")
-        .single();
-
-      if (invError || !invitation) {
-        throw new Error("Invalid or expired invitation code");
-      }
-
-      // Verify not expired
-      if (new Date(invitation.expires_at) < new Date()) {
-        throw new Error("This invitation has expired");
-      }
-
-      // Get user email for display name
-      const displayName = user.email?.split('@')[0] || 'User';
-
-      // Create membership
-      const { error: memberError } = await supabase
-        .from("household_members")
-        .insert({
-          household_id: invitation.household_id,
-          user_id: user.id,
-          display_name: displayName,
-          status: "approved",
-        });
-
-      if (memberError) {
-        if (memberError.message.includes("duplicate")) {
-          throw new Error("You are already a member of this household");
-        }
-        throw memberError;
-      }
-
-      // Create role
-      const { error: roleError } = await supabase
-        .from("household_user_roles")
-        .insert({
-          household_id: invitation.household_id,
-          user_id: user.id,
-          role: invitation.role as "owner" | "member" | "viewer" | "contributor" | "editor",
-        });
-
-      if (roleError) throw roleError;
-
-      // Update invitation
-      const { error: updateError } = await supabase
-        .from("household_invitations")
-        .update({ 
-          status: "accepted",
-          invited_email: user.email || "",
-        })
-        .eq("id", invitation.id);
-
-      if (updateError) throw updateError;
-
-      return invitation;
+      if (error) throw new Error(error.message);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["my-household"] });
