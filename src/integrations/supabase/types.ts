@@ -1015,6 +1015,10 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
+      accept_household_invitation: {
+        Args: { _invitation_id: string }
+        Returns: undefined
+      }
       has_household_role: {
         Args: {
           _household_id: string
@@ -1030,6 +1034,10 @@ export type Database = {
       is_household_owner: {
         Args: { _household_id: string; _user_id: string }
         Returns: boolean
+      }
+      join_household_by_code: {
+        Args: { _invitation_code: string }
+        Returns: undefined
       }
       log_audit_entry: {
         Args: {
