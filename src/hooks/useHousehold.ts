@@ -95,7 +95,7 @@ export const useCreateHousehold = () => {
           household_id: householdId,
           user_id: user.id,
           display_name: displayName,
-          status: 'approved', // Creator is auto-approved
+          status: 'approved',
         });
 
       if (memberError) throw memberError;

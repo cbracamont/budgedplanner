@@ -67,19 +67,16 @@ export const useLogAction = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("User not authenticated");
 
-      const { error } = await supabase
-        .from("audit_log")
-        .insert({
-          household_id: householdId || null,
-          user_id: user.id,
-          profile_id: profileId || null,
-          action,
-          table_name: tableName,
-          record_id: recordId || null,
-          old_values: oldValues || null,
-          new_values: newValues || null,
-          user_display_name: displayName || null,
-        });
+      const { error } = await supabase.rpc("log_audit_entry", {
+        _action: action,
+        _table_name: tableName,
+        _record_id: recordId || null,
+        _old_values: oldValues || null,
+        _new_values: newValues || null,
+        _household_id: householdId || null,
+        _profile_id: profileId || null,
+        _display_name: displayName || null,
+      });
 
       if (error) throw error;
     },
