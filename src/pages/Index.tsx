@@ -2336,7 +2336,7 @@ const DebtPlanner = ({
       <Card>
         <CardHeader>
           <CardTitle className="flex items-center justify-between">
-            <span className="text-lg font-semibold">Debt Priority Order</span>
+            <span className="text-lg font-semibold">{language === 'en' ? 'Debt Priority Order' : language === 'es' ? 'Orden de Prioridad de Deudas' : 'Ordem de Prioridade de Dívidas'}</span>
             <Select value={debtMethod} onValueChange={(value) => setDebtMethod(value as DebtMethod)}>
               <SelectTrigger className="w-[200px]">
                 <SelectValue />
@@ -2360,12 +2360,12 @@ const DebtPlanner = ({
               </SelectContent>
             </Select>
           </CardTitle>
-          <CardDescription className="text-sm">
-            Simplified debt prioritization based on your chosen strategy
+           <CardDescription className="text-sm">
+            {language === 'en' ? 'Debt repayment plan with surplus allocation based on your chosen strategy' : language === 'es' ? 'Plan de pago de deudas con asignación de excedente según tu estrategia elegida' : 'Plano de pagamento de dívidas com alocação de excedente baseada na sua estratégia escolhida'}
           </CardDescription>
         </CardHeader>
         <CardContent>
-          <SimplifiedDebtPriority debts={debtStrategy.sortedDebts} method={debtMethod} language={language} />
+          <SimplifiedDebtPriority debts={debtStrategy.sortedDebts} method={debtMethod} language={language} cashFlow={cashFlow} monthlySavings={monthlySavings} />
         </CardContent>
       </Card>
     </div>
