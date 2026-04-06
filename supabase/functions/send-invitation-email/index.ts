@@ -51,9 +51,6 @@ Deno.serve(async (req) => {
       });
     }
 
-    const LOVABLE_API_KEY = Deno.env.get("LOVABLE_API_KEY");
-    const GATEWAY_URL = "https://connector-gateway.lovable.dev/resend";
-
     const roleLabels: Record<string, Record<string, string>> = {
       en: { viewer: "Viewer", contributor: "Contributor", editor: "Editor", owner: "Owner" },
       es: { viewer: "Observador", contributor: "Colaborador", editor: "Editor", owner: "Propietario" },
