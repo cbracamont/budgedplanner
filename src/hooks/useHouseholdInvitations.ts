@@ -127,61 +127,11 @@ export const useAcceptInvitation = () => {
 
   return useMutation({
     mutationFn: async (invitationId: string) => {
-      const { data: { user } } = await supabase.auth.getUser();
-      if (!user) throw new Error("User not authenticated");
+      const { error } = await supabase.rpc("accept_household_invitation", {
+        _invitation_id: invitationId,
+      });
 
-      // Get the invitation
-      const { data: invitation, error: invError } = await supabase
-        .from("household_invitations")
-        .select("*")
-        .eq("id", invitationId)
-        .single();
-
-      if (invError) throw invError;
-
-      // Verify invitation is for this user
-      if (invitation.invited_email !== user.email) {
-        throw new Error("This invitation is not for you");
-      }
-
-      // Verify not expired
-      if (new Date(invitation.expires_at) < new Date()) {
-        throw new Error("This invitation has expired");
-      }
-
-      // Get user email for display name
-      const displayName = user.email?.split('@')[0] || 'User';
-
-      // Create membership
-      const { error: memberError } = await supabase
-        .from("household_members")
-        .insert({
-          household_id: invitation.household_id,
-          user_id: user.id,
-          display_name: displayName,
-          status: "approved",
-        });
-
-      if (memberError) throw memberError;
-
-      // Create role
-      const { error: roleError } = await supabase
-        .from("household_user_roles")
-        .insert({
-          household_id: invitation.household_id,
-          user_id: user.id,
-          role: invitation.role as "owner" | "member" | "viewer" | "contributor" | "editor",
-        });
-
-      if (roleError) throw roleError;
-
-      // Update invitation
-      const { error: updateError } = await supabase
-        .from("household_invitations")
-        .update({ status: "accepted" })
-        .eq("id", invitationId);
-
-      if (updateError) throw updateError;
+      if (error) throw new Error(error.message);
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["my-invitations"] });
