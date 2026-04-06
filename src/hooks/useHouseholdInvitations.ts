@@ -61,11 +61,13 @@ export const useCreateInvitation = () => {
     mutationFn: async ({ 
       householdId, 
       email, 
-      role 
+      role,
+      language = "en",
     }: { 
       householdId: string; 
       email: string; 
       role: string;
+      language?: string;
     }) => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("User not authenticated");
@@ -87,6 +89,23 @@ export const useCreateInvitation = () => {
         .single();
 
       if (error) throw error;
+
+      // Send invitation email
+      try {
+        await supabase.functions.invoke("send-invitation-email", {
+          body: {
+            recipientEmail: email,
+            invitationCode,
+            role,
+            senderEmail: user.email,
+            language,
+          },
+        });
+      } catch (emailError) {
+        console.error("Failed to send invitation email:", emailError);
+        // Don't fail the whole mutation - invitation was created successfully
+      }
+
       return data;
     },
     onSuccess: () => {
@@ -94,7 +113,7 @@ export const useCreateInvitation = () => {
       toast.success("Invitation sent successfully");
     },
     onError: (error: any) => {
-      if (error.message.includes("duplicate")) {
+      if (error.message?.includes("duplicate")) {
         toast.error("An invitation already exists for this email");
       } else {
         toast.error("Error sending invitation");
