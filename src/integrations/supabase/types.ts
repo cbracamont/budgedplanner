@@ -1031,6 +1031,19 @@ export type Database = {
         Args: { _household_id: string; _user_id: string }
         Returns: boolean
       }
+      log_audit_entry: {
+        Args: {
+          _action: string
+          _display_name?: string
+          _household_id?: string
+          _new_values?: Json
+          _old_values?: Json
+          _profile_id?: string
+          _record_id?: string
+          _table_name: string
+        }
+        Returns: undefined
+      }
     }
     Enums: {
       household_role: "owner" | "member" | "viewer" | "contributor" | "editor"
