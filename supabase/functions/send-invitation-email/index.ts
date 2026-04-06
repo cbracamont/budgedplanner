@@ -125,40 +125,19 @@ Deno.serve(async (req) => {
 </body>
 </html>`;
 
-    let emailResponse;
-
-    if (LOVABLE_API_KEY) {
-      // Use connector gateway
-      emailResponse = await fetch(`${GATEWAY_URL}/emails`, {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${LOVABLE_API_KEY}`,
-          "X-Connection-Api-Key": RESEND_API_KEY,
-        },
-        body: JSON.stringify({
-          from: "Family Budget Planner <onboarding@resend.dev>",
-          to: [recipientEmail],
-          subject: t.subject,
-          html: htmlContent,
-        }),
-      });
-    } else {
-      // Direct Resend API
-      emailResponse = await fetch("https://api.resend.com/emails", {
-        method: "POST",
-        headers: {
-          "Content-Type": "application/json",
-          Authorization: `Bearer ${RESEND_API_KEY}`,
-        },
-        body: JSON.stringify({
-          from: "Family Budget Planner <onboarding@resend.dev>",
-          to: [recipientEmail],
-          subject: t.subject,
-          html: htmlContent,
-        }),
-      });
-    }
+    const emailResponse = await fetch("https://api.resend.com/emails", {
+      method: "POST",
+      headers: {
+        "Content-Type": "application/json",
+        Authorization: `Bearer ${RESEND_API_KEY}`,
+      },
+      body: JSON.stringify({
+        from: "Family Budget Planner <onboarding@resend.dev>",
+        to: [recipientEmail],
+        subject: t.subject,
+        html: htmlContent,
+      }),
+    });
 
     const result = await emailResponse.json();
 
