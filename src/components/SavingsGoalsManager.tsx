@@ -356,16 +356,12 @@ export const SavingsGoalsManager = ({
           ) : (
             goals.map((goal) => {
               const progress = goal.target_amount > 0 ? Math.min(100, (goal.current_amount / goal.target_amount) * 100) : 0;
-              const remaining = Math.max(0, goal.target_amount - goal.current_amount);
-              const monthsToGoal = remaining > 0 && goal.target_date
-                ? Math.max(0, differenceInMonths(new Date(goal.target_date), new Date()))
-                : 0;
-              const suggestedMonthly = remaining > 0 && monthsToGoal > 0
-                ? remaining / monthsToGoal
-                : 0;
+              const monthsToGoal = goal.target_date ? differenceInMonths(new Date(goal.target_date), new Date()) : null;
+              const suggestedMonthly = goal.target_date && monthsToGoal ? (goal.target_amount - goal.current_amount) / monthsToGoal : 0;
               const status = getGoalStatus(goal);
               const roi = getROIEstimate(goal);
-              const isUrgent = remaining > 0 && (isPast(new Date(goal.target_date || '')) || monthsToGoal < 3);
+              const isUrgent = isPast(new Date(goal.target_date || '')) || (monthsToGoal && monthsToGoal < 3);
+              const remaining = Math.max(0, goal.target_amount - goal.current_amount);
 
               return (
                 <Card key={goal.id} className={`relative overflow-hidden border ${isUrgent ? 'border-orange-500 dark:border-orange-600 shadow-md' : 'border-border'} bg-card hover:shadow-lg transition-shadow`}>
@@ -439,10 +435,10 @@ export const SavingsGoalsManager = ({
                             <td className="px-4 py-3 text-sm text-muted-foreground">Remaining</td>
                             <td className="px-4 py-3 text-right font-semibold text-destructive">{formatCurrency(remaining)}</td>
                           </tr>
-                          {goal.target_date && (
+                          {goal.target_date && monthsToGoal && (
                             <tr className="hover:bg-muted/50 transition-colors">
                               <td className="px-4 py-3 text-sm text-muted-foreground">Months to Goal</td>
-                              <td className="px-4 py-3 text-right font-semibold text-foreground">{monthsToGoal} {monthsToGoal === 1 ? "month" : "months"}</td>
+                              <td className="px-4 py-3 text-right font-semibold text-foreground">{monthsToGoal} months</td>
                             </tr>
                           )}
                           {suggestedMonthly > 0 && (
