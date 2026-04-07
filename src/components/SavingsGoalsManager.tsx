@@ -361,7 +361,7 @@ export const SavingsGoalsManager = ({
               const status = getGoalStatus(goal);
               const roi = getROIEstimate(goal);
               const isUrgent = isPast(new Date(goal.target_date || '')) || (monthsToGoal && monthsToGoal < 3);
-              const remaining = goal.target_amount - goal.current_amount;
+              const remaining = Math.max(0, goal.target_amount - goal.current_amount);
 
               return (
                 <Card key={goal.id} className={`relative overflow-hidden border ${isUrgent ? 'border-orange-500 dark:border-orange-600 shadow-md' : 'border-border'} bg-card hover:shadow-lg transition-shadow`}>
