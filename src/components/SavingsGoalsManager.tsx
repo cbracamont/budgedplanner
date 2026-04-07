@@ -439,10 +439,10 @@ export const SavingsGoalsManager = ({
                             <td className="px-4 py-3 text-sm text-muted-foreground">Remaining</td>
                             <td className="px-4 py-3 text-right font-semibold text-destructive">{formatCurrency(remaining)}</td>
                           </tr>
-                          {goal.target_date && monthsToGoal && (
+                          {goal.target_date && (
                             <tr className="hover:bg-muted/50 transition-colors">
                               <td className="px-4 py-3 text-sm text-muted-foreground">Months to Goal</td>
-                              <td className="px-4 py-3 text-right font-semibold text-foreground">{monthsToGoal} months</td>
+                              <td className="px-4 py-3 text-right font-semibold text-foreground">{monthsToGoal} {monthsToGoal === 1 ? "month" : "months"}</td>
                             </tr>
                           )}
                           {suggestedMonthly > 0 && (
