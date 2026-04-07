@@ -95,7 +95,7 @@ export const VariableExpensesTracker = ({ language = "en" }: VariableExpensesTra
       deleteConfirm: "Are you sure you want to delete this expense?",
       monthTotal: "Month Total",
       noEntries: "No variable expenses for this month",
-      added: "Added",
+      added: "Last modified",
     },
     es: {
       title: "Gastos Variables Mensuales",
@@ -109,7 +109,7 @@ export const VariableExpensesTracker = ({ language = "en" }: VariableExpensesTra
       deleteConfirm: "¿Está seguro de eliminar este gasto?",
       monthTotal: "Total del Mes",
       noEntries: "No hay gastos variables para este mes",
-      added: "Agregado",
+      added: "Última modificación",
     },
     pt: {
       title: "Despesas Variáveis Mensais",
@@ -123,7 +123,7 @@ export const VariableExpensesTracker = ({ language = "en" }: VariableExpensesTra
       deleteConfirm: "Tem certeza que deseja eliminar esta despesa?",
       monthTotal: "Total do Mês",
       noEntries: "Nenhuma despesa variável neste mês",
-      added: "Adicionado",
+      added: "Última modificação",
     },
   };
   const translations = t[language];
@@ -181,7 +181,7 @@ export const VariableExpensesTracker = ({ language = "en" }: VariableExpensesTra
                     <div className="flex items-center gap-2">
                       <p className="font-semibold">{expense.name || "Unnamed"}</p>
                       <span className="text-xs text-muted-foreground">
-                        {translations.added} {format(new Date(expense.created_at), "dd/MM/yyyy")}
+                        {translations.added} {format(new Date(expense.updated_at), "dd/MM/yyyy")}
                       </span>
                     </div>
                     <p className="text-sm font-bold text-warning mt-1">{formatCurrency(expense.amount)}</p>
