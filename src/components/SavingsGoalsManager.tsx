@@ -356,8 +356,12 @@ export const SavingsGoalsManager = ({
           ) : (
             goals.map((goal) => {
               const progress = goal.target_amount > 0 ? Math.min(100, (goal.current_amount / goal.target_amount) * 100) : 0;
-              const monthsToGoal = goal.target_date ? differenceInMonths(new Date(goal.target_date), new Date()) : null;
-              const suggestedMonthly = goal.target_date && monthsToGoal ? (goal.target_amount - goal.current_amount) / monthsToGoal : 0;
+              const monthsToGoal = remaining > 0 && goal.target_date
+                ? Math.max(0, differenceInMonths(new Date(goal.target_date), new Date()))
+                : 0;
+              const suggestedMonthly = remaining > 0 && monthsToGoal > 0
+                ? remaining / monthsToGoal
+                : 0;
               const status = getGoalStatus(goal);
               const roi = getROIEstimate(goal);
               const isUrgent = isPast(new Date(goal.target_date || '')) || (monthsToGoal && monthsToGoal < 3);
