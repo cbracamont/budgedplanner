@@ -368,7 +368,10 @@ export const EnhancedDebtAdvisor = ({ debts: allDebts, extraPayment, language }:
                   {(() => {
                     const today = new Date();
                     const months = Math.ceil((totalDebtFreeDate.getTime() - today.getTime()) / (1000 * 60 * 60 * 24 * 30));
-                    return `${months} ${months === 1 ? (language === 'en' ? 'month' : 'mes') : (language === 'en' ? 'months' : 'meses')} ${language === 'en' ? 'away' : 'restantes'}`;
+                    const monthLabel = months === 1 
+                      ? (language === 'en' ? 'month' : language === 'es' ? 'mes' : 'mês')
+                      : (language === 'en' ? 'months' : 'meses');
+                    return `${months} ${monthLabel} ${language === 'en' ? 'away' : language === 'es' ? 'restantes' : 'restantes'}`;
                   })()}
                 </p>
                 <p className="text-xs text-muted-foreground mt-1">
@@ -455,7 +458,7 @@ export const EnhancedDebtAdvisor = ({ debts: allDebts, extraPayment, language }:
                         )}
                       </p>
                       <p className="text-xs text-muted-foreground mt-1">
-                        {formatCurrency(debt.minimumPayment)}/mo • ~{monthsToPayoff} {monthsToPayoff === 1 ? (language === 'en' ? 'month' : 'mes') : (language === 'en' ? 'months' : 'meses')}
+                        {formatCurrency(debt.minimumPayment)}/mo • ~{monthsToPayoff} {monthsToPayoff === 1 ? (language === 'en' ? 'month' : language === 'es' ? 'mes' : 'mês') : (language === 'en' ? 'months' : 'meses')}
                       </p>
                     </div>
                   </div>
