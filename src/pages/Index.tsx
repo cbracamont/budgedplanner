@@ -967,7 +967,7 @@ const Index = () => {
       if (lower.includes("save")) {
         response = `Cut £50-100 from variable expenses (£${totalVariable}).`;
       } else if (lower.includes("debt")) {
-        response = `Pay highest APR first. Debt-free in ${monthsToDebtFree} months.`;
+        response = `Pay highest APR first. Debt-free in ${monthsToDebtFree} ${monthsToDebtFree === 1 ? 'month' : 'months'}.`;
       } else if (lower.includes("variable income") || lower.includes("extra income")) {
         const variableAllocation = currentMonthVariableIncome * 0.2;
         response = `You have ${formatCurrency(currentMonthVariableIncome)} in variable income this month. Suggestion: Allocate 20% (${formatCurrency(variableAllocation)}) to debt payoff.`;
@@ -1350,7 +1350,7 @@ const Index = () => {
                     <div className="text-center space-y-4">
                       <div>
                         <p className="text-4xl font-bold">{format(debtFreeDate, "d MMM yyyy")}</p>
-                        <p className="text-lg text-muted-foreground">{monthsToDebtFree} months away</p>
+                        <p className="text-lg text-muted-foreground">{monthsToDebtFree} {monthsToDebtFree === 1 ? (language === 'en' ? 'month' : language === 'es' ? 'mes' : 'mês') : (language === 'en' ? 'months' : 'meses')} {language === 'en' ? 'away' : language === 'es' ? 'restantes' : 'restantes'}</p>
                       </div>
 
                       {/* Progress vs Ideal */}
