@@ -529,7 +529,7 @@ export const SimplifiedDebtPriority = ({
                         </div>
                         <div className="p-2 bg-primary/5 rounded-lg border border-primary/10">
                           <p className="text-xs text-muted-foreground">{t.payoffWithExtra}</p>
-                          <p className="font-semibold text-primary">{debt.monthsWithExtra} {t.months}</p>
+                          <p className="font-semibold text-primary">{debt.monthsWithExtra} {debt.monthsWithExtra === 1 ? t.month : t.months}</p>
                           <p className="text-xs text-emerald-600 dark:text-emerald-400">{t.totalInterest}: {formatCurrency(debt.interestWithExtra)}</p>
                         </div>
                       </div>
