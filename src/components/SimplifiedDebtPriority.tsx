@@ -361,12 +361,12 @@ export const SimplifiedDebtPriority = ({
             </div>
             <div>
               <p className="text-xs text-muted-foreground">{t.debtFreeMinOnly}</p>
-              <p className="text-xl font-bold text-muted-foreground">{minOnlyMonths} {t.months}</p>
+              <p className="text-xl font-bold text-muted-foreground">{minOnlyMonths} {minOnlyMonths === 1 ? t.month : t.months}</p>
             </div>
             <div>
               <p className="text-xs text-muted-foreground">{t.debtFreeWithExtra}</p>
               <p className="text-xl font-bold text-primary">
-                {withExtraMonths} {t.months}
+                {withExtraMonths} {withExtraMonths === 1 ? t.month : t.months}
                 {surplus > 0 && withExtraMonths < minOnlyMonths && (
                   <span className="text-xs ml-1 text-emerald-600 dark:text-emerald-400">
                     (-{minOnlyMonths - withExtraMonths})
@@ -456,10 +456,10 @@ export const SimplifiedDebtPriority = ({
                   <div className="flex items-center gap-2 text-sm">
                     <div className="flex items-center gap-1">
                       <Clock className="h-3.5 w-3.5 text-muted-foreground" />
-                      <span className="text-muted-foreground line-through">{debt.monthsMinOnly} {t.months}</span>
+                      <span className="text-muted-foreground line-through">{debt.monthsMinOnly} {debt.monthsMinOnly === 1 ? t.month : t.months}</span>
                     </div>
                     <ArrowRight className="h-3.5 w-3.5 text-muted-foreground" />
-                    <span className="font-semibold text-primary">{debt.monthsWithExtra} {t.months}</span>
+                    <span className="font-semibold text-primary">{debt.monthsWithExtra} {debt.monthsWithExtra === 1 ? t.month : t.months}</span>
                     {debt.monthsSaved > 0 && (
                       <span className="text-xs text-emerald-600 dark:text-emerald-400 font-medium">
                         (-{debt.monthsSaved})
@@ -524,7 +524,7 @@ export const SimplifiedDebtPriority = ({
                       <div className="grid grid-cols-2 gap-3 text-sm">
                         <div className="p-2 bg-muted rounded-lg">
                           <p className="text-xs text-muted-foreground">{t.payoffMinOnly}</p>
-                          <p className="font-medium">{debt.monthsMinOnly} {t.months}</p>
+                          <p className="font-medium">{debt.monthsMinOnly} {debt.monthsMinOnly === 1 ? t.month : t.months}</p>
                           <p className="text-xs text-muted-foreground">{t.totalInterest}: {formatCurrency(debt.interestMinOnly)}</p>
                         </div>
                         <div className="p-2 bg-primary/5 rounded-lg border border-primary/10">
