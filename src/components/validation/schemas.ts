@@ -40,6 +40,7 @@ export const savingsGoalInputSchema = z.object({
   current_amount: z.number().min(0, "Amount must be positive").max(100000000, "Amount too large").optional(),
   monthly_contribution: z.number().min(0, "Amount must be positive").max(1000000, "Amount too large").optional(),
   target_date: z.string().optional(),
+  is_active: z.boolean().optional(),
 });
 
 export const debtPaymentInputSchema = z.object({
