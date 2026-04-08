@@ -365,13 +365,19 @@ export const SavingsGoalsManager = ({
                 : 0;
               const status = getGoalStatus(goal);
               const roi = getROIEstimate(goal);
-              const isUrgent = remaining > 0 && (isPast(new Date(goal.target_date || '')) || monthsToGoal < 3);
+              const isOverdue = remaining > 0 && goal.target_date && isPast(new Date(goal.target_date));
+              const isClosing = remaining > 0 && !isOverdue && monthsToGoal > 0 && monthsToGoal < 3;
+              const isUrgent = isOverdue || isClosing;
+
+              const urgentLabel = isOverdue
+                ? (language === 'en' ? 'Overdue' : language === 'es' ? 'Vencida' : 'Vencida')
+                : (language === 'en' ? `${monthsToGoal} ${monthsToGoal === 1 ? 'month' : 'months'} left` : `${monthsToGoal} ${monthsToGoal === 1 ? 'mes' : 'meses'} restante${monthsToGoal === 1 ? '' : 's'}`);
 
               return (
                 <Card key={goal.id} className={`relative overflow-hidden border ${isUrgent ? 'border-orange-500 dark:border-orange-600 shadow-md' : 'border-border'} bg-card hover:shadow-lg transition-shadow`}>
                   {isUrgent && (
                     <div className="absolute top-2 right-2 z-10">
-                      <Badge variant="destructive" className="text-xs">Urgent</Badge>
+                      <Badge variant="destructive" className="text-xs">{urgentLabel}</Badge>
                     </div>
                   )}
                   <CardHeader className="pb-4 bg-gradient-to-r from-primary/5 to-transparent dark:from-primary/10">
