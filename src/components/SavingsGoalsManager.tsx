@@ -474,40 +474,49 @@ export const SavingsGoalsManager = ({
                           
                           {/* Edit contribution amount */}
                           {editingContributionId === goal.id ? (
-                            <div className="flex items-center gap-2">
-                              <Input
-                                type="number"
-                                step="0.01"
-                                value={editContributionValue}
-                                onChange={(e) => setEditContributionValue(e.target.value)}
-                                className="w-32 h-8 text-sm"
-                                placeholder="0.00"
-                              />
-                              <Button
-                                size="sm"
-                                variant="default"
-                                onClick={() => {
-                                  const newAmount = parseFloat(editContributionValue) || 0;
-                                  if (newAmount <= 0) {
-                                    toast({ title: language === 'en' ? 'Invalid amount' : 'Monto inválido', variant: 'destructive' });
-                                    return;
-                                  }
-                                  updateGoalMutation.mutate(
-                                    { id: goal.id, monthly_contribution: newAmount, is_active: true },
-                                    {
-                                      onSuccess: () => {
-                                        toast({ title: language === 'en' ? 'Contribution updated' : 'Contribución actualizada' });
-                                        setEditingContributionId(null);
-                                      },
+                            <div className="space-y-2">
+                              {suggestedMonthly > 0 && (
+                                <p className="text-xs text-muted-foreground">
+                                  {language === 'en' ? 'Recommended to reach goal on time:' : 'Recomendado para cumplir la meta a tiempo:'} <span className="font-semibold text-primary">{formatCurrency(suggestedMonthly)}</span>
+                                </p>
+                              )}
+                              <div className="flex items-center gap-2">
+                                <Input
+                                  type="number"
+                                  step="0.01"
+                                  value={editContributionValue}
+                                  onChange={(e) => setEditContributionValue(e.target.value)}
+                                  className="w-32 h-8 text-sm"
+                                  placeholder="0.00"
+                                />
+                                {suggestedMonthly > 0 && (
+                                  <Button size="sm" variant="ghost" className="text-xs h-8" onClick={() => setEditContributionValue(suggestedMonthly.toFixed(2))}>
+                                    {language === 'en' ? 'Use recommended' : 'Usar recomendado'}
+                                  </Button>
+                                )}
+                              </div>
+                              <div className="flex gap-2">
+                                <Button
+                                  size="sm"
+                                  variant="default"
+                                  onClick={() => {
+                                    const newAmount = parseFloat(editContributionValue) || 0;
+                                    if (newAmount <= 0) {
+                                      toast({ title: language === 'en' ? 'Invalid amount' : 'Monto inválido', variant: 'destructive' });
+                                      return;
                                     }
-                                  );
-                                }}
-                              >
-                                {language === 'en' ? 'Save' : 'Guardar'}
-                              </Button>
-                              <Button size="sm" variant="ghost" onClick={() => setEditingContributionId(null)}>
-                                {language === 'en' ? 'Cancel' : 'Cancelar'}
-                              </Button>
+                                    updateGoalMutation.mutate(
+                                      { id: goal.id, monthly_contribution: newAmount, is_active: true },
+                                      { onSuccess: () => { toast({ title: language === 'en' ? 'Contribution updated' : 'Contribución actualizada' }); setEditingContributionId(null); } }
+                                    );
+                                  }}
+                                >
+                                  {language === 'en' ? 'Save' : 'Guardar'}
+                                </Button>
+                                <Button size="sm" variant="ghost" onClick={() => setEditingContributionId(null)}>
+                                  {language === 'en' ? 'Cancel' : 'Cancelar'}
+                                </Button>
+                              </div>
                             </div>
                           ) : (
                             <div className="flex flex-wrap gap-2">
