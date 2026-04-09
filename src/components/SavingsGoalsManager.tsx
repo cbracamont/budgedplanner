@@ -55,6 +55,8 @@ export const SavingsGoalsManager = ({
   const [deleteDialogOpen, setDeleteDialogOpen] = useState(false);
   const [goalToDelete, setGoalToDelete] = useState<string | null>(null);
   const [editingGoal, setEditingGoal] = useState<SavingsGoal | null>(null);
+  const [editingContributionId, setEditingContributionId] = useState<string | null>(null);
+  const [editContributionValue, setEditContributionValue] = useState("");
   const [formData, setFormData] = useState({
     goal_name: "",
     goal_description: "",
