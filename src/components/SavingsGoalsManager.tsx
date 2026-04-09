@@ -676,7 +676,9 @@ export const SavingsGoalsManager = ({
                                     ? language === "en" ? "Insufficient Budget" : "Presupuesto Insuficiente"
                                     : language === "en" ? "Activate Monthly Contribution" : "Activar Contribución Mensual"
                                   }
-                            </Button>
+                                </Button>
+                              )}
+                            </>
                           )}
                         </div>
                       )}
