@@ -6,7 +6,7 @@ import { Label } from "@/components/ui/label";
 import { Textarea } from "@/components/ui/textarea";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger, DialogFooter, DialogDescription } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle } from "@/components/ui/alert-dialog";
-import { Target, Plus, Trash2, Pencil, TrendingDown, TrendingUp as TrendingUpIcon, CheckCircle2, PiggyBank } from "lucide-react";
+import { Target, Plus, Trash2, Pencil, TrendingDown, TrendingUp as TrendingUpIcon, CheckCircle2, PiggyBank, PauseCircle } from "lucide-react";
 import { Badge } from "@/components/ui/badge";
 import { Language } from "@/lib/i18n";
 import { useToast } from "@/hooks/use-toast";
