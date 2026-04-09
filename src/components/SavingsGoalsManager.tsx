@@ -462,11 +462,103 @@ export const SavingsGoalsManager = ({
                     </div>
 
                     {/* Action buttons */}
-                    <div className="flex flex-col sm:flex-row gap-2 pt-4 border-t border-border">
+                    <div className="flex flex-col gap-3 pt-4 border-t border-border">
                       {goal.is_active ? (
-                        <div className="flex items-center gap-2 text-sm text-success dark:text-success">
-                          <CheckCircle2 className="h-4 w-4" />
-                          <span>Active monthly contribution: {formatCurrency(goal.monthly_contribution || 0)}</span>
+                        <div className="space-y-3">
+                          <div className="flex items-center gap-2 text-sm text-success dark:text-success">
+                            <CheckCircle2 className="h-4 w-4" />
+                            <span>{language === 'en' ? 'Active monthly contribution:' : 'Contribución mensual activa:'} {formatCurrency(goal.monthly_contribution || 0)}</span>
+                          </div>
+                          
+                          {/* Edit contribution amount */}
+                          {editingContributionId === goal.id ? (
+                            <div className="flex items-center gap-2">
+                              <Input
+                                type="number"
+                                step="0.01"
+                                value={editContributionValue}
+                                onChange={(e) => setEditContributionValue(e.target.value)}
+                                className="w-32 h-8 text-sm"
+                                placeholder="0.00"
+                              />
+                              <Button
+                                size="sm"
+                                variant="default"
+                                onClick={() => {
+                                  const newAmount = parseFloat(editContributionValue) || 0;
+                                  if (newAmount <= 0) {
+                                    toast({ title: language === 'en' ? 'Invalid amount' : 'Monto inválido', variant: 'destructive' });
+                                    return;
+                                  }
+                                  updateGoalMutation.mutate(
+                                    { id: goal.id, monthly_contribution: newAmount, is_active: true },
+                                    {
+                                      onSuccess: () => {
+                                        toast({ title: language === 'en' ? 'Contribution updated' : 'Contribución actualizada' });
+                                        setEditingContributionId(null);
+                                      },
+                                    }
+                                  );
+                                }}
+                              >
+                                {language === 'en' ? 'Save' : 'Guardar'}
+                              </Button>
+                              <Button size="sm" variant="ghost" onClick={() => setEditingContributionId(null)}>
+                                {language === 'en' ? 'Cancel' : 'Cancelar'}
+                              </Button>
+                            </div>
+                          ) : (
+                            <div className="flex flex-wrap gap-2">
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="gap-1"
+                                onClick={() => {
+                                  setEditingContributionId(goal.id);
+                                  setEditContributionValue((goal.monthly_contribution || 0).toString());
+                                }}
+                              >
+                                <Pencil className="h-3 w-3" />
+                                {language === 'en' ? 'Modify' : 'Modificar'}
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="gap-1 border-warning/50 text-warning hover:bg-warning/10"
+                                onClick={() => {
+                                  updateGoalMutation.mutate(
+                                    { id: goal.id, is_active: false },
+                                    {
+                                      onSuccess: () => {
+                                        toast({ title: language === 'en' ? 'Contribution paused' : 'Contribución pausada' });
+                                      },
+                                    }
+                                  );
+                                }}
+                              >
+                                <PauseCircle className="h-3 w-3" />
+                                {language === 'en' ? 'Pause' : 'Pausar'}
+                              </Button>
+                              <Button
+                                size="sm"
+                                variant="outline"
+                                className="gap-1 border-destructive/50 text-destructive hover:bg-destructive/10"
+                                onClick={() => {
+                                  updateGoalMutation.mutate(
+                                    { id: goal.id, monthly_contribution: 0, is_active: false },
+                                    {
+                                      onSuccess: () => {
+                                        toast({ title: language === 'en' ? 'Contribution removed' : 'Contribución eliminada' });
+                                      },
+                                    }
+                                  );
+                                }}
+                              >
+                                <Trash2 className="h-3 w-3" />
+                                {language === 'en' ? 'Remove' : 'Eliminar'}
+                              </Button>
+                            </div>
+                          )}
                         </div>
                       ) : (
                         <div className="flex flex-col gap-2">
