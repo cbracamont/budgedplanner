@@ -1,0 +1,105 @@
+{
+  "version": 1,
+  "sdk_version": "0.26.1",
+  "path": "/mcp",
+  "auth": {
+    "type": "oauth",
+    "issuer": "https://eyejsldngbqnygxbgahe.supabase.co/auth/v1",
+    "accepted_audiences": [
+      "authenticated"
+    ]
+  },
+  "mcp": {
+    "server": {
+      "name": "budget-planner",
+      "version": "0.1.0",
+      "title": "Budget Planner"
+    },
+    "tools": [
+      {
+        "name": "get_budget_summary",
+        "title": "Get budget summary",
+        "description": "Summarize the signed-in user's active budget profile: total monthly income, debt minimum payments, fixed and variable expenses, savings balances and the resulting monthly cashflow.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {}
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "list_debts",
+        "title": "List debts",
+        "description": "List the debts on the signed-in user's active budget profile with balance, APR, minimum payment and payment day.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {}
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "list_savings_goals",
+        "title": "List savings goals",
+        "description": "List the savings goals on the signed-in user's active budget profile with progress, monthly contribution and target date.",
+        "annotations": {
+          "readOnlyHint": true,
+          "idempotentHint": true,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "$schema": "http://json-schema.org/draft-07/schema#",
+          "type": "object",
+          "properties": {}
+        },
+        "outputSchema": null
+      },
+      {
+        "name": "add_variable_expense",
+        "title": "Add variable expense",
+        "description": "Record a one-off variable expense on the signed-in user's active budget profile.",
+        "annotations": {
+          "readOnlyHint": false,
+          "destructiveHint": false,
+          "openWorldHint": false
+        },
+        "inputSchema": {
+          "type": "object",
+          "properties": {
+            "name": {
+              "type": "string",
+              "minLength": 1,
+              "description": "What the expense was for, e.g. 'Groceries'."
+            },
+            "amount": {
+              "type": "number",
+              "exclusiveMinimum": 0,
+              "description": "Expense amount in GBP."
+            },
+            "date": {
+              "type": "string",
+              "description": "Date of the expense as YYYY-MM-DD. Defaults to today."
+            }
+          },
+          "required": [
+            "name",
+            "amount"
+          ],
+          "additionalProperties": false,
+          "$schema": "http://json-schema.org/draft-07/schema#"
+        },
+        "outputSchema": null
+      }
+    ]
+  }
+}
