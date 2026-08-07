@@ -15,7 +15,7 @@ import {
   sub,
   startOfWeek,
 } from "date-fns";
-import { formatCurrency } from "@/lib/i18n";
+import { formatCurrency, getTranslation } from "@/lib/i18n";
 import {
   TrendingUp,
   Download,
