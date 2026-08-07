@@ -116,6 +116,11 @@ const buildSeed = (): GuestDB => {
       base({ profile_id: profileId, category_id: transportId, name: "Fuel", amount: 90, date: dateOnly(new Date(now.getFullYear(), now.getMonth(), 8)) }),
       base({ profile_id: profileId, category_id: leisureId, name: "Dining out", amount: 75, date: dateOnly(new Date(now.getFullYear(), now.getMonth(), 12)) }),
     ],
+    category_budgets: [
+      base({ profile_id: profileId, category_id: groceriesId, month_year: dateOnly(new Date(now.getFullYear(), now.getMonth(), 1)), limit_amount: 400 }),
+      base({ profile_id: profileId, category_id: transportId, month_year: dateOnly(new Date(now.getFullYear(), now.getMonth(), 1)), limit_amount: 100 }),
+      base({ profile_id: profileId, category_id: leisureId, month_year: dateOnly(new Date(now.getFullYear(), now.getMonth(), 1)), limit_amount: 80 }),
+    ],
     variable_income: [],
     debts: [
       base({

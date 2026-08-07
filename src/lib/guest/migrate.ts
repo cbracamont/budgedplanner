@@ -92,6 +92,23 @@ export const migrateGuestData = async (): Promise<{ migrated: number }> => {
     const { error } = await supabase.from("variable_expenses").insert(payload as any);
     if (!error) migrated += payload.length;
   }
+  // 5. Category budgets need the remapped category and profile
+  const categoryBudgets = db.category_budgets ?? [];
+  if (categoryBudgets.length) {
+    const payload = categoryBudgets
+      .filter((row) => !row.category_id || categoryMap.has(row.category_id))
+      .map((row) => ({
+        ...strip(row),
+        user_id: user.id,
+        profile_id: profileMap.get(row.profile_id) ?? firstProfileId,
+        category_id: row.category_id ? categoryMap.get(row.category_id) ?? null : null,
+      }));
+    if (payload.length) {
+      const { error } = await supabase.from("category_budgets").insert(payload as any);
+      if (!error) migrated += payload.length;
+    }
+  }
+
 
   // Debt payment history is intentionally not copied: demo balances already
   // reflect those payments, and re-inserting them would decrement twice.

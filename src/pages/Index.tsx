@@ -77,6 +77,7 @@ import { FixedExpensesTracker } from "@/components/FixedExpensesTracker";
 import { VariableExpensesManager } from "@/components/VariableExpensesManager";
 import { MonthlyVariableIncomeTracker } from "@/components/MonthlyVariableIncomeTracker";
 import { VariableExpensesTracker } from "@/components/MonthlyVariableExpensesTracker";
+import { CategoryBudgetsManager } from "@/components/CategoryBudgetsManager";
 import { SavingsGoalsManager } from "@/components/SavingsGoalsManager";
 import { MonthlyPaymentTracker } from "@/components/MonthlyPaymentTracker";
 import { GeneralSavingsTracker } from "@/components/GeneralSavingsTracker";
@@ -2065,12 +2066,16 @@ const Index = () => {
                 <TabsList>
                   <TabsTrigger value="fixed">Fixed</TabsTrigger>
                   <TabsTrigger value="variable">Variable</TabsTrigger>
+                  <TabsTrigger value="budgets">Budgets</TabsTrigger>
                 </TabsList>
                 <TabsContent value="fixed">
                   <FixedExpensesTracker language={language} />
                 </TabsContent>
                 <TabsContent value="variable">
                   <VariableExpensesTracker language={language} />
+                </TabsContent>
+                <TabsContent value="budgets">
+                  <CategoryBudgetsManager language={language} />
                 </TabsContent>
               </Tabs>
             </TabsContent>
