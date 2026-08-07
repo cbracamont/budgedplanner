@@ -778,7 +778,17 @@ export const translations = {
     displayName: "Nome de exibição",
     create: "Criar",
     cancel: "Cancelar",
+
+    // Modo convidado / demo
+    guestModeTry: "Explorar com dados de demonstração",
+    guestModeHint: "Sem conta. Os dados ficam neste dispositivo e podem ir para a sua conta depois.",
+    guestModeBannerText: "Modo demo: os dados são salvos apenas neste dispositivo. Crie uma conta para mantê-los.",
+    guestModeCreateAccount: "Criar conta e salvar dados",
+    guestModeReset: "Redefinir dados de demonstração",
+    guestModeExit: "Sair do demo",
+    guestModeMigrated: "Os seus dados de demonstração foram movidos para a sua conta.",
   }
+
 };
 
 export const getTranslation = (lang: Language, key: string): string => {
