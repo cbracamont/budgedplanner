@@ -254,7 +254,17 @@ export const translations = {
     displayName: "Display name",
     create: "Create",
     cancel: "Cancel",
+
+    // Guest / demo mode
+    guestModeTry: "Explore with demo data",
+    guestModeHint: "No account needed. Data stays on this device and can be moved to your account later.",
+    guestModeBannerText: "Demo mode: data is saved only on this device. Create an account to keep it.",
+    guestModeCreateAccount: "Create account & save data",
+    guestModeReset: "Reset demo data",
+    guestModeExit: "Exit demo",
+    guestModeMigrated: "Your demo data was moved to your account.",
   },
+
   es: {
     // App title
     appTitle: "Presupuesto Familiar UK",
