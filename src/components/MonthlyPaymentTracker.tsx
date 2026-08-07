@@ -48,7 +48,6 @@ import {
 import { useDeleteDebtPayment } from "@/hooks/useDebtPayments";
 import { useIncomeSources, useDebts, useFixedExpenses, useSavingsGoals } from "@/hooks/useFinancialData";
 import { useActiveProfile } from "@/hooks/useFinancialProfiles";
-import { supabase } from "@/integrations/supabase/client";
 import { Progress } from "@/components/ui/progress";
 import { formatCurrency } from "@/lib/i18n";
 import { format, startOfMonth, addMonths, subMonths, isPast } from "date-fns";
@@ -305,26 +304,13 @@ export const MonthlyPaymentTracker = ({ language }: MonthlyPaymentTrackerProps) 
         },
       );
     } else {
+      // NOTE: we intentionally do NOT also insert into `debt_payments` here.
+      // `payment_tracker` is the source of truth for tracked monthly payments and
+      // is already discounted from the debt balance in the UI (getAdjustedBalance).
+      // Writing both tables listed the same payment twice and reduced the balance twice.
       addMutation.mutate(entry, {
-        onSuccess: async () => {
-          // Create a debt_payment record to update the balance via trigger
-          try {
-            const {
-              data: { user },
-            } = await supabase.auth.getUser();
-            if (user) {
-              await supabase.from("debt_payments").insert({
-                user_id: user.id,
-                profile_id: activeProfile?.id || null,
-                debt_id: formData.source_id,
-                amount: parseFloat(formData.amount),
-                payment_date: formData.payment_date,
-                notes: formData.notes || undefined,
-              });
-            }
-          } catch (error) {
-            console.error("Error creating debt payment:", error);
-          }
+        onSuccess: () => {
+
 
           toast({
             title: "Success",
