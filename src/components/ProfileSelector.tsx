@@ -78,17 +78,20 @@ export const ProfileSelector = ({ language }: ProfileSelectorProps) => {
         <div className="space-y-4">
           {profiles && profiles.length > 0 && (
             <div className="space-y-2">
-              {profiles.map((profile) => (
+              {profiles.map((profile) => {
+                const isSelected = activeProfile?.id === profile.id;
+                return (
                 <Card
                   key={profile.id}
                   className={`p-3 transition-colors ${
-                    profile.is_active ? "bg-primary/10 border-primary" : "hover:bg-muted"
+                    isSelected ? "bg-primary/10 border-primary" : "hover:bg-muted"
                   } ${editingId === profile.id ? "" : "cursor-pointer"}`}
-                  onClick={() => !profile.is_active && editingId !== profile.id && setActiveProfile.mutate(profile.id)}
+                  onClick={() => !isSelected && editingId !== profile.id && setActiveProfile.mutate(profile.id)}
                 >
                   <div className="flex items-center justify-between">
                     <div className="flex items-center gap-2 flex-1">
-                      {profile.is_active && <Check className="h-4 w-4 text-primary" />}
+                      {isSelected && <Check className="h-4 w-4 text-primary" />}
+
                       <div className="flex-1">
                         {editingId === profile.id ? (
                           <Input
