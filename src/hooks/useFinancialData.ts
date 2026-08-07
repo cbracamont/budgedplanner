@@ -381,21 +381,22 @@ export const useAddVariableExpense = () => {
   const { data: activeProfile } = useActiveProfile();
   
   return useMutation({
-    mutationFn: async (expense: { name: string; amount: number }) => {
+    mutationFn: async (expense: { name: string; amount: number; category_id?: string | null }) => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error('No user');
       if (!activeProfile) throw new Error('No active profile');
       
-      // Validate input
-      const validated = variableExpenseInputSchema.parse(expense);
+      // Validate input (category_id is handled separately so it can be cleared)
+      const { category_id, ...rest } = expense;
+      const validated = variableExpenseInputSchema.parse(rest);
       
       const { error } = await supabase.from('variable_expenses').insert([{
         user_id: user.id,
         profile_id: activeProfile.id,
         amount: validated.amount,
+        category_id: category_id ?? null,
         ...(validated.name && { name: validated.name }),
         ...(validated.date && { date: validated.date }),
-        ...(validated.category_id && { category_id: validated.category_id }),
       }]);
       
       if (error) throw error;
@@ -415,13 +416,14 @@ export const useUpdateVariableExpense = () => {
   const { toast } = useToast();
   
   return useMutation({
-    mutationFn: async ({ id, ...updates }: { id: string; name: string; amount: number }) => {
-      // Validate input
-      const validated = variableExpenseInputSchema.partial().parse(updates);
-      
+    mutationFn: async ({ id, ...updates }: { id: string; name: string; amount: number; category_id?: string | null }) => {
+      // Validate input (category_id is handled separately so it can be cleared)
+      const { category_id, ...rest } = updates;
+      const validated = variableExpenseInputSchema.partial().parse(rest);
+
       const { error } = await supabase
         .from('variable_expenses')
-        .update(validated)
+        .update({ ...validated, ...(category_id !== undefined && { category_id }) })
         .eq('id', id);
       
       if (error) throw error;

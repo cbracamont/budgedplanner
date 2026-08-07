@@ -122,6 +122,54 @@ export type Database = {
         }
         Relationships: []
       }
+      category_budgets: {
+        Row: {
+          category_id: string | null
+          created_at: string
+          id: string
+          limit_amount: number
+          month_year: string
+          profile_id: string | null
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          category_id?: string | null
+          created_at?: string
+          id?: string
+          limit_amount?: number
+          month_year: string
+          profile_id?: string | null
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          category_id?: string | null
+          created_at?: string
+          id?: string
+          limit_amount?: number
+          month_year?: string
+          profile_id?: string | null
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "category_budgets_category_id_fkey"
+            columns: ["category_id"]
+            isOneToOne: false
+            referencedRelation: "variable_expense_categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "category_budgets_profile_id_fkey"
+            columns: ["profile_id"]
+            isOneToOne: false
+            referencedRelation: "financial_profiles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       category_names: {
         Row: {
           category_key: string

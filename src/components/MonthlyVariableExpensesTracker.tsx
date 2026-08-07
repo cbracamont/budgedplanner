@@ -9,6 +9,9 @@ import { ChevronLeft, ChevronRight, Plus, Edit2, Trash2, Receipt } from "lucide-
 import { format, addMonths, subMonths, startOfMonth, endOfMonth, isBefore, isAfter } from "date-fns";
 import { formatCurrency, Language } from "@/lib/i18n";
 import { useVariableExpenses, useAddVariableExpense, useUpdateVariableExpense, useDeleteVariableExpense } from "@/hooks/useFinancialData";
+import { useExpenseCategories } from "@/hooks/useCategoryBudgets";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { Badge } from "@/components/ui/badge";
 
 interface VariableExpensesTrackerProps {
   language?: Language;
@@ -20,9 +23,12 @@ export const VariableExpensesTracker = ({ language = "en" }: VariableExpensesTra
   const [isEditDialogOpen, setIsEditDialogOpen] = useState(false);
   const [deleteId, setDeleteId] = useState<string | null>(null);
   const [editingExpense, setEditingExpense] = useState<any | null>(null);
-  const [formData, setFormData] = useState({ name: "", amount: "" });
+  const [formData, setFormData] = useState({ name: "", amount: "", categoryId: "none" });
 
   const { data: allExpenses = [], isLoading } = useVariableExpenses();
+  const { data: categories = [] } = useExpenseCategories();
+  const categoryName = (id: string | null | undefined) =>
+    categories.find((c) => c.id === id)?.name ?? null;
   const addMutation = useAddVariableExpense();
   const updateMutation = useUpdateVariableExpense();
   const deleteMutation = useDeleteVariableExpense();
@@ -45,21 +51,25 @@ export const VariableExpensesTracker = ({ language = "en" }: VariableExpensesTra
   const handleNextMonth = () => setCurrentMonth(prev => addMonths(prev, 1));
 
   const handleAdd = () => {
-    setFormData({ name: "", amount: "" });
+    setFormData({ name: "", amount: "", categoryId: "none" });
     setIsAddDialogOpen(true);
   };
 
   const handleSaveNew = () => {
     const amount = parseFloat(formData.amount);
     if (!formData.name || isNaN(amount) || amount <= 0) return;
-    addMutation.mutate({ name: formData.name, amount });
+    addMutation.mutate({
+      name: formData.name,
+      amount,
+      category_id: formData.categoryId === "none" ? null : formData.categoryId,
+    });
     setIsAddDialogOpen(false);
-    setFormData({ name: "", amount: "" });
+    setFormData({ name: "", amount: "", categoryId: "none" });
   };
 
   const handleEdit = (expense: any) => {
     setEditingExpense(expense);
-    setFormData({ name: expense.name || "", amount: expense.amount.toString() });
+    setFormData({ name: expense.name || "", amount: expense.amount.toString(), categoryId: expense.category_id || "none" });
     setIsEditDialogOpen(true);
   };
 
@@ -67,10 +77,15 @@ export const VariableExpensesTracker = ({ language = "en" }: VariableExpensesTra
     if (!editingExpense) return;
     const amount = parseFloat(formData.amount);
     if (!formData.name || isNaN(amount) || amount <= 0) return;
-    updateMutation.mutate({ id: editingExpense.id, name: formData.name, amount });
+    updateMutation.mutate({
+      id: editingExpense.id,
+      name: formData.name,
+      amount,
+      category_id: formData.categoryId === "none" ? null : formData.categoryId,
+    });
     setIsEditDialogOpen(false);
     setEditingExpense(null);
-    setFormData({ name: "", amount: "" });
+    setFormData({ name: "", amount: "", categoryId: "none" });
   };
 
   const handleDelete = (id: string) => setDeleteId(id);
@@ -86,6 +101,8 @@ export const VariableExpensesTracker = ({ language = "en" }: VariableExpensesTra
     en: {
       title: "Monthly Variable Expenses",
       addExpense: "Add Expense",
+      category: "Category",
+      noCategory: "No category",
       name: "Name",
       amount: "Amount",
       save: "Save",
@@ -100,6 +117,8 @@ export const VariableExpensesTracker = ({ language = "en" }: VariableExpensesTra
     es: {
       title: "Gastos Variables Mensuales",
       addExpense: "Agregar Gasto",
+      category: "Categoría",
+      noCategory: "Sin categoría",
       name: "Nombre",
       amount: "Monto",
       save: "Guardar",
@@ -114,6 +133,8 @@ export const VariableExpensesTracker = ({ language = "en" }: VariableExpensesTra
     pt: {
       title: "Despesas Variáveis Mensais",
       addExpense: "Adicionar Despesa",
+      category: "Categoria",
+      noCategory: "Sem categoria",
       name: "Nome",
       amount: "Valor",
       save: "Guardar",
@@ -174,6 +195,9 @@ export const VariableExpensesTracker = ({ language = "en" }: VariableExpensesTra
                   <div className="flex-1">
                     <div className="flex items-center gap-2">
                       <p className="font-semibold">{expense.name || "Unnamed"}</p>
+                      {categoryName(expense.category_id) && (
+                        <Badge variant="secondary" className="text-xs">{categoryName(expense.category_id)}</Badge>
+                      )}
                       <span className="text-xs text-muted-foreground">
                         {translations.added} {format(new Date(expense.updated_at), "dd/MM/yyyy")}
                       </span>
@@ -211,6 +235,20 @@ export const VariableExpensesTracker = ({ language = "en" }: VariableExpensesTra
               />
             </div>
             <div>
+              <Label htmlFor="add-category">{translations.category}</Label>
+              <Select value={formData.categoryId} onValueChange={(value) => setFormData({ ...formData, categoryId: value })}>
+                <SelectTrigger id="add-category">
+                  <SelectValue placeholder={translations.category} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">{translations.noCategory}</SelectItem>
+                  {categories.map((category) => (
+                    <SelectItem key={category.id} value={category.id}>{category.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
+            </div>
+            <div>
               <Label htmlFor="add-amount">{translations.amount}</Label>
               <Input
                 id="add-amount"
@@ -244,6 +282,20 @@ export const VariableExpensesTracker = ({ language = "en" }: VariableExpensesTra
                 value={formData.name}
                 onChange={(e) => setFormData({ ...formData, name: e.target.value })}
               />
+            </div>
+            <div>
+              <Label htmlFor="edit-category">{translations.category}</Label>
+              <Select value={formData.categoryId} onValueChange={(value) => setFormData({ ...formData, categoryId: value })}>
+                <SelectTrigger id="edit-category">
+                  <SelectValue placeholder={translations.category} />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="none">{translations.noCategory}</SelectItem>
+                  {categories.map((category) => (
+                    <SelectItem key={category.id} value={category.id}>{category.name}</SelectItem>
+                  ))}
+                </SelectContent>
+              </Select>
             </div>
             <div>
               <Label htmlFor="edit-amount">{translations.amount}</Label>
