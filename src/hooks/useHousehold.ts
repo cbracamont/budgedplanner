@@ -113,11 +113,16 @@ export const useCreateHousehold = () => {
 
       if (roleError) throw roleError;
 
+      // Create the shared family profile so every member works on the same data
+      await supabase.rpc("ensure_household_shared_profile", { _household_id: householdId });
+
       return householdId;
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["my-household"] });
       queryClient.invalidateQueries({ queryKey: ["household-members"] });
+      queryClient.invalidateQueries({ queryKey: ["financial-profiles"] });
+      queryClient.invalidateQueries({ queryKey: ["active-profile"] });
       toast.success("Hogar creado exitosamente");
     },
     onError: () => {
@@ -125,6 +130,7 @@ export const useCreateHousehold = () => {
     },
   });
 };
+
 
 export const useJoinHousehold = () => {
   const queryClient = useQueryClient();
