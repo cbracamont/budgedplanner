@@ -254,7 +254,17 @@ export const translations = {
     displayName: "Display name",
     create: "Create",
     cancel: "Cancel",
+
+    // Guest / demo mode
+    guestModeTry: "Explore with demo data",
+    guestModeHint: "No account needed. Data stays on this device and can be moved to your account later.",
+    guestModeBannerText: "Demo mode: data is saved only on this device. Create an account to keep it.",
+    guestModeCreateAccount: "Create account & save data",
+    guestModeReset: "Reset demo data",
+    guestModeExit: "Exit demo",
+    guestModeMigrated: "Your demo data was moved to your account.",
   },
+
   es: {
     // App title
     appTitle: "Presupuesto Familiar UK",
@@ -506,7 +516,17 @@ export const translations = {
     displayName: "Nombre para mostrar",
     create: "Crear",
     cancel: "Cancelar",
+
+    // Modo invitado / demo
+    guestModeTry: "Explorar con datos de demo",
+    guestModeHint: "Sin cuenta. Los datos quedan en este dispositivo y podrás pasarlos a tu cuenta más tarde.",
+    guestModeBannerText: "Modo demo: los datos solo se guardan en este dispositivo. Crea una cuenta para conservarlos.",
+    guestModeCreateAccount: "Crear cuenta y guardar datos",
+    guestModeReset: "Reiniciar datos de demo",
+    guestModeExit: "Salir del demo",
+    guestModeMigrated: "Tus datos de demo se movieron a tu cuenta.",
   },
+
   pt: {
     // App title
     appTitle: "Orçamento Familiar UK",
@@ -758,7 +778,17 @@ export const translations = {
     displayName: "Nome de exibição",
     create: "Criar",
     cancel: "Cancelar",
+
+    // Modo convidado / demo
+    guestModeTry: "Explorar com dados de demonstração",
+    guestModeHint: "Sem conta. Os dados ficam neste dispositivo e podem ir para a sua conta depois.",
+    guestModeBannerText: "Modo demo: os dados são salvos apenas neste dispositivo. Crie uma conta para mantê-los.",
+    guestModeCreateAccount: "Criar conta e salvar dados",
+    guestModeReset: "Redefinir dados de demonstração",
+    guestModeExit: "Sair do demo",
+    guestModeMigrated: "Os seus dados de demonstração foram movidos para a sua conta.",
   }
+
 };
 
 export const getTranslation = (lang: Language, key: string): string => {

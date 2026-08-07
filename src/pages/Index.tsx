@@ -15,7 +15,7 @@ import {
   sub,
   startOfWeek,
 } from "date-fns";
-import { formatCurrency } from "@/lib/i18n";
+import { formatCurrency, getTranslation } from "@/lib/i18n";
 import {
   TrendingUp,
   Download,
@@ -67,6 +67,10 @@ import { useMonthlyVariableExpensesTotal } from "@/hooks/useMonthlyVariableExpen
 import { toast } from "@/hooks/use-toast";
 import { useFinancialProfiles } from "@/hooks/useFinancialProfiles";
 import { Auth } from "@/components/Auth";
+import { GuestModeBanner } from "@/components/GuestModeBanner";
+import { hasPendingMigration, isGuestMode } from "@/lib/guest/store";
+import { migrateGuestData } from "@/lib/guest/migrate";
+
 import { IncomeManager } from "@/components/IncomeManager";
 import { DebtsManager } from "@/components/DebtsManager";
 import { FixedExpensesTracker } from "@/components/FixedExpensesTracker";
@@ -706,6 +710,25 @@ const Index = () => {
     });
     return () => subscription.unsubscribe();
   }, []);
+
+  // Move locally stored demo data into the account right after signing up/in.
+  useEffect(() => {
+    if (!user || isGuestMode() || !hasPendingMigration()) return;
+    let cancelled = false;
+    migrateGuestData()
+      .then(({ migrated }) => {
+        if (cancelled || migrated === 0) return;
+        queryClient.invalidateQueries();
+        toast({ title: getTranslation(language, "guestModeMigrated") });
+      })
+      .catch(() => {
+        /* keep the local data so the user can retry */
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [user]);
+
   if (authLoading)
     return (
       <div className="p-8">
@@ -993,6 +1016,8 @@ const Index = () => {
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-slate-900 dark:to-slate-800">
         <ScrollToTop />
         <div className="max-w-7xl mx-auto p-6 space-y-8">
+          {isGuestMode() && <GuestModeBanner language={language} />}
+
           {/* HEADER */}
           <div className="no-print flex justify-between items-center mb-8">
             <div>

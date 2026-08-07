@@ -10,8 +10,10 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { AlertCircle, Mail, Lock, User, Chrome, Phone } from "lucide-react";
+import { AlertCircle, Mail, Lock, User, Chrome, Phone, FlaskConical } from "lucide-react";
 import { useTheme } from "@/hooks/useTheme";
+import { seedGuestData, setGuestMode } from "@/lib/guest/store";
+
 
 // NUEVO: Tipo ampliado para LanguageToggle
 type Language = "en" | "es" | "pt";
@@ -142,7 +144,15 @@ export const Auth = () => {
     }
   };
 
+  const startGuestMode = () => {
+    // Fresh demo dataset stored locally; migrated on sign up.
+    if (!localStorage.getItem("guest-demo-db")) seedGuestData();
+    setGuestMode(true);
+    window.location.reload();
+  };
+
   const signInWithGoogle = async () => {
+
     setLoading(true);
     try {
       const { error } = await supabase.auth.signInWithOAuth({
@@ -331,7 +341,21 @@ export const Auth = () => {
               <Chrome className="mr-2 h-4 w-4" />
               Continue with Google
             </Button>
+
+            <Button
+              variant="secondary"
+              className="mt-3 w-full"
+              onClick={startGuestMode}
+              disabled={loading}
+            >
+              <FlaskConical className="mr-2 h-4 w-4" />
+              Explore with demo data
+            </Button>
+            <p className="mt-2 text-xs text-center text-muted-foreground">
+              No account needed. Data stays on this device and can be moved to your account later.
+            </p>
           </div>
+
 
           {isLogin && authMethod === "email" && (
             <div className="mt-4 text-center">

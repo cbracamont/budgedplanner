@@ -13,8 +13,13 @@ import Privacy from "./pages/Privacy";
 import Terms from "./pages/Terms";
 import ResetPassword from "./pages/ResetPassword";
 import OAuthConsent from "./pages/OAuthConsent";
+import { installGuestShim } from "@/lib/guest/shim";
+
+// Must run before React renders so every hook sees the demo data layer.
+installGuestShim();
 
 const queryClient = new QueryClient();
+
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
