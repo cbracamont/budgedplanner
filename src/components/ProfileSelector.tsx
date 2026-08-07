@@ -104,11 +104,17 @@ export const ProfileSelector = ({ language }: ProfileSelectorProps) => {
                           />
                         ) : (
                           <>
-                            <p className="font-medium">{profile.name}</p>
+                            <div className="flex items-center gap-2">
+                              <p className="font-medium">{profile.name}</p>
+                              {profile.household_id && (
+                                <span className="rounded-full bg-primary/15 px-2 py-0.5 text-[10px] font-semibold uppercase text-primary">
+                                  {getTranslation(language, "shared")}
+                                </span>
+                              )}
+                            </div>
                             <p className="text-xs text-muted-foreground capitalize">{profile.type}</p>
                           </>
-                        )}
-                      </div>
+
                     </div>
                     <div className="flex gap-1">
                       {editingId === profile.id ? (
