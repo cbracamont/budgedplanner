@@ -1,7 +1,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { BarChart, Bar, PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip, XAxis, YAxis } from "recharts";
 import { TrendingUp } from "lucide-react";
-import { Language } from "@/lib/i18n";
+import { Language, formatCurrency } from "@/lib/i18n";
 
 interface FinancialChartsProps {
   totalIncome: number;
