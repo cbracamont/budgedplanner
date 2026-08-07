@@ -1,10 +1,10 @@
 import { useState, useEffect } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogFooter } from "@/components/ui/dialog";
 import { ShoppingCart, Trash2, Plus, Pencil } from "lucide-react";
+import { SectionCard, SectionEmpty, SectionLoading } from "@/components/ui/section-card";
 import { getTranslation, Language } from "@/lib/i18n";
 import { useToast } from "@/hooks/use-toast";
 import { useVariableExpenses, useAddVariableExpense, useUpdateVariableExpense, useDeleteVariableExpense } from "@/hooks/useFinancialData";
@@ -23,7 +23,7 @@ interface VariableExpensesManagerProps {
 export const VariableExpensesManager = ({ onExpensesChange, language }: VariableExpensesManagerProps) => {
   const t = (key: string) => getTranslation(language, key);
   const { toast } = useToast();
-  const { data: expenses = [] } = useVariableExpenses();
+  const { data: expenses = [], isLoading } = useVariableExpenses();
   const addExpenseMutation = useAddVariableExpense();
   const updateExpenseMutation = useUpdateVariableExpense();
   const deleteExpenseMutation = useDeleteVariableExpense();
@@ -71,17 +71,12 @@ export const VariableExpensesManager = ({ onExpensesChange, language }: Variable
   };
 
   return (
-    <Card className="shadow-medium border-warning/20">
-      <CardHeader className="bg-muted/50 border-b">
-        <div className="flex items-center gap-2">
-          <ShoppingCart className="h-5 w-5 text-primary" />
-          <CardTitle>{t('variableExpenses')}</CardTitle>
-        </div>
-        <CardDescription>
-          {language === 'en' ? 'Manage your monthly variable expenses' : 'Gestiona tus gastos variables mensuales'}
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="pt-6 space-y-6">
+    <SectionCard
+      accent="expense"
+      icon={ShoppingCart}
+      title={t('variableExpenses')}
+      description={language === 'en' ? 'Manage your monthly variable expenses' : language === 'pt' ? 'Gerencie as suas despesas variáveis mensais' : 'Gestiona tus gastos variables mensuales'}
+    >
         {/* Add Expense */}
         <div className="space-y-3">
           <Label className="text-base font-semibold">
@@ -113,7 +108,15 @@ export const VariableExpensesManager = ({ onExpensesChange, language }: Variable
         </div>
 
         {/* Expenses List */}
-        {expenses.length > 0 && (
+        {isLoading ? (
+          <SectionLoading />
+        ) : expenses.length === 0 ? (
+          <SectionEmpty
+            icon={ShoppingCart}
+            title={t('emptyVariableExpensesTitle')}
+            description={t('emptyVariableExpensesDesc')}
+          />
+        ) : (
           <div className="space-y-3 pt-4 border-t">
             <Label className="text-base font-semibold">
               {language === 'en' ? 'Current Expenses' : 'Gastos Actuales'}
@@ -186,7 +189,6 @@ export const VariableExpensesManager = ({ onExpensesChange, language }: Variable
             </DialogFooter>
           </DialogContent>
         </Dialog>
-      </CardContent>
-    </Card>
+    </SectionCard>
   );
 };
