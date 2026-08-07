@@ -67,6 +67,10 @@ import { useMonthlyVariableExpensesTotal } from "@/hooks/useMonthlyVariableExpen
 import { toast } from "@/hooks/use-toast";
 import { useFinancialProfiles } from "@/hooks/useFinancialProfiles";
 import { Auth } from "@/components/Auth";
+import { GuestModeBanner } from "@/components/GuestModeBanner";
+import { hasPendingMigration, isGuestMode } from "@/lib/guest/store";
+import { migrateGuestData } from "@/lib/guest/migrate";
+
 import { IncomeManager } from "@/components/IncomeManager";
 import { DebtsManager } from "@/components/DebtsManager";
 import { FixedExpensesTracker } from "@/components/FixedExpensesTracker";
