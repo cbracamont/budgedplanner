@@ -144,7 +144,15 @@ export const Auth = () => {
     }
   };
 
+  const startGuestMode = () => {
+    // Fresh demo dataset stored locally; migrated on sign up.
+    if (!localStorage.getItem("guest-demo-db")) seedGuestData();
+    setGuestMode(true);
+    window.location.reload();
+  };
+
   const signInWithGoogle = async () => {
+
     setLoading(true);
     try {
       const { error } = await supabase.auth.signInWithOAuth({
