@@ -75,11 +75,13 @@ export const useCreateHousehold = () => {
       if (!user) throw new Error("No user found");
 
       // Check if user is already in a household
-      const { data: existingMembership } = await supabase
+      const { data: existingMembership, error: membershipError } = await supabase
         .from("household_members")
         .select("id")
         .eq("user_id", user.id)
-        .single();
+        .maybeSingle();
+
+      if (membershipError) throw membershipError;
 
       if (existingMembership) {
         throw new Error("Ya eres miembro de un hogar");
