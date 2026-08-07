@@ -160,7 +160,9 @@ export const ProfileSelector = ({ language }: ProfileSelectorProps) => {
                     </div>
                   </div>
                 </Card>
-              ))}
+                );
+              })}
+
             </div>
           )}
 
