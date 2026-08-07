@@ -128,6 +128,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import type { Language } from "@/lib/i18n";
+import { sumMonthlyFixedExpenses } from "@/lib/budgetMath";
 type DebtMethod = "avalanche" | "snowball" | "hybrid";
 type Event = {
   id: string;
@@ -397,26 +398,10 @@ const Index = () => {
     const totalVariableIncome = currentMonthVariableIncome;
     const totalIncome = totalFixedIncome + totalVariableIncome;
     // Fixed expenses: respect frequency_type/payment_month so quarterly,
-    // semiannual and annual expenses are only counted in the months they are due
-    // (same rule used to build the calendar events below).
+    // semiannual and annual expenses are only counted in the months they are due,
+    // and weekly/bi-weekly ones are converted to their monthly equivalent.
     const currentMonthNum = new Date().getMonth() + 1;
-    const isFixedExpenseDueInMonth = (exp: { frequency_type?: string | null; payment_month?: number | null }, monthNum: number) => {
-      const firstMonth = exp.payment_month || 1;
-      switch (exp.frequency_type) {
-        case "quarterly":
-          return [0, 3, 6, 9].some((offset) => ((firstMonth + offset - 1) % 12) + 1 === monthNum);
-        case "semiannual":
-          return [0, 6].some((offset) => ((firstMonth + offset - 1) % 12) + 1 === monthNum);
-        case "annual":
-          return firstMonth === monthNum;
-        default:
-          return true;
-      }
-    };
-    const totalFixed = fixedExpensesData.reduce(
-      (s, e) => (isFixedExpenseDueInMonth(e, currentMonthNum) ? s + e.amount : s),
-      0,
-    );
+    const totalFixed = sumMonthlyFixedExpenses(fixedExpensesData, currentMonthNum);
 
     // Use monthly variable expenses from database instead of regular variable expenses
     const totalVariable = currentMonthVariableExpenses;
@@ -2259,15 +2244,21 @@ const DebtPlanner = ({
   const { data: fixedExpensesData = [] } = useFixedExpenses();
   const { data: variableExpensesData = [] } = useVariableExpenses();
   const { data: savings } = useSavings();
+  const { data: savingsGoalsData = [] } = useSavingsGoals();
   const { totalIncome, totalFixed, totalVariable, totalDebtPayment, totalExpenses, cashFlow, savingsTotal } =
     useMemo(() => {
+      // Same rules as the Overview tab so both tabs never disagree.
+      const currentMonthNum = new Date().getMonth() + 1;
       const totalIncome = incomeData.reduce((s, i) => s + i.amount, 0);
-      const totalFixed = fixedExpensesData.reduce((s, e) => s + e.amount, 0);
+      const totalFixed = sumMonthlyFixedExpenses(fixedExpensesData, currentMonthNum);
       const totalVariable = variableExpensesData.reduce((s, e) => s + e.amount, 0);
       const activeDebts = debtData.filter((d) => d.balance > 0 && d.minimum_payment > 0);
       const totalDebtPayment = activeDebts.reduce((s, d) => s + d.minimum_payment, 0);
       const totalExpenses = totalFixed + totalVariable + totalDebtPayment;
-      const cashFlow = totalIncome - totalExpenses;
+      const savingsCommitments = savingsGoalsData
+        .filter((g) => g.is_active && g.monthly_contribution)
+        .reduce((s, g) => s + (g.monthly_contribution || 0), 0);
+      const cashFlow = totalIncome - totalExpenses - savingsCommitments;
       const savingsTotal = savings?.emergency_fund || 0;
       return {
         totalIncome,
@@ -2278,58 +2269,22 @@ const DebtPlanner = ({
         cashFlow,
         savingsTotal,
       };
-    }, [incomeData, debtData, fixedExpensesData, variableExpensesData, savings]);
+    }, [incomeData, debtData, fixedExpensesData, variableExpensesData, savings, savingsGoalsData]);
+  // Only the ordering is used here; the real amortization (with surplus and freed-up
+  // minimums redistributed) lives in SimplifiedDebtPriority, so no second engine.
   const debtStrategy = useMemo(() => {
     const activeDebts = debtData.filter((d) => d.balance > 0 && d.minimum_payment > 0);
     if (activeDebts.length === 0) return null;
 
-    // NO aplicar automáticamente el excedente del cashflow a las deudas
-    // Solo usar pagos mínimos
-    const extraForDebt = 0;
     const sortFn =
       debtMethod === "avalanche"
         ? (a, b) => b.apr - a.apr
         : debtMethod === "snowball"
           ? (a, b) => a.balance - b.balance
           : (a, b) => b.apr * 0.6 + (b.balance / 1000) * 0.4 - (a.apr * 0.6 + (a.balance / 1000) * 0.4);
-    const sortedDebts = [...activeDebts].sort(sortFn);
-    let remainingBalances = sortedDebts.map((d) => ({
-      ...d,
-      balance: d.balance,
-    }));
-    let months = 0;
-    let totalInterest = 0;
-    let allocation = sortedDebts.map((d) => ({
-      name: d.name,
-      minPayment: d.minimum_payment,
-      extra: 0,
-      totalPayment: d.minimum_payment,
-    }));
-    while (remainingBalances.some((d) => d.balance > 0) && months < 120) {
-      let monthlyInterest = 0;
-      remainingBalances.forEach((debt, index) => {
-        if (debt.balance <= 0) return;
-        const interest = debt.balance * (debt.apr / 100 / 12);
-        monthlyInterest += interest;
-        debt.balance += interest;
-        const payment = debt.minimum_payment;
-        allocation[index].totalPayment += payment;
-        debt.balance = Math.max(0, debt.balance - payment);
-      });
-      totalInterest += monthlyInterest;
-      months++;
-    }
-    const monthsToEmergency =
-      monthlySavings > 0 ? ((totalExpenses * 3 - savingsTotal) / monthlySavings).toFixed(1) : "N/A";
-    return {
-      sortedDebts,
-      allocation,
-      months,
-      totalInterest: Math.round(totalInterest),
-      monthsToEmergency,
-      extraForDebt,
-    };
-  }, [debtData, cashFlow, monthlySavings, debtMethod, totalExpenses, savingsTotal]);
+
+    return { sortedDebts: [...activeDebts].sort(sortFn) };
+  }, [debtData, debtMethod]);
   if (!debtStrategy)
     return (
       <Card>

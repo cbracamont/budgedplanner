@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { formatCurrency, Language } from "@/lib/i18n";
-import { AlertCircle, TrendingDown, ChevronDown, ChevronUp, Zap, Target, Clock, ArrowRight } from "lucide-react";
+import { AlertCircle, AlertTriangle, TrendingDown, ChevronDown, ChevronUp, Zap, Target, Clock, ArrowRight } from "lucide-react";
 import { useDebtPayments } from "@/hooks/useDebtPayments";
 import { Button } from "@/components/ui/button";
 
@@ -38,6 +38,8 @@ interface SimulationResult {
   interestWithExtra: number;
   interestSaved: number;
   monthsSaved: number;
+  unpayableMinOnly: boolean;
+  unpayableWithExtra: boolean;
   progressPercent: number;
   priorityRank: number;
   monthlyProjection: { month: number; balance: number }[];
@@ -48,7 +50,7 @@ function runAmortization(
   extraBudget: number,
   method: "avalanche" | "snowball" | "hybrid",
   maxMonths = 360
-): { perDebt: Map<string, { months: number; interest: number; projection: { month: number; balance: number }[] }>; totalMonths: number } {
+): { perDebt: Map<string, { months: number; interest: number; unpayable: boolean; projection: { month: number; balance: number }[] }>; totalMonths: number } {
   const simDebts = debts.map(d => ({
     ...d,
     bal: d.balance,
@@ -123,9 +125,9 @@ function runAmortization(
     if (!d.done) d.months = maxMonths;
   }
 
-  const result = new Map<string, { months: number; interest: number; projection: { month: number; balance: number }[] }>();
+  const result = new Map<string, { months: number; interest: number; unpayable: boolean; projection: { month: number; balance: number }[] }>();
   for (const d of simDebts) {
-    result.set(d.id, { months: d.months, interest: d.totalInterest, projection: d.projection });
+    result.set(d.id, { months: d.months, interest: d.totalInterest, unpayable: !d.done, projection: d.projection });
   }
   const totalMonths = Math.max(...simDebts.map(d => d.months));
   return { perDebt: result, totalMonths };
@@ -183,7 +185,11 @@ export const SimplifiedDebtPriority = ({
     }
     for (const d of sorted) {
       if (extraRemaining <= 0) break;
-      const extraForThis = Math.min(extraRemaining, d.balance);
+      // Cap at what month 1 actually needs after interest and the minimum payment,
+      // so the displayed extra never exceeds what the simulation applies.
+      const monthInterest = d.balance * (d.apr / 100 / 12);
+      const needed = Math.max(0, d.balance + monthInterest - d.minimum_payment);
+      const extraForThis = Math.min(extraRemaining, needed);
       extraAllocation.set(d.id, extraForThis);
       extraRemaining -= extraForThis;
     }
@@ -212,6 +218,8 @@ export const SimplifiedDebtPriority = ({
         interestWithExtra: Math.round(extraData.interest),
         interestSaved: Math.round(minData.interest - extraData.interest),
         monthsSaved: minData.months - extraData.months,
+        unpayableMinOnly: minData.unpayable,
+        unpayableWithExtra: extraData.unpayable,
         progressPercent: originalBalance > 0 ? Math.min(100, (totalPaid / originalBalance) * 100) : 0,
         priorityRank: index + 1,
         monthlyProjection: extraData.projection.slice(0, Math.min(extraData.months + 1, 25)),
@@ -246,6 +254,7 @@ export const SimplifiedDebtPriority = ({
       payoffWithExtra: "Payoff (With Extra)",
       interestSaved: "Interest Saved",
       monthsSaved: "Months Saved",
+      unpayableWarning: "At this payment level the minimum does not cover the interest, so the balance never clears. Increase the payment.",
       progress: "Payment Progress",
       projection: "Balance Projection",
       sortedBy: "Sorted by",
@@ -277,6 +286,7 @@ export const SimplifiedDebtPriority = ({
       payoffWithExtra: "Liquidación (Con Extra)",
       interestSaved: "Interés Ahorrado",
       monthsSaved: "Meses Ahorrados",
+      unpayableWarning: "Con este nivel de pago el mínimo no cubre los intereses, así que el saldo nunca se liquida. Aumenta el pago.",
       progress: "Progreso de Pago",
       projection: "Proyección de Saldo",
       sortedBy: "Ordenado por",
@@ -308,6 +318,7 @@ export const SimplifiedDebtPriority = ({
       payoffWithExtra: "Quitação (Com Extra)",
       interestSaved: "Juros Economizados",
       monthsSaved: "Meses Economizados",
+      unpayableWarning: "Com este nível de pagamento o mínimo não cobre os juros, então o saldo nunca é liquidado. Aumente o pagamento.",
       progress: "Progresso de Pagamento",
       projection: "Projeção de Saldo",
       sortedBy: "Ordenado por",
@@ -327,6 +338,8 @@ export const SimplifiedDebtPriority = ({
   const totalMinPayments = debts.reduce((s, d) => s + d.minimum_payment, 0);
   const totalMonthly = totalMinPayments + surplus;
 
+  const anyUnpayable = simulation.some(s => s.unpayableWithExtra);
+  const fmtMonths = (m: number, unpayable: boolean) => `${m}${unpayable ? "+" : ""} ${m === 1 ? t.month : t.months}`;
   const minOnlyMonths = Math.max(...simulation.map(s => s.monthsMinOnly));
   const withExtraMonths = Math.max(...simulation.map(s => s.monthsWithExtra));
   const totalInterestSaved = simulation.reduce((s, d) => s + d.interestSaved, 0);
@@ -375,6 +388,14 @@ export const SimplifiedDebtPriority = ({
               </p>
             </div>
           </div>
+
+          {anyUnpayable && (
+            <div className="mt-4 flex items-start gap-2 p-2 bg-destructive/10 rounded-lg">
+              <AlertTriangle className="h-4 w-4 text-destructive mt-0.5 shrink-0" />
+              <p className="text-sm text-destructive">{t.unpayableWarning}</p>
+            </div>
+          )}
+
 
           {/* Surplus indicator */}
           {surplus > 0 ? (
@@ -456,10 +477,10 @@ export const SimplifiedDebtPriority = ({
                   <div className="flex items-center gap-2 text-sm">
                     <div className="flex items-center gap-1">
                       <Clock className="h-3.5 w-3.5 text-muted-foreground" />
-                      <span className="text-muted-foreground line-through">{debt.monthsMinOnly} {debt.monthsMinOnly === 1 ? t.month : t.months}</span>
+                      <span className="text-muted-foreground line-through">{fmtMonths(debt.monthsMinOnly, debt.unpayableMinOnly)}</span>
                     </div>
                     <ArrowRight className="h-3.5 w-3.5 text-muted-foreground" />
-                    <span className="font-semibold text-primary">{debt.monthsWithExtra} {debt.monthsWithExtra === 1 ? t.month : t.months}</span>
+                    <span className="font-semibold text-primary">{fmtMonths(debt.monthsWithExtra, debt.unpayableWithExtra)}</span>
                     {debt.monthsSaved > 0 && (
                       <span className="text-xs text-emerald-600 dark:text-emerald-400 font-medium">
                         (-{debt.monthsSaved})
@@ -524,12 +545,12 @@ export const SimplifiedDebtPriority = ({
                       <div className="grid grid-cols-2 gap-3 text-sm">
                         <div className="p-2 bg-muted rounded-lg">
                           <p className="text-xs text-muted-foreground">{t.payoffMinOnly}</p>
-                          <p className="font-medium">{debt.monthsMinOnly} {debt.monthsMinOnly === 1 ? t.month : t.months}</p>
+                          <p className="font-medium">{fmtMonths(debt.monthsMinOnly, debt.unpayableMinOnly)}</p>
                           <p className="text-xs text-muted-foreground">{t.totalInterest}: {formatCurrency(debt.interestMinOnly)}</p>
                         </div>
                         <div className="p-2 bg-primary/5 rounded-lg border border-primary/10">
                           <p className="text-xs text-muted-foreground">{t.payoffWithExtra}</p>
-                          <p className="font-semibold text-primary">{debt.monthsWithExtra} {debt.monthsWithExtra === 1 ? t.month : t.months}</p>
+                          <p className="font-semibold text-primary">{fmtMonths(debt.monthsWithExtra, debt.unpayableWithExtra)}</p>
                           <p className="text-xs text-emerald-600 dark:text-emerald-400">{t.totalInterest}: {formatCurrency(debt.interestWithExtra)}</p>
                         </div>
                       </div>

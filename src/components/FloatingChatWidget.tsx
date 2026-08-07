@@ -1,7 +1,7 @@
 import { useState, useRef, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
-import { MessageSquare, Send, X, Loader2, Trash2, Plus, Sparkles, Bot } from "lucide-react";
+import { MessageSquare, Send, X, Loader2, Trash2, Plus, Sparkles, Bot, Square } from "lucide-react";
 import { Language } from "@/lib/i18n";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -29,12 +29,35 @@ const messageSchema = z.object({
   content: z.string().trim().min(1).max(2000, "Message must be less than 2000 characters")
 });
 
+const SUPABASE_URL = import.meta.env.VITE_SUPABASE_URL as string;
+const SUPABASE_PUBLISHABLE_KEY = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY as string;
+
+const SUGGESTIONS: Record<string, string[]> = {
+  en: [
+    "How is my cash flow this month?",
+    "Which debt should I pay off first?",
+    "Can I reach my savings goals on time?",
+  ],
+  es: [
+    "¿Cómo va mi flujo de caja este mes?",
+    "¿Qué deuda debería pagar primero?",
+    "¿Puedo cumplir mis metas de ahorro a tiempo?",
+  ],
+  pt: [
+    "Como está o meu fluxo de caixa este mês?",
+    "Qual dívida devo pagar primeiro?",
+    "Consigo cumprir as minhas metas de poupança a tempo?",
+  ],
+};
+
 export const FloatingChatWidget = ({ language = 'en' as Language }: FloatingChatWidgetProps) => {
   const { toast } = useToast();
   const [isOpen, setIsOpen] = useState(false);
   const [messages, setMessages] = useState<Message[]>([]);
   const [input, setInput] = useState("");
   const [isLoading, setIsLoading] = useState(false);
+  const [streamingContent, setStreamingContent] = useState("");
+  const abortRef = useRef<AbortController | null>(null);
   const [conversations, setConversations] = useState<Conversation[]>([]);
   const [currentConversationId, setCurrentConversationId] = useState<string | null>(null);
   const [showConversations, setShowConversations] = useState(false);
@@ -62,7 +85,7 @@ export const FloatingChatWidget = ({ language = 'en' as Language }: FloatingChat
     if (scrollRef.current) {
       scrollRef.current.scrollIntoView({ behavior: "smooth", block: "end" });
     }
-  }, [messages]);
+  }, [messages, streamingContent]);
 
   useEffect(() => {
     if (isOpen) {
@@ -132,28 +155,23 @@ export const FloatingChatWidget = ({ language = 'en' as Language }: FloatingChat
     }
   };
 
-  const createNewConversation = async () => {
+  const createConversation = async (title?: string): Promise<string | null> => {
     try {
       const { data, error } = await supabase
         .from('chat_conversations')
-        .insert([{ 
+        .insert([{
           user_id: (await supabase.auth.getUser()).data.user?.id,
-          title: `${language === 'en' ? 'Chat' : 'Conversación'} ${new Date().toLocaleDateString()}`
+          title: title || `${language === 'en' ? 'Chat' : 'Conversación'} ${new Date().toLocaleDateString()}`
         }])
         .select()
         .single();
 
       if (error) throw error;
-      
+
       setCurrentConversationId(data.id);
-      setMessages([]);
       setShowConversations(false);
       loadConversations();
-      
-      toast({
-        title: language === 'en' ? "New Chat" : "Nuevo Chat",
-        description: language === 'en' ? "Started a new conversation" : "Se inició una nueva conversación"
-      });
+      return data.id;
     } catch (error) {
       console.error('Error creating conversation:', error);
       toast({
@@ -161,7 +179,18 @@ export const FloatingChatWidget = ({ language = 'en' as Language }: FloatingChat
         description: language === 'en' ? "Failed to create chat" : "Error al crear chat",
         variant: "destructive"
       });
+      return null;
     }
+  };
+
+  const createNewConversation = async () => {
+    const id = await createConversation();
+    if (!id) return;
+    setMessages([]);
+    toast({
+      title: language === 'en' ? "New Chat" : "Nuevo Chat",
+      description: language === 'en' ? "Started a new conversation" : "Se inició una nueva conversación"
+    });
   };
 
   const loadConversation = async (conversationId: string) => {
@@ -209,14 +238,15 @@ export const FloatingChatWidget = ({ language = 'en' as Language }: FloatingChat
     }
   };
 
-  const saveMessage = async (role: 'user' | 'assistant', content: string) => {
-    if (!currentConversationId) return;
+  const saveMessage = async (role: 'user' | 'assistant', content: string, conversationId?: string | null) => {
+    const target = conversationId ?? currentConversationId;
+    if (!target) return;
 
     try {
       await supabase
         .from('chat_messages')
         .insert([{
-          conversation_id: currentConversationId,
+          conversation_id: target,
           user_id: (await supabase.auth.getUser()).data.user?.id,
           role,
           content
@@ -226,9 +256,12 @@ export const FloatingChatWidget = ({ language = 'en' as Language }: FloatingChat
     }
   };
 
-  const sendMessage = async (e: React.FormEvent) => {
-    e.preventDefault();
-    const messageContent = input.trim();
+  const stopStreaming = () => {
+    abortRef.current?.abort();
+    abortRef.current = null;
+  };
+
+  const submitMessage = async (messageContent: string) => {
     if (!messageContent || isLoading) return;
 
     const validation = messageSchema.safeParse({ content: messageContent });
@@ -241,55 +274,122 @@ export const FloatingChatWidget = ({ language = 'en' as Language }: FloatingChat
       return;
     }
 
-    if (!currentConversationId) {
-      await createNewConversation();
-      await new Promise(resolve => setTimeout(resolve, 100));
+    // Name a brand-new conversation after the first question so the list is readable.
+    let conversationId = currentConversationId;
+    if (!conversationId) {
+      const title = messageContent.length > 40 ? `${messageContent.slice(0, 40)}…` : messageContent;
+      conversationId = await createConversation(title);
+      if (!conversationId) return;
     }
 
     const userMessage: Message = { role: 'user', content: messageContent };
-    setMessages(prev => [...prev, userMessage]);
-    
-    await saveMessage('user', messageContent);
-    
+    const history = [...messages, userMessage];
+    setMessages(history);
+    await saveMessage('user', messageContent, conversationId);
+
     setInput("");
     setIsLoading(true);
+    setStreamingContent("");
+
+    const controller = new AbortController();
+    abortRef.current = controller;
 
     try {
-      const { data, error } = await supabase.functions.invoke('financial-advisor', {
-        body: { messages: [...messages, userMessage] }
+      const { data: { session } } = await supabase.auth.getSession();
+      if (!session) throw new Error(language === 'en' ? 'Session expired. Please sign in again.' : language === 'es' ? 'Sesión expirada. Inicia sesión de nuevo.' : 'Sessão expirada. Inicie sessão novamente.');
+
+      const response = await fetch(`${SUPABASE_URL}/functions/v1/financial-advisor`, {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          Authorization: `Bearer ${session.access_token}`,
+          apikey: SUPABASE_PUBLISHABLE_KEY,
+        },
+        body: JSON.stringify({ messages: history }),
+        signal: controller.signal,
       });
 
-      if (error) {
-        if (error.message?.includes('429')) {
-          throw new Error(language === 'en' ? 'Rate limit exceeded. Please try again later.' : language === 'es' ? 'Límite de solicitudes excedido. Intenta más tarde.' : 'Limite de pedidos excedido. Tente mais tarde.');
+      if (!response.ok || !response.body) {
+        let serverMessage = '';
+        try {
+          serverMessage = (await response.json())?.error ?? '';
+        } catch {
+          serverMessage = '';
         }
-        if (error.message?.includes('402')) {
+        if (response.status === 429) {
+          throw new Error(language === 'en' ? 'Rate limit exceeded. Please try again in a moment.' : language === 'es' ? 'Límite de solicitudes excedido. Intenta en un momento.' : 'Limite de pedidos excedido. Tente num momento.');
+        }
+        if (response.status === 402) {
           throw new Error(language === 'en' ? 'AI credits depleted. Please add credits in Settings.' : language === 'es' ? 'Créditos de IA agotados. Añade créditos en Configuración.' : 'Créditos de IA esgotados. Adicione créditos nas Configurações.');
         }
-        throw error;
+        throw new Error(serverMessage || `HTTP ${response.status}`);
       }
 
-      const assistantMessage: Message = {
-        role: 'assistant',
-        content: data.choices[0].message.content
-      };
-      setMessages(prev => [...prev, assistantMessage]);
-      
-      await saveMessage('assistant', assistantMessage.content);
+      // Stream the answer so the user sees it appear token by token.
+      const reader = response.body.getReader();
+      const decoder = new TextDecoder();
+      let buffer = "";
+      let assistantText = "";
+
+      while (true) {
+        const { done, value } = await reader.read();
+        if (done) break;
+        buffer += decoder.decode(value, { stream: true });
+
+        const lines = buffer.split('\n');
+        buffer = lines.pop() ?? "";
+
+        for (const line of lines) {
+          const trimmed = line.trim();
+          if (!trimmed.startsWith('data:')) continue;
+          const payload = trimmed.slice(5).trim();
+          if (!payload || payload === '[DONE]') continue;
+          try {
+            const delta = JSON.parse(payload)?.choices?.[0]?.delta?.content;
+            if (typeof delta === 'string' && delta) {
+              assistantText += delta;
+              setStreamingContent(assistantText);
+            }
+          } catch {
+            // Partial JSON chunk — it will be completed on the next read.
+          }
+        }
+      }
+
+      if (assistantText.trim()) {
+        setMessages(prev => [...prev, { role: 'assistant', content: assistantText }]);
+        await saveMessage('assistant', assistantText, conversationId);
+      }
+      setStreamingContent("");
     } catch (error: any) {
-      console.error('Error:', error);
-      toast({
-        title: "Error",
-        description: error.message || (language === 'en' 
-          ? "Failed to get advice. Please try again." 
-          : language === 'es'
-          ? "Error al obtener consejo. Intenta de nuevo."
-          : "Erro ao obter conselho. Tente novamente."),
-        variant: "destructive"
+      setStreamingContent((partial) => {
+        if (partial.trim()) {
+          setMessages(prev => [...prev, { role: 'assistant', content: partial }]);
+          saveMessage('assistant', partial, conversationId);
+        }
+        return "";
       });
+      if (error?.name !== 'AbortError') {
+        console.error('Error:', error);
+        toast({
+          title: "Error",
+          description: error.message || (language === 'en'
+            ? "Failed to get advice. Please try again."
+            : language === 'es'
+            ? "Error al obtener consejo. Intenta de nuevo."
+            : "Erro ao obter conselho. Tente novamente."),
+          variant: "destructive"
+        });
+      }
     } finally {
+      abortRef.current = null;
       setIsLoading(false);
     }
+  };
+
+  const sendMessage = async (e: React.FormEvent) => {
+    e.preventDefault();
+    await submitMessage(input.trim());
   };
 
   return (
@@ -459,7 +559,7 @@ export const FloatingChatWidget = ({ language = 'en' as Language }: FloatingChat
               <ScrollArea className="flex-1 p-4">
                 <div className="space-y-3">
                   {messages.length === 0 && (
-                    <div className="text-center text-muted-foreground py-12">
+                    <div className="text-center text-muted-foreground py-10">
                       <div className="text-4xl mb-3">💡</div>
                        <p className="text-sm">
                         {language === 'en' 
@@ -475,6 +575,20 @@ export const FloatingChatWidget = ({ language = 'en' as Language }: FloatingChat
                           ? 'Puedo analizar los datos de tu perfil activo'
                           : 'Posso analisar os dados do seu perfil ativo'}
                        </p>
+                       <div className="mt-4 flex flex-col gap-2">
+                         {(SUGGESTIONS[language] ?? SUGGESTIONS.en).map((suggestion) => (
+                           <Button
+                             key={suggestion}
+                             variant="outline"
+                             size="sm"
+                             className="h-auto whitespace-normal py-2 text-xs"
+                             disabled={isLoading}
+                             onClick={() => submitMessage(suggestion)}
+                           >
+                             {suggestion}
+                           </Button>
+                         ))}
+                       </div>
                     </div>
                   )}
                   {messages.map((msg, idx) => (
@@ -525,7 +639,29 @@ export const FloatingChatWidget = ({ language = 'en' as Language }: FloatingChat
                       )}
                     </div>
                   ))}
-                  {isLoading && (
+                  {streamingContent && (
+                    <div className="flex justify-start gap-2">
+                      <div className="h-7 w-7 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0">
+                        <Sparkles className="h-3.5 w-3.5 text-primary" />
+                      </div>
+                      <div className="max-w-[75%] rounded-2xl rounded-bl-sm px-3 py-2 text-sm bg-muted text-foreground">
+                        <div className="prose prose-sm dark:prose-invert max-w-none">
+                          <ReactMarkdown
+                            components={{
+                              p: ({ children }) => <p className="mb-2 last:mb-0">{children}</p>,
+                              ul: ({ children }) => <ul className="my-2 ml-4 list-disc">{children}</ul>,
+                              ol: ({ children }) => <ol className="my-2 ml-4 list-decimal">{children}</ol>,
+                              li: ({ children }) => <li className="my-1">{children}</li>,
+                              strong: ({ children }) => <strong className="font-semibold">{children}</strong>,
+                            }}
+                          >
+                            {streamingContent}
+                          </ReactMarkdown>
+                        </div>
+                      </div>
+                    </div>
+                  )}
+                  {isLoading && !streamingContent && (
                     <div className="flex justify-start gap-2">
                       <div className="h-7 w-7 rounded-full bg-primary/20 flex items-center justify-center flex-shrink-0">
                         <Sparkles className="h-3.5 w-3.5 text-primary" />
@@ -550,13 +686,25 @@ export const FloatingChatWidget = ({ language = 'en' as Language }: FloatingChat
                     disabled={isLoading}
                     className="flex-1"
                   />
-                  <Button 
-                    type="submit" 
-                    disabled={isLoading || !input.trim()}
-                    size="icon"
-                  >
-                    <Send className="h-4 w-4" />
-                  </Button>
+                  {isLoading ? (
+                    <Button
+                      type="button"
+                      onClick={stopStreaming}
+                      size="icon"
+                      variant="secondary"
+                      aria-label={language === 'en' ? 'Stop' : language === 'es' ? 'Detener' : 'Parar'}
+                    >
+                      <Square className="h-4 w-4" />
+                    </Button>
+                  ) : (
+                    <Button
+                      type="submit"
+                      disabled={!input.trim()}
+                      size="icon"
+                    >
+                      <Send className="h-4 w-4" />
+                    </Button>
+                  )}
                 </div>
               </form>
             </>

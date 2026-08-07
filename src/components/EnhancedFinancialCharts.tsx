@@ -1,7 +1,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { BarChart, Bar, PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip, XAxis, YAxis, LineChart, Line, CartesianGrid } from "recharts";
 import { TrendingUp, TrendingDown, Smile, Heart, Target } from "lucide-react";
-import { Language } from "@/lib/i18n";
+import { Language, formatCurrency } from "@/lib/i18n";
 import { ChartType } from "./ChartSettings";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 
@@ -123,7 +123,7 @@ export const EnhancedFinancialCharts = ({
                       tick={{ fill: 'hsl(var(--foreground))' }}
                     />
                     <Tooltip 
-                      formatter={(value: number) => [`£${value.toFixed(2)}`, '']}
+                      formatter={(value: number) => [formatCurrency(value), '']}
                       contentStyle={{ 
                         background: 'hsl(var(--card))',
                         border: '1px solid hsl(var(--primary)/0.3)',
@@ -222,7 +222,7 @@ export const EnhancedFinancialCharts = ({
                       ))}
                     </Pie>
                     <Tooltip 
-                      formatter={(value: number) => [`£${value.toFixed(2)}`, '']}
+                      formatter={(value: number) => [formatCurrency(value), '']}
                       contentStyle={{ 
                         background: 'hsl(var(--card))',
                         border: '1px solid hsl(var(--primary)/0.3)',
@@ -271,7 +271,7 @@ export const EnhancedFinancialCharts = ({
                       tick={{ fill: 'hsl(var(--foreground))' }}
                     />
                     <Tooltip 
-                      formatter={(value: number) => [`£${value.toFixed(2)}`, '']}
+                      formatter={(value: number) => [formatCurrency(value), '']}
                       contentStyle={{ 
                         background: 'hsl(var(--card))',
                         border: '1px solid hsl(var(--primary)/0.3)',

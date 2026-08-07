@@ -1,7 +1,7 @@
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { BarChart, Bar, PieChart, Pie, Cell, ResponsiveContainer, Legend, Tooltip, XAxis, YAxis } from "recharts";
 import { TrendingUp } from "lucide-react";
-import { Language } from "@/lib/i18n";
+import { Language, formatCurrency } from "@/lib/i18n";
 
 interface FinancialChartsProps {
   totalIncome: number;
@@ -64,7 +64,7 @@ export const FinancialCharts = ({
               <XAxis dataKey="name" />
               <YAxis />
               <Tooltip 
-                formatter={(value: number) => `£${value.toFixed(2)}`}
+                formatter={(value: number) => formatCurrency(value)}
                 contentStyle={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))' }}
               />
               <Bar dataKey="value" radius={[8, 8, 0, 0]}>
@@ -103,7 +103,7 @@ export const FinancialCharts = ({
                 ))}
               </Pie>
               <Tooltip 
-                formatter={(value: number) => `£${value.toFixed(2)}`}
+                formatter={(value: number) => formatCurrency(value)}
                 contentStyle={{ backgroundColor: 'hsl(var(--card))', border: '1px solid hsl(var(--border))' }}
               />
             </PieChart>
