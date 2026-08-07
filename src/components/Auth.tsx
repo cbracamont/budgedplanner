@@ -10,8 +10,10 @@ import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle }
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Checkbox } from "@/components/ui/checkbox";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { AlertCircle, Mail, Lock, User, Chrome, Phone } from "lucide-react";
+import { AlertCircle, Mail, Lock, User, Chrome, Phone, FlaskConical } from "lucide-react";
 import { useTheme } from "@/hooks/useTheme";
+import { seedGuestData, setGuestMode } from "@/lib/guest/store";
+
 
 // NUEVO: Tipo ampliado para LanguageToggle
 type Language = "en" | "es" | "pt";
