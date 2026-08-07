@@ -389,6 +389,14 @@ export const SimplifiedDebtPriority = ({
             </div>
           </div>
 
+          {anyUnpayable && (
+            <div className="mt-4 flex items-start gap-2 p-2 bg-destructive/10 rounded-lg">
+              <AlertTriangle className="h-4 w-4 text-destructive mt-0.5 shrink-0" />
+              <p className="text-sm text-destructive">{t.unpayableWarning}</p>
+            </div>
+          )}
+
+
           {/* Surplus indicator */}
           {surplus > 0 ? (
             <div className="mt-4 flex items-center gap-2 p-2 bg-emerald-50 dark:bg-emerald-950/30 rounded-lg">
