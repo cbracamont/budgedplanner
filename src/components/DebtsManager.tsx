@@ -14,6 +14,7 @@ import { useDebtPayments } from "@/hooks/useDebtPayments";
 import { useAllPaymentHistory } from "@/hooks/usePaymentTracker";
 import { useActiveProfile } from "@/hooks/useFinancialProfiles";
 import { format, startOfMonth } from "date-fns";
+import { parseLocalDate } from "@/lib/dateUtils";
 
 interface Debt {
   id: string;
@@ -55,7 +56,7 @@ export const DebtsManager = ({ language, onDebtsChange }: DebtsManagerProps) => 
     // Get all payment_tracker entries for this debt up to current month
     const autoPayments = allPaymentHistory.filter(p => {
       if (p.source_id !== debt.id) return false;
-      const pMonth = new Date(p.month_year);
+      const pMonth = parseLocalDate(p.month_year);
       return pMonth <= currentMonthStart;
     });
     

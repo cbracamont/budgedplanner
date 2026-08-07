@@ -51,6 +51,7 @@ import { useActiveProfile } from "@/hooks/useFinancialProfiles";
 import { Progress } from "@/components/ui/progress";
 import { formatCurrency } from "@/lib/i18n";
 import { format, startOfMonth, addMonths, subMonths, isPast } from "date-fns";
+import { parseLocalDate } from "@/lib/dateUtils";
 
 interface MonthlyPaymentTrackerProps {
   language: Language;
@@ -217,7 +218,7 @@ export const MonthlyPaymentTracker = ({ language }: MonthlyPaymentTrackerProps) 
         const paymentsUntilViewingMonth = allPayments.filter((p) => {
           if (p.source_id !== debt.id) return false;
           const pMonthStr = p.month_year;
-          const pMonth = new Date(pMonthStr);
+          const pMonth = parseLocalDate(pMonthStr);
           // Include current month and all months up to the viewing month
           return pMonth >= todayMonthStart && pMonth <= currentMonthStart;
         });
@@ -229,7 +230,7 @@ export const MonthlyPaymentTracker = ({ language }: MonthlyPaymentTrackerProps) 
         const paymentsAfterViewingMonth = allPayments.filter((p) => {
           if (p.source_id !== debt.id) return false;
           const pMonthStr = p.month_year;
-          const pMonth = new Date(pMonthStr);
+          const pMonth = parseLocalDate(pMonthStr);
           // Include all months AFTER viewing month up to and including current month
           return pMonth > currentMonthStart && pMonth <= todayMonthStart;
         });

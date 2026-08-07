@@ -7,6 +7,7 @@ import { useDebtPayments } from "@/hooks/useDebtPayments";
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer } from "recharts";
 import { format, parseISO, startOfMonth, eachMonthOfInterval, subMonths } from "date-fns";
 import { es, enGB } from "date-fns/locale";
+import { parseLocalDate } from "@/lib/dateUtils";
 
 interface DebtEvolutionChartProps {
   language: Language;
@@ -27,7 +28,7 @@ export const DebtEvolutionChart = ({ language }: DebtEvolutionChartProps) => {
     const sixMonthsAgo = subMonths(today, 6);
     
     const earliestPayment = payments.length > 0
-      ? new Date(Math.min(...payments.map((p) => new Date(p.payment_date).getTime())))
+      ? new Date(Math.min(...payments.map((p) => parseLocalDate(p.payment_date).getTime())))
       : sixMonthsAgo;
 
     const startDate = earliestPayment < sixMonthsAgo ? earliestPayment : sixMonthsAgo;
@@ -54,13 +55,13 @@ export const DebtEvolutionChart = ({ language }: DebtEvolutionChartProps) => {
         const paymentsUpToMonth = payments.filter(
           (p) =>
             p.debt_id === debt.id &&
-            new Date(p.payment_date) >= monthStart &&
-            new Date(p.payment_date) < monthEnd
+            parseLocalDate(p.payment_date) >= monthStart &&
+            parseLocalDate(p.payment_date) < monthEnd
         );
 
         // Add back the payments to get the balance at the start of the month
         const paymentsAfterMonth = payments.filter(
-          (p) => p.debt_id === debt.id && new Date(p.payment_date) >= monthEnd
+          (p) => p.debt_id === debt.id && parseLocalDate(p.payment_date) >= monthEnd
         );
 
         balance += paymentsAfterMonth.reduce((sum, p) => sum + p.amount, 0);
