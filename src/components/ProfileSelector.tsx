@@ -142,7 +142,7 @@ export const ProfileSelector = ({ language }: ProfileSelectorProps) => {
                           <Pencil className="h-4 w-4" />
                         </Button>
                       )}
-                      {profiles.length > 1 && (
+                      {profiles.length > 1 && !profile.household_id && (
                         <Button
                           variant="ghost"
                           size="icon"
