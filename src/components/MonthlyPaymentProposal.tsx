@@ -43,13 +43,17 @@ export const MonthlyPaymentProposal = ({
   // Calculate surplus
   const surplus = Math.max(0, cashFlow - monthlySavings);
 
-  // Get highest APR debt
-  const highestAPRDebt = debts.length > 0 ? debts.reduce((prev, current) => prev.apr > current.apr ? prev : current) : null;
+  // Get highest APR debt (only debts with an outstanding balance)
+  const payableDebts = debts.filter(d => d.balance > 0);
+  const highestAPRDebt = payableDebts.length > 0 ? payableDebts.reduce((prev, current) => prev.apr > current.apr ? prev : current) : null;
 
-  // Calculate allocations
-  const debtAllocation = surplus * 0.5;
+  // Calculate allocations. The debt slice is capped at the remaining balance so we
+  // never record a payment larger than what actually reduces the debt.
+  const rawDebtAllocation = surplus * 0.5;
+  const debtAllocation = highestAPRDebt ? Math.min(rawDebtAllocation, highestAPRDebt.balance) : 0;
   const emergencyAllocation = surplus * 0.3;
   const variableAllocation = surplus * 0.2;
+
   const proposals = [{
     category: "Highest APR Debt",
     name: highestAPRDebt?.name || "No debts",
