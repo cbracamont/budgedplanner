@@ -54,8 +54,12 @@ export const CalendarView = ({ payments, language }: CalendarViewProps) => {
 
 const getPaymentsForDay = (day: number) => {
   const currentMonthNumber = currentMonth.getMonth() + 1;
+  const lastDayOfMonth = getDaysInMonth(currentMonth);
   return payments.filter(p => {
-    if (p.dueDay !== day) return false;
+    // Clamp due days beyond the length of the month (e.g. 31 in February)
+    // so those payments still show on the last day instead of disappearing.
+    const effectiveDay = Math.min(p.dueDay, lastDayOfMonth);
+    if (effectiveDay !== day) return false;
     // For annual payments, only show in the specified month
     if (p.isAnnual && p.paymentMonth) {
       if (p.paymentMonth !== currentMonthNumber) return false;

@@ -236,6 +236,16 @@ export const translations = {
     variableExpense: "variable expense",
     savingsGoal: "savings goal",
     debtPayment: "debt payment",
+
+    // Household
+    household: "Household",
+    createHousehold: "Create household",
+    leaveHousehold: "Leave household",
+    householdId: "Household ID",
+    members: "Members",
+    displayName: "Display name",
+    create: "Create",
+    cancel: "Cancel",
   },
   es: {
     // App title
@@ -470,6 +480,16 @@ export const translations = {
     variableExpense: "gasto variable",
     savingsGoal: "meta de ahorro",
     debtPayment: "pago de deuda",
+
+    // Hogar
+    household: "Hogar",
+    createHousehold: "Crear hogar",
+    leaveHousehold: "Salir del hogar",
+    householdId: "ID del hogar",
+    members: "Miembros",
+    displayName: "Nombre para mostrar",
+    create: "Crear",
+    cancel: "Cancelar",
   },
   pt: {
     // App title
@@ -704,6 +724,16 @@ export const translations = {
     variableExpense: "despesa variável",
     savingsGoal: "meta de poupança",
     debtPayment: "pagamento de dívida",
+
+    // Casa
+    household: "Casa",
+    createHousehold: "Criar casa",
+    leaveHousehold: "Sair da casa",
+    householdId: "ID da casa",
+    members: "Membros",
+    displayName: "Nome de exibição",
+    create: "Criar",
+    cancel: "Cancelar",
   }
 };
 
@@ -718,12 +748,43 @@ export const getTranslation = (lang: Language, key: string): string => {
   return value || key;
 };
 
-export const formatCurrency = (amount: number): string => {
-  return new Intl.NumberFormat('en-GB', {
-    style: 'currency',
-    currency: 'GBP',
-    minimumFractionDigits: 2,
-  }).format(amount);
+// Active currency, kept in a module-level variable so the 60+ existing
+// formatCurrency(amount) call sites automatically honour the user's setting.
+const CURRENCY_LOCALES: Record<string, string> = {
+  GBP: 'en-GB',
+  EUR: 'de-DE',
+  USD: 'en-US',
+  BRL: 'pt-BR',
+  MXN: 'es-MX',
+  COP: 'es-CO',
+  ARS: 'es-AR',
+  CLP: 'es-CL',
+};
+
+let activeCurrency = 'GBP';
+
+export const setActiveCurrency = (currency?: string | null) => {
+  if (currency && currency.trim()) activeCurrency = currency.trim().toUpperCase();
+};
+
+export const getActiveCurrency = () => activeCurrency;
+
+export const formatCurrency = (amount: number, currency?: string): string => {
+  const code = (currency || activeCurrency).toUpperCase();
+  const locale = CURRENCY_LOCALES[code] || 'en-GB';
+  try {
+    return new Intl.NumberFormat(locale, {
+      style: 'currency',
+      currency: code,
+      minimumFractionDigits: 2,
+    }).format(amount);
+  } catch {
+    return new Intl.NumberFormat('en-GB', {
+      style: 'currency',
+      currency: 'GBP',
+      minimumFractionDigits: 2,
+    }).format(amount);
+  }
 };
 
 export const ukBanks = [

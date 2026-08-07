@@ -38,11 +38,15 @@ export const useActiveProfile = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("User not authenticated");
 
+      // Tolerate legacy data where more than one profile was left active:
+      // take the most recent one instead of erroring out the whole dashboard.
       const { data, error } = await supabase
         .from("financial_profiles")
         .select("*")
         .eq("user_id", user.id)
         .eq("is_active", true)
+        .order("created_at", { ascending: false })
+        .limit(1)
         .maybeSingle();
 
       if (error) throw error;
@@ -138,18 +142,11 @@ export const useSetActiveProfile = () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("User not authenticated");
 
-      // Deactivate all profiles first
-      await supabase
-        .from("financial_profiles")
-        .update({ is_active: false })
-        .eq("user_id", user.id);
-
-      // Activate the selected profile
+      // Single atomic call: deactivating the others and activating the chosen
+      // profile happens in one transaction, so rapid clicks or multiple tabs
+      // can never leave zero or several active profiles behind.
       const { data, error } = await supabase
-        .from("financial_profiles")
-        .update({ is_active: true })
-        .eq("id", profileId)
-        .select()
+        .rpc("set_active_financial_profile", { p_profile_id: profileId })
         .single();
 
       if (error) throw error;

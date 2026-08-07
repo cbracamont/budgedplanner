@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { setActiveCurrency } from "@/lib/i18n";
 
 export interface UserSettings {
   id: string;
@@ -34,9 +35,11 @@ export const useUserSettings = () => {
           .single();
         
         if (insertError) throw insertError;
+        setActiveCurrency((newSettings as UserSettings).currency);
         return newSettings as UserSettings;
       }
       
+      setActiveCurrency((data as UserSettings).currency);
       return data as UserSettings;
     },
   });

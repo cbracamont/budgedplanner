@@ -1052,6 +1052,25 @@ export type Database = {
         }
         Returns: undefined
       }
+      set_active_financial_profile: {
+        Args: { p_profile_id: string }
+        Returns: {
+          created_at: string
+          household_id: string | null
+          id: string
+          is_active: boolean
+          name: string
+          type: string
+          updated_at: string
+          user_id: string
+        }
+        SetofOptions: {
+          from: "*"
+          to: "financial_profiles"
+          isOneToOne: true
+          isSetofReturn: false
+        }
+      }
     }
     Enums: {
       household_role: "owner" | "member" | "viewer" | "contributor" | "editor"

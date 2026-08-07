@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { Button } from "@/components/ui/button";
 import { Sheet, SheetContent, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 import { Badge } from "@/components/ui/badge";
@@ -31,17 +31,21 @@ export const NotificationCenter = ({ language }: NotificationCenterProps) => {
     }
   }, []);
 
-  // Show browser notification for new unread notifications
+  // Show browser notification once per notification (polling every 30s would
+  // otherwise re-fire the same OS toast repeatedly until it is marked read).
+  const notifiedIdsRef = useRef<Set<string>>(new Set());
   useEffect(() => {
-    if (unreadNotifications && unreadNotifications.length > 0 && "Notification" in window && Notification.permission === "granted") {
-      const latestNotification = unreadNotifications[0];
-      if (latestNotification && !latestNotification.is_read) {
-        new Notification(latestNotification.title, {
-          body: latestNotification.message,
-          icon: "/favicon.ico",
-        });
-      }
-    }
+    if (!unreadNotifications?.length) return;
+    if (!("Notification" in window) || Notification.permission !== "granted") return;
+
+    unreadNotifications.forEach((notification) => {
+      if (notification.is_read || notifiedIdsRef.current.has(notification.id)) return;
+      notifiedIdsRef.current.add(notification.id);
+      new Notification(notification.title, {
+        body: notification.message,
+        icon: "/favicon.ico",
+      });
+    });
   }, [unreadNotifications]);
 
   const handleMarkAsRead = async (id: string) => {

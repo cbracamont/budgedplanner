@@ -69,13 +69,10 @@ import { useFinancialProfiles } from "@/hooks/useFinancialProfiles";
 import { Auth } from "@/components/Auth";
 import { IncomeManager } from "@/components/IncomeManager";
 import { DebtsManager } from "@/components/DebtsManager";
-import { FixedExpensesManager } from "@/components/FixedExpensesManager";
 import { FixedExpensesTracker } from "@/components/FixedExpensesTracker";
 import { VariableExpensesManager } from "@/components/VariableExpensesManager";
-import { VariableIncomeManager } from "@/components/VariableIncomeManager";
 import { MonthlyVariableIncomeTracker } from "@/components/MonthlyVariableIncomeTracker";
 import { VariableExpensesTracker } from "@/components/MonthlyVariableExpensesTracker";
-import { SavingsManager } from "@/components/SavingsManager";
 import { SavingsGoalsManager } from "@/components/SavingsGoalsManager";
 import { MonthlyPaymentTracker } from "@/components/MonthlyPaymentTracker";
 import { GeneralSavingsTracker } from "@/components/GeneralSavingsTracker";
@@ -399,7 +396,27 @@ const Index = () => {
     // Use monthly variable income from database instead of calculated from recurring
     const totalVariableIncome = currentMonthVariableIncome;
     const totalIncome = totalFixedIncome + totalVariableIncome;
-    const totalFixed = fixedExpensesData.reduce((s, e) => s + e.amount, 0);
+    // Fixed expenses: respect frequency_type/payment_month so quarterly,
+    // semiannual and annual expenses are only counted in the months they are due
+    // (same rule used to build the calendar events below).
+    const currentMonthNum = new Date().getMonth() + 1;
+    const isFixedExpenseDueInMonth = (exp: { frequency_type?: string | null; payment_month?: number | null }, monthNum: number) => {
+      const firstMonth = exp.payment_month || 1;
+      switch (exp.frequency_type) {
+        case "quarterly":
+          return [0, 3, 6, 9].some((offset) => ((firstMonth + offset - 1) % 12) + 1 === monthNum);
+        case "semiannual":
+          return [0, 6].some((offset) => ((firstMonth + offset - 1) % 12) + 1 === monthNum);
+        case "annual":
+          return firstMonth === monthNum;
+        default:
+          return true;
+      }
+    };
+    const totalFixed = fixedExpensesData.reduce(
+      (s, e) => (isFixedExpenseDueInMonth(e, currentMonthNum) ? s + e.amount : s),
+      0,
+    );
 
     // Use monthly variable expenses from database instead of regular variable expenses
     const totalVariable = currentMonthVariableExpenses;
@@ -826,7 +843,11 @@ const Index = () => {
     try {
       const goal = savingsGoalsData.find((g) => g.id === addMoneyGoalId);
       if (!goal) return;
-      const newAmount = goal.current_amount + addMoneyAmount;
+      // Cap the goal balance at its target so progress never exceeds 100%
+      const newAmount = Math.min(
+        goal.current_amount + addMoneyAmount,
+        goal.target_amount || goal.current_amount + addMoneyAmount,
+      );
       const { error } = await supabase
         .from("savings_goals")
         .update({

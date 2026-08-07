@@ -1,6 +1,7 @@
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { toast } from "sonner";
+import { useActiveProfile } from "./useFinancialProfiles";
 
 export interface Notification {
   id: string;
@@ -17,9 +18,17 @@ export interface Notification {
   updated_at: string;
 }
 
+// Notifications belong to a financial profile. Legacy rows have no profile_id,
+// so those are always included to avoid hiding older reminders.
+const profileFilter = (profileId?: string) =>
+  profileId ? `profile_id.eq.${profileId},profile_id.is.null` : "profile_id.is.null";
+
 export const useNotifications = () => {
+  const { data: activeProfile } = useActiveProfile();
+  const profileId = activeProfile?.id;
+
   return useQuery({
-    queryKey: ["notifications"],
+    queryKey: ["notifications", profileId],
     queryFn: async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("User not authenticated");
@@ -28,6 +37,7 @@ export const useNotifications = () => {
         .from("notifications")
         .select("*")
         .eq("user_id", user.id)
+        .or(profileFilter(profileId))
         .order("created_at", { ascending: false });
 
       if (error) throw error;
@@ -38,8 +48,11 @@ export const useNotifications = () => {
 };
 
 export const useUnreadNotifications = () => {
+  const { data: activeProfile } = useActiveProfile();
+  const profileId = activeProfile?.id;
+
   return useQuery({
-    queryKey: ["unread-notifications"],
+    queryKey: ["unread-notifications", profileId],
     queryFn: async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("User not authenticated");
@@ -49,6 +62,7 @@ export const useUnreadNotifications = () => {
         .select("*")
         .eq("user_id", user.id)
         .eq("is_read", false)
+        .or(profileFilter(profileId))
         .order("created_at", { ascending: false });
 
       if (error) throw error;
@@ -81,17 +95,22 @@ export const useMarkAsRead = () => {
 
 export const useMarkAllAsRead = () => {
   const queryClient = useQueryClient();
+  const { data: activeProfile } = useActiveProfile();
+  const profileId = activeProfile?.id;
 
   return useMutation({
     mutationFn: async () => {
       const { data: { user } } = await supabase.auth.getUser();
       if (!user) throw new Error("User not authenticated");
 
+      // Only mark the notifications of the profile currently being viewed,
+      // so reminders of other profiles are not silently dismissed.
       const { error } = await supabase
         .from("notifications")
         .update({ is_read: true })
         .eq("user_id", user.id)
-        .eq("is_read", false);
+        .eq("is_read", false)
+        .or(profileFilter(profileId));
 
       if (error) throw error;
     },
