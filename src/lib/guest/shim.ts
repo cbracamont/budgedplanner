@@ -59,7 +59,7 @@ class GuestQuery<T = any> implements PromiseLike<any> {
   private mode: "select" | "insert" | "update" | "delete" | "upsert" = "select";
   private payload: GuestRow[] = [];
   private returning = false;
-  private single: "one" | "maybe" | null = null;
+  private singleMode: "one" | "maybe" | null = null;
   private headOnly = false;
   private wantCount = false;
 
@@ -157,11 +157,11 @@ class GuestQuery<T = any> implements PromiseLike<any> {
     return this;
   }
   maybeSingle() {
-    this.single = "maybe";
+    this.singleMode = "maybe";
     return this;
   }
   single() {
-    this.single = "one";
+    this.singleMode = "one";
     return this;
   }
 
@@ -224,7 +224,7 @@ class GuestQuery<T = any> implements PromiseLike<any> {
 
     const count = result.length;
     if (this.headOnly) return { data: null, error: null, count };
-    if (this.single === "one") {
+    if (this.singleMode === "one") {
       if (result.length !== 1) {
         return {
           data: null,
@@ -234,7 +234,7 @@ class GuestQuery<T = any> implements PromiseLike<any> {
       }
       return { data: result[0], error: null, count };
     }
-    if (this.single === "maybe") return { data: result[0] ?? null, error: null, count };
+    if (this.singleMode === "maybe") return { data: result[0] ?? null, error: null, count };
     return { data: this.wantCount && !this.returning ? null : result, error: null, count };
   }
 
@@ -256,10 +256,10 @@ const guestRpc = async (fn: string, args: any = {}) => {
   const db = readDB();
   switch (fn) {
     case "set_active_financial_profile": {
-      const profiles = db.financial_profiles ?? [];
-      const next = profiles.map((p) => ({ ...p, is_active: p.id === args.p_profile_id }));
+      const profiles: any[] = (db.financial_profiles ?? []) as any[];
+      const next: any[] = profiles.map((p: any) => ({ ...p, is_active: p.id === args.p_profile_id }));
       saveTable("financial_profiles", next);
-      return { data: next.find((p) => p.id === args.p_profile_id) ?? null, error: null };
+      return { data: next.find((p: any) => p.id === args.p_profile_id) ?? null, error: null };
     }
     case "ensure_household_shared_profile":
     case "log_audit_entry":
