@@ -1,12 +1,13 @@
 import { useEffect, useState } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
 import { TrendingUp, Plus, Trash2, Pencil } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
+import { SectionCard, SectionEmpty, SectionLoading } from "@/components/ui/section-card";
 import { getTranslation, Language } from "@/lib/i18n";
 import { useIncomeSources, useAddIncome, useUpdateIncome, useDeleteIncome } from "@/hooks/useFinancialData";
+
 
 interface IncomeSource {
   id: string;
@@ -22,7 +23,7 @@ interface IncomeManagerProps {
 
 export const IncomeManager = ({ language, onIncomeChange }: IncomeManagerProps) => {
   const t = (key: string) => getTranslation(language, key);
-  const { data: incomeSources = [] } = useIncomeSources();
+  const { data: incomeSources = [], isLoading } = useIncomeSources();
   const addIncomeMutation = useAddIncome();
   const updateIncomeMutation = useUpdateIncome();
   const deleteIncomeMutation = useDeleteIncome();
@@ -66,17 +67,12 @@ export const IncomeManager = ({ language, onIncomeChange }: IncomeManagerProps) 
   };
 
   return (
-    <Card className="shadow-medium border-income/20">
-      <CardHeader className="bg-income/10 border-b border-income/20">
-        <div className="flex items-center gap-2">
-          <TrendingUp className="h-5 w-5 text-income" />
-          <CardTitle>{t('income')}</CardTitle>
-        </div>
-        <CardDescription>
-          {language === 'en' ? 'Manage your income sources' : 'Administra tus fuentes de ingreso'}
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="pt-6 space-y-6">
+    <SectionCard
+      accent="income"
+      icon={TrendingUp}
+      title={t('income')}
+      description={language === 'en' ? 'Manage your income sources' : language === 'pt' ? 'Gerencie as suas fontes de renda' : 'Administra tus fuentes de ingreso'}
+    >
         <form onSubmit={addIncomeSource} className="space-y-4">
           <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
             <div className="space-y-2">
@@ -126,6 +122,15 @@ export const IncomeManager = ({ language, onIncomeChange }: IncomeManagerProps) 
           </Button>
         </form>
 
+        {isLoading ? (
+          <SectionLoading />
+        ) : incomeSources.length === 0 ? (
+          <SectionEmpty
+            icon={TrendingUp}
+            title={t('emptyIncomeTitle')}
+            description={t('emptyIncomeDesc')}
+          />
+        ) : (
         <div className="space-y-3">
           {incomeSources.map((source) => (
             <div key={source.id} className="flex items-center justify-between p-3 bg-secondary/50 rounded-lg">
@@ -206,7 +211,7 @@ export const IncomeManager = ({ language, onIncomeChange }: IncomeManagerProps) 
             </div>
           ))}
         </div>
-      </CardContent>
-    </Card>
+        )}
+    </SectionCard>
   );
 };

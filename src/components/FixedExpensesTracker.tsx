@@ -1,5 +1,5 @@
 // src/components/FixedExpensesTracker.tsx
-import { Trash2, Plus, CalendarIcon, Pencil, Check, X } from "lucide-react";
+import { Trash2, Plus, CalendarIcon, Pencil, Check, X, Home } from "lucide-react";
 import { useFixedExpenses, useAddFixedExpense, useDeleteFixedExpense, useUpdateFixedExpense } from "@/hooks/useFinancialData";
 import { useToast } from "@/hooks/use-toast";
 import { useState } from "react";
@@ -8,6 +8,11 @@ import { Calendar } from "@/components/ui/calendar";
 import { Popover, PopoverContent, PopoverTrigger } from "@/components/ui/popover";
 import { Button } from "@/components/ui/button";
 import { cn } from "@/lib/utils";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
+import { SectionCard, SectionEmpty, SectionLoading } from "@/components/ui/section-card";
+import { getTranslation, formatCurrency, Language } from "@/lib/i18n";
 type Frequency = "weekly" | "bi-weekly" | "monthly" | "quarterly" | "annually";
 interface VariableExpense {
   id: string;
@@ -24,12 +29,18 @@ const frequencyMultiplier: Record<Frequency, number> = {
   quarterly: 0.333,
   annually: 0.0833
 };
-export const FixedExpensesTracker = () => {
+interface FixedExpensesTrackerProps {
+  language?: Language;
+}
+
+export const FixedExpensesTracker = ({ language = 'en' }: FixedExpensesTrackerProps) => {
+  const t = (key: string) => getTranslation(language, key);
   const {
     toast
   } = useToast();
   const {
-    data: expenses = []
+    data: expenses = [],
+    isLoading
   } = useFixedExpenses();
   const addExpenseMutation = useAddFixedExpense();
   const deleteExpenseMutation = useDeleteFixedExpense();
@@ -106,138 +117,161 @@ export const FixedExpensesTracker = () => {
   const handleCancelEdit = () => {
     setEditingId(null);
   };
-  return <div className="bg-white dark:bg-gray-800 p-8 rounded-3xl shadow-2xl">
-      <div className="flex justify-between items-center mb-8">
-        <div>
-          <h2 className="text-3xl font-bold text-gray-800 dark:text-white">Fixed Expenses</h2>
-          <p className="text-gray-600 dark:text-gray-400">Committed monthly expenses:</p>
-        </div>
-        <button onClick={() => setIsAdding(true)} className="bg-indigo-600 hover:bg-indigo-700 text-white px-6 py-3 rounded-xl flex items-center gap-2 transition font-medium">
-          <Plus className="w-5 h-5" />
-          Add Category
-        </button>
-      </div>
-
-      <div className="space-y-4 mb-8">
-        {expenses.map(expense => <div key={expense.id} className="flex justify-between items-center p-4 bg-gray-50 dark:bg-gray-700 rounded-xl hover:bg-gray-100 dark:hover:bg-gray-600 transition">
-            <div>
-              <p className="font-semibold text-lg">{expense.name}</p>
-              <p className="text-sm text-gray-500 capitalize">
-                {expense.frequency_type === "bi-weekly" ? "Bi-weekly" : expense.frequency_type} - Day {expense.payment_day}
-              </p>
-            </div>
-            <div className="flex items-center gap-3">
-              {editingId === expense.id ? (
-                <>
-                  <input
-                    type="number"
-                    value={editAmount || ""}
-                    onChange={(e) => setEditAmount(Number(e.target.value))}
-                    className="w-24 px-2 py-1 border rounded-lg text-lg font-bold text-center focus:outline-none focus:ring-2 focus:ring-indigo-500"
-                    autoFocus
-                    onKeyDown={(e) => {
-                      if (e.key === "Enter") handleSaveEdit(expense.id);
-                      if (e.key === "Escape") handleCancelEdit();
-                    }}
-                  />
-                  <button onClick={() => handleSaveEdit(expense.id)} className="text-emerald-600 hover:bg-emerald-50 dark:hover:bg-emerald-900/20 p-2 rounded-lg transition">
-                    <Check className="w-5 h-5" />
-                  </button>
-                  <button onClick={handleCancelEdit} className="text-gray-500 hover:bg-gray-100 dark:hover:bg-gray-600 p-2 rounded-lg transition">
-                    <X className="w-5 h-5" />
-                  </button>
-                </>
-              ) : (
-                <>
-                  <span className="text-2xl font-bold text-indigo-600">£{expense.amount}</span>
-                  <button onClick={() => handleStartEdit(expense)} className="text-indigo-500 hover:bg-indigo-50 dark:hover:bg-indigo-900/20 p-2 rounded-lg transition">
-                    <Pencil className="w-4 h-4" />
-                  </button>
-                  <button onClick={() => handleDelete(expense.id)} className="text-red-500 hover:bg-red-50 dark:hover:bg-red-900/20 p-2 rounded-lg transition">
-                    <Trash2 className="w-5 h-5" />
-                  </button>
-                </>
-              )}
-            </div>
-          </div>)}
-      </div>
-
-      {isAdding && <div className="bg-gradient-to-r from-indigo-50 to-purple-50 dark:from-indigo-900/20 dark:to-purple-900/20 p-6 rounded-2xl border-2 border-indigo-200 dark:border-indigo-700">
-          <h3 className="text-xl font-bold mb-4">New Fixed Expense</h3>
-          <div className="grid md:grid-cols-2 gap-4 mb-4">
-            <input 
-              type="text" 
-              placeholder="e.g. Gym membership" 
-              value={newExpense.name} 
-              onChange={e => setNewExpense({
-                ...newExpense,
-                name: e.target.value
-              })} 
-              className="px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500" 
-            />
-            <input 
-              type="number" 
-              placeholder="Amount" 
-              value={newExpense.amount || ""} 
-              onChange={e => setNewExpense({
-                ...newExpense,
-                amount: Number(e.target.value)
-              })} 
-              className="px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500" 
-            />
-          </div>
-          <div className="grid md:grid-cols-2 gap-4">
-            <select 
-              value={newExpense.frequency} 
-              onChange={e => setNewExpense({
-                ...newExpense,
-                frequency: e.target.value as Frequency
-              })} 
-              className="px-4 py-3 border rounded-xl focus:outline-none focus:ring-2 focus:ring-indigo-500"
+  return (
+    <SectionCard
+      accent="expense"
+      icon={Home}
+      title={t('fixedExpenses')}
+      description={language === 'en' ? 'Committed recurring expenses' : language === 'pt' ? 'Despesas recorrentes comprometidas' : 'Gastos recurrentes comprometidos'}
+      actions={
+        <Button onClick={() => setIsAdding(true)} size="sm" className="gap-2">
+          <Plus className="h-4 w-4" />
+          {language === 'en' ? 'Add expense' : language === 'pt' ? 'Adicionar despesa' : 'Añadir gasto'}
+        </Button>
+      }
+    >
+      {isLoading ? (
+        <SectionLoading />
+      ) : expenses.length === 0 ? (
+        <SectionEmpty
+          icon={Home}
+          title={t('emptyFixedExpensesTitle')}
+          description={t('emptyFixedExpensesDesc')}
+        />
+      ) : (
+        <div className="space-y-3">
+          {expenses.map(expense => (
+            <div
+              key={expense.id}
+              className="flex items-center justify-between gap-4 p-4 bg-card border border-border rounded-lg hover:border-warning/40 hover:shadow-sm transition-all"
             >
-              <option value="weekly">Weekly</option>
-              <option value="bi-weekly">Bi-weekly</option>
-              <option value="monthly">Monthly</option>
-              <option value="quarterly">Quarterly</option>
-              <option value="annually">Annually</option>
-            </select>
-            <Popover>
-              <PopoverTrigger asChild>
-                <Button
-                  variant="outline"
-                  className={cn(
-                    "justify-start text-left font-normal h-[50px]",
-                    !newExpense.date && "text-muted-foreground"
-                  )}
-                >
-                  <CalendarIcon className="mr-2 h-4 w-4" />
-                  {newExpense.date ? format(newExpense.date, "PPP") : <span>Pick a date</span>}
-                </Button>
-              </PopoverTrigger>
-              <PopoverContent className="w-auto p-0" align="start">
-                <Calendar
-                  mode="single"
-                  selected={newExpense.date}
-                  onSelect={(date) => date && setNewExpense({ ...newExpense, date })}
-                  initialFocus
-                  className={cn("p-3 pointer-events-auto")}
-                />
-              </PopoverContent>
-            </Popover>
-          </div>
-          <div className="flex gap-3 mt-4">
-            <button onClick={handleAdd} className="bg-emerald-600 hover:bg-emerald-700 text-white px-6 py-3 rounded-xl font-bold transition">
-              Save Expense
-            </button>
-            <button onClick={() => setIsAdding(false)} className="bg-gray-400 hover:bg-gray-500 text-white px-6 py-3 rounded-xl font-bold transition">
-              Cancel
-            </button>
-          </div>
-        </div>}
+              <div className="min-w-0">
+                <p className="font-semibold truncate">{expense.name}</p>
+                <p className="text-sm text-muted-foreground capitalize">
+                  {expense.frequency_type === "bi-weekly" ? "Bi-weekly" : expense.frequency_type} · {language === 'en' ? 'Day' : language === 'pt' ? 'Dia' : 'Día'} {expense.payment_day}
+                </p>
+              </div>
+              <div className="flex items-center gap-2">
+                {editingId === expense.id ? (
+                  <>
+                    <Input
+                      type="number"
+                      value={editAmount || ""}
+                      onChange={(e) => setEditAmount(Number(e.target.value))}
+                      className="w-28 text-right font-semibold"
+                      autoFocus
+                      onKeyDown={(e) => {
+                        if (e.key === "Enter") handleSaveEdit(expense.id);
+                        if (e.key === "Escape") handleCancelEdit();
+                      }}
+                    />
+                    <Button variant="ghost" size="icon" onClick={() => handleSaveEdit(expense.id)}>
+                      <Check className="h-4 w-4 text-income" />
+                    </Button>
+                    <Button variant="ghost" size="icon" onClick={handleCancelEdit}>
+                      <X className="h-4 w-4" />
+                    </Button>
+                  </>
+                ) : (
+                  <>
+                    <span className="text-lg font-bold text-warning">{formatCurrency(expense.amount)}</span>
+                    <Button variant="ghost" size="icon" onClick={() => handleStartEdit(expense)}>
+                      <Pencil className="h-4 w-4" />
+                    </Button>
+                    <Button variant="ghost" size="icon" onClick={() => handleDelete(expense.id)}>
+                      <Trash2 className="h-4 w-4 text-destructive" />
+                    </Button>
+                  </>
+                )}
+              </div>
+            </div>
+          ))}
+        </div>
+      )}
 
-      <div className="mt-10 p-8 bg-gradient-to-r from-indigo-600 to-purple-600 text-white rounded-3xl text-center">
-        <p className="text-2xl opacity-90">Total fixed expenses per month</p>
-        <p className="text-6xl font-black mt-2">£{monthlyTotal.toFixed(0)}</p>
+      {isAdding && (
+        <div className="space-y-4 rounded-lg border border-warning/30 bg-warning/5 p-4">
+          <h3 className="font-semibold">
+            {language === 'en' ? 'New fixed expense' : language === 'pt' ? 'Nova despesa fixa' : 'Nuevo gasto fijo'}
+          </h3>
+          <div className="grid gap-3 md:grid-cols-2">
+            <div className="space-y-2">
+              <Label>{language === 'en' ? 'Name' : language === 'pt' ? 'Nome' : 'Nombre'}</Label>
+              <Input
+                placeholder={language === 'en' ? 'e.g. Gym membership' : language === 'pt' ? 'ex. Academia' : 'ej. Gimnasio'}
+                value={newExpense.name}
+                onChange={e => setNewExpense({ ...newExpense, name: e.target.value })}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>{language === 'en' ? 'Amount' : language === 'pt' ? 'Valor' : 'Monto'}</Label>
+              <Input
+                type="number"
+                step="0.01"
+                placeholder="0.00"
+                value={newExpense.amount || ""}
+                onChange={e => setNewExpense({ ...newExpense, amount: Number(e.target.value) })}
+              />
+            </div>
+            <div className="space-y-2">
+              <Label>{language === 'en' ? 'Frequency' : language === 'pt' ? 'Frequência' : 'Frecuencia'}</Label>
+              <Select
+                value={newExpense.frequency}
+                onValueChange={(value) => setNewExpense({ ...newExpense, frequency: value as Frequency })}
+              >
+                <SelectTrigger>
+                  <SelectValue />
+                </SelectTrigger>
+                <SelectContent>
+                  <SelectItem value="weekly">Weekly</SelectItem>
+                  <SelectItem value="bi-weekly">Bi-weekly</SelectItem>
+                  <SelectItem value="monthly">Monthly</SelectItem>
+                  <SelectItem value="quarterly">Quarterly</SelectItem>
+                  <SelectItem value="annually">Annually</SelectItem>
+                </SelectContent>
+              </Select>
+            </div>
+            <div className="space-y-2">
+              <Label>{language === 'en' ? 'First payment' : language === 'pt' ? 'Primeiro pagamento' : 'Primer pago'}</Label>
+              <Popover>
+                <PopoverTrigger asChild>
+                  <Button
+                    variant="outline"
+                    className={cn("w-full justify-start text-left font-normal", !newExpense.date && "text-muted-foreground")}
+                  >
+                    <CalendarIcon className="mr-2 h-4 w-4" />
+                    {newExpense.date ? format(newExpense.date, "PPP") : <span>Pick a date</span>}
+                  </Button>
+                </PopoverTrigger>
+                <PopoverContent className="w-auto p-0" align="start">
+                  <Calendar
+                    mode="single"
+                    selected={newExpense.date}
+                    onSelect={(date) => date && setNewExpense({ ...newExpense, date })}
+                    initialFocus
+                    className={cn("p-3 pointer-events-auto")}
+                  />
+                </PopoverContent>
+              </Popover>
+            </div>
+          </div>
+          <div className="flex gap-2">
+            <Button onClick={handleAdd}>
+              {language === 'en' ? 'Save expense' : language === 'pt' ? 'Salvar despesa' : 'Guardar gasto'}
+            </Button>
+            <Button variant="outline" onClick={() => setIsAdding(false)}>
+              {language === 'en' ? 'Cancel' : language === 'pt' ? 'Cancelar' : 'Cancelar'}
+            </Button>
+          </div>
+        </div>
+      )}
+
+      <div className="flex items-center justify-between rounded-lg border border-warning/30 bg-warning/10 p-4">
+        <p className="text-sm font-medium text-muted-foreground">
+          {language === 'en' ? 'Total fixed expenses per month' : language === 'pt' ? 'Total de despesas fixas por mês' : 'Total de gastos fijos por mes'}
+        </p>
+        <p className="text-2xl font-bold text-warning">{formatCurrency(monthlyTotal)}</p>
       </div>
-    </div>;
+    </SectionCard>
+  );
 };

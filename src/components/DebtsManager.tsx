@@ -1,5 +1,6 @@
 import { useEffect, useState, useMemo, useCallback } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
+import { SectionCard, SectionEmpty, SectionLoading } from "@/components/ui/section-card";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Button } from "@/components/ui/button";
@@ -43,7 +44,7 @@ interface DebtsManagerProps {
 export const DebtsManager = ({ language, onDebtsChange }: DebtsManagerProps) => {
   const t = (key: string) => getTranslation(language, key);
   const { toast } = useToast();
-  const { data: allDebts = [] } = useDebts();
+  const { data: allDebts = [], isLoading } = useDebts();
   const { data: activeProfile } = useActiveProfile();
   const { data: allPaymentHistory = [] } = useAllPaymentHistory(activeProfile?.id);
   
@@ -233,17 +234,12 @@ export const DebtsManager = ({ language, onDebtsChange }: DebtsManagerProps) => 
 
   return (
     <>
-    <Card className="shadow-medium border-debt/20">
-      <CardHeader className="bg-debt/10 border-b border-debt/20">
-        <div className="flex items-center gap-2">
-          <CreditCard className="h-5 w-5 text-debt" />
-          <CardTitle>{t('debts')}</CardTitle>
-        </div>
-        <CardDescription>
-          {language === 'en' ? 'Manage your debts and payment dates' : 'Administra tus deudas y fechas de pago'}
-        </CardDescription>
-      </CardHeader>
-      <CardContent className="pt-6 space-y-6">
+    <SectionCard
+      accent="debt"
+      icon={CreditCard}
+      title={t('debts')}
+      description={language === 'en' ? 'Manage your debts and payment dates' : language === 'pt' ? 'Gerencie as suas dívidas e datas de pagamento' : 'Administra tus deudas y fechas de pago'}
+    >
         <form onSubmit={addDebt} className="space-y-4 p-4 bg-secondary/50 rounded-lg">
           <div className="flex items-center space-x-2 mb-4">
             <input 
@@ -503,6 +499,15 @@ export const DebtsManager = ({ language, onDebtsChange }: DebtsManagerProps) => 
           </Button>
         </form>
 
+        {isLoading ? (
+          <SectionLoading />
+        ) : debts.length === 0 ? (
+          <SectionEmpty
+            icon={CreditCard}
+            title={t('emptyDebtsTitle')}
+            description={t('emptyDebtsDesc')}
+          />
+        ) : (
         <div className="space-y-3">
           {debts.map((debt) => (
             <div key={debt.id} className="flex items-center justify-between p-3 bg-secondary/50 rounded-lg">
@@ -680,6 +685,7 @@ export const DebtsManager = ({ language, onDebtsChange }: DebtsManagerProps) => 
             </div>
           ))}
         </div>
+        )}
 
         {/* Paid Debts Section */}
         {paidDebts.length > 0 && (
@@ -742,8 +748,7 @@ export const DebtsManager = ({ language, onDebtsChange }: DebtsManagerProps) => 
             </div>
           </div>
         )}
-      </CardContent>
-    </Card>
+    </SectionCard>
 
     {/* Payment History Dialog */}
     <Dialog open={isHistoryDialogOpen} onOpenChange={setIsHistoryDialogOpen}>
@@ -779,7 +784,7 @@ export const DebtsManager = ({ language, onDebtsChange }: DebtsManagerProps) => 
             <p className="text-sm text-muted-foreground mb-1">
               {language === 'en' ? 'Remaining Balance' : language === 'es' ? 'Saldo Restante' : 'Pozostałe Saldo'}
             </p>
-            <p className="text-2xl font-bold text-orange-600 dark:text-orange-400">
+            <p className="text-2xl font-bold text-debt">
               £{remainingBalance.toFixed(2)}
             </p>
           </div>
@@ -790,9 +795,9 @@ export const DebtsManager = ({ language, onDebtsChange }: DebtsManagerProps) => 
               {language === 'en' ? 'Payments' : language === 'es' ? 'Pagos' : 'Płatności'} ({combinedPaymentHistory.length})
             </h4>
             {combinedPaymentHistory.length === 0 ? (
-              <p className="text-center text-muted-foreground py-8">
-                {language === 'en' ? 'No payment records found' : language === 'es' ? 'No se encontraron registros de pago' : 'Nie znaleziono płatności'}
-              </p>
+              <SectionEmpty
+                title={language === 'en' ? 'No payment records found' : language === 'pt' ? 'Nenhum pagamento registrado' : 'No se encontraron registros de pago'}
+              />
             ) : (
               <div className="space-y-2">
                 {combinedPaymentHistory.map((payment) => (

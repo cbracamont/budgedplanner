@@ -2067,7 +2067,7 @@ const Index = () => {
                   <TabsTrigger value="variable">Variable</TabsTrigger>
                 </TabsList>
                 <TabsContent value="fixed">
-                  <FixedExpensesTracker />
+                  <FixedExpensesTracker language={language} />
                 </TabsContent>
                 <TabsContent value="variable">
                   <VariableExpensesTracker language={language} />

@@ -1,5 +1,6 @@
 import { useState, useMemo } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent } from "@/components/ui/card";
+import { SectionCard, SectionEmpty, SectionLoading } from "@/components/ui/section-card";
 import { AutoPaymentsGenerator } from "@/components/AutoPaymentsGenerator";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -71,7 +72,7 @@ export const MonthlyPaymentTracker = ({ language }: MonthlyPaymentTrackerProps) 
     source_id: "",
   });
 
-  const { data: payments = [] } = useCombinedMonthlyPayments(currentMonth, activeProfile?.id);
+  const { data: payments = [], isLoading } = useCombinedMonthlyPayments(currentMonth, activeProfile?.id);
   const { data: allPayments = [] } = useAllPaymentHistory(activeProfile?.id);
   const { data: incomes = [] } = useIncomeSources();
   const { data: debts = [] } = useDebts();
@@ -376,19 +377,13 @@ export const MonthlyPaymentTracker = ({ language }: MonthlyPaymentTrackerProps) 
   return (
     <>
       <AutoPaymentsGenerator language={language} />
-      <Card className="shadow-lg">
-        <CardHeader className="pb-4">
-          <div className="flex items-center justify-between flex-wrap gap-4">
-            <div className="flex items-center gap-3">
-              <div className="p-2 bg-gradient-to-br from-primary to-primary/80 rounded-xl">
-                <Receipt className="h-6 w-6 text-white" />
-              </div>
-              <div>
-                <CardTitle>{t.title}</CardTitle>
-                <CardDescription>{t.description}</CardDescription>
-              </div>
-            </div>
-
+      <SectionCard
+        accent="payment"
+        icon={Receipt}
+        title={t.title}
+        description={t.description}
+        actions={
+          <>
             <div className="flex items-center gap-2">
               <Button variant="outline" size="icon" onClick={() => setCurrentMonth(subMonths(currentMonth, 1))}>
                 <ChevronLeft className="h-4 w-4" />
@@ -480,44 +475,43 @@ export const MonthlyPaymentTracker = ({ language }: MonthlyPaymentTrackerProps) 
                 </DialogFooter>
               </DialogContent>
             </Dialog>
-          </div>
-        </CardHeader>
-        <CardContent className="pt-6">
+          </>
+        }
+      >
           {/* Summary Cards */}
           <div className="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6">
-            <div className="p-4 rounded-lg bg-gradient-to-br from-green-500/10 to-green-500/5 border border-green-500/20">
+            <div className="p-4 rounded-lg bg-income/10 border border-income/20">
               <p className="text-sm text-muted-foreground mb-1">{t.totalPaid}</p>
-              <p className="text-2xl font-bold text-green-600 dark:text-green-400">
+              <p className="text-2xl font-bold text-income">
                 {formatCurrency(monthlyTotals.totalPaidThisMonth)}
               </p>
             </div>
-            <div className="p-4 rounded-lg bg-gradient-to-br from-blue-500/10 to-blue-500/5 border border-blue-500/20">
+            <div className="p-4 rounded-lg bg-primary/10 border border-primary/20">
               <p className="text-sm text-muted-foreground mb-1">{t.expectedThisMonth}</p>
-              <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">
+              <p className="text-2xl font-bold text-primary">
                 {formatCurrency(monthlyTotals.expectedThisMonth)}
               </p>
             </div>
-            <div className="p-4 rounded-lg bg-gradient-to-br from-orange-500/10 to-orange-500/5 border border-orange-500/20">
+            <div className="p-4 rounded-lg bg-debt/10 border border-debt/20">
               <p className="text-sm text-muted-foreground mb-1">{t.totalDebtBalance}</p>
-              <p className="text-2xl font-bold text-orange-600 dark:text-orange-400">
+              <p className="text-2xl font-bold text-debt">
                 {formatCurrency(monthlyTotals.totalDebtBalance)}
               </p>
             </div>
-            <div className="p-4 rounded-lg bg-gradient-to-br from-purple-500/10 to-purple-500/5 border border-purple-500/20">
+            <div className="p-4 rounded-lg bg-accent/10 border border-accent/20">
               <p className="text-sm text-muted-foreground mb-1">
                 {language === 'en' ? 'Extra Paid' : language === 'es' ? 'Extra Pagado' : 'Extra Pago'}
               </p>
-              <p className="text-2xl font-bold text-purple-600 dark:text-purple-400">
+              <p className="text-2xl font-bold text-accent-foreground">
                 {formatCurrency(monthlyTotals.extraPaid)}
               </p>
             </div>
           </div>
 
-          {payments.length === 0 ? (
-            <div className="text-center py-12 text-muted-foreground">
-              <Receipt className="h-12 w-12 mx-auto mb-4 opacity-50" />
-              <p>{t.noPayments}</p>
-            </div>
+          {isLoading ? (
+            <SectionLoading />
+          ) : payments.length === 0 ? (
+            <SectionEmpty icon={Receipt} title={t.noPayments} />
           ) : (
             <div className="space-y-3">
               {payments.map((payment) => {
@@ -692,8 +686,7 @@ export const MonthlyPaymentTracker = ({ language }: MonthlyPaymentTrackerProps) 
               })}
             </div>
           )}
-        </CardContent>
-      </Card>
+      </SectionCard>
     </>
   );
 };

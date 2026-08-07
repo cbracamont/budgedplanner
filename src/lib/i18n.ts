@@ -263,7 +263,24 @@ export const translations = {
     guestModeReset: "Reset demo data",
     guestModeExit: "Exit demo",
     guestModeMigrated: "Your demo data was moved to your account.",
+
+    // Shared section empty states
+    emptyIncomeTitle: "No income sources yet",
+    emptyIncomeDesc: "Add your salary or any other income to start building your budget.",
+    emptyVariableExpensesTitle: "No variable expenses yet",
+    emptyVariableExpensesDesc: "Add groceries, transport or any other changing expense.",
+    emptyFixedExpensesTitle: "No fixed expenses yet",
+    emptyFixedExpensesDesc: "Add rent, bills or subscriptions with their payment day.",
+    emptyDebtsTitle: "No debts registered",
+    emptyDebtsDesc: "Add a card or loan to see payoff plans and projections.",
+    emptyPaymentsTitle: "No payments this month",
+    emptyPaymentsDesc: "Payments appear here once you have income, expenses or debts.",
+    emptySavingsGoalsTitle: "No savings goals yet",
+    emptySavingsGoalsDesc: "Create a goal and we will suggest a monthly contribution.",
+    emptyGeneralSavingsTitle: "No savings recorded yet",
+    emptyGeneralSavingsDesc: "Set a monthly goal to start tracking your savings.",
   },
+
 
   es: {
     // App title
@@ -525,7 +542,24 @@ export const translations = {
     guestModeReset: "Reiniciar datos de demo",
     guestModeExit: "Salir del demo",
     guestModeMigrated: "Tus datos de demo se movieron a tu cuenta.",
+
+    // Estados vacíos compartidos
+    emptyIncomeTitle: "Aún no hay ingresos",
+    emptyIncomeDesc: "Agrega tu salario u otros ingresos para empezar tu presupuesto.",
+    emptyVariableExpensesTitle: "Aún no hay gastos variables",
+    emptyVariableExpensesDesc: "Agrega compras, transporte u otros gastos que cambian.",
+    emptyFixedExpensesTitle: "Aún no hay gastos fijos",
+    emptyFixedExpensesDesc: "Agrega alquiler, facturas o suscripciones con su día de pago.",
+    emptyDebtsTitle: "No hay deudas registradas",
+    emptyDebtsDesc: "Agrega una tarjeta o préstamo para ver planes y proyecciones.",
+    emptyPaymentsTitle: "No hay pagos este mes",
+    emptyPaymentsDesc: "Los pagos aparecen aquí cuando tengas ingresos, gastos o deudas.",
+    emptySavingsGoalsTitle: "Aún no hay metas de ahorro",
+    emptySavingsGoalsDesc: "Crea una meta y te sugeriremos una contribución mensual.",
+    emptyGeneralSavingsTitle: "Aún no hay ahorros registrados",
+    emptyGeneralSavingsDesc: "Define una meta mensual para empezar a seguir tus ahorros.",
   },
+
 
   pt: {
     // App title
@@ -787,7 +821,24 @@ export const translations = {
     guestModeReset: "Redefinir dados de demonstração",
     guestModeExit: "Sair do demo",
     guestModeMigrated: "Os seus dados de demonstração foram movidos para a sua conta.",
+
+    // Estados vazios compartilhados
+    emptyIncomeTitle: "Ainda sem fontes de renda",
+    emptyIncomeDesc: "Adicione o seu salário ou outras rendas para começar o orçamento.",
+    emptyVariableExpensesTitle: "Ainda sem despesas variáveis",
+    emptyVariableExpensesDesc: "Adicione mercado, transporte ou outras despesas que variam.",
+    emptyFixedExpensesTitle: "Ainda sem despesas fixas",
+    emptyFixedExpensesDesc: "Adicione aluguel, contas ou assinaturas com o dia de pagamento.",
+    emptyDebtsTitle: "Nenhuma dívida registrada",
+    emptyDebtsDesc: "Adicione um cartão ou empréstimo para ver planos e projeções.",
+    emptyPaymentsTitle: "Nenhum pagamento neste mês",
+    emptyPaymentsDesc: "Os pagamentos aparecem aqui quando houver renda, despesas ou dívidas.",
+    emptySavingsGoalsTitle: "Ainda sem metas de poupança",
+    emptySavingsGoalsDesc: "Crie uma meta e sugeriremos uma contribuição mensal.",
+    emptyGeneralSavingsTitle: "Ainda sem poupança registrada",
+    emptyGeneralSavingsDesc: "Defina uma meta mensal para acompanhar a sua poupança.",
   }
+
 
 };
 

@@ -1,5 +1,6 @@
 import { useState } from "react";
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { SectionCard, SectionEmpty, SectionLoading } from "@/components/ui/section-card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -46,7 +47,7 @@ export const SavingsGoalsManager = ({
   onBudgetAllocation,
 }: SavingsGoalsManagerProps) => {
   const { toast } = useToast();
-  const { data: goals = [] } = useSavingsGoals();
+  const { data: goals = [], isLoading } = useSavingsGoals();
   const addGoalMutation = useAddSavingsGoal();
   const updateGoalMutation = useUpdateSavingsGoal();
   const deleteGoalMutation = useDeleteSavingsGoal();
@@ -254,22 +255,16 @@ export const SavingsGoalsManager = ({
   };
 
   return (
-    <Card className="shadow-lg">
-      <CardHeader className="pb-4">
-        <div className="flex items-center justify-between">
-          <div className="flex items-center gap-3">
-            <div className="p-2 bg-gradient-to-br from-primary to-primary/80 rounded-xl">
-              <Target className="h-6 w-6 text-white" />
-            </div>
-            <div>
-              <CardTitle>{t.title}</CardTitle>
-              <CardDescription>
-                {language === "en"
-                  ? "Create and track individual savings goals with progress tracking and automatic monthly contributions."
-                  : "Crea y monitorea metas de ahorro individuales con seguimiento de progreso y aportes mensuales automáticos."}
-              </CardDescription>
-            </div>
-          </div>
+    <SectionCard
+      accent="savings"
+      icon={Target}
+      title={t.title}
+      description={language === "en"
+        ? "Create and track individual savings goals with progress tracking and automatic monthly contributions."
+        : language === "pt"
+          ? "Crie e acompanhe metas de poupança com progresso e aportes mensais automáticos."
+          : "Crea y monitorea metas de ahorro individuales con seguimiento de progreso y aportes mensuales automáticos."}
+      actions={
           <Dialog open={isAddDialogOpen} onOpenChange={(open) => {
             setIsAddDialogOpen(open);
             if (!open) resetForm();
@@ -343,19 +338,20 @@ export const SavingsGoalsManager = ({
               </div>
             </DialogContent>
           </Dialog>
-        </div>
-      </CardHeader>
-      <CardContent className="pt-6 space-y-6">
+      }
+    >
         {/* Available for Savings - Enhanced */}
-        <Card className="bg-gradient-to-r from-emerald-50/50 to-green-50/50 dark:from-emerald-950/20 dark:to-green-950/20 border border-emerald-200 dark:border-emerald-800">
+        <Card className="bg-income/10 border border-income/20">
           <CardContent className="p-6">
             <div className="flex items-center gap-3">
-              <div className="p-3 bg-emerald-100 dark:bg-emerald-900/50 rounded-full">
-                <PiggyBank className="h-6 w-6 text-emerald-600 dark:text-emerald-400" />
+              <div className="p-3 bg-income/15 rounded-full">
+                <PiggyBank className="h-6 w-6 text-income" />
               </div>
               <div>
-                <p className="text-sm font-medium text-emerald-800 dark:text-emerald-200">Available Monthly for Savings</p>
-                <p className="text-2xl font-bold text-emerald-900 dark:text-emerald-100">{formatCurrency(availableForSavings)}</p>
+                <p className="text-sm font-medium text-muted-foreground">
+                  {language === "en" ? "Available Monthly for Savings" : language === "pt" ? "Disponível por mês para poupança" : "Disponible mensual para ahorros"}
+                </p>
+                <p className="text-2xl font-bold text-income">{formatCurrency(availableForSavings)}</p>
               </div>
             </div>
           </CardContent>
@@ -363,14 +359,14 @@ export const SavingsGoalsManager = ({
 
         {/* Goals List with Sophisticated Cards */}
         <div className="space-y-4">
-          {goals.length === 0 ? (
-            <Card className="border-2 border-dashed border-slate-200 dark:border-slate-700">
-              <CardContent className="p-12 text-center">
-                <Target className="h-12 w-12 text-slate-400 mx-auto mb-4" />
-                <p className="text-lg font-medium">{language === "en" ? "No savings goals yet" : "Aún no hay metas de ahorro"}</p>
-                <p className="text-sm text-slate-500 dark:text-slate-400 mt-1">{language === "en" ? "Create your first goal to get started!" : "¡Crea tu primera meta para comenzar!"}</p>
-              </CardContent>
-            </Card>
+          {isLoading ? (
+            <SectionLoading />
+          ) : goals.length === 0 ? (
+            <SectionEmpty
+              icon={Target}
+              title={language === "en" ? "No savings goals yet" : language === "pt" ? "Ainda não há metas de poupança" : "Aún no hay metas de ahorro"}
+              description={language === "en" ? "Create your first goal to get started!" : language === "pt" ? "Crie a sua primeira meta para começar!" : "¡Crea tu primera meta para comenzar!"}
+            />
           ) : (
             goals.map((goal) => {
               const progress = goal.target_amount > 0 ? Math.min(100, (goal.current_amount / goal.target_amount) * 100) : 0;
@@ -805,7 +801,6 @@ export const SavingsGoalsManager = ({
             </AlertDialogFooter>
           </AlertDialogContent>
         </AlertDialog>
-      </CardContent>
-    </Card>
+    </SectionCard>
   );
 };

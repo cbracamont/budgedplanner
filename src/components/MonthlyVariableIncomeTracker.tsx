@@ -1,5 +1,5 @@
 import { useState, useMemo } from "react";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { SectionCard, SectionEmpty, SectionLoading } from "@/components/ui/section-card";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
@@ -157,23 +157,17 @@ export const MonthlyVariableIncomeTracker = ({
   };
   const translations = t[language];
   return <>
-      <Card className="shadow-lg bg-gradient-to-br from-card to-card/95 backdrop-blur-md border-border/60 hover:shadow-xl transition-shadow">
-        <CardHeader className="bg-gradient-to-r from-income/20 via-income/15 to-income/10 border-b border-border/40">
-          <div className="flex items-center justify-between">
-            <div className="flex items-center gap-3">
-              <div className="p-2 rounded-lg bg-income/20 text-income">
-                <PoundSterling className="h-5 w-5" />
-              </div>
-              <CardTitle className="text-lg font-semibold">{translations.title}</CardTitle>
-            </div>
-            <Button onClick={handleAdd} size="sm" variant="secondary" className="gap-2 shadow-sm">
-              <Plus className="h-4 w-4" />
-              {translations.addIncome}
-            </Button>
-          </div>
-        </CardHeader>
-
-        <CardContent className="pt-6">
+      <SectionCard
+        accent="income"
+        icon={PoundSterling}
+        title={translations.title}
+        actions={
+          <Button onClick={handleAdd} size="sm" className="gap-2">
+            <Plus className="h-4 w-4" />
+            {translations.addIncome}
+          </Button>
+        }
+      >
           {/* Month Navigation */}
           <div className="flex items-center justify-between mb-6">
             <Button onClick={handlePrevMonth} variant="outline" size="icon" className="h-8 w-8">
@@ -194,7 +188,7 @@ export const MonthlyVariableIncomeTracker = ({
 
           {/* Income List */}
           <div className="space-y-3">
-            {isLoading ? <p className="text-center text-muted-foreground py-4">Cargando...</p> : incomes.length === 0 ? <p className="text-center text-muted-foreground py-4">{translations.noEntries}</p> : incomes.map(income => <div key={income.id} className="flex items-center justify-between p-4 bg-gradient-to-r from-card to-card/90 border border-border/50 rounded-lg hover:shadow-md hover:border-income/30 transition-all">
+            {isLoading ? <SectionLoading /> : incomes.length === 0 ? <SectionEmpty icon={PoundSterling} title={translations.noEntries} /> : incomes.map(income => <div key={income.id} className="flex items-center justify-between gap-4 p-4 bg-card border border-border rounded-lg hover:border-income/40 hover:shadow-sm transition-all">
                   <div className="flex-1">
                     <div className="flex items-center gap-2">
                       <p className="font-semibold text-income">{formatCurrency(income.amount)}</p>
@@ -214,8 +208,7 @@ export const MonthlyVariableIncomeTracker = ({
                   </div>
                 </div>)}
           </div>
-        </CardContent>
-      </Card>
+      </SectionCard>
 
       {/* Add Dialog */}
       <Dialog open={isAddDialogOpen} onOpenChange={setIsAddDialogOpen}>
