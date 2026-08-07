@@ -993,6 +993,8 @@ const Index = () => {
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-slate-900 dark:to-slate-800">
         <ScrollToTop />
         <div className="max-w-7xl mx-auto p-6 space-y-8">
+          {isGuestMode() && <GuestModeBanner language={language} />}
+
           {/* HEADER */}
           <div className="no-print flex justify-between items-center mb-8">
             <div>
