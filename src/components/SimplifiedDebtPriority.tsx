@@ -38,6 +38,8 @@ interface SimulationResult {
   interestWithExtra: number;
   interestSaved: number;
   monthsSaved: number;
+  unpayableMinOnly: boolean;
+  unpayableWithExtra: boolean;
   progressPercent: number;
   priorityRank: number;
   monthlyProjection: { month: number; balance: number }[];
@@ -48,7 +50,7 @@ function runAmortization(
   extraBudget: number,
   method: "avalanche" | "snowball" | "hybrid",
   maxMonths = 360
-): { perDebt: Map<string, { months: number; interest: number; projection: { month: number; balance: number }[] }>; totalMonths: number } {
+): { perDebt: Map<string, { months: number; interest: number; unpayable: boolean; projection: { month: number; balance: number }[] }>; totalMonths: number } {
   const simDebts = debts.map(d => ({
     ...d,
     bal: d.balance,
@@ -123,9 +125,9 @@ function runAmortization(
     if (!d.done) d.months = maxMonths;
   }
 
-  const result = new Map<string, { months: number; interest: number; projection: { month: number; balance: number }[] }>();
+  const result = new Map<string, { months: number; interest: number; unpayable: boolean; projection: { month: number; balance: number }[] }>();
   for (const d of simDebts) {
-    result.set(d.id, { months: d.months, interest: d.totalInterest, projection: d.projection });
+    result.set(d.id, { months: d.months, interest: d.totalInterest, unpayable: !d.done, projection: d.projection });
   }
   const totalMonths = Math.max(...simDebts.map(d => d.months));
   return { perDebt: result, totalMonths };
@@ -216,6 +218,8 @@ export const SimplifiedDebtPriority = ({
         interestWithExtra: Math.round(extraData.interest),
         interestSaved: Math.round(minData.interest - extraData.interest),
         monthsSaved: minData.months - extraData.months,
+        unpayableMinOnly: minData.unpayable,
+        unpayableWithExtra: extraData.unpayable,
         progressPercent: originalBalance > 0 ? Math.min(100, (totalPaid / originalBalance) * 100) : 0,
         priorityRank: index + 1,
         monthlyProjection: extraData.projection.slice(0, Math.min(extraData.months + 1, 25)),
