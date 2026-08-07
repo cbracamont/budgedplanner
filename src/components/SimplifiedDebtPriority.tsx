@@ -2,7 +2,7 @@ import { useMemo, useState } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { Progress } from "@/components/ui/progress";
 import { formatCurrency, Language } from "@/lib/i18n";
-import { AlertCircle, TrendingDown, ChevronDown, ChevronUp, Zap, Target, Clock, ArrowRight } from "lucide-react";
+import { AlertCircle, AlertTriangle, TrendingDown, ChevronDown, ChevronUp, Zap, Target, Clock, ArrowRight } from "lucide-react";
 import { useDebtPayments } from "@/hooks/useDebtPayments";
 import { Button } from "@/components/ui/button";
 
