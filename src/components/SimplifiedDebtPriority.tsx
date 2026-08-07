@@ -183,7 +183,11 @@ export const SimplifiedDebtPriority = ({
     }
     for (const d of sorted) {
       if (extraRemaining <= 0) break;
-      const extraForThis = Math.min(extraRemaining, d.balance);
+      // Cap at what month 1 actually needs after interest and the minimum payment,
+      // so the displayed extra never exceeds what the simulation applies.
+      const monthInterest = d.balance * (d.apr / 100 / 12);
+      const needed = Math.max(0, d.balance + monthInterest - d.minimum_payment);
+      const extraForThis = Math.min(extraRemaining, needed);
       extraAllocation.set(d.id, extraForThis);
       extraRemaining -= extraForThis;
     }
