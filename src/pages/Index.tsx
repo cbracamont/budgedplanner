@@ -128,6 +128,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import type { Language } from "@/lib/i18n";
+import { sumMonthlyFixedExpenses } from "@/lib/budgetMath";
 type DebtMethod = "avalanche" | "snowball" | "hybrid";
 type Event = {
   id: string;
