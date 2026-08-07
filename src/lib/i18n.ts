@@ -516,7 +516,17 @@ export const translations = {
     displayName: "Nombre para mostrar",
     create: "Crear",
     cancel: "Cancelar",
+
+    // Modo invitado / demo
+    guestModeTry: "Explorar con datos de demo",
+    guestModeHint: "Sin cuenta. Los datos quedan en este dispositivo y podrás pasarlos a tu cuenta más tarde.",
+    guestModeBannerText: "Modo demo: los datos solo se guardan en este dispositivo. Crea una cuenta para conservarlos.",
+    guestModeCreateAccount: "Crear cuenta y guardar datos",
+    guestModeReset: "Reiniciar datos de demo",
+    guestModeExit: "Salir del demo",
+    guestModeMigrated: "Tus datos de demo se movieron a tu cuenta.",
   },
+
   pt: {
     // App title
     appTitle: "Orçamento Familiar UK",
