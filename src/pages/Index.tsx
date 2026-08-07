@@ -710,6 +710,25 @@ const Index = () => {
     });
     return () => subscription.unsubscribe();
   }, []);
+
+  // Move locally stored demo data into the account right after signing up/in.
+  useEffect(() => {
+    if (!user || isGuestMode() || !hasPendingMigration()) return;
+    let cancelled = false;
+    migrateGuestData()
+      .then(({ migrated }) => {
+        if (cancelled || migrated === 0) return;
+        queryClient.invalidateQueries();
+        toast({ title: getTranslation(language, "guestModeMigrated") });
+      })
+      .catch(() => {
+        /* keep the local data so the user can retry */
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [user]);
+
   if (authLoading)
     return (
       <div className="p-8">
