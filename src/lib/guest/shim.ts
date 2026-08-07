@@ -277,25 +277,28 @@ export const installGuestShim = () => {
   installed = true;
 
   const client = supabase as any;
+  const define = (key: string, value: any) =>
+    Object.defineProperty(client, key, { value, configurable: true, writable: true });
 
-  client.from = (table: string) => new GuestQuery(table) as any;
-  client.rpc = (fn: string, args?: any) => guestRpc(fn, args) as any;
+  define("from", (table: string) => new GuestQuery(table) as any);
+  define("rpc", (fn: string, args?: any) => guestRpc(fn, args) as any);
 
-  client.functions = {
+  define("functions", {
     invoke: async () => ({
       data: null,
       error: { message: "AI and email features are disabled in demo mode. Create an account to unlock them." },
     }),
-  };
+  });
 
-  client.channel = () => ({
+  define("channel", () => ({
     on: () => ({ subscribe: () => ({ unsubscribe: () => {} }) }),
     subscribe: () => ({ unsubscribe: () => {} }),
-  });
-  client.removeChannel = () => {};
+  }));
+  define("removeChannel", () => {});
 
-  client.auth = {
-    ...client.auth,
+  const realAuth = client.auth;
+  define("auth", {
+    ...realAuth,
     getUser: async () => ({ data: { user: guestUser() }, error: null }),
     getSession: async () => ({ data: { session: guestSession() }, error: null }),
     onAuthStateChange: (cb: any) => {
@@ -311,5 +314,6 @@ export const installGuestShim = () => {
       data: { user: null, session: null },
       error: { message: "Leave demo mode first to sign in." },
     }),
-  };
+  });
 };
+
