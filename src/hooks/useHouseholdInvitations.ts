@@ -214,13 +214,30 @@ export const useJoinByCode = () => {
       });
 
       if (error) throw new Error(error.message);
+
+      const { data: { user } } = await supabase.auth.getUser();
+      if (user) {
+        const { data: membership } = await supabase
+          .from("household_members")
+          .select("household_id")
+          .eq("user_id", user.id)
+          .maybeSingle();
+        if (membership?.household_id) {
+          await supabase.rpc("ensure_household_shared_profile", {
+            _household_id: membership.household_id,
+          });
+        }
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["my-household"] });
       queryClient.invalidateQueries({ queryKey: ["household-members"] });
       queryClient.invalidateQueries({ queryKey: ["my-invitations"] });
+      queryClient.invalidateQueries({ queryKey: ["financial-profiles"] });
+      queryClient.invalidateQueries({ queryKey: ["active-profile"] });
       toast.success("Successfully joined the household");
     },
+
     onError: (error: Error) => {
       toast.error(error.message || "Error joining household");
     },
