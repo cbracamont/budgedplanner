@@ -127,16 +127,30 @@ export const useAcceptInvitation = () => {
 
   return useMutation({
     mutationFn: async (invitationId: string) => {
+      const { data: invitation } = await supabase
+        .from("household_invitations")
+        .select("household_id")
+        .eq("id", invitationId)
+        .maybeSingle();
+
       const { error } = await supabase.rpc("accept_household_invitation", {
         _invitation_id: invitationId,
       });
 
       if (error) throw new Error(error.message);
+
+      if (invitation?.household_id) {
+        await supabase.rpc("ensure_household_shared_profile", {
+          _household_id: invitation.household_id,
+        });
+      }
     },
     onSuccess: () => {
       queryClient.invalidateQueries({ queryKey: ["my-invitations"] });
       queryClient.invalidateQueries({ queryKey: ["my-household"] });
       queryClient.invalidateQueries({ queryKey: ["household-members"] });
+      queryClient.invalidateQueries({ queryKey: ["financial-profiles"] });
+      queryClient.invalidateQueries({ queryKey: ["active-profile"] });
       toast.success("You have joined the household");
     },
     onError: (error: Error) => {
@@ -144,6 +158,7 @@ export const useAcceptInvitation = () => {
     },
   });
 };
+
 
 export const useRejectInvitation = () => {
   const queryClient = useQueryClient();
