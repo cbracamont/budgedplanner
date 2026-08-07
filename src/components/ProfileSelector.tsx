@@ -114,8 +114,10 @@ export const ProfileSelector = ({ language }: ProfileSelectorProps) => {
                             </div>
                             <p className="text-xs text-muted-foreground capitalize">{profile.type}</p>
                           </>
-
+                        )}
+                      </div>
                     </div>
+
                     <div className="flex gap-1">
                       {editingId === profile.id ? (
                         <Button
