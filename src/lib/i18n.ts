@@ -691,8 +691,16 @@ export const translations = {
     helpFixedExpenses: "Despesas que se mantêm iguais todos os meses",
     helpVariableExpenses: "Despesas que mudam de mês para mês com base na utilização",
 
+    // Perfil familiar partilhado
+    shared: "Partilhado",
+    sharedFamilyProfile: "Perfil familiar partilhado",
+    sharedFamilyProfileDesc: "Todos os membros aprovados veem e editam os mesmos dados familiares. Os seus perfis pessoais permanecem privados.",
+    pendingApproval: "Pendente de aprovação",
+    approvedMember: "Aprovado",
+
     // Invitations
     joinHousehold: "Juntar-se a um Lar",
+
     joinHouseholdDesc: "Introduza um código de convite para se juntar a um lar existente",
     invitationCode: "Código de Convite",
     enterInvitationCode: "Introduza código de convite",
