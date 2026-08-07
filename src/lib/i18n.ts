@@ -185,8 +185,16 @@ export const translations = {
     helpFixedExpenses: "Expenses that stay the same every month",
     helpVariableExpenses: "Expenses that change from month to month based on usage",
 
+    // Shared family profile
+    shared: "Shared",
+    sharedFamilyProfile: "Shared family profile",
+    sharedFamilyProfileDesc: "All approved members see and edit the same family data. Your personal profiles stay private.",
+    pendingApproval: "Pending approval",
+    approvedMember: "Approved",
+
     // Invitations
     joinHousehold: "Join a Household",
+
     joinHouseholdDesc: "Enter an invitation code to join an existing household",
     invitationCode: "Invitation Code",
     enterInvitationCode: "Enter invitation code",
@@ -431,8 +439,16 @@ export const translations = {
     helpFixedExpenses: "Gastos que permanecen iguales cada mes",
     helpVariableExpenses: "Gastos que cambian de mes a mes según el uso",
 
+    // Perfil familiar compartido
+    shared: "Compartido",
+    sharedFamilyProfile: "Perfil familiar compartido",
+    sharedFamilyProfileDesc: "Todos los miembros aprobados ven y editan los mismos datos familiares. Tus perfiles personales siguen siendo privados.",
+    pendingApproval: "Pendiente de aprobación",
+    approvedMember: "Aprobado",
+
     // Invitations
     joinHousehold: "Unirse a un Hogar",
+
     joinHouseholdDesc: "Ingresa un código de invitación para unirte a un hogar existente",
     invitationCode: "Código de Invitación",
     enterInvitationCode: "Ingresa código de invitación",
@@ -675,8 +691,16 @@ export const translations = {
     helpFixedExpenses: "Despesas que se mantêm iguais todos os meses",
     helpVariableExpenses: "Despesas que mudam de mês para mês com base na utilização",
 
+    // Perfil familiar partilhado
+    shared: "Partilhado",
+    sharedFamilyProfile: "Perfil familiar partilhado",
+    sharedFamilyProfileDesc: "Todos os membros aprovados veem e editam os mesmos dados familiares. Os seus perfis pessoais permanecem privados.",
+    pendingApproval: "Pendente de aprovação",
+    approvedMember: "Aprovado",
+
     // Invitations
     joinHousehold: "Juntar-se a um Lar",
+
     joinHouseholdDesc: "Introduza um código de convite para se juntar a um lar existente",
     invitationCode: "Código de Convite",
     enterInvitationCode: "Introduza código de convite",

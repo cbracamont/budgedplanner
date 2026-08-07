@@ -90,6 +90,13 @@ export const HouseholdManager = ({ language }: HouseholdManagerProps) => {
         </CardHeader>
         <CardContent>
           <div className="space-y-4">
+            <div className="rounded-lg border border-primary/20 bg-primary/5 p-3">
+              <p className="text-sm font-medium">{getTranslation(language, 'sharedFamilyProfile')}</p>
+              <p className="text-xs text-muted-foreground">
+                {getTranslation(language, 'sharedFamilyProfileDesc')}
+              </p>
+            </div>
+
             <div className="flex items-center gap-2 text-sm">
               <span className="font-medium">{getTranslation(language, 'householdId')}:</span>
               <code className="px-2 py-1 bg-muted rounded text-xs">{myHousehold.data.household_id}</code>
@@ -110,7 +117,9 @@ export const HouseholdManager = ({ language }: HouseholdManagerProps) => {
                     <div>
                       <div className="font-medium">{member.display_name}</div>
                       <div className="text-xs text-muted-foreground">
-                        {member.status !== 'approved' && `(${member.status})`}
+                        {member.status === 'approved'
+                          ? getTranslation(language, 'approvedMember')
+                          : getTranslation(language, 'pendingApproval')}
                       </div>
                     </div>
                     {isOwner && member.status === 'pending' && (
@@ -139,6 +148,7 @@ export const HouseholdManager = ({ language }: HouseholdManagerProps) => {
             </div>
           </div>
         </CardContent>
+
       </Card>
     );
   }
