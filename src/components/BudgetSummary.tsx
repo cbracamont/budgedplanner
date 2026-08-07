@@ -18,7 +18,8 @@ export const BudgetSummary = ({ totalIncome, totalDebts, totalFixedExpenses, tot
   const monthlySavingsCommitments = totalSavingsGoals + monthlyEmergencyContribution;
   const monthlyBalance = totalIncome - totalExpenses - monthlySavingsCommitments;
   const estimatedSavings = monthlyBalance > 0 ? monthlyBalance : 0;
-  const weeklyBalance = monthlyBalance / 4;
+  // 12 months / 52 weeks — a month is 4.333 weeks, not 4.
+  const weeklyBalance = (monthlyBalance * 12) / 52;
   const isPositive = monthlyBalance >= 0;
 
   return (

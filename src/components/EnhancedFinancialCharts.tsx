@@ -123,7 +123,7 @@ export const EnhancedFinancialCharts = ({
                       tick={{ fill: 'hsl(var(--foreground))' }}
                     />
                     <Tooltip 
-                      formatter={(value: number) => [`£${value.toFixed(2)}`, '']}
+                      formatter={(value: number) => [formatCurrency(value), '']}
                       contentStyle={{ 
                         background: 'hsl(var(--card))',
                         border: '1px solid hsl(var(--primary)/0.3)',
@@ -222,7 +222,7 @@ export const EnhancedFinancialCharts = ({
                       ))}
                     </Pie>
                     <Tooltip 
-                      formatter={(value: number) => [`£${value.toFixed(2)}`, '']}
+                      formatter={(value: number) => [formatCurrency(value), '']}
                       contentStyle={{ 
                         background: 'hsl(var(--card))',
                         border: '1px solid hsl(var(--primary)/0.3)',
@@ -271,7 +271,7 @@ export const EnhancedFinancialCharts = ({
                       tick={{ fill: 'hsl(var(--foreground))' }}
                     />
                     <Tooltip 
-                      formatter={(value: number) => [`£${value.toFixed(2)}`, '']}
+                      formatter={(value: number) => [formatCurrency(value), '']}
                       contentStyle={{ 
                         background: 'hsl(var(--card))',
                         border: '1px solid hsl(var(--primary)/0.3)',

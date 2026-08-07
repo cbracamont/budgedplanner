@@ -141,7 +141,7 @@ export const DebtEvolutionChart = ({ language }: DebtEvolutionChartProps) => {
                   />
                   <YAxis
                     tick={{ fontSize: 12 }}
-                    tickFormatter={(value) => `£${value}`}
+                    tickFormatter={(value) => formatCurrency(Number(value))}
                   />
                   <Tooltip
                     formatter={(value: number) => [formatCurrency(value), language === "en" ? "Balance" : "Saldo"]}
