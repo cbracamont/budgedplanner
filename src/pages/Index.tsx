@@ -2244,15 +2244,21 @@ const DebtPlanner = ({
   const { data: fixedExpensesData = [] } = useFixedExpenses();
   const { data: variableExpensesData = [] } = useVariableExpenses();
   const { data: savings } = useSavings();
+  const { data: savingsGoalsData = [] } = useSavingsGoals();
   const { totalIncome, totalFixed, totalVariable, totalDebtPayment, totalExpenses, cashFlow, savingsTotal } =
     useMemo(() => {
+      // Same rules as the Overview tab so both tabs never disagree.
+      const currentMonthNum = new Date().getMonth() + 1;
       const totalIncome = incomeData.reduce((s, i) => s + i.amount, 0);
-      const totalFixed = fixedExpensesData.reduce((s, e) => s + e.amount, 0);
+      const totalFixed = sumMonthlyFixedExpenses(fixedExpensesData, currentMonthNum);
       const totalVariable = variableExpensesData.reduce((s, e) => s + e.amount, 0);
       const activeDebts = debtData.filter((d) => d.balance > 0 && d.minimum_payment > 0);
       const totalDebtPayment = activeDebts.reduce((s, d) => s + d.minimum_payment, 0);
       const totalExpenses = totalFixed + totalVariable + totalDebtPayment;
-      const cashFlow = totalIncome - totalExpenses;
+      const savingsCommitments = savingsGoalsData
+        .filter((g) => g.is_active && g.monthly_contribution)
+        .reduce((s, g) => s + (g.monthly_contribution || 0), 0);
+      const cashFlow = totalIncome - totalExpenses - savingsCommitments;
       const savingsTotal = savings?.emergency_fund || 0;
       return {
         totalIncome,
@@ -2263,7 +2269,7 @@ const DebtPlanner = ({
         cashFlow,
         savingsTotal,
       };
-    }, [incomeData, debtData, fixedExpensesData, variableExpensesData, savings]);
+    }, [incomeData, debtData, fixedExpensesData, variableExpensesData, savings, savingsGoalsData]);
   const debtStrategy = useMemo(() => {
     const activeDebts = debtData.filter((d) => d.balance > 0 && d.minimum_payment > 0);
     if (activeDebts.length === 0) return null;
