@@ -397,26 +397,10 @@ const Index = () => {
     const totalVariableIncome = currentMonthVariableIncome;
     const totalIncome = totalFixedIncome + totalVariableIncome;
     // Fixed expenses: respect frequency_type/payment_month so quarterly,
-    // semiannual and annual expenses are only counted in the months they are due
-    // (same rule used to build the calendar events below).
+    // semiannual and annual expenses are only counted in the months they are due,
+    // and weekly/bi-weekly ones are converted to their monthly equivalent.
     const currentMonthNum = new Date().getMonth() + 1;
-    const isFixedExpenseDueInMonth = (exp: { frequency_type?: string | null; payment_month?: number | null }, monthNum: number) => {
-      const firstMonth = exp.payment_month || 1;
-      switch (exp.frequency_type) {
-        case "quarterly":
-          return [0, 3, 6, 9].some((offset) => ((firstMonth + offset - 1) % 12) + 1 === monthNum);
-        case "semiannual":
-          return [0, 6].some((offset) => ((firstMonth + offset - 1) % 12) + 1 === monthNum);
-        case "annual":
-          return firstMonth === monthNum;
-        default:
-          return true;
-      }
-    };
-    const totalFixed = fixedExpensesData.reduce(
-      (s, e) => (isFixedExpenseDueInMonth(e, currentMonthNum) ? s + e.amount : s),
-      0,
-    );
+    const totalFixed = sumMonthlyFixedExpenses(fixedExpensesData, currentMonthNum);
 
     // Use monthly variable expenses from database instead of regular variable expenses
     const totalVariable = currentMonthVariableExpenses;
