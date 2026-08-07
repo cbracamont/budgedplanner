@@ -48,7 +48,6 @@ import {
 import { useDeleteDebtPayment } from "@/hooks/useDebtPayments";
 import { useIncomeSources, useDebts, useFixedExpenses, useSavingsGoals } from "@/hooks/useFinancialData";
 import { useActiveProfile } from "@/hooks/useFinancialProfiles";
-import { supabase } from "@/integrations/supabase/client";
 import { Progress } from "@/components/ui/progress";
 import { formatCurrency } from "@/lib/i18n";
 import { format, startOfMonth, addMonths, subMonths, isPast } from "date-fns";
