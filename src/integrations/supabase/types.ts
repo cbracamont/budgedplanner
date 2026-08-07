@@ -1019,6 +1019,14 @@ export type Database = {
         Args: { _invitation_id: string }
         Returns: undefined
       }
+      can_access_profile: {
+        Args: { _profile_id: string; _user_id: string }
+        Returns: boolean
+      }
+      ensure_household_shared_profile: {
+        Args: { _household_id: string }
+        Returns: string
+      }
       has_household_role: {
         Args: {
           _household_id: string
