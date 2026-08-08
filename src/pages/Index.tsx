@@ -337,7 +337,7 @@ const Index = () => {
       },
     [profiles],
   );
-  const { data: incomeData = [] } = useIncomeSources();
+  const { data: incomeData = [], isLoading: incomeLoading } = useIncomeSources();
   const { data: variableIncomeData = [] } = useVariableIncome();
 
   // Get current month's variable income and expenses totals
@@ -345,11 +345,13 @@ const Index = () => {
   const currentMonthStart = useMemo(() => startOfMonth(new Date()), []);
   const currentMonthVariableIncome = useMonthlyVariableIncomeTotal(currentMonthStart);
   const currentMonthVariableExpenses = useMonthlyVariableExpensesTotal(currentMonthStart);
-  const { data: debtData = [] } = useDebts();
-  const { data: fixedExpensesData = [] } = useFixedExpenses();
+  const { data: debtData = [], isLoading: debtsLoading } = useDebts();
+  const { data: fixedExpensesData = [], isLoading: fixedLoading } = useFixedExpenses();
   const { data: variableExpensesData = [] } = useVariableExpenses();
   const { data: savingsGoalsData = [] } = useSavingsGoals();
-  const { data: savings } = useSavings();
+  const { data: savings, isLoading: savingsLoading } = useSavings();
+  const overviewLoading = incomeLoading || debtsLoading || fixedLoading || savingsLoading;
+
   const [currentWeekOffset, setCurrentWeekOffset] = useState(0);
   const [projectionMonthOffset, setProjectionMonthOffset] = useState(0); // New state for month projection
 
