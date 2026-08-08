@@ -140,8 +140,8 @@ export const FloatingBudgetBuddy = ({ language, profileId, onNavigate }: Floatin
 
   const dueLabel = (p: UpcomingPayment) => {
     const d = p.daysUntil;
-    if (d === undefined) return `${t.today.length ? "" : ""}${p.date}`;
-    if (d === 0) return t.today;
+    if (d === undefined) return `${p.date}`;
+
     if (d === 1) return t.tomorrow;
     return t.inDays(d);
   };
