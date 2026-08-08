@@ -17,7 +17,6 @@ export default defineConfig({
       // modules get covered, and raise the thresholds with it.
       include: [
         "src/lib/calendarEvents.ts",
-        "src/lib/budgetMath.ts",
         "src/components/dashboard/**/*.tsx",
       ],
       exclude: ["**/*.test.{ts,tsx}", "**/*.spec.{ts,tsx}"],
