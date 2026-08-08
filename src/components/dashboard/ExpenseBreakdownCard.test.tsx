@@ -59,8 +59,9 @@ describe("ExpenseBreakdownCard", () => {
       />,
     );
 
-    expect(screen.getByText(`${labels.high} ${labels.impact}`)).toBeInTheDocument(); // 60% > 20%
-    expect(screen.getByText(`${labels.medium} ${labels.impact}`)).toBeInTheDocument(); // 15% is > 10%
+    // Fixed 60% and Variable 25% are both above the 20% "high" threshold
+    expect(screen.getAllByText(`${labels.high} ${labels.impact}`)).toHaveLength(2);
+    expect(screen.getAllByText(`${labels.medium} ${labels.impact}`)).toHaveLength(1); // Debt 15%
     expect(screen.queryByText(`${labels.low} ${labels.impact}`)).not.toBeInTheDocument();
   });
 
