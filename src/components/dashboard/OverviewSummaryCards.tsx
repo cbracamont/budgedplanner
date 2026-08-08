@@ -142,7 +142,11 @@ export const OverviewSummaryCards = ({
         <div className={`text-7xl font-bold ${status.color} animate-scale-in`}>
           {status.emoji} {status.label}
         </div>
-        <Progress value={status.progress} className="mt-6 h-3" />
+        <Progress
+          value={status.progress}
+          className="mt-6 h-3"
+          aria-label={`${labels.cashFlow}: ${status.label}`}
+        />
         <p className="mt-4 text-muted-foreground">{status.message}</p>
       </div>
     </>
