@@ -37,16 +37,17 @@ serve(async (req) => {
     const { profileId, language = 'en' } = await req.json();
 
     // Fetch financial data
-    const [incomeData, debtsData, paymentsData, savingsData] = await Promise.all([
+    const [incomeData, debtsData, paymentsData, savingsData, fixedData] = await Promise.all([
       supabase.from('income_sources').select('*').eq('user_id', user.id).eq('profile_id', profileId),
       supabase.from('debts').select('*').eq('user_id', user.id).eq('profile_id', profileId),
       supabase.from('payment_tracker').select('*').eq('user_id', user.id).eq('profile_id', profileId),
-      supabase.from('savings_goals').select('*').eq('user_id', user.id).eq('profile_id', profileId)
+      supabase.from('savings_goals').select('*').eq('user_id', user.id).eq('profile_id', profileId),
+      supabase.from('fixed_expenses').select('*').eq('user_id', user.id).eq('profile_id', profileId)
     ]);
 
     const currentDate = new Date();
     const currentMonth = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}`;
-    
+
     const monthlyPayments = paymentsData.data?.filter(p => p.month_year === currentMonth) || [];
     const pendingPayments = monthlyPayments.filter(p => p.payment_status === 'pending');
     const paidPayments = monthlyPayments.filter(p => p.payment_status === 'paid');
@@ -55,50 +56,68 @@ serve(async (req) => {
     const totalDebt = debtsData.data?.reduce((sum, d) => sum + d.balance, 0) || 0;
     const totalPending = pendingPayments.reduce((sum, p) => sum + p.amount, 0);
     const totalPaid = paidPayments.reduce((sum, p) => sum + p.amount, 0);
-    const savingsProgress = savingsData.data?.reduce((sum, s) => sum + (s.current_amount / s.target_amount) * 100, 0) / (savingsData.data?.length || 1) || 0;
+    const savingsProgress = savingsData.data?.length
+      ? savingsData.data.reduce(
+          (sum, s) => sum + (s.target_amount > 0 ? Math.min(s.current_amount / s.target_amount, 1) * 100 : 0),
+          0
+        ) / savingsData.data.length
+      : 0;
 
-    // Get upcoming payments (next 7 days)
-    const nextWeek = new Date();
-    nextWeek.setDate(nextWeek.getDate() + 7);
-    
-    const upcomingDebts = debtsData.data?.filter(d => {
-      const paymentDay = d.payment_day;
-      const nextPaymentDate = new Date(currentDate.getFullYear(), currentDate.getMonth(), paymentDay);
-      return nextPaymentDate >= currentDate && nextPaymentDate <= nextWeek;
-    }).map(d => ({
-      name: d.name,
-      amount: d.minimum_payment,
-      date: d.payment_day,
-      type: 'debt'
-    })) || [];
+    // Upcoming payments in the next 7 days (debts + monthly fixed expenses)
+    const daysUntil = (day: number) => {
+      const thisMonth = new Date(currentDate.getFullYear(), currentDate.getMonth(), day);
+      const target = thisMonth < new Date(currentDate.getFullYear(), currentDate.getMonth(), currentDate.getDate())
+        ? new Date(currentDate.getFullYear(), currentDate.getMonth() + 1, day)
+        : thisMonth;
+      return Math.round(
+        (target.getTime() - new Date(currentDate.getFullYear(), currentDate.getMonth(), currentDate.getDate()).getTime()) /
+          86400000
+      );
+    };
+
+    const upcomingDebts = (debtsData.data || [])
+      .filter(d => d.balance > 0 && d.payment_day)
+      .map(d => ({ name: d.name, amount: d.minimum_payment, date: d.payment_day, type: 'debt', daysUntil: daysUntil(d.payment_day) }))
+      .filter(p => p.daysUntil >= 0 && p.daysUntil <= 7);
+
+    const upcomingFixed = (fixedData.data || [])
+      .filter(f => (f.frequency_type ?? 'monthly') === 'monthly' && f.payment_day)
+      .map(f => ({ name: f.name, amount: f.amount, date: f.payment_day, type: 'fixed', daysUntil: daysUntil(f.payment_day) }))
+      .filter(p => p.daysUntil >= 0 && p.daysUntil <= 7);
+
+    const upcoming = [...upcomingDebts, ...upcomingFixed].sort((a, b) => a.daysUntil - b.daysUntil);
+    const upcomingTotal = upcoming.reduce((sum, p) => sum + (p.amount || 0), 0);
 
     const translations = {
       en: {
         healthyStatus: "Your financial health is good",
         concernStatus: "Some areas need attention",
         criticalStatus: "Immediate action needed",
-        upcomingPayments: "upcoming payments",
-        pendingPayments: "pending payments worth",
+        pendingPayments: "Pending payments this month",
+        paidPayments: "Paid this month",
         debtLevel: "Total debt",
-        savingsProgress: "Savings goals progress"
+        savingsProgress: "Savings goals progress",
+        next7days: "Due in the next 7 days"
       },
       es: {
         healthyStatus: "Tu salud financiera es buena",
         concernStatus: "Algunas áreas necesitan atención",
         criticalStatus: "Se requiere acción inmediata",
-        upcomingPayments: "pagos próximos",
-        pendingPayments: "pagos pendientes por valor de",
+        pendingPayments: "Pagos pendientes este mes",
+        paidPayments: "Pagado este mes",
         debtLevel: "Deuda total",
-        savingsProgress: "Progreso de metas de ahorro"
+        savingsProgress: "Progreso de metas de ahorro",
+        next7days: "Vence en los próximos 7 días"
       },
       pt: {
         healthyStatus: "Sua saúde financeira está boa",
         concernStatus: "Algumas áreas precisam de atenção",
         criticalStatus: "Ação imediata necessária",
-        upcomingPayments: "pagamentos próximos",
-        pendingPayments: "pagamentos pendentes no valor de",
+        pendingPayments: "Pagamentos pendentes este mês",
+        paidPayments: "Pago este mês",
         debtLevel: "Dívida total",
-        savingsProgress: "Progresso das metas de poupança"
+        savingsProgress: "Progresso das metas de poupança",
+        next7days: "Vence nos próximos 7 dias"
       }
     };
 
@@ -107,7 +126,7 @@ serve(async (req) => {
     // Determine financial status
     let status = 'healthy';
     let statusMessage = t.healthyStatus;
-    
+
     if (totalDebt > totalIncome * 3 || pendingPayments.length > 5) {
       status = 'critical';
       statusMessage = t.criticalStatus;
@@ -120,24 +139,13 @@ serve(async (req) => {
       status,
       statusMessage,
       metrics: [
-        {
-          label: t.pendingPayments,
-          value: `$${totalPending.toLocaleString()}`,
-          count: pendingPayments.length
-        },
-        {
-          label: t.debtLevel,
-          value: `$${totalDebt.toLocaleString()}`
-        },
-        {
-          label: t.savingsProgress,
-          value: `${Math.round(savingsProgress)}%`
-        }
+        { key: 'pending', label: t.pendingPayments, amount: totalPending, format: 'currency', count: pendingPayments.length },
+        { key: 'paid', label: t.paidPayments, amount: totalPaid, format: 'currency', count: paidPayments.length },
+        { key: 'next7', label: t.next7days, amount: upcomingTotal, format: 'currency', count: upcoming.length },
+        { key: 'debt', label: t.debtLevel, amount: totalDebt, format: 'currency' },
+        { key: 'savings', label: t.savingsProgress, amount: Math.round(savingsProgress), format: 'percent' }
       ],
-      upcomingPayments: upcomingDebts.map(p => ({
-        ...p,
-        label: `${t.upcomingPayments}`
-      }))
+      upcomingPayments: upcoming
     };
 
     return new Response(JSON.stringify({ insights }), {
