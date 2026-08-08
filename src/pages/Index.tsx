@@ -341,6 +341,7 @@ const Index = () => {
   const { data: variableIncomeData = [] } = useVariableIncome();
 
   // Get current month's variable income and expenses totals
+  const currencySymbol = getCurrencySymbol();
   const currentMonthStart = useMemo(() => startOfMonth(new Date()), []);
   const currentMonthVariableIncome = useMonthlyVariableIncomeTotal(currentMonthStart);
   const currentMonthVariableExpenses = useMonthlyVariableExpensesTotal(currentMonthStart);
