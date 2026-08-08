@@ -8,7 +8,7 @@ describe("dashboard skeletons", () => {
   it("renders a placeholder per metric card plus the status strip", () => {
     const { container } = render(<SummaryCardsSkeleton />);
     expect(container.querySelectorAll("[aria-busy='true']").length).toBeGreaterThan(0);
-    expect(skeletons(container).length).toBe(14);
+    expect(skeletons(container).length).toBe(15);
   });
 
   it("renders the donut placeholder with one row per slice", () => {
