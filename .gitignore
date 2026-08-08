@@ -26,3 +26,8 @@ dist-ssr
 test-results/
 playwright-report/
 coverage/
+
+# Local env files (contain backend keys)
+.env
+.env.*
+!.env.example

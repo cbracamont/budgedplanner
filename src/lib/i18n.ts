@@ -892,6 +892,19 @@ export const formatCurrency = (amount: number, currency?: string): string => {
   }
 };
 
+export const getCurrencySymbol = (currency?: string): string => {
+  const code = (currency || activeCurrency).toUpperCase();
+  const locale = CURRENCY_LOCALES[code] || 'en-GB';
+  try {
+    const parts = new Intl.NumberFormat(locale, { style: 'currency', currency: code }).formatToParts(0);
+    return parts.find((p) => p.type === 'currency')?.value || code;
+  } catch {
+    return '£';
+  }
+};
+
+
+
 export const ukBanks = [
   "Barclays", "HSBC", "Lloyds", "NatWest", "Santander", 
   "Nationwide", "Halifax", "TSB", "Monzo", "Starling", 

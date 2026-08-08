@@ -13,7 +13,7 @@ import {
   add,
   sub,
 } from "date-fns";
-import { formatCurrency, getTranslation } from "@/lib/i18n";
+import { formatCurrency, getCurrencySymbol, getTranslation } from "@/lib/i18n";
 import {
   TrendingUp,
   Download,
@@ -341,6 +341,7 @@ const Index = () => {
   const { data: variableIncomeData = [] } = useVariableIncome();
 
   // Get current month's variable income and expenses totals
+  const currencySymbol = getCurrencySymbol();
   const currentMonthStart = useMemo(() => startOfMonth(new Date()), []);
   const currentMonthVariableIncome = useMonthlyVariableIncomeTotal(currentMonthStart);
   const currentMonthVariableExpenses = useMonthlyVariableExpensesTotal(currentMonthStart);
@@ -1260,7 +1261,7 @@ const Index = () => {
                   {/* Amount (not for debts) */}
                   {newEvent.type !== "debt" && (
                     <div>
-                      <Label>{newEvent.type === "savings" ? "Current Saved Amount (£)" : "Amount (£)"}</Label>
+                      <Label>{newEvent.type === "savings" ? `Current Saved Amount (${currencySymbol})` : `Amount (${currencySymbol})`}</Label>
                       <Input
                         type="number"
                         step="0.01"
@@ -1280,7 +1281,7 @@ const Index = () => {
                   {newEvent.type === "debt" && (
                     <>
                       <div>
-                        <Label>Total Balance (£)</Label>
+                        <Label>Total Balance ({currencySymbol})</Label>
                         <Input
                           type="number"
                           step="0.01"
@@ -1310,7 +1311,7 @@ const Index = () => {
                         />
                       </div>
                       <div>
-                        <Label>Minimum Payment (£)</Label>
+                        <Label>Minimum Payment ({currencySymbol})</Label>
                         <Input
                           type="number"
                           step="0.01"
@@ -1331,7 +1332,7 @@ const Index = () => {
                   {newEvent.type === "savings" && (
                     <>
                       <div>
-                        <Label>Target Amount (£)</Label>
+                        <Label>Target Amount ({currencySymbol})</Label>
                         <Input
                           type="number"
                           step="0.01"
@@ -1449,7 +1450,7 @@ const Index = () => {
                     />
                   </div>
                   <div>
-                    <Label>Amount (£)</Label>
+                    <Label>Amount ({currencySymbol})</Label>
                     <Input
                       type="number"
                       value={newIncome.amount || ""}
@@ -1491,7 +1492,7 @@ const Index = () => {
                 </AlertDialogHeader>
                 <div className="space-y-4">
                   <div>
-                    <Label>Amount (£)</Label>
+                    <Label>Amount ({currencySymbol})</Label>
                     <Input
                       type="number"
                       value={addMoneyAmount || ""}
@@ -1520,7 +1521,7 @@ const Index = () => {
                 </AlertDialogHeader>
                 <div className="space-y-4">
                   <div>
-                    <Label>Current Amount Saved (£)</Label>
+                    <Label>Current Amount Saved ({currencySymbol})</Label>
                     <Input
                       type="number"
                       value={editGoalData.current_amount || ""}
@@ -1536,7 +1537,7 @@ const Index = () => {
                     />
                   </div>
                   <div>
-                    <Label>Target Amount (£)</Label>
+                    <Label>Target Amount ({currencySymbol})</Label>
                     <Input
                       type="number"
                       value={editGoalData.target_amount || ""}
@@ -1588,7 +1589,7 @@ const Index = () => {
                 </AlertDialogHeader>
                 <div className="space-y-4 py-4">
                   <div className="space-y-2">
-                    <Label htmlFor="emergency-amount">Amount to Add (£)</Label>
+                    <Label htmlFor="emergency-amount">Amount to Add ({currencySymbol})</Label>
                     <Input
                       id="emergency-amount"
                       type="number"
@@ -1622,7 +1623,7 @@ const Index = () => {
                 </AlertDialogHeader>
                 <div className="space-y-4 py-4">
                   <div className="space-y-2">
-                    <Label htmlFor="edit-emergency-amount">Current Amount (£)</Label>
+                    <Label htmlFor="edit-emergency-amount">Current Amount ({currencySymbol})</Label>
                     <Input
                       id="edit-emergency-amount"
                       type="number"
