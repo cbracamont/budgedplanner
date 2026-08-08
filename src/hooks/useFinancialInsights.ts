@@ -1,18 +1,25 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { supabase } from '@/integrations/supabase/client';
 
 export interface FinancialMetric {
+  key?: string;
   label: string;
-  value: string;
+  /** Raw numeric value, formatted on the client so it respects the user's currency. */
+  amount?: number;
+  format?: 'currency' | 'percent';
+  /** Legacy pre-formatted value (older function responses). */
+  value?: string;
   count?: number;
 }
 
 export interface UpcomingPayment {
   name: string;
   amount: number;
+  /** Day of the month the payment is due. */
   date: number;
   type: string;
-  label: string;
+  daysUntil?: number;
+  label?: string;
 }
 
 export interface FinancialInsights {
@@ -27,7 +34,7 @@ export const useFinancialInsights = (profileId: string | undefined, language: st
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState<string | null>(null);
 
-  const fetchInsights = async () => {
+  const fetchInsights = useCallback(async () => {
     if (!profileId) {
       setInsights(null);
       return;
@@ -57,11 +64,11 @@ export const useFinancialInsights = (profileId: string | undefined, language: st
     } finally {
       setIsLoading(false);
     }
-  };
+  }, [profileId, language]);
 
   useEffect(() => {
     fetchInsights();
-  }, [profileId, language]);
+  }, [fetchInsights]);
 
   return {
     insights,

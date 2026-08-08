@@ -1891,7 +1891,9 @@ const Index = () => {
         <FloatingBudgetBuddy 
           language={language} 
           profileId={"id" in activeProfile ? activeProfile.id : undefined}
+          onNavigate={setActiveTab}
         />
+
       </div>
     </>
   );
