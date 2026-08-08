@@ -129,7 +129,8 @@ All colors MUST be HSL.
     --secondary-foreground: 220 10% 95%;
 
     --muted: 220 15% 16%;
-    --muted-foreground: 220 10% 65%;
+    /* Raised for AA contrast on small (text-xs) copy in dark mode */
+    --muted-foreground: 220 12% 74%;
 
     --accent: 217 91% 60%;
     --accent-foreground: 0 0% 100%;
