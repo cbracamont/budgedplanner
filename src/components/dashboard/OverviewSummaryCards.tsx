@@ -183,10 +183,7 @@ export const OverviewSummaryCards = ({
               className="h-2"
               aria-label={`${labels.cashFlow}: ${status.label}`}
             />
-            <p className="text-body-sm text-muted-foreground flex items-center gap-1">
-              <Minus className="hidden" aria-hidden="true" />
-              {status.message}
-            </p>
+            <p className="text-body-sm text-muted-foreground">{status.message}</p>
           </div>
         </CardContent>
       </Card>
