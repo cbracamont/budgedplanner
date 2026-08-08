@@ -1,6 +1,5 @@
 "use client";
 
-import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from "recharts";
 
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { useQueryClient, useQuery } from "@tanstack/react-query";
@@ -13,7 +12,6 @@ import {
   isSameDay,
   add,
   sub,
-  startOfWeek,
 } from "date-fns";
 import { formatCurrency, getTranslation } from "@/lib/i18n";
 import {
@@ -107,16 +105,10 @@ import { useTheme as useNextTheme } from "next-themes";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Sheet, SheetContent, SheetDescription, SheetHeader, SheetTitle, SheetTrigger } from "@/components/ui/sheet";
 
-// Calendar Event Type
-type CalendarEvent = {
-  id: string;
-  date: string;
-  type: "income" | "fixed" | "debt" | "variable";
-  name: string;
-  amount: number;
-  recurring: boolean;
-  payment_status?: "paid" | "pending";
-};
+import { buildCalendarEvents, type CalendarEvent } from "@/lib/calendarEvents";
+import { OverviewSummaryCards } from "@/components/dashboard/OverviewSummaryCards";
+import { ExpenseBreakdownCard } from "@/components/dashboard/ExpenseBreakdownCard";
+import { PaymentTimelineCard } from "@/components/dashboard/PaymentTimelineCard";
 import {
   AlertDialog,
   AlertDialogAction,
@@ -127,7 +119,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
@@ -513,151 +504,16 @@ const Index = () => {
       },
     ].filter((d) => d.value > 0);
 
-    // CALENDARIO CON EVENTOS EN TODOS LOS MESES
-    const allEvents: CalendarEvent[] = [];
-    const startYear = currentMonth.getFullYear() - 1;
-    const endYear = currentMonth.getFullYear() + 1;
-    for (let year = startYear; year <= endYear; year++) {
-      for (let month = 0; month < 12; month++) {
-        const currentDate = new Date(year, month, 1);
-        if (currentDate > new Date(endYear, 11, 31)) break;
-
-        // INGRESOS FIJOS - payment_day
-        incomeData.forEach((inc) => {
-          const day = inc.payment_day || 1;
-          const lastDayOfMonth = new Date(year, month + 1, 0).getDate();
-          const date = new Date(year, month, Math.min(day, lastDayOfMonth));
-          allEvents.push({
-            id: `inc-${inc.id}-${year}-${month}`,
-            date: format(date, "yyyy-MM-dd"),
-            type: "income",
-            name: inc.name,
-            amount: inc.amount,
-            recurring: true,
-          });
-        });
-
-        // VARIABLE INCOME - Based on frequency and payment_day/day_of_week
-        variableIncomeData.forEach((inc) => {
-          if (inc.frequency === "weekly" && inc.day_of_week !== undefined) {
-            // For weekly, add event for each occurrence of the day in the month
-            const daysInMonth = new Date(year, month + 1, 0).getDate();
-            for (let day = 1; day <= daysInMonth; day++) {
-              const date = new Date(year, month, day);
-              if (date.getDay() === inc.day_of_week) {
-                allEvents.push({
-                  id: `var-inc-${inc.id}-${year}-${month}-${day}`,
-                  date: format(date, "yyyy-MM-dd"),
-                  type: "income",
-                  name: `${inc.name} (weekly)`,
-                  amount: inc.amount,
-                  recurring: true,
-                });
-              }
-            }
-          } else {
-            // For other frequencies, check if should be included in this month
-            const shouldInclude = (() => {
-              switch (inc.frequency) {
-                case "monthly":
-                  return true;
-                case "quarterly":
-                  return month % 3 === 0;
-                case "semi-annually":
-                  return month % 6 === 0;
-                case "annually":
-                  return month === 0;
-                default:
-                  return true;
-              }
-            })();
-            if (shouldInclude) {
-              const day = inc.payment_day || 1;
-              const lastDayOfMonth = new Date(year, month + 1, 0).getDate();
-              const date = new Date(year, month, Math.min(day, lastDayOfMonth));
-              allEvents.push({
-                id: `var-inc-${inc.id}-${year}-${month}`,
-                date: format(date, "yyyy-MM-dd"),
-                type: "income",
-                name: `${inc.name} (${inc.frequency})`,
-                amount: inc.amount,
-                recurring: true,
-              });
-            }
-          }
-        });
-
-        // GASTOS FIJOS - Respetar frecuencia
-        fixedExpensesData.forEach((exp) => {
-          // Determinar si este gasto debe mostrarse en este mes
-          const shouldInclude = (() => {
-            const monthNum = month + 1; // 1-based month
-
-            if (exp.frequency_type === "monthly") {
-              return true;
-            } else if (exp.frequency_type === "quarterly") {
-              // Quarterly: payment_month indica el primer mes (ej: 1 = Ene, Abr, Jul, Oct)
-              const firstMonth = exp.payment_month || 1;
-              const quarterlyMonths = [
-                firstMonth,
-                ((firstMonth + 3 - 1) % 12) + 1,
-                ((firstMonth + 6 - 1) % 12) + 1,
-                ((firstMonth + 9 - 1) % 12) + 1,
-              ];
-              return quarterlyMonths.includes(monthNum);
-            } else if (exp.frequency_type === "semiannual") {
-              // Semiannual: payment_month indica el primer mes (ej: 1 = Ene y Jul)
-              const firstMonth = exp.payment_month || 1;
-              const semiannualMonths = [firstMonth, ((firstMonth + 6 - 1) % 12) + 1];
-              return semiannualMonths.includes(monthNum);
-            } else if (exp.frequency_type === "annual") {
-              // Annual: solo en el mes especificado
-              return exp.payment_month === monthNum;
-            }
-            return true;
-          })();
-          if (shouldInclude) {
-            const day = exp.payment_day || 1;
-            const lastDayOfMonth = new Date(year, month + 1, 0).getDate();
-            const date = new Date(year, month, Math.min(day, lastDayOfMonth));
-            allEvents.push({
-              id: `fix-${exp.id}-${year}-${month}`,
-              date: format(date, "yyyy-MM-dd"),
-              type: "fixed",
-              name: exp.name,
-              amount: exp.amount,
-              recurring: exp.frequency_type === "monthly",
-            });
-          }
-        });
-
-        // DEUDAS - Día 15
-        debtData.forEach((debt) => {
-          const date = new Date(year, month, 15);
-          allEvents.push({
-            id: `debt-${debt.id}-${year}-${month}`,
-            date: format(date, "yyyy-MM-dd"),
-            type: "debt",
-            name: `${debt.name} (min)`,
-            amount: debt.minimum_payment,
-            recurring: true,
-          });
-        });
-
-        // GASTOS VARIABLES - Día 10
-        variableExpensesData.forEach((exp) => {
-          const date = new Date(year, month, 10);
-          allEvents.push({
-            id: `var-${exp.id}-${year}-${month}`,
-            date: format(date, "yyyy-MM-dd"),
-            type: "variable",
-            name: exp.name,
-            amount: exp.amount,
-            recurring: true,
-          });
-        });
-      }
-    }
+    // Recurring calendar events for the surrounding years (pure helper).
+    const allEvents: CalendarEvent[] = buildCalendarEvents({
+      incomeData,
+      variableIncomeData,
+      fixedExpensesData,
+      debtData,
+      variableExpensesData,
+      startYear: currentMonth.getFullYear() - 1,
+      endYear: currentMonth.getFullYear() + 1,
+    });
     const monthStart = startOfMonth(currentMonth);
     const monthEnd = endOfMonth(currentMonth);
     const monthDays = eachDayOfInterval({
@@ -1155,209 +1011,49 @@ const Index = () => {
 
             <TabsContent value="overview">
               {/* RESUMEN */}
-              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
-                <Card className="border-green-200">
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-sm text-green-600">{t.totalIncome}</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-3xl font-bold text-green-600">{formatCurrency(totalIncome)}</div>
-                    {totalVariableIncome > 0 && (
-                      <p className="text-xs text-muted-foreground mt-1">
-                        Variable: {formatCurrency(totalVariableIncome)}
-                      </p>
-                    )}
-                  </CardContent>
-                </Card>
-                <Card className="border-red-200">
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-sm text-red-600">{t.totalExpenses}</CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-3xl font-bold text-red-600">{formatCurrency(totalExpenses)}</div>
-                  </CardContent>
-                </Card>
-                <Card className={`${cashFlow >= 0 ? "border-emerald-200" : "border-orange-200"}`}>
-                  <CardHeader className="pb-2">
-                    <CardTitle className={`text-sm ${cashFlow >= 0 ? "text-emerald-600" : "text-orange-600"}`}>
-                      {t.cashFlow}
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className={`text-3xl font-bold ${cashFlow >= 0 ? "text-emerald-600" : "text-orange-600"}`}>
-                      {formatCurrency(cashFlow)}
-                    </div>
-                  </CardContent>
-                </Card>
-                <Card className="border-purple-200">
-                  <CardHeader className="pb-2">
-                    <CardTitle className="text-sm text-purple-600 flex items-center gap-1">
-                      <PiggyBank className="h-4 w-4" /> {t.totalSavings}
-                    </CardTitle>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-3xl font-bold text-purple-600">{formatCurrency(savingsTotal)}</div>
-                    <div className="text-xs text-muted-foreground mt-1 space-y-0.5">
-                      <p>Emergency: {formatCurrency(savings?.emergency_fund || 0)}</p>
-                      <p>General: {formatCurrency(savings?.total_accumulated || 0)}</p>
-                      <p>Goals: {formatCurrency(savingsGoalsData.reduce((s, g) => s + (g.current_amount || 0), 0))}</p>
-                    </div>
-                  </CardContent>
-                </Card>
-              </div>
-
-
-              {/* Main Status - Multi-Stage */}
-              <div className="text-center py-8">
-                {(() => {
-                  const status = (() => {
-                    if (cashFlow > totalExpenses * 0.3)
-                      return {
-                        emoji: "🚀",
-                        label: "Excellent",
-                        color: "text-emerald-600",
-                        progress: 95,
-                        message: `Amazing! You're saving ${formatCurrency(cashFlow)} per month — 30%+ of expenses. Keep going!`,
-                      };
-                    if (cashFlow > totalExpenses * 0.1)
-                      return {
-                        emoji: "💪",
-                        label: "Strong",
-                        color: "text-green-600",
-                        progress: 80,
-                        message: `Great job! You have ${formatCurrency(cashFlow)} per month in disposable income — 10-30% of expenses. Solid foundation.`,
-                      };
-                    if (cashFlow > 0)
-                      return {
-                        emoji: "✅",
-                        label: "Healthy",
-                        color: "text-blue-600",
-                        progress: 65,
-                        message: `You're in the green! Saving ${formatCurrency(cashFlow)} per month. Small wins add up.`,
-                      };
-                    if (cashFlow > -totalExpenses * 0.1)
-                      return {
-                        emoji: "⚠️",
-                        label: "Review",
-                        color: "text-orange-600",
-                        progress: 40,
-                        message: `Close call! You're overspending by ${formatCurrency(Math.abs(cashFlow))} — less than 10% of expenses. Trim a little.`,
-                      };
-                    return {
-                      emoji: "🔴",
-                      label: "Critical",
-                      color: "text-red-600",
-                      progress: 20,
-                      message: `Alert! Overspending by ${formatCurrency(Math.abs(cashFlow))} — over 10% of expenses. Cut now to avoid debt.`,
-                    };
-                  })();
-                  return (
-                    <div>
-                      <div className={`text-7xl font-bold ${status.color} animate-scale-in`}>
-                        {status.emoji} {status.label}
-                      </div>
-                      <Progress value={status.progress} className="mt-6 h-3" />
-                      <p className="mt-4 text-muted-foreground">{status.message}</p>
-                    </div>
-                  );
-                })()}
-              </div>
+              <OverviewSummaryCards
+                totalIncome={totalIncome}
+                totalVariableIncome={totalVariableIncome}
+                totalExpenses={totalExpenses}
+                cashFlow={cashFlow}
+                savingsTotal={savingsTotal}
+                emergencyFund={savings?.emergency_fund || 0}
+                generalSavings={savings?.total_accumulated || 0}
+                goalsSaved={savingsGoalsData.reduce((s, g) => s + (g.current_amount || 0), 0)}
+                labels={{
+                  totalIncome: t.totalIncome,
+                  totalExpenses: t.totalExpenses,
+                  cashFlow: t.cashFlow,
+                  totalSavings: t.totalSavings,
+                  variable: language === "en" ? "Variable" : "Variable",
+                  emergency: language === "en" ? "Emergency" : language === "es" ? "Emergencia" : "Emergência",
+                  general: language === "en" ? "General" : "General",
+                  goals: language === "en" ? "Goals" : language === "es" ? "Metas" : "Metas",
+                }}
+              />
 
               {/* GASTOS PASTEL */}
-              {pieData.length > 0 && (
-                <Card className="overflow-hidden">
-                  <CardHeader className="pb-3">
-                    <CardTitle className="text-lg font-semibold flex items-center gap-2">
-                      <Zap className="h-5 w-5 text-blue-600" />
-                      Expense Breakdown
-                    </CardTitle>
-                    <CardDescription className="text-sm">Monthly spending distribution with trends</CardDescription>
-                  </CardHeader>
-                  <CardContent className="p-6">
-                    <div className="grid md:grid-cols-2 gap-6">
-                      <div className="relative flex items-center justify-center">
-                        <div className="w-56 h-56 md:w-64 md:h-64">
-                          <ResponsiveContainer width="100%" height="100%">
-                            <PieChart>
-                              <Pie
-                                data={pieData}
-                                cx="50%"
-                                cy="50%"
-                                innerRadius="55%"
-                                outerRadius="85%"
-                                dataKey="value"
-                                stroke="none"
-                                paddingAngle={3}
-                              >
-                                {pieData.map((entry, index) => (
-                                  <Cell key={`cell-${index}`} fill={entry.color} />
-                                ))}
-                              </Pie>
-                              <Tooltip
-                                formatter={(value: number) => formatCurrency(value)}
-                                contentStyle={{ borderRadius: '8px', fontSize: '12px' }}
-                              />
-                            </PieChart>
-                          </ResponsiveContainer>
-                          <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                            <div className="text-xl md:text-2xl font-bold text-foreground">
-                              {formatCurrency(totalExpenses)}
-                            </div>
-                            <div className="text-xs text-muted-foreground mt-1">Monthly Total</div>
-                          </div>
-                        </div>
-                      </div>
-
-                      <div className="flex flex-col justify-center space-y-4">
-                        {pieData.map((d, i) => {
-                          const percent = ((d.value / totalExpenses) * 100).toFixed(1);
-                          const trend =
-                            d.value > totalExpenses * 0.2 ? "High" : d.value > totalExpenses * 0.1 ? "Medium" : "Low";
-                          return (
-                            <div
-                              key={i}
-                              className="flex items-center justify-between p-3 rounded-lg bg-slate-50 dark:bg-slate-800/50 hover:bg-slate-100 dark:hover:bg-slate-700/50 transition-all"
-                            >
-                              <div className="flex items-center gap-3">
-                                <div
-                                  className="w-4 h-4 rounded-full shadow-md"
-                                  style={{
-                                    backgroundColor: d.color,
-                                  }}
-                                />
-                                <div>
-                                  <p className="font-medium text-sm">{d.name}</p>
-                                  <p className="text-xs text-slate-500 dark:text-slate-400">{percent}%</p>
-                                  <p className="text-xs text-slate-400 dark:text-slate-500">{trend} impact</p>
-                                </div>
-                              </div>
-                              <div className="text-right">
-                                <p className="font-bold text-sm">{formatCurrency(d.value)}</p>
-                                <p className="text-xs text-slate-500 dark:text-slate-400">Monthly</p>
-                              </div>
-                            </div>
-                          );
-                        })}
-                      </div>
-                    </div>
-
-                    <div className="border-t px-6 py-4 bg-gradient-to-r from-slate-50 to-slate-100 dark:from-slate-800 dark:to-slate-900 rounded-b-lg rounded-sm">
-                      <div className="flex justify-between items-center">
-                        <span className="text-sm font-medium text-slate-600 dark:text-slate-300">Monthly Total</span>
-                        <div className="flex items-center gap-2">
-                          <span className="text-xl font-bold text-slate-800 dark:text-slate-100">
-                            {formatCurrency(totalExpenses)}
-                          </span>
-                          <div className="flex items-center gap-1 text-xs text-slate-500 dark:text-slate-400">
-                            <TrendingUp className="h-3 w-3 text-emerald-500" />
-                            <span>{((totalExpenses / totalIncome) * 100).toFixed(0)}% of income</span>
-                          </div>
-                        </div>
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
-              )}
+              <ExpenseBreakdownCard
+                pieData={pieData}
+                totalExpenses={totalExpenses}
+                totalIncome={totalIncome}
+                labels={{
+                  title: language === "en" ? "Expense Breakdown" : language === "es" ? "Desglose de Gastos" : "Detalhamento de Despesas",
+                  subtitle:
+                    language === "en"
+                      ? "Monthly spending distribution with trends"
+                      : language === "es"
+                        ? "Distribución del gasto mensual con tendencias"
+                        : "Distribuição dos gastos mensais com tendências",
+                  monthlyTotal: language === "en" ? "Monthly Total" : language === "es" ? "Total Mensual" : "Total Mensal",
+                  monthly: language === "en" ? "Monthly" : language === "es" ? "Mensual" : "Mensal",
+                  ofIncome: language === "en" ? "of income" : language === "es" ? "de los ingresos" : "das receitas",
+                  high: language === "en" ? "High" : language === "es" ? "Alto" : "Alto",
+                  medium: language === "en" ? "Medium" : language === "es" ? "Medio" : "Médio",
+                  low: language === "en" ? "Low" : language === "es" ? "Bajo" : "Baixo",
+                  impact: language === "en" ? "impact" : language === "es" ? "impacto" : "impacto",
+                }}
+              />
 
               {/* DEBT FREE with Projection Navigation */}
               {debtData.length > 0 && (
@@ -1412,124 +1108,27 @@ const Index = () => {
                 </Card>
               )}
 
-              {/* PAYMENT TIMELINE - Next 3 Weeks */}
-              <Card className="rounded-sm">
-                <CardHeader className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-                  <CardTitle className="flex items-center gap-2">
-                    <Calendar className="h-5 w-5" />
-                    {t.paymentTimeline}
-                  </CardTitle>
-                  <div className="flex items-center gap-2">
-                    <Button
-                      variant="outline"
-                      size="sm"
-                      onClick={handlePrevWeek}
-                      disabled={currentWeekOffset === 0 && new Date().getDay() === 0} // Disable if current week and Sunday
-                    >
-                      <ChevronLeft className="h-4 w-4" />
-                      Previous
-                    </Button>
-                    <Button variant="outline" size="sm" onClick={handleNextWeek}>
-                      Next
-                      <ChevronRight className="h-4 w-4 ml-1" />
-                    </Button>
-                  </div>
-                </CardHeader>
-                <CardContent className="space-y-4">
-                  {(() => {
-                    const today = new Date(); // November 07, 2025
-                    const currentWeekStart = startOfWeek(today, {
-                      weekStartsOn: 0,
-                    }); // Sunday start
-                    const weekStart = add(currentWeekStart, {
-                      weeks: currentWeekOffset,
-                    });
-                    const weekEnd = add(weekStart, {
-                      days: 6,
-                    });
-                    const upcomingEvents = calendarEvents
-                      .filter((e) => {
-                        const eventDate = new Date(e.date);
-                        return eventDate >= weekStart && eventDate <= weekEnd && e.type !== "variable"; // Exclude variable expenses
-                      })
-                      .sort((a, b) => new Date(a.date).getTime() - new Date(b.date).getTime());
-                    if (upcomingEvents.length === 0) {
-                      return <p className="text-center text-muted-foreground py-8">No upcoming payments this week</p>;
-                    }
-                    return (
-                      <>
-                        {/* Week Header */}
-                        <div className="text-center pb-4">
-                          <h4 className="font-semibold text-sm text-muted-foreground">
-                            {format(weekStart, "MMM d")} - {format(weekEnd, "MMM d, yyyy")}
-                          </h4>
-                        </div>
-                        {/* Vertical Timeline - Improved Opacity */}
-                        <div className="relative space-y-4">
-                          {/* Vertical line */}
-                          <div className="absolute left-6 top-0 bottom-0 w-0.5 bg-muted opacity-60" />
-                          {upcomingEvents.map((event, idx) => {
-                            const eventDate = new Date(event.date);
-                            const isToday = isSameDay(eventDate, today);
-                            const isPast = eventDate < today;
-                            const isPaid = event.payment_status === "paid"; // Assume event has payment_status
-
-                            // All items at full opacity
-                            const opacityClass = "opacity-100";
-
-                            return (
-                              <div key={event.id} className={`relative pl-8 ${opacityClass}`}>
-                                {/* Timeline dot - Color intensity based on status */}
-                                <div
-                                  className={`absolute left-[-10px] top-2 h-4 w-4 rounded-full border-2 border-background flex items-center justify-center transition-all duration-300 ${event.type === "income" ? "bg-green-500" : event.type === "debt" ? "bg-red-500" : event.type === "fixed" ? "bg-orange-500" : "bg-blue-500"} ${isPaid ? "scale-110 shadow-lg" : isToday ? "ring-4 ring-primary ring-offset-2" : ""}`}
-                                />
-                                {/* Event card with description */}
-                                <div
-                                  className={`rounded-lg border p-3 transition-all hover:shadow-md w-full ${isPaid ? "border-green-500 bg-green-50/50" : isToday ? "border-primary bg-primary/10 shadow-lg shadow-primary/20" : "bg-card"}`}
-                                >
-                                  <div className="flex items-start justify-between gap-2">
-                                    <div className="flex-1 space-y-1">
-                                      <div className="flex items-center gap-2">
-                                        <span className="font-medium text-sm">{event.name}</span>
-                                        {isPaid && (
-                                          <Badge variant="default" className="text-xs bg-green-100 text-green-800">
-                                            Paid
-                                          </Badge>
-                                        )}
-                                        {isToday && (
-                                          <Badge variant="secondary" className="text-xs">
-                                            Today
-                                          </Badge>
-                                        )}
-                                      </div>
-                                      <div className="flex items-center gap-2 text-xs text-muted-foreground">
-                                        <span>{format(eventDate, "EEE, MMM d")}</span>
-                                        <span>•</span>
-                                        <span className="capitalize">{event.type}</span>
-                                        {event.recurring && (
-                                          <>
-                                            <span>•</span>
-                                            <span className="italic">Recurring</span>
-                                          </>
-                                        )}
-                                      </div>
-                                    </div>
-                                    <div
-                                      className={`text-right font-semibold ${event.type === "income" ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400"}`}
-                                    >
-                                      {event.type === "income" ? "+" : "-"}{formatCurrency(event.amount)}
-                                    </div>
-                                  </div>
-                                </div>
-                              </div>
-                            );
-                          })}
-                        </div>
-                      </>
-                    );
-                  })()}
-                </CardContent>
-              </Card>
+              {/* PAYMENT TIMELINE */}
+              <PaymentTimelineCard
+                title={t.paymentTimeline}
+                events={calendarEvents}
+                weekOffset={currentWeekOffset}
+                onPrevWeek={handlePrevWeek}
+                onNextWeek={handleNextWeek}
+                labels={{
+                  previous: language === "en" ? "Previous" : language === "es" ? "Anterior" : "Anterior",
+                  next: language === "en" ? "Next" : language === "es" ? "Siguiente" : "Próximo",
+                  empty:
+                    language === "en"
+                      ? "No upcoming payments this week"
+                      : language === "es"
+                        ? "No hay pagos próximos esta semana"
+                        : "Nenhum pagamento próximo esta semana",
+                  paid: language === "en" ? "Paid" : language === "es" ? "Pagado" : "Pago",
+                  today: language === "en" ? "Today" : language === "es" ? "Hoy" : "Hoje",
+                  recurring: language === "en" ? "Recurring" : language === "es" ? "Recurrente" : "Recorrente",
+                }}
+              />
             </TabsContent>
 
             {/* Savings Goals Pots */}
