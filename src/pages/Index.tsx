@@ -185,6 +185,8 @@ const translations = {
     invitationsTab: "Invitations",
     auditTab: "Log",
     exportData: "Export Data",
+    debtFreeDate: "Debt Free Date",
+    paymentTimeline: "Payment Timeline - This Week",
   },
   es: {
     overview: "Resumen",
@@ -227,6 +229,8 @@ const translations = {
     invitationsTab: "Invitaciones",
     auditTab: "Registro",
     exportData: "Exportar datos",
+    debtFreeDate: "Fecha Libre de Deudas",
+    paymentTimeline: "Calendario de Pagos - Esta Semana",
   },
   pt: {
     overview: "Visão Geral",
@@ -269,6 +273,8 @@ const translations = {
     invitationsTab: "Convites",
     auditTab: "Registro",
     exportData: "Exportar dados",
+    debtFreeDate: "Data Livre de Dívidas",
+    paymentTimeline: "Calendário de Pagamentos - Esta Semana",
   },
 };
 // Variable income hook moved to src/hooks/useVariableIncome.ts for security
