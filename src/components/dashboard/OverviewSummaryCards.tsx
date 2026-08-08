@@ -1,7 +1,7 @@
 import {
   ArrowDownRight,
   ArrowUpRight,
-  Minus,
+
   PiggyBank,
   Rocket,
   ShieldCheck,
