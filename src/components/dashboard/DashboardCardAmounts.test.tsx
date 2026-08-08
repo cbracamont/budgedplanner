@@ -1,5 +1,5 @@
 import { describe, it, expect, afterEach } from "vitest";
-import { render, screen } from "@testing-library/react";
+import { render } from "@testing-library/react";
 import { OverviewSummaryCards } from "./OverviewSummaryCards";
 import { ExpenseBreakdownCard, type PieDatum } from "./ExpenseBreakdownCard";
 import { PaymentTimelineCard } from "./PaymentTimelineCard";
@@ -79,28 +79,29 @@ const isoDay = (offset: number) => {
 
 const currencies = ["GBP", "EUR", "USD", "BRL", "COP"] as const;
 
+/** Intl uses NBSP/narrow-NBSP between symbol and digits; normalise before comparing DOM text. */
+const norm = (s: string) => s.replace(/[\s\u00a0\u202f]+/g, " ");
+const money = (value: number, currency: string) => norm(formatCurrency(value, currency));
+const occurrences = (container: HTMLElement, needle: string) =>
+  norm(container.textContent ?? "").split(needle).length - 1;
+const expectMoney = (container: HTMLElement, value: number, currency: string) =>
+  expect(occurrences(container, money(value, currency))).toBeGreaterThan(0);
+
 describe("dashboard card amounts respect the active currency", () => {
   it.each(currencies)("OverviewSummaryCards renders computed totals in %s", (currency) => {
     setActiveCurrency(currency);
-    render(<OverviewSummaryCards {...summaryTotals} labels={summaryLabels} />);
+    const { container } = render(<OverviewSummaryCards {...summaryTotals} labels={summaryLabels} />);
 
     // Rendered strings must equal formatCurrency() of the computed values
-    expect(screen.getByText(formatCurrency(totalIncome, currency))).toBeInTheDocument();
-    expect(screen.getByText(formatCurrency(totalExpenses, currency))).toBeInTheDocument();
-    expect(screen.getByText(formatCurrency(cashFlow, currency))).toBeInTheDocument();
-    expect(screen.getByText(formatCurrency(savingsTotal, currency))).toBeInTheDocument();
-    expect(
-      screen.getByText(`${summaryLabels.variable}: ${formatCurrency(totalVariableIncome, currency)}`),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByText(`${summaryLabels.emergency}: ${formatCurrency(emergencyFund, currency)}`),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByText(`${summaryLabels.general}: ${formatCurrency(generalSavings, currency)}`),
-    ).toBeInTheDocument();
-    expect(
-      screen.getByText(`${summaryLabels.goals}: ${formatCurrency(goalsSaved, currency)}`),
-    ).toBeInTheDocument();
+    expectMoney(container, totalIncome, currency);
+    expectMoney(container, totalExpenses, currency);
+    expectMoney(container, cashFlow, currency);
+    expectMoney(container, savingsTotal, currency);
+    const text = norm(container.textContent ?? "");
+    expect(text).toContain(`${summaryLabels.variable}: ${money(totalVariableIncome, currency)}`);
+    expect(text).toContain(`${summaryLabels.emergency}: ${money(emergencyFund, currency)}`);
+    expect(text).toContain(`${summaryLabels.general}: ${money(generalSavings, currency)}`);
+    expect(text).toContain(`${summaryLabels.goals}: ${money(goalsSaved, currency)}`);
   });
 
   it("OverviewSummaryCards never renders a stale GBP amount after a currency change", () => {
@@ -112,7 +113,7 @@ describe("dashboard card amounts respect the active currency", () => {
 
   it.each(currencies)("ExpenseBreakdownCard total equals the sum of its slices in %s", (currency) => {
     setActiveCurrency(currency);
-    render(
+    const { container } = render(
       <ExpenseBreakdownCard
         pieData={pieData}
         totalExpenses={totalExpenses}
@@ -124,9 +125,9 @@ describe("dashboard card amounts respect the active currency", () => {
     const sumOfSlices = pieData.reduce((s, d) => s + d.value, 0);
     expect(sumOfSlices).toBeCloseTo(totalExpenses, 2);
     // The donut centre and the footer both show the month total
-    expect(screen.getAllByText(formatCurrency(sumOfSlices, currency))).toHaveLength(2);
+    expect(occurrences(container, money(sumOfSlices, currency))).toBe(2);
     for (const d of pieData) {
-      expect(screen.getByText(formatCurrency(d.value, currency))).toBeInTheDocument();
+      expectMoney(container, d.value, currency);
     }
   });
 
@@ -138,7 +139,7 @@ describe("dashboard card amounts respect the active currency", () => {
       { id: "d1", date: isoDay(0), name: "Card payment", amount: 150.55, type: "debt", recurring: true },
     ];
 
-    render(
+    const { container } = render(
       <PaymentTimelineCard
         title="Payment Timeline"
         events={events}
@@ -150,8 +151,7 @@ describe("dashboard card amounts respect the active currency", () => {
     );
 
     for (const e of events) {
-      const matches = screen.getAllByText((text) => text.includes(formatCurrency(e.amount, currency)));
-      expect(matches.length).toBeGreaterThan(0);
+      expectMoney(container, e.amount, currency);
     }
   });
 });
