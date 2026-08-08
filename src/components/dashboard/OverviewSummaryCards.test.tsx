@@ -65,6 +65,6 @@ describe("OverviewSummaryCards", () => {
   it("shows a zero cash flow as a non-negative (blue) figure", () => {
     render(<OverviewSummaryCards {...currentMonth} cashFlow={0} labels={labels} />);
     const value = screen.getByText(formatCurrency(0));
-    expect(value.className).toContain("text-emerald-600");
+    expect(value.className).toContain("text-success");
   });
 });
