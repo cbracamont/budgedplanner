@@ -1887,7 +1887,7 @@ const Index = () => {
             <p className="mt-2">© 2025 Family Budget Planner UK</p>
           </footer>
         </div>
-        <FloatingChatWidget language={language} />
+        <FloatingChatWidget language={language} context={activeTab} />
         <FloatingBudgetBuddy 
           language={language} 
           profileId={"id" in activeProfile ? activeProfile.id : undefined}
