@@ -1,6 +1,6 @@
 import { useMemo } from "react";
 import { add, format, isSameDay, startOfWeek } from "date-fns";
-import { Calendar, ChevronLeft, ChevronRight } from "lucide-react";
+import { ArrowDownRight, ArrowUpRight, Calendar, Check, ChevronLeft, ChevronRight } from "lucide-react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
@@ -47,23 +47,29 @@ export const PaymentTimelineCard = ({
   }, [events, weekOffset]);
 
   return (
-    <Card className="rounded-sm">
-      <CardHeader className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
-        <CardTitle className="flex items-center gap-2">
-          <Calendar className="h-5 w-5" />
+    <Card className="animate-fade-in">
+      <CardHeader className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
+        <CardTitle className="text-subtitle flex items-center gap-2 text-muted-foreground">
+          <Calendar className="h-4 w-4" aria-hidden="true" />
           {title}
         </CardTitle>
         <div className="flex items-center gap-2">
           <Button
             variant="outline"
             size="sm"
+            className="transition-transform active:scale-95"
             onClick={onPrevWeek}
             disabled={weekOffset === 0 && new Date().getDay() === 0}
           >
             <ChevronLeft className="h-4 w-4" />
             {labels.previous}
           </Button>
-          <Button variant="outline" size="sm" onClick={onNextWeek}>
+          <Button
+            variant="outline"
+            size="sm"
+            className="transition-transform active:scale-95"
+            onClick={onNextWeek}
+          >
             {labels.next}
             <ChevronRight className="h-4 w-4 ml-1" />
           </Button>
@@ -71,35 +77,39 @@ export const PaymentTimelineCard = ({
       </CardHeader>
       <CardContent className="space-y-4">
         {upcomingEvents.length === 0 ? (
-          <p className="text-center text-muted-foreground py-8">{labels.empty}</p>
+          <p className="text-body text-center text-muted-foreground py-8">{labels.empty}</p>
         ) : (
           <>
-            <div className="text-center pb-4">
-              <h4 className="font-semibold text-sm text-muted-foreground">
+            <div className="text-center pb-2">
+              <h4 className="text-label text-muted-foreground">
                 {format(weekStart, "MMM d")} - {format(weekEnd, "MMM d, yyyy")}
               </h4>
             </div>
-            <div className="relative space-y-4">
-              <div className="absolute left-6 top-0 bottom-0 w-0.5 bg-muted opacity-60" />
+            <div className="relative space-y-3">
+              <div className="absolute left-6 top-0 bottom-0 w-0.5 bg-border" />
               {upcomingEvents.map((event) => {
                 const eventDate = new Date(event.date);
                 const isToday = isSameDay(eventDate, today);
                 const isPaid = event.payment_status === "paid";
+                const isIncome = event.type === "income";
+                const DirectionIcon = isIncome ? ArrowUpRight : ArrowDownRight;
 
                 return (
-                  <div key={event.id} className="relative pl-8 opacity-100">
+                  <div key={event.id} className="relative pl-8">
                     <div
-                      className={`absolute left-[-10px] top-2 h-4 w-4 rounded-full border-2 border-background flex items-center justify-center transition-all duration-300 ${event.type === "income" ? "bg-green-500" : event.type === "debt" ? "bg-red-500" : event.type === "fixed" ? "bg-orange-500" : "bg-blue-500"} ${isPaid ? "scale-110 shadow-lg" : isToday ? "ring-4 ring-primary ring-offset-2" : ""}`}
+                      className={`absolute left-[-10px] top-3 h-3.5 w-3.5 rounded-full border-2 border-background ${isIncome ? "bg-success" : "bg-destructive"} ${isToday ? "ring-2 ring-primary ring-offset-2 ring-offset-background" : ""}`}
+                      aria-hidden="true"
                     />
                     <div
-                      className={`rounded-lg border p-3 transition-all hover:shadow-md w-full ${isPaid ? "border-green-500 bg-green-50/50" : isToday ? "border-primary bg-primary/10 shadow-lg shadow-primary/20" : "bg-card"}`}
+                      className={`rounded-lg border p-3 transition-shadow duration-200 hover:shadow-soft w-full ${isToday ? "border-primary bg-primary/5" : "bg-card"}`}
                     >
                       <div className="flex items-start justify-between gap-2">
                         <div className="flex-1 space-y-1">
-                          <div className="flex items-center gap-2">
-                            <span className="font-medium text-sm">{event.name}</span>
+                          <div className="flex items-center gap-2 flex-wrap">
+                            <span className="text-body font-medium">{event.name}</span>
                             {isPaid && (
-                              <Badge variant="default" className="text-xs bg-green-100 text-green-800">
+                              <Badge variant="outline" className="text-xs gap-1 border-success text-success">
+                                <Check className="h-3 w-3" aria-hidden="true" />
                                 {labels.paid}
                               </Badge>
                             )}
@@ -109,22 +119,23 @@ export const PaymentTimelineCard = ({
                               </Badge>
                             )}
                           </div>
-                          <div className="flex items-center gap-2 text-xs text-muted-foreground">
+                          <div className="flex items-center gap-2 text-body-sm text-muted-foreground">
                             <span>{format(eventDate, "EEE, MMM d")}</span>
-                            <span>•</span>
+                            <span aria-hidden="true">•</span>
                             <span className="capitalize">{event.type}</span>
                             {event.recurring && (
                               <>
-                                <span>•</span>
-                                <span className="italic">{labels.recurring}</span>
+                                <span aria-hidden="true">•</span>
+                                <span>{labels.recurring}</span>
                               </>
                             )}
                           </div>
                         </div>
                         <div
-                          className={`text-right font-semibold ${event.type === "income" ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400"}`}
+                          className={`flex items-center gap-1 text-right font-semibold tabular-nums ${isIncome ? "text-success" : "text-destructive"}`}
                         >
-                          {event.type === "income" ? "+" : "-"}
+                          <DirectionIcon className="h-4 w-4 shrink-0" aria-hidden="true" />
+                          {isIncome ? "+" : "-"}
                           {formatCurrency(event.amount)}
                         </div>
                       </div>
