@@ -11,8 +11,6 @@ import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from 
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
 import { getTranslation, Language, ukBanks, formatCurrency } from "@/lib/i18n";
 import { effectiveApr, promoStatus, monthlyInterest, interestOnlyPayment, installmentBreakdown, paymentCoversInterest } from "@/lib/debtMath";
-import { debtInputSchema } from "@/components/validation/schemas";
-import { friendlyError } from "@/lib/errorMessages";
 import { useDebts, useAddDebt, useUpdateDebt, useDeleteDebt } from "@/hooks/useFinancialData";
 import { useDebtPayments } from "@/hooks/useDebtPayments";
 import { useAllPaymentHistory } from "@/hooks/usePaymentTracker";
@@ -604,10 +602,10 @@ export const DebtsManager = ({ language, onDebtsChange }: DebtsManagerProps) => 
                   <>
                     <p className="text-sm text-muted-foreground">
                       {debt.bank && `${debt.bank} • `}
-                      £{debt.installment_amount?.toFixed(2)}/installment • {language === 'en' ? 'Day' : 'Día'} {debt.payment_day}
+                      {formatCurrency(debt.installment_amount || 0)}/{language === 'en' ? 'installment' : language === 'pt' ? 'prestação' : 'cuota'} • {language === 'en' ? 'Day' : 'Día'} {debt.payment_day}
                     </p>
                     <p className="text-xs text-muted-foreground">
-                      {language === 'en' ? 'Total:' : 'Total:'} £{debt.total_amount?.toFixed(2)} • 
+                      {language === 'en' ? 'Total:' : 'Total:'} {formatCurrency(debt.total_amount || 0)} • 
                       {debt.number_of_installments} {language === 'en' ? 'installments' : 'cuotas'}
                     </p>
                   </>
@@ -819,7 +817,7 @@ export const DebtsManager = ({ language, onDebtsChange }: DebtsManagerProps) => 
                     ) : (
                       <p className="text-sm text-green-700 dark:text-green-400">
                         {debt.bank && `${debt.bank} • `}
-                        {language === 'en' ? 'Balance: £0.00 • Paid' : language === 'es' ? 'Balance: £0.00 • Pagado' : 'Saldo: £0.00 • Spłacone'}
+                        {`${language === 'en' ? 'Balance' : language === 'pt' ? 'Saldo' : 'Balance'}: ${formatCurrency(0)} • ${language === 'en' ? 'Paid' : language === 'pt' ? 'Pago' : 'Pagado'}`}
                       </p>
                     )}
                   </div>
@@ -871,7 +869,7 @@ export const DebtsManager = ({ language, onDebtsChange }: DebtsManagerProps) => 
               {language === 'en' ? 'Original Amount' : language === 'es' ? 'Monto Original' : 'Pierwotna Kwota'}
             </p>
             <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">
-              £{originalAmount.toFixed(2)}
+              {formatCurrency(originalAmount)}
             </p>
           </div>
 
@@ -881,7 +879,7 @@ export const DebtsManager = ({ language, onDebtsChange }: DebtsManagerProps) => 
               {language === 'en' ? 'Total Paid' : language === 'es' ? 'Total Pagado' : 'Razem Zapłacono'}
             </p>
             <p className="text-2xl font-bold text-green-600 dark:text-green-400">
-              £{totalPaidCombined.toFixed(2)}
+              {formatCurrency(totalPaidCombined)}
             </p>
           </div>
 
@@ -891,7 +889,7 @@ export const DebtsManager = ({ language, onDebtsChange }: DebtsManagerProps) => 
               {language === 'en' ? 'Remaining Balance' : language === 'es' ? 'Saldo Restante' : 'Pozostałe Saldo'}
             </p>
             <p className="text-2xl font-bold text-debt">
-              £{remainingBalance.toFixed(2)}
+              {formatCurrency(remainingBalance)}
             </p>
           </div>
 
@@ -910,7 +908,7 @@ export const DebtsManager = ({ language, onDebtsChange }: DebtsManagerProps) => 
                   <div key={`${payment.source}-${payment.id}`} className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/50 transition-colors">
                     <div className="flex-1">
                       <div className="flex items-center gap-2">
-                        <p className="font-medium">£{payment.amount.toFixed(2)}</p>
+                        <p className="font-medium">{formatCurrency(payment.amount)}</p>
                         <span className={`text-xs px-2 py-0.5 rounded-full ${
                           payment.source === 'auto' 
                             ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300' 
