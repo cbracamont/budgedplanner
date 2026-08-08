@@ -96,9 +96,12 @@ export const ExpenseBreakdownCard = ({
                     <div className="w-3 h-3 rounded-full" style={{ backgroundColor: d.color }} aria-hidden="true" />
                     <div>
                       <p className="text-body font-medium">{d.name}</p>
-                      <p className="text-body-sm text-muted-foreground">
-                        {percent}% · {trend} {labels.impact}
+                      <p className="text-body-sm text-muted-foreground flex items-center gap-1.5">
+                        <span>{percent}%</span>
+                        <span aria-hidden="true">·</span>
+                        <span>{`${trend} ${labels.impact}`}</span>
                       </p>
+
                     </div>
                   </div>
                   <p className="text-metric-sm">{formatCurrency(d.value)}</p>
