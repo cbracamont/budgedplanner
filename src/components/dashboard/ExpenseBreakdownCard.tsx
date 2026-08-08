@@ -37,7 +37,7 @@ export const ExpenseBreakdownCard = ({
   return (
     <Card className="overflow-hidden animate-fade-in shadow-medium">
       <CardHeader className="pb-2">
-        <CardTitle className="text-title flex items-center gap-2">
+        <CardTitle className="text-lg sm:text-xl md:text-2xl font-semibold tracking-tight flex items-center gap-2">
           <PieIcon className="h-5 w-5 text-primary" aria-hidden="true" />
           {labels.title}
         </CardTitle>

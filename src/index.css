@@ -201,8 +201,9 @@ All colors MUST be HSL.
     @apply text-xs font-medium uppercase tracking-wide;
   }
   .text-metric {
-    @apply text-2xl md:text-3xl font-bold tabular-nums tracking-tight;
+    @apply text-xl sm:text-2xl md:text-3xl font-bold tabular-nums tracking-tight break-words;
   }
+
   .text-metric-sm {
     @apply text-lg font-semibold tabular-nums;
   }

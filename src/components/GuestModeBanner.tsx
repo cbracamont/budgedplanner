@@ -44,7 +44,7 @@ export const GuestModeBanner = ({ language = "en" }: GuestModeBannerProps) => {
         <span className="text-sm">
           {t("guestModeBannerText", "Demo mode: data is saved only on this device. Create an account to keep it.")}
         </span>
-        <span className="flex flex-wrap gap-2">
+        <span className="flex flex-wrap gap-2 [&>button]:flex-1 sm:[&>button]:flex-none">
           <Button size="sm" onClick={handleCreateAccount} disabled={busy}>
             <UserPlus className="mr-2 h-4 w-4" />
             {t("guestModeCreateAccount", "Create account & save data")}

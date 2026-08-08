@@ -890,17 +890,18 @@ const Index = () => {
 
       <div className="min-h-screen bg-gradient-to-br from-blue-50 to-indigo-100 dark:from-slate-900 dark:to-slate-800">
         <ScrollToTop />
-        <div className="max-w-7xl mx-auto p-6 space-y-8">
+        <div className="max-w-7xl mx-auto p-4 sm:p-6 pb-28 sm:pb-32 space-y-6 sm:space-y-8">
           {isGuestMode() && <GuestModeBanner language={language} />}
 
           {/* HEADER */}
-          <div className="no-print flex justify-between items-center mb-8">
-            <div>
-              <h1 className="text-5xl font-bold bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent flex items-center gap-3">
-                <Home className="h-12 w-12" /> Family Budget Planner UK
+          <div className="no-print flex flex-wrap justify-between items-start gap-3 mb-4 sm:mb-8">
+            <div className="min-w-0 flex-1">
+              <h1 className="text-2xl sm:text-3xl md:text-5xl font-bold leading-tight bg-gradient-to-r from-blue-600 to-indigo-600 bg-clip-text text-transparent flex items-start gap-2 sm:gap-3">
+                <Home className="h-7 w-7 md:h-12 md:w-12 shrink-0" /> <span className="break-words">Family Budget Planner UK</span>
               </h1>
-              <p className="text-muted-foreground">Hi, {activeProfile.name}!</p>
+              <p className="text-sm text-muted-foreground mt-1">Hi, {activeProfile.name}!</p>
             </div>
+
             <div className="hidden md:flex items-center gap-3">
               <LanguageToggle language={language} onLanguageChange={setLanguage} />
               <ProfileSelector language={language} />
@@ -1690,7 +1691,7 @@ const Index = () => {
 
             <TabsContent value="income">
               <Tabs defaultValue="fixed" className="mt-6">
-                <TabsList>
+                <TabsList className="grid w-full grid-cols-2">
                   <TabsTrigger value="fixed">Fixed Income</TabsTrigger>
                   <TabsTrigger value="variable">Variable Income</TabsTrigger>
                 </TabsList>
@@ -1707,7 +1708,7 @@ const Index = () => {
 
             <TabsContent value="expenses">
               <Tabs defaultValue="fixed" className="mt-6">
-                <TabsList>
+                <TabsList className="grid w-full grid-cols-3">
                   <TabsTrigger value="fixed">Fixed</TabsTrigger>
                   <TabsTrigger value="variable">Variable</TabsTrigger>
                   <TabsTrigger value="budgets">Budgets</TabsTrigger>

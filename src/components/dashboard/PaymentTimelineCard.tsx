@@ -49,7 +49,7 @@ export const PaymentTimelineCard = ({
   return (
     <Card className="animate-fade-in">
       <CardHeader className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3">
-        <CardTitle className="text-subtitle flex items-center gap-2 text-muted-foreground">
+        <CardTitle className="text-base md:text-lg font-semibold flex items-center gap-2 text-muted-foreground">
           <Calendar className="h-4 w-4" aria-hidden="true" />
           {title}
         </CardTitle>
