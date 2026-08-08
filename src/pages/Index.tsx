@@ -2278,7 +2278,7 @@ const DebtPlanner = ({
   const { data: debtData = [] } = useDebts();
   const { data: incomeData = [] } = useIncomeSources();
   const { data: fixedExpensesData = [] } = useFixedExpenses();
-  const { data: variableExpensesData = [] } = useVariableExpenses();
+  const currentMonthVariableExpenses = useMonthlyVariableExpensesTotal(startOfMonth(new Date()));
   const { data: savings } = useSavings();
   const { data: savingsGoalsData = [] } = useSavingsGoals();
   const { totalIncome, totalFixed, totalVariable, totalDebtPayment, totalExpenses, cashFlow, savingsTotal } =
@@ -2305,7 +2305,7 @@ const DebtPlanner = ({
         cashFlow,
         savingsTotal,
       };
-    }, [incomeData, debtData, fixedExpensesData, variableExpensesData, savings, savingsGoalsData]);
+    }, [incomeData, debtData, fixedExpensesData, currentMonthVariableExpenses, savings, savingsGoalsData]);
   // Only the ordering is used here; the real amortization (with surplus and freed-up
   // minimums redistributed) lives in SimplifiedDebtPriority, so no second engine.
   const debtStrategy = useMemo(() => {
