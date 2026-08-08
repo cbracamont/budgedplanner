@@ -185,6 +185,8 @@ const translations = {
     invitationsTab: "Invitations",
     auditTab: "Log",
     exportData: "Export Data",
+    debtFreeDate: "Debt Free Date",
+    paymentTimeline: "Payment Timeline - This Week",
   },
   es: {
     overview: "Resumen",
@@ -227,6 +229,8 @@ const translations = {
     invitationsTab: "Invitaciones",
     auditTab: "Registro",
     exportData: "Exportar datos",
+    debtFreeDate: "Fecha Libre de Deudas",
+    paymentTimeline: "Calendario de Pagos - Esta Semana",
   },
   pt: {
     overview: "Visão Geral",
@@ -269,6 +273,8 @@ const translations = {
     invitationsTab: "Convites",
     auditTab: "Registro",
     exportData: "Exportar dados",
+    debtFreeDate: "Data Livre de Dívidas",
+    paymentTimeline: "Calendário de Pagamentos - Esta Semana",
   },
 };
 // Variable income hook moved to src/hooks/useVariableIncome.ts for security
@@ -1152,7 +1158,7 @@ const Index = () => {
               <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-6">
                 <Card className="border-green-200">
                   <CardHeader className="pb-2">
-                    <CardTitle className="text-sm text-green-600">Total Income</CardTitle>
+                    <CardTitle className="text-sm text-green-600">{t.totalIncome}</CardTitle>
                   </CardHeader>
                   <CardContent>
                     <div className="text-3xl font-bold text-green-600">{formatCurrency(totalIncome)}</div>
@@ -1165,7 +1171,7 @@ const Index = () => {
                 </Card>
                 <Card className="border-red-200">
                   <CardHeader className="pb-2">
-                    <CardTitle className="text-sm text-red-600">Total Expenses</CardTitle>
+                    <CardTitle className="text-sm text-red-600">{t.totalExpenses}</CardTitle>
                   </CardHeader>
                   <CardContent>
                     <div className="text-3xl font-bold text-red-600">{formatCurrency(totalExpenses)}</div>
@@ -1174,7 +1180,7 @@ const Index = () => {
                 <Card className={`${cashFlow >= 0 ? "border-emerald-200" : "border-orange-200"}`}>
                   <CardHeader className="pb-2">
                     <CardTitle className={`text-sm ${cashFlow >= 0 ? "text-emerald-600" : "text-orange-600"}`}>
-                      Cash Flow
+                      {t.cashFlow}
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
@@ -1186,7 +1192,7 @@ const Index = () => {
                 <Card className="border-purple-200">
                   <CardHeader className="pb-2">
                     <CardTitle className="text-sm text-purple-600 flex items-center gap-1">
-                      <PiggyBank className="h-4 w-4" /> Total Savings
+                      <PiggyBank className="h-4 w-4" /> {t.totalSavings}
                     </CardTitle>
                   </CardHeader>
                   <CardContent>
@@ -1359,7 +1365,7 @@ const Index = () => {
                   <CardHeader>
                     <div className="flex items-center justify-between">
                       <CardTitle className="flex items-center gap-2 text-slate-200">
-                        <TrendingUp className="h-6 w-6" /> Debt Free Date
+                        <TrendingUp className="h-6 w-6" /> {t.debtFreeDate}
                       </CardTitle>
                       <div className="flex items-center gap-2">
                         <Button variant="outline" size="sm" onClick={handlePrevProjectionMonth}>
@@ -1411,7 +1417,7 @@ const Index = () => {
                 <CardHeader className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
                   <CardTitle className="flex items-center gap-2">
                     <Calendar className="h-5 w-5" />
-                    Payment Timeline - This Week
+                    {t.paymentTimeline}
                   </CardTitle>
                   <div className="flex items-center gap-2">
                     <Button
@@ -1511,7 +1517,7 @@ const Index = () => {
                                     <div
                                       className={`text-right font-semibold ${event.type === "income" ? "text-green-600 dark:text-green-400" : "text-red-600 dark:text-red-400"}`}
                                     >
-                                      {event.type === "income" ? "+" : "-"}£{event.amount.toFixed(2)}
+                                      {event.type === "income" ? "+" : "-"}{formatCurrency(event.amount)}
                                     </div>
                                   </div>
                                 </div>
@@ -2042,7 +2048,7 @@ const Index = () => {
             </AlertDialog>
 
             {/* TABS */}
-            <TabsContent value="overview">{/* Main Status - Multi-Stage */}</TabsContent>
+            
 
             <TabsContent value="income">
               <Tabs defaultValue="fixed" className="mt-6">
@@ -2272,7 +2278,7 @@ const DebtPlanner = ({
   const { data: debtData = [] } = useDebts();
   const { data: incomeData = [] } = useIncomeSources();
   const { data: fixedExpensesData = [] } = useFixedExpenses();
-  const { data: variableExpensesData = [] } = useVariableExpenses();
+  const currentMonthVariableExpenses = useMonthlyVariableExpensesTotal(startOfMonth(new Date()));
   const { data: savings } = useSavings();
   const { data: savingsGoalsData = [] } = useSavingsGoals();
   const { totalIncome, totalFixed, totalVariable, totalDebtPayment, totalExpenses, cashFlow, savingsTotal } =
@@ -2281,7 +2287,7 @@ const DebtPlanner = ({
       const currentMonthNum = new Date().getMonth() + 1;
       const totalIncome = incomeData.reduce((s, i) => s + i.amount, 0);
       const totalFixed = sumMonthlyFixedExpenses(fixedExpensesData, currentMonthNum);
-      const totalVariable = variableExpensesData.reduce((s, e) => s + e.amount, 0);
+      const totalVariable = currentMonthVariableExpenses;
       const activeDebts = debtData.filter((d) => d.balance > 0 && d.minimum_payment > 0);
       const totalDebtPayment = activeDebts.reduce((s, d) => s + d.minimum_payment, 0);
       const totalExpenses = totalFixed + totalVariable + totalDebtPayment;
@@ -2299,7 +2305,7 @@ const DebtPlanner = ({
         cashFlow,
         savingsTotal,
       };
-    }, [incomeData, debtData, fixedExpensesData, variableExpensesData, savings, savingsGoalsData]);
+    }, [incomeData, debtData, fixedExpensesData, currentMonthVariableExpenses, savings, savingsGoalsData]);
   // Only the ordering is used here; the real amortization (with surplus and freed-up
   // minimums redistributed) lives in SimplifiedDebtPriority, so no second engine.
   const debtStrategy = useMemo(() => {
