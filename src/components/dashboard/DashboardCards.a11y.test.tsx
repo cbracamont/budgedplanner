@@ -62,10 +62,10 @@ const isoDay = (offset: number) => {
 };
 
 const events: CalendarEvent[] = [
-  { date: isoDay(1), title: "Rent", amount: 900, type: "fixed-expense", isPaid: false, isRecurring: true },
-  { date: isoDay(2), title: "Salary", amount: 2000, type: "income", isPaid: true, isRecurring: true },
-  { date: isoDay(3), title: "Card payment", amount: 150, type: "debt", isPaid: false, isRecurring: true },
-] as CalendarEvent[];
+  { id: "f1", date: isoDay(1), name: "Rent", amount: 900, type: "fixed", recurring: true, payment_status: "pending" },
+  { id: "i1", date: isoDay(2), name: "Salary", amount: 2000, type: "income", recurring: true, payment_status: "paid" },
+  { id: "d1", date: isoDay(3), name: "Card payment", amount: 150, type: "debt", recurring: true },
+];
 
 describe("dashboard cards accessibility (axe)", () => {
   it("OverviewSummaryCards has no axe violations", async () => {
