@@ -1010,127 +1010,154 @@ const Index = () => {
               <TabsTrigger value="savings">Savings</TabsTrigger>
             </TabsList>
 
-            <TabsContent value="overview">
-              {/* RESUMEN */}
-              <OverviewSummaryCards
-                totalIncome={totalIncome}
-                totalVariableIncome={totalVariableIncome}
-                totalExpenses={totalExpenses}
-                cashFlow={cashFlow}
-                savingsTotal={savingsTotal}
-                emergencyFund={savings?.emergency_fund || 0}
-                generalSavings={savings?.total_accumulated || 0}
-                goalsSaved={savingsGoalsData.reduce((s, g) => s + (g.current_amount || 0), 0)}
-                labels={{
-                  totalIncome: t.totalIncome,
-                  totalExpenses: t.totalExpenses,
-                  cashFlow: t.cashFlow,
-                  totalSavings: t.totalSavings,
-                  variable: language === "en" ? "Variable" : "Variable",
-                  emergency: language === "en" ? "Emergency" : language === "es" ? "Emergencia" : "Emergência",
-                  general: language === "en" ? "General" : "General",
-                  goals: language === "en" ? "Goals" : language === "es" ? "Metas" : "Metas",
-                }}
-              />
-
-              {/* GASTOS PASTEL */}
-              <ExpenseBreakdownCard
-                pieData={pieData}
-                totalExpenses={totalExpenses}
-                totalIncome={totalIncome}
-                labels={{
-                  title: language === "en" ? "Expense Breakdown" : language === "es" ? "Desglose de Gastos" : "Detalhamento de Despesas",
-                  subtitle:
-                    language === "en"
-                      ? "Monthly spending distribution with trends"
-                      : language === "es"
-                        ? "Distribución del gasto mensual con tendencias"
-                        : "Distribuição dos gastos mensais com tendências",
-                  monthlyTotal: language === "en" ? "Monthly Total" : language === "es" ? "Total Mensual" : "Total Mensal",
-                  monthly: language === "en" ? "Monthly" : language === "es" ? "Mensual" : "Mensal",
-                  ofIncome: language === "en" ? "of income" : language === "es" ? "de los ingresos" : "das receitas",
-                  high: language === "en" ? "High" : language === "es" ? "Alto" : "Alto",
-                  medium: language === "en" ? "Medium" : language === "es" ? "Medio" : "Médio",
-                  low: language === "en" ? "Low" : language === "es" ? "Bajo" : "Baixo",
-                  impact: language === "en" ? "impact" : language === "es" ? "impacto" : "impacto",
-                }}
-              />
-
-              {/* DEBT FREE with Projection Navigation */}
-              {debtData.length > 0 && (
-                <Card className="border-2 rounded-bl-none rounded-md bg-card">
-                  <CardHeader>
-                    <div className="flex items-center justify-between">
-                      <CardTitle className="flex items-center gap-2 text-slate-200">
-                        <TrendingUp className="h-6 w-6" /> {t.debtFreeDate}
-                      </CardTitle>
-                      <div className="flex items-center gap-2">
-                        <Button variant="outline" size="sm" onClick={handlePrevProjectionMonth}>
-                          <ChevronLeft className="h-4 w-4" />
-                        </Button>
-                        <span className="text-sm font-medium min-w-[100px] text-center">
-                          {projectionMonthOffset === 0
-                            ? "Current"
-                            : projectionMonthOffset > 0
-                              ? `+${projectionMonthOffset}m`
-                              : `${projectionMonthOffset}m`}
-                        </span>
-                        <Button variant="outline" size="sm" onClick={handleNextProjectionMonth}>
-                          <ChevronRight className="h-4 w-4" />
-                        </Button>
-                      </div>
-                    </div>
-                  </CardHeader>
-                  <CardContent>
-                    <div className="text-center space-y-4">
-                      <div>
-                        <p className="text-4xl font-bold">{format(debtFreeDate, "d MMM yyyy")}</p>
-                        <p className="text-lg text-muted-foreground">{monthsToDebtFree} {monthsToDebtFree === 1 ? (language === 'en' ? 'month' : language === 'es' ? 'mes' : 'mês') : (language === 'en' ? 'months' : 'meses')} {language === 'en' ? 'away' : language === 'es' ? 'restantes' : 'restantes'}</p>
-                      </div>
-
-                      {/* Progress vs Ideal */}
-                      <div className="space-y-2">
-                        <div className="flex items-center justify-between text-sm">
-                          <span className="text-muted-foreground">Ideal Progress</span>
-                          <span className="font-semibold">{idealProgressPercent.toFixed(1)}%</span>
-                        </div>
-                        <Progress value={idealProgressPercent} className="h-4" />
-                        <p className="text-xs text-muted-foreground">
-                          Ideal Remaining Debt: {formatCurrency(idealRemainingDebt)}
-                        </p>
-                        {projectionMonthOffset !== 0 && (
-                          <p className="text-xs text-primary font-medium">
-                            Projection for {format(projectionDate, "MMM yyyy")}
-                          </p>
-                        )}
-                      </div>
-                    </div>
-                  </CardContent>
-                </Card>
+            <TabsContent value="overview" className="space-y-10">
+              {/* 1. KEY METRICS — first thing the user sees */}
+              {overviewLoading ? (
+                <SummaryCardsSkeleton />
+              ) : (
+                <OverviewSummaryCards
+                  totalIncome={totalIncome}
+                  totalVariableIncome={totalVariableIncome}
+                  totalExpenses={totalExpenses}
+                  cashFlow={cashFlow}
+                  savingsTotal={savingsTotal}
+                  emergencyFund={savings?.emergency_fund || 0}
+                  generalSavings={savings?.total_accumulated || 0}
+                  goalsSaved={savingsGoalsData.reduce((s, g) => s + (g.current_amount || 0), 0)}
+                  labels={{
+                    totalIncome: t.totalIncome,
+                    totalExpenses: t.totalExpenses,
+                    cashFlow: t.cashFlow,
+                    totalSavings: t.totalSavings,
+                    variable: language === "en" ? "Variable" : "Variable",
+                    emergency: language === "en" ? "Emergency" : language === "es" ? "Emergencia" : "Emergência",
+                    general: language === "en" ? "General" : "General",
+                    goals: language === "en" ? "Goals" : language === "es" ? "Metas" : "Metas",
+                  }}
+                />
               )}
 
-              {/* PAYMENT TIMELINE */}
-              <PaymentTimelineCard
-                title={t.paymentTimeline}
-                events={calendarEvents}
-                weekOffset={currentWeekOffset}
-                onPrevWeek={handlePrevWeek}
-                onNextWeek={handleNextWeek}
-                labels={{
-                  previous: language === "en" ? "Previous" : language === "es" ? "Anterior" : "Anterior",
-                  next: language === "en" ? "Next" : language === "es" ? "Siguiente" : "Próximo",
-                  empty:
-                    language === "en"
-                      ? "No upcoming payments this week"
-                      : language === "es"
-                        ? "No hay pagos próximos esta semana"
-                        : "Nenhum pagamento próximo esta semana",
-                  paid: language === "en" ? "Paid" : language === "es" ? "Pagado" : "Pago",
-                  today: language === "en" ? "Today" : language === "es" ? "Hoy" : "Hoje",
-                  recurring: language === "en" ? "Recurring" : language === "es" ? "Recurrente" : "Recorrente",
-                }}
-              />
+              {/* 2. SPENDING CHART — visual centre of the tab */}
+              {overviewLoading ? (
+                <ChartCardSkeleton />
+              ) : (
+                <ExpenseBreakdownCard
+                  pieData={pieData}
+                  totalExpenses={totalExpenses}
+                  totalIncome={totalIncome}
+                  labels={{
+                    title: language === "en" ? "Expense Breakdown" : language === "es" ? "Desglose de Gastos" : "Detalhamento de Despesas",
+                    subtitle:
+                      language === "en"
+                        ? "Monthly spending distribution with trends"
+                        : language === "es"
+                          ? "Distribución del gasto mensual con tendencias"
+                          : "Distribuição dos gastos mensais com tendências",
+                    monthlyTotal: language === "en" ? "Monthly Total" : language === "es" ? "Total Mensual" : "Total Mensal",
+                    monthly: language === "en" ? "Monthly" : language === "es" ? "Mensual" : "Mensal",
+                    ofIncome: language === "en" ? "of income" : language === "es" ? "de los ingresos" : "das receitas",
+                    high: language === "en" ? "High" : language === "es" ? "Alto" : "Alto",
+                    medium: language === "en" ? "Medium" : language === "es" ? "Medio" : "Médio",
+                    low: language === "en" ? "Low" : language === "es" ? "Bajo" : "Baixo",
+                    impact: language === "en" ? "impact" : language === "es" ? "impacto" : "impacto",
+                  }}
+                />
+              )}
+
+              {/* 3. SECONDARY SECTION — debt horizon + week ahead, lower emphasis */}
+              <section className="space-y-4 pt-2">
+                <h2 className="text-label text-muted-foreground">
+                  {language === "en" ? "Planning" : language === "es" ? "Planificación" : "Planejamento"}
+                </h2>
+
+                {overviewLoading ? (
+                  <ListCardSkeleton rows={2} />
+                ) : (
+                  <div className="grid gap-4 lg:grid-cols-2">
+                    {debtData.length > 0 && (
+                      <Card className="animate-fade-in">
+                        <CardHeader className="pb-3">
+                          <div className="flex items-center justify-between gap-2">
+                            <CardTitle className="text-subtitle flex items-center gap-2 text-muted-foreground">
+                              <TrendingUp className="h-4 w-4" aria-hidden="true" /> {t.debtFreeDate}
+                            </CardTitle>
+                            <div className="flex items-center gap-1">
+                              <Button
+                                variant="ghost"
+                                size="icon-sm"
+                                onClick={handlePrevProjectionMonth}
+                                aria-label={language === "en" ? "Previous month" : language === "es" ? "Mes anterior" : "Mês anterior"}
+                              >
+                                <ChevronLeft className="h-4 w-4" />
+                              </Button>
+                              <span className="text-body-sm font-medium min-w-[70px] text-center tabular-nums">
+                                {projectionMonthOffset === 0
+                                  ? "Current"
+                                  : projectionMonthOffset > 0
+                                    ? `+${projectionMonthOffset}m`
+                                    : `${projectionMonthOffset}m`}
+                              </span>
+                              <Button
+                                variant="ghost"
+                                size="icon-sm"
+                                onClick={handleNextProjectionMonth}
+                                aria-label={language === "en" ? "Next month" : language === "es" ? "Mes siguiente" : "Próximo mês"}
+                              >
+                                <ChevronRight className="h-4 w-4" />
+                              </Button>
+                            </div>
+                          </div>
+                        </CardHeader>
+                        <CardContent className="space-y-4">
+                          <div>
+                            <p className="text-metric">{format(debtFreeDate, "d MMM yyyy")}</p>
+                            <p className="text-body text-muted-foreground">{monthsToDebtFree} {monthsToDebtFree === 1 ? (language === 'en' ? 'month' : language === 'es' ? 'mes' : 'mês') : (language === 'en' ? 'months' : 'meses')} {language === 'en' ? 'away' : language === 'es' ? 'restantes' : 'restantes'}</p>
+                          </div>
+
+                          <div className="space-y-2">
+                            <div className="flex items-center justify-between text-body-sm">
+                              <span className="text-muted-foreground">Ideal Progress</span>
+                              <span className="font-semibold tabular-nums">{idealProgressPercent.toFixed(1)}%</span>
+                            </div>
+                            <Progress value={idealProgressPercent} className="h-2" aria-label="Ideal progress" />
+                            <p className="text-body-sm text-muted-foreground">
+                              Ideal Remaining Debt: {formatCurrency(idealRemainingDebt)}
+                            </p>
+                            {projectionMonthOffset !== 0 && (
+                              <p className="text-body-sm text-primary font-medium">
+                                Projection for {format(projectionDate, "MMM yyyy")}
+                              </p>
+                            )}
+                          </div>
+                        </CardContent>
+                      </Card>
+                    )}
+
+                    <PaymentTimelineCard
+                      title={t.paymentTimeline}
+                      events={calendarEvents}
+                      weekOffset={currentWeekOffset}
+                      onPrevWeek={handlePrevWeek}
+                      onNextWeek={handleNextWeek}
+                      labels={{
+                        previous: language === "en" ? "Previous" : language === "es" ? "Anterior" : "Anterior",
+                        next: language === "en" ? "Next" : language === "es" ? "Siguiente" : "Próximo",
+                        empty:
+                          language === "en"
+                            ? "No upcoming payments this week"
+                            : language === "es"
+                              ? "No hay pagos próximos esta semana"
+                              : "Nenhum pagamento próximo esta semana",
+                        paid: language === "en" ? "Paid" : language === "es" ? "Pagado" : "Pago",
+                        today: language === "en" ? "Today" : language === "es" ? "Hoy" : "Hoje",
+                        recurring: language === "en" ? "Recurring" : language === "es" ? "Recurrente" : "Recorrente",
+                      }}
+                    />
+                  </div>
+                )}
+              </section>
             </TabsContent>
+
 
             {/* Savings Goals Pots */}
 
