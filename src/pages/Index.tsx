@@ -110,6 +110,12 @@ import { OverviewSummaryCards } from "@/components/dashboard/OverviewSummaryCard
 import { ExpenseBreakdownCard } from "@/components/dashboard/ExpenseBreakdownCard";
 import { PaymentTimelineCard } from "@/components/dashboard/PaymentTimelineCard";
 import {
+  SummaryCardsSkeleton,
+  ChartCardSkeleton,
+  ListCardSkeleton,
+} from "@/components/dashboard/DashboardSkeleton";
+
+import {
   AlertDialog,
   AlertDialogAction,
   AlertDialogCancel,
