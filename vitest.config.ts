@@ -23,10 +23,10 @@ export default defineConfig({
       all: true,
       // The build fails when coverage drops below these numbers.
       thresholds: {
-        statements: 85,
-        branches: 80,
+        statements: 95,
+        branches: 85,
         functions: 85,
-        lines: 85,
+        lines: 95,
       },
     },
   },
