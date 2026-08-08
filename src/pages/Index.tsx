@@ -13,7 +13,7 @@ import {
   add,
   sub,
 } from "date-fns";
-import { formatCurrency, getTranslation } from "@/lib/i18n";
+import { formatCurrency, getCurrencySymbol, getTranslation } from "@/lib/i18n";
 import {
   TrendingUp,
   Download,
@@ -1260,7 +1260,7 @@ const Index = () => {
                   {/* Amount (not for debts) */}
                   {newEvent.type !== "debt" && (
                     <div>
-                      <Label>{newEvent.type === "savings" ? "Current Saved Amount ({currencySymbol})" : "Amount ({currencySymbol})"}</Label>
+                      <Label>{newEvent.type === "savings" ? `Current Saved Amount (${currencySymbol})` : `Amount (${currencySymbol})`}</Label>
                       <Input
                         type="number"
                         step="0.01"
