@@ -189,7 +189,7 @@ export const FloatingBudgetBuddy = ({ language, profileId, onNavigate }: Floatin
       <Button
         onClick={() => setIsOpen((v) => !v)}
         aria-label={t.title}
-        className="fixed bottom-24 right-6 h-14 w-14 rounded-full shadow-elegant hover:shadow-glow transition-all z-50 bg-gradient-primary"
+        className="fixed bottom-[4.75rem] sm:bottom-24 right-4 sm:right-6 h-12 w-12 sm:h-14 sm:w-14 rounded-full shadow-elegant hover:shadow-glow transition-all z-50 bg-gradient-primary"
         size="icon"
       >
         {statusIcon()}
@@ -201,7 +201,7 @@ export const FloatingBudgetBuddy = ({ language, profileId, onNavigate }: Floatin
       </Button>
 
       {isOpen && (
-        <Card className="fixed bottom-40 right-6 w-96 max-w-[calc(100vw-3rem)] shadow-elegant z-50 border-primary/20 animate-in fade-in slide-in-from-bottom-2">
+        <Card className="fixed bottom-40 right-4 sm:right-6 w-96 max-w-[calc(100vw-2rem)] max-h-[70vh] overflow-y-auto shadow-elegant z-50 border-primary/20 animate-in fade-in slide-in-from-bottom-2">
           <CardHeader className="bg-gradient-primary text-primary-foreground pb-3">
             <div className="flex items-center justify-between">
               <div className="flex items-center gap-2">

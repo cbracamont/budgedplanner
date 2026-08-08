@@ -96,10 +96,10 @@ export const OverviewSummaryCards = ({
 
   return (
     <div className="space-y-6">
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+      <div className="grid grid-cols-2 lg:grid-cols-4 gap-3 sm:gap-4">
         <Card className={metricCardClass} style={{ animationDelay: "0ms" }}>
           <CardHeader className="pb-2">
-            <CardTitle className="text-label flex items-center gap-2 text-muted-foreground">
+            <CardTitle className="text-xs font-medium uppercase tracking-wide leading-tight flex items-center gap-2 text-muted-foreground">
               <ArrowUpRight className="h-4 w-4 text-success" aria-hidden="true" />
               {labels.totalIncome}
             </CardTitle>
@@ -116,7 +116,7 @@ export const OverviewSummaryCards = ({
 
         <Card className={metricCardClass} style={{ animationDelay: "60ms" }}>
           <CardHeader className="pb-2">
-            <CardTitle className="text-label flex items-center gap-2 text-muted-foreground">
+            <CardTitle className="text-xs font-medium uppercase tracking-wide leading-tight flex items-center gap-2 text-muted-foreground">
               <ArrowDownRight className="h-4 w-4 text-destructive" aria-hidden="true" />
               {labels.totalExpenses}
             </CardTitle>
@@ -128,7 +128,7 @@ export const OverviewSummaryCards = ({
 
         <Card className={metricCardClass} style={{ animationDelay: "120ms" }}>
           <CardHeader className="pb-2">
-            <CardTitle className="text-label flex items-center gap-2 text-muted-foreground">
+            <CardTitle className="text-xs font-medium uppercase tracking-wide leading-tight flex items-center gap-2 text-muted-foreground">
               <Wallet className="h-4 w-4" aria-hidden="true" />
               {labels.cashFlow}
             </CardTitle>
@@ -145,7 +145,7 @@ export const OverviewSummaryCards = ({
 
         <Card className={metricCardClass} style={{ animationDelay: "180ms" }}>
           <CardHeader className="pb-2">
-            <CardTitle className="text-label flex items-center gap-2 text-muted-foreground">
+            <CardTitle className="text-xs font-medium uppercase tracking-wide leading-tight flex items-center gap-2 text-muted-foreground">
               <PiggyBank className="h-4 w-4 text-primary" aria-hidden="true" /> {labels.totalSavings}
             </CardTitle>
           </CardHeader>

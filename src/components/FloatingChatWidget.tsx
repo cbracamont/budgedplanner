@@ -585,7 +585,7 @@ export const FloatingChatWidget = ({ language = "en" as Language, context }: Flo
           onClick={() => setIsOpen(true)}
           size="icon"
           aria-label={t.open}
-          className="fixed bottom-4 right-4 z-50 h-14 w-14 rounded-full shadow-lg transition-transform hover:scale-110"
+          className="fixed bottom-4 right-4 sm:right-6 z-50 h-12 w-12 sm:h-14 sm:w-14 rounded-full shadow-lg transition-transform hover:scale-110"
         >
           <MessageSquare className="h-6 w-6" />
         </Button>

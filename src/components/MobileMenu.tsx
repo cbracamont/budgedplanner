@@ -33,12 +33,14 @@ export function MobileMenu({ activeTab, onTabChange, tabs, language, onLanguageC
         <Button
           variant="outline"
           size="icon"
-          className="md:hidden fixed top-4 left-4 z-50 bg-card shadow-lg"
+          aria-label="Open menu"
+          className="md:hidden h-11 w-11 bg-card shadow-sm"
         >
           <Menu className="h-5 w-5" />
         </Button>
       </SheetTrigger>
-      <SheetContent side="left" className="w-72 bg-card">
+      <SheetContent side="left" className="w-[85vw] max-w-xs overflow-y-auto bg-card">
+
         <div className="flex flex-col gap-4 mt-8">
           {/* Navigation Tabs */}
           <div className="flex flex-col gap-2">
