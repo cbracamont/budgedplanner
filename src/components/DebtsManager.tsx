@@ -9,7 +9,8 @@ import { useToast } from "@/hooks/use-toast";
 import { CreditCard, Plus, Trash2, Pencil } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { getTranslation, Language, ukBanks } from "@/lib/i18n";
+import { getTranslation, Language, ukBanks, formatCurrency } from "@/lib/i18n";
+import { effectiveApr, promoStatus, monthlyInterest, interestOnlyPayment, installmentBreakdown, paymentCoversInterest } from "@/lib/debtMath";
 import { useDebts, useAddDebt, useUpdateDebt, useDeleteDebt } from "@/hooks/useFinancialData";
 import { useDebtPayments } from "@/hooks/useDebtPayments";
 import { useAllPaymentHistory } from "@/hooks/usePaymentTracker";
@@ -162,8 +163,85 @@ export const DebtsManager = ({ language, onDebtsChange }: DebtsManagerProps) => 
     onDebtsChange?.(total);
   }, [debts, onDebtsChange]);
 
+  const validationMessages = {
+    en: {
+      balance: "Enter a total balance greater than 0.",
+      apr: "Enter an APR between 0 and 100%.",
+      minPayment: "Enter a minimum payment greater than 0.",
+      installments: "Enter at least 1 instalment.",
+      startDate: "Choose a start date for the instalment plan.",
+      promoDate: "Choose the date the promotional APR ends.",
+      promoRegular: "Enter the regular APR that applies after the promotion.",
+      promoPast: "The promotional end date must be in the future.",
+      neverPaidOff: (min: string, needed: string) =>
+        `A payment of ${min} does not cover the monthly interest (${needed}). The balance would never go down.`,
+    },
+    es: {
+      balance: "Introduce un balance total mayor que 0.",
+      apr: "Introduce un APR entre 0 y 100%.",
+      minPayment: "Introduce un pago mínimo mayor que 0.",
+      installments: "Introduce al menos 1 cuota.",
+      startDate: "Elige la fecha de inicio del plan de cuotas.",
+      promoDate: "Elige la fecha en que termina el APR promocional.",
+      promoRegular: "Introduce el APR regular que aplica al terminar la promoción.",
+      promoPast: "La fecha de fin de la promoción debe ser futura.",
+      neverPaidOff: (min: string, needed: string) =>
+        `Un pago de ${min} no cubre el interés mensual (${needed}). El balance nunca bajaría.`,
+    },
+    pt: {
+      balance: "Introduza um saldo total maior que 0.",
+      apr: "Introduza uma TAEG entre 0 e 100%.",
+      minPayment: "Introduza um pagamento mínimo maior que 0.",
+      installments: "Introduza pelo menos 1 prestação.",
+      startDate: "Escolha a data de início do plano de prestações.",
+      promoDate: "Escolha a data em que termina a TAEG promocional.",
+      promoRegular: "Introduza a TAEG regular aplicada após a promoção.",
+      promoPast: "A data de fim da promoção deve ser futura.",
+      neverPaidOff: (min: string, needed: string) =>
+        `Um pagamento de ${min} não cobre os juros mensais (${needed}). O saldo nunca desceria.`,
+    },
+  }[language === 'es' ? 'es' : language === 'pt' ? 'pt' : 'en'];
+
+  const showError = (message: string) =>
+    toast({ title: language === 'en' ? 'Check the form' : language === 'pt' ? 'Verifique o formulário' : 'Revisa el formulario', description: message, variant: 'destructive' });
+
   const addDebt = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    const balanceValue = parseFloat(newDebt.balance);
+    if (!Number.isFinite(balanceValue) || balanceValue <= 0) return showError(validationMessages.balance);
+
+    if (isInstallment) {
+      const installments = parseInt(newDebt.number_of_installments);
+      if (!Number.isFinite(installments) || installments < 1) return showError(validationMessages.installments);
+      if (!newDebt.start_date) return showError(validationMessages.startDate);
+    } else {
+      const minPay = parseFloat(newDebt.minimum_payment);
+      if (!Number.isFinite(minPay) || minPay <= 0) return showError(validationMessages.minPayment);
+    }
+
+    if (hasPromotionalAPR) {
+      const promo = parseFloat(newDebt.promotional_apr);
+      const regular = parseFloat(newDebt.regular_apr);
+      if (!Number.isFinite(promo) || promo < 0 || promo > 100) return showError(validationMessages.apr);
+      if (!newDebt.promotional_apr_end_date) return showError(validationMessages.promoDate);
+      if (parseLocalDate(newDebt.promotional_apr_end_date) < startOfMonth(new Date())) return showError(validationMessages.promoPast);
+      if (!Number.isFinite(regular) || regular < 0 || regular > 100) return showError(validationMessages.promoRegular);
+    } else if (!isInstallment) {
+      const aprValue = parseFloat(newDebt.apr);
+      if (!Number.isFinite(aprValue) || aprValue < 0 || aprValue > 100) return showError(validationMessages.apr);
+    }
+
+    // A payment that does not beat the first month of interest never clears the debt.
+    if (!isInstallment) {
+      const minPay = parseFloat(newDebt.minimum_payment);
+      const aprForCheck = hasPromotionalAPR ? parseFloat(newDebt.promotional_apr) : parseFloat(newDebt.apr);
+      if (Number.isFinite(aprForCheck) && aprForCheck > 0 && !paymentCoversInterest(balanceValue, minPay, aprForCheck)) {
+        return showError(
+          validationMessages.neverPaidOff(formatCurrency(minPay), formatCurrency(interestOnlyPayment(balanceValue, aprForCheck)))
+        );
+      }
+    }
 
     const debtData: any = {
       name: newDebt.name,
@@ -352,16 +430,15 @@ export const DebtsManager = ({ language, onDebtsChange }: DebtsManagerProps) => 
                       let endDate = "";
                       
                       if (startDate && numInstallments > 0) {
-                        const start = new Date(startDate);
-                        start.setMonth(start.getMonth() + numInstallments);
-                        endDate = start.toISOString().split('T')[0];
+                        const start = parseLocalDate(startDate);
+                        endDate = format(new Date(start.getFullYear(), start.getMonth() + numInstallments, start.getDate()), 'yyyy-MM-dd');
                       }
-                      
+
                       setNewDebt({ 
                         ...newDebt, 
                         number_of_installments: e.target.value,
                         installment_amount: (!isNaN(balance) && numInstallments > 0) 
-                          ? (balance / numInstallments).toFixed(2) 
+                          ? installmentBreakdown(balance, numInstallments).regular.toFixed(2) 
                           : "",
                         end_date: endDate
                       });
@@ -379,6 +456,22 @@ export const DebtsManager = ({ language, onDebtsChange }: DebtsManagerProps) => 
                     value={newDebt.installment_amount}
                     readOnly
                   />
+                  {(() => {
+                    const n = parseInt(newDebt.number_of_installments);
+                    const bal = parseFloat(newDebt.balance);
+                    if (!Number.isFinite(n) || n < 1 || !Number.isFinite(bal) || bal <= 0) return null;
+                    const { regular, final } = installmentBreakdown(bal, n);
+                    if (Math.abs(final - regular) < 0.005) return null;
+                    return (
+                      <p className="text-xs text-muted-foreground">
+                        {language === 'en'
+                          ? `Last instalment: ${formatCurrency(final)} (rounding adjustment)`
+                          : language === 'pt'
+                            ? `Última prestação: ${formatCurrency(final)} (ajuste de arredondamento)`
+                            : `Última cuota: ${formatCurrency(final)} (ajuste de redondeo)`}
+                      </p>
+                    );
+                  })()}
                 </div>
                 <div className="space-y-2">
                   <Label htmlFor="start-date">{language === 'en' ? 'Start Date' : 'Fecha de Inicio'}</Label>
@@ -395,15 +488,9 @@ export const DebtsManager = ({ language, onDebtsChange }: DebtsManagerProps) => 
                       let endDate = "";
                       
                       if (startDate && numInstallments > 0) {
-                        const start = new Date(startDate);
-                        const nextMonth = new Date(start);
-                        nextMonth.setMonth(nextMonth.getMonth() + 1);
-                        nextPaymentDate = nextMonth.toISOString().split('T')[0];
-                        
-                        // Calculate end date
-                        const end = new Date(start);
-                        end.setMonth(end.getMonth() + numInstallments);
-                        endDate = end.toISOString().split('T')[0];
+                        const start = parseLocalDate(startDate);
+                        nextPaymentDate = format(new Date(start.getFullYear(), start.getMonth() + 1, start.getDate()), 'yyyy-MM-dd');
+                        endDate = format(new Date(start.getFullYear(), start.getMonth() + numInstallments, start.getDate()), 'yyyy-MM-dd');
                       }
                       
                       setNewDebt({ 
@@ -417,10 +504,8 @@ export const DebtsManager = ({ language, onDebtsChange }: DebtsManagerProps) => 
                   {newDebt.start_date && newDebt.number_of_installments && (
                     <p className="text-xs text-muted-foreground">
                       {language === 'en' ? 'First payment:' : 'Primer pago:'} {(() => {
-                        const start = new Date(newDebt.start_date);
-                        const nextMonth = new Date(start);
-                        nextMonth.setMonth(nextMonth.getMonth() + 1);
-                        return nextMonth.toLocaleDateString();
+                        const start = parseLocalDate(newDebt.start_date);
+                        return new Date(start.getFullYear(), start.getMonth() + 1, start.getDate()).toLocaleDateString();
                       })()}
                     </p>
                   )}
@@ -517,10 +602,10 @@ export const DebtsManager = ({ language, onDebtsChange }: DebtsManagerProps) => 
                   <>
                     <p className="text-sm text-muted-foreground">
                       {debt.bank && `${debt.bank} • `}
-                      £{debt.installment_amount?.toFixed(2)}/installment • {language === 'en' ? 'Day' : 'Día'} {debt.payment_day}
+                      {formatCurrency(debt.installment_amount || 0)}/{language === 'en' ? 'installment' : language === 'pt' ? 'prestação' : 'cuota'} • {language === 'en' ? 'Day' : 'Día'} {debt.payment_day}
                     </p>
                     <p className="text-xs text-muted-foreground">
-                      {language === 'en' ? 'Total:' : 'Total:'} £{debt.total_amount?.toFixed(2)} • 
+                      {language === 'en' ? 'Total:' : 'Total:'} {formatCurrency(debt.total_amount || 0)} • 
                       {debt.number_of_installments} {language === 'en' ? 'installments' : 'cuotas'}
                     </p>
                   </>
@@ -528,34 +613,53 @@ export const DebtsManager = ({ language, onDebtsChange }: DebtsManagerProps) => 
                   <>
                     <p className="text-sm text-muted-foreground">
                       {debt.bank && `${debt.bank} • `}
-                      £{debt.minimum_payment.toFixed(2)}/month • {language === 'en' ? 'Day' : 'Día'} {debt.payment_day}
+                      {formatCurrency(debt.minimum_payment)}/{language === 'en' ? 'month' : language === 'pt' ? 'mês' : 'mes'} • {language === 'en' ? 'Day' : language === 'pt' ? 'Dia' : 'Día'} {debt.payment_day}
                     </p>
-                    {debt.promotional_apr && debt.promotional_apr_end_date ? (
-                      <>
-                        <p className="text-xs text-muted-foreground">
-                          {language === 'en' ? 'Balance:' : 'Balance:'} £{getAdjustedBalance(debt).toFixed(2)}
-                        </p>
-                        <p className="text-xs text-blue-600 dark:text-blue-400 font-medium">
-                          {language === 'en' ? '🎯 Promotional APR:' : '🎯 APR Promocional:'} {debt.promotional_apr}% 
-                          {language === 'en' ? ' until ' : ' hasta '} 
-                          {new Date(debt.promotional_apr_end_date).toLocaleDateString(language === 'en' ? 'en-GB' : 'es-ES')}
-                        </p>
-                        <p className="text-xs text-muted-foreground">
-                          {language === 'en' ? 'Then APR:' : 'Luego APR:'} {debt.regular_apr}%
-                        </p>
-                      </>
-                    ) : (
-                      <p className="text-xs text-muted-foreground">
-                        {language === 'en' ? 'Balance:' : 'Balance:'} £{getAdjustedBalance(debt).toFixed(2)} • APR: {debt.apr}%
-                      </p>
-                    )}
-                    {debt.promotional_apr && debt.promotional_apr_end_date && (
-                      <p className="text-xs text-blue-600 dark:text-blue-400 hidden">
-                        {language === 'en' ? 'Promo APR:' : 'APR Promo:'} {debt.promotional_apr}% 
-                        {language === 'en' ? ' until ' : ' hasta '}{new Date(debt.promotional_apr_end_date).toLocaleDateString(language === 'en' ? 'en-GB' : 'es-ES')}
-                        {language === 'en' ? ', then ' : ', luego '}{debt.regular_apr}%
-                      </p>
-                    )}
+                    {(() => {
+                      const balance = getAdjustedBalance(debt);
+                      const status = promoStatus(debt);
+                      const currentApr = effectiveApr(debt);
+                      const interest = monthlyInterest(balance, currentApr);
+                      const covers = paymentCoversInterest(balance, debt.minimum_payment, currentApr);
+                      const dateLocale = language === 'en' ? 'en-GB' : language === 'pt' ? 'pt-PT' : 'es-ES';
+                      return (
+                        <>
+                          <p className="text-xs text-muted-foreground">
+                            {language === 'en' ? 'Balance:' : language === 'pt' ? 'Saldo:' : 'Balance:'} {formatCurrency(balance)} • APR: {currentApr}%
+                            {interest > 0 && (
+                              <> • {language === 'en' ? 'interest/month' : language === 'pt' ? 'juros/mês' : 'interés/mes'}: {formatCurrency(interest)}</>
+                            )}
+                          </p>
+                          {status === 'active' && (
+                            <p className="text-xs text-primary font-medium">
+                              {language === 'en' ? 'Promotional APR' : language === 'pt' ? 'TAEG promocional' : 'APR promocional'} {debt.promotional_apr}%
+                              {language === 'en' ? ' until ' : language === 'pt' ? ' até ' : ' hasta '}
+                              {parseLocalDate(debt.promotional_apr_end_date as string).toLocaleDateString(dateLocale)}
+                              {' • '}
+                              {language === 'en' ? 'then ' : language === 'pt' ? 'depois ' : 'luego '}{debt.regular_apr ?? debt.apr}%
+                            </p>
+                          )}
+                          {status === 'expired' && (
+                            <p className="text-xs text-destructive font-medium">
+                              {language === 'en'
+                                ? `Promotion ended ${parseLocalDate(debt.promotional_apr_end_date as string).toLocaleDateString(dateLocale)} — now charging ${currentApr}%`
+                                : language === 'pt'
+                                  ? `Promoção terminou em ${parseLocalDate(debt.promotional_apr_end_date as string).toLocaleDateString(dateLocale)} — agora cobra ${currentApr}%`
+                                  : `La promoción terminó el ${parseLocalDate(debt.promotional_apr_end_date as string).toLocaleDateString(dateLocale)} — ahora cobra ${currentApr}%`}
+                            </p>
+                          )}
+                          {!covers && balance > 0 && currentApr > 0 && (
+                            <p className="text-xs text-destructive">
+                              {language === 'en'
+                                ? `The payment does not cover the interest — pay at least ${formatCurrency(interestOnlyPayment(balance, currentApr))}/month.`
+                                : language === 'pt'
+                                  ? `O pagamento não cobre os juros — pague pelo menos ${formatCurrency(interestOnlyPayment(balance, currentApr))}/mês.`
+                                  : `El pago no cubre el interés — paga al menos ${formatCurrency(interestOnlyPayment(balance, currentApr))}/mes.`}
+                            </p>
+                          )}
+                        </>
+                      );
+                    })()}
                   </>
                 )}
               </div>
@@ -713,7 +817,7 @@ export const DebtsManager = ({ language, onDebtsChange }: DebtsManagerProps) => 
                     ) : (
                       <p className="text-sm text-green-700 dark:text-green-400">
                         {debt.bank && `${debt.bank} • `}
-                        {language === 'en' ? 'Balance: £0.00 • Paid' : language === 'es' ? 'Balance: £0.00 • Pagado' : 'Saldo: £0.00 • Spłacone'}
+                        {`${language === 'en' ? 'Balance' : language === 'pt' ? 'Saldo' : 'Balance'}: ${formatCurrency(0)} • ${language === 'en' ? 'Paid' : language === 'pt' ? 'Pago' : 'Pagado'}`}
                       </p>
                     )}
                   </div>
@@ -765,7 +869,7 @@ export const DebtsManager = ({ language, onDebtsChange }: DebtsManagerProps) => 
               {language === 'en' ? 'Original Amount' : language === 'es' ? 'Monto Original' : 'Pierwotna Kwota'}
             </p>
             <p className="text-2xl font-bold text-blue-600 dark:text-blue-400">
-              £{originalAmount.toFixed(2)}
+              {formatCurrency(originalAmount)}
             </p>
           </div>
 
@@ -775,7 +879,7 @@ export const DebtsManager = ({ language, onDebtsChange }: DebtsManagerProps) => 
               {language === 'en' ? 'Total Paid' : language === 'es' ? 'Total Pagado' : 'Razem Zapłacono'}
             </p>
             <p className="text-2xl font-bold text-green-600 dark:text-green-400">
-              £{totalPaidCombined.toFixed(2)}
+              {formatCurrency(totalPaidCombined)}
             </p>
           </div>
 
@@ -785,7 +889,7 @@ export const DebtsManager = ({ language, onDebtsChange }: DebtsManagerProps) => 
               {language === 'en' ? 'Remaining Balance' : language === 'es' ? 'Saldo Restante' : 'Pozostałe Saldo'}
             </p>
             <p className="text-2xl font-bold text-debt">
-              £{remainingBalance.toFixed(2)}
+              {formatCurrency(remainingBalance)}
             </p>
           </div>
 
@@ -804,7 +908,7 @@ export const DebtsManager = ({ language, onDebtsChange }: DebtsManagerProps) => 
                   <div key={`${payment.source}-${payment.id}`} className="flex items-center justify-between p-3 border rounded-lg hover:bg-muted/50 transition-colors">
                     <div className="flex-1">
                       <div className="flex items-center gap-2">
-                        <p className="font-medium">£{payment.amount.toFixed(2)}</p>
+                        <p className="font-medium">{formatCurrency(payment.amount)}</p>
                         <span className={`text-xs px-2 py-0.5 rounded-full ${
                           payment.source === 'auto' 
                             ? 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-300' 

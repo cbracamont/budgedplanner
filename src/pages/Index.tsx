@@ -131,6 +131,7 @@ import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Textarea } from "@/components/ui/textarea";
 import type { Language } from "@/lib/i18n";
+import { effectiveApr } from "@/lib/debtMath";
 import { sumMonthlyFixedExpenses } from "@/lib/budgetMath";
 type DebtMethod = "avalanche" | "snowball" | "hybrid";
 type Event = {
@@ -1955,7 +1956,7 @@ const DebtPlanner = ({
 
     const sortFn =
       debtMethod === "avalanche"
-        ? (a, b) => b.apr - a.apr
+        ? (a, b) => effectiveApr(b) - effectiveApr(a)
         : debtMethod === "snowball"
           ? (a, b) => a.balance - b.balance
           : (a, b) => b.apr * 0.6 + (b.balance / 1000) * 0.4 - (a.apr * 0.6 + (a.balance / 1000) * 0.4);
