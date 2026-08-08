@@ -118,9 +118,10 @@ export const ExpenseBreakdownCard = ({
               <span className="text-metric-sm text-foreground">{formatCurrency(totalExpenses)}</span>
               <span className="flex items-center gap-1 text-body-sm text-muted-foreground">
                 <TrendingUp className="h-3 w-3" aria-hidden="true" />
-                {totalIncome > 0 ? ((totalExpenses / totalIncome) * 100).toFixed(0) : 0}% {labels.ofIncome}
+                <span>{`${totalIncome > 0 ? ((totalExpenses / totalIncome) * 100).toFixed(0) : 0}% ${labels.ofIncome}`}</span>
               </span>
             </div>
+
           </div>
         </div>
       </CardContent>
