@@ -9,6 +9,8 @@ export async function enterDemoMode(page: Page) {
   await page.addInitScript(() => {
     try {
       localStorage.setItem("guest-mode-enabled", "true");
+      // Skip the first-run walkthrough so it never covers the dashboard.
+      localStorage.setItem("hasSeenOnboarding", "true");
     } catch {
       /* ignore */
     }
