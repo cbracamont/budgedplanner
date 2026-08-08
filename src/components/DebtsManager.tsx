@@ -9,7 +9,10 @@ import { useToast } from "@/hooks/use-toast";
 import { CreditCard, Plus, Trash2, Pencil } from "lucide-react";
 import { Dialog, DialogContent, DialogHeader, DialogTitle, DialogTrigger } from "@/components/ui/dialog";
 import { AlertDialog, AlertDialogAction, AlertDialogCancel, AlertDialogContent, AlertDialogDescription, AlertDialogFooter, AlertDialogHeader, AlertDialogTitle, AlertDialogTrigger } from "@/components/ui/alert-dialog";
-import { getTranslation, Language, ukBanks } from "@/lib/i18n";
+import { getTranslation, Language, ukBanks, formatCurrency } from "@/lib/i18n";
+import { effectiveApr, promoStatus, monthlyInterest, interestOnlyPayment, installmentBreakdown, paymentCoversInterest } from "@/lib/debtMath";
+import { debtInputSchema } from "@/components/validation/schemas";
+import { friendlyError } from "@/lib/errorMessages";
 import { useDebts, useAddDebt, useUpdateDebt, useDeleteDebt } from "@/hooks/useFinancialData";
 import { useDebtPayments } from "@/hooks/useDebtPayments";
 import { useAllPaymentHistory } from "@/hooks/usePaymentTracker";
@@ -162,8 +165,85 @@ export const DebtsManager = ({ language, onDebtsChange }: DebtsManagerProps) => 
     onDebtsChange?.(total);
   }, [debts, onDebtsChange]);
 
+  const validationMessages = {
+    en: {
+      balance: "Enter a total balance greater than 0.",
+      apr: "Enter an APR between 0 and 100%.",
+      minPayment: "Enter a minimum payment greater than 0.",
+      installments: "Enter at least 1 instalment.",
+      startDate: "Choose a start date for the instalment plan.",
+      promoDate: "Choose the date the promotional APR ends.",
+      promoRegular: "Enter the regular APR that applies after the promotion.",
+      promoPast: "The promotional end date must be in the future.",
+      neverPaidOff: (min: string, needed: string) =>
+        `A payment of ${min} does not cover the monthly interest (${needed}). The balance would never go down.`,
+    },
+    es: {
+      balance: "Introduce un balance total mayor que 0.",
+      apr: "Introduce un APR entre 0 y 100%.",
+      minPayment: "Introduce un pago mínimo mayor que 0.",
+      installments: "Introduce al menos 1 cuota.",
+      startDate: "Elige la fecha de inicio del plan de cuotas.",
+      promoDate: "Elige la fecha en que termina el APR promocional.",
+      promoRegular: "Introduce el APR regular que aplica al terminar la promoción.",
+      promoPast: "La fecha de fin de la promoción debe ser futura.",
+      neverPaidOff: (min: string, needed: string) =>
+        `Un pago de ${min} no cubre el interés mensual (${needed}). El balance nunca bajaría.`,
+    },
+    pt: {
+      balance: "Introduza um saldo total maior que 0.",
+      apr: "Introduza uma TAEG entre 0 e 100%.",
+      minPayment: "Introduza um pagamento mínimo maior que 0.",
+      installments: "Introduza pelo menos 1 prestação.",
+      startDate: "Escolha a data de início do plano de prestações.",
+      promoDate: "Escolha a data em que termina a TAEG promocional.",
+      promoRegular: "Introduza a TAEG regular aplicada após a promoção.",
+      promoPast: "A data de fim da promoção deve ser futura.",
+      neverPaidOff: (min: string, needed: string) =>
+        `Um pagamento de ${min} não cobre os juros mensais (${needed}). O saldo nunca desceria.`,
+    },
+  }[language === 'es' ? 'es' : language === 'pt' ? 'pt' : 'en'];
+
+  const showError = (message: string) =>
+    toast({ title: language === 'en' ? 'Check the form' : language === 'pt' ? 'Verifique o formulário' : 'Revisa el formulario', description: message, variant: 'destructive' });
+
   const addDebt = async (e: React.FormEvent) => {
     e.preventDefault();
+
+    const balanceValue = parseFloat(newDebt.balance);
+    if (!Number.isFinite(balanceValue) || balanceValue <= 0) return showError(validationMessages.balance);
+
+    if (isInstallment) {
+      const installments = parseInt(newDebt.number_of_installments);
+      if (!Number.isFinite(installments) || installments < 1) return showError(validationMessages.installments);
+      if (!newDebt.start_date) return showError(validationMessages.startDate);
+    } else {
+      const minPay = parseFloat(newDebt.minimum_payment);
+      if (!Number.isFinite(minPay) || minPay <= 0) return showError(validationMessages.minPayment);
+    }
+
+    if (hasPromotionalAPR) {
+      const promo = parseFloat(newDebt.promotional_apr);
+      const regular = parseFloat(newDebt.regular_apr);
+      if (!Number.isFinite(promo) || promo < 0 || promo > 100) return showError(validationMessages.apr);
+      if (!newDebt.promotional_apr_end_date) return showError(validationMessages.promoDate);
+      if (parseLocalDate(newDebt.promotional_apr_end_date) < startOfMonth(new Date())) return showError(validationMessages.promoPast);
+      if (!Number.isFinite(regular) || regular < 0 || regular > 100) return showError(validationMessages.promoRegular);
+    } else if (!isInstallment) {
+      const aprValue = parseFloat(newDebt.apr);
+      if (!Number.isFinite(aprValue) || aprValue < 0 || aprValue > 100) return showError(validationMessages.apr);
+    }
+
+    // A payment that does not beat the first month of interest never clears the debt.
+    if (!isInstallment) {
+      const minPay = parseFloat(newDebt.minimum_payment);
+      const aprForCheck = hasPromotionalAPR ? parseFloat(newDebt.promotional_apr) : parseFloat(newDebt.apr);
+      if (Number.isFinite(aprForCheck) && aprForCheck > 0 && !paymentCoversInterest(balanceValue, minPay, aprForCheck)) {
+        return showError(
+          validationMessages.neverPaidOff(formatCurrency(minPay), formatCurrency(interestOnlyPayment(balanceValue, aprForCheck)))
+        );
+      }
+    }
 
     const debtData: any = {
       name: newDebt.name,
@@ -352,16 +432,15 @@ export const DebtsManager = ({ language, onDebtsChange }: DebtsManagerProps) => 
                       let endDate = "";
                       
                       if (startDate && numInstallments > 0) {
-                        const start = new Date(startDate);
-                        start.setMonth(start.getMonth() + numInstallments);
-                        endDate = start.toISOString().split('T')[0];
+                        const start = parseLocalDate(startDate);
+                        endDate = format(new Date(start.getFullYear(), start.getMonth() + numInstallments, start.getDate()), 'yyyy-MM-dd');
                       }
-                      
+
                       setNewDebt({ 
                         ...newDebt, 
                         number_of_installments: e.target.value,
                         installment_amount: (!isNaN(balance) && numInstallments > 0) 
-                          ? (balance / numInstallments).toFixed(2) 
+                          ? installmentBreakdown(balance, numInstallments).regular.toFixed(2) 
                           : "",
                         end_date: endDate
                       });
@@ -395,15 +474,9 @@ export const DebtsManager = ({ language, onDebtsChange }: DebtsManagerProps) => 
                       let endDate = "";
                       
                       if (startDate && numInstallments > 0) {
-                        const start = new Date(startDate);
-                        const nextMonth = new Date(start);
-                        nextMonth.setMonth(nextMonth.getMonth() + 1);
-                        nextPaymentDate = nextMonth.toISOString().split('T')[0];
-                        
-                        // Calculate end date
-                        const end = new Date(start);
-                        end.setMonth(end.getMonth() + numInstallments);
-                        endDate = end.toISOString().split('T')[0];
+                        const start = parseLocalDate(startDate);
+                        nextPaymentDate = format(new Date(start.getFullYear(), start.getMonth() + 1, start.getDate()), 'yyyy-MM-dd');
+                        endDate = format(new Date(start.getFullYear(), start.getMonth() + numInstallments, start.getDate()), 'yyyy-MM-dd');
                       }
                       
                       setNewDebt({ 
@@ -417,10 +490,8 @@ export const DebtsManager = ({ language, onDebtsChange }: DebtsManagerProps) => 
                   {newDebt.start_date && newDebt.number_of_installments && (
                     <p className="text-xs text-muted-foreground">
                       {language === 'en' ? 'First payment:' : 'Primer pago:'} {(() => {
-                        const start = new Date(newDebt.start_date);
-                        const nextMonth = new Date(start);
-                        nextMonth.setMonth(nextMonth.getMonth() + 1);
-                        return nextMonth.toLocaleDateString();
+                        const start = parseLocalDate(newDebt.start_date);
+                        return new Date(start.getFullYear(), start.getMonth() + 1, start.getDate()).toLocaleDateString();
                       })()}
                     </p>
                   )}
