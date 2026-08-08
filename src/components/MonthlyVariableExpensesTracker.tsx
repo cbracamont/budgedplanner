@@ -164,18 +164,18 @@ export const VariableExpensesTracker = ({ language = "en" }: VariableExpensesTra
       >
           {/* Month Navigation */}
           <div className="flex items-center justify-between mb-6">
-            <Button onClick={handlePrevMonth} variant="outline" size="icon" className="h-8 w-8">
+            <Button onClick={handlePrevMonth} variant="outline" size="icon" className="h-8 w-8" aria-label="Previous month" data-testid="var-exp-prev-month">
               <ChevronLeft className="h-4 w-4" />
             </Button>
 
             <div className="text-center">
-              <h3 className="text-lg font-semibold">{format(currentMonth, "MMMM yyyy")}</h3>
+              <h3 className="text-lg font-semibold" data-testid="var-exp-month-label">{format(currentMonth, "MMMM yyyy")}</h3>
               <p className="text-sm text-muted-foreground">
-                {translations.monthTotal}: <span className="font-bold text-warning">{formatCurrency(monthTotal)}</span>
+                {translations.monthTotal}: <span className="font-bold text-warning" data-testid="var-exp-month-total">{formatCurrency(monthTotal)}</span>
               </p>
             </div>
 
-            <Button onClick={handleNextMonth} variant="outline" size="icon" className="h-8 w-8">
+            <Button onClick={handleNextMonth} variant="outline" size="icon" className="h-8 w-8" aria-label="Next month" data-testid="var-exp-next-month">
               <ChevronRight className="h-4 w-4" />
             </Button>
           </div>

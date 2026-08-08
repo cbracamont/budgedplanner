@@ -234,18 +234,18 @@ export const CategoryBudgetsManager = ({ language = "en" }: Props) => {
         }
         headerExtra={
           <div className="flex items-center justify-between gap-3">
-            <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => setMonth((m) => subMonths(m, 1))}>
+            <Button variant="outline" size="icon" className="h-8 w-8" aria-label="Previous month" data-testid="budget-prev-month" onClick={() => setMonth((m) => subMonths(m, 1))}>
               <ChevronLeft className="h-4 w-4" />
             </Button>
             <div className="text-center">
-              <p className="font-semibold">{format(month, "MMMM yyyy")}</p>
+              <p className="font-semibold" data-testid="budget-month-label">{format(month, "MMMM yyyy")}</p>
               <p className="text-sm text-muted-foreground">
                 {t.monthTotal}: <span className="font-bold">{formatCurrency(totals.budgeted)}</span>
                 {" · "}
                 {t.totalSpent}: <span className="font-bold text-warning">{formatCurrency(totals.spent)}</span>
               </p>
             </div>
-            <Button variant="outline" size="icon" className="h-8 w-8" onClick={() => setMonth((m) => addMonths(m, 1))}>
+            <Button variant="outline" size="icon" className="h-8 w-8" aria-label="Next month" data-testid="budget-next-month" onClick={() => setMonth((m) => addMonths(m, 1))}>
               <ChevronRight className="h-4 w-4" />
             </Button>
           </div>
