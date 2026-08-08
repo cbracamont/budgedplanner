@@ -55,12 +55,18 @@ export default {
           DEFAULT: "hsl(var(--debt))",
           foreground: "hsl(var(--debt-foreground))",
         },
+        expenses: {
+          DEFAULT: "hsl(var(--expenses))",
+          foreground: "hsl(var(--expenses-foreground))",
+        },
         success: "hsl(var(--success))",
         warning: "hsl(var(--warning))",
       },
       boxShadow: {
         soft: "var(--shadow-soft)",
         medium: "var(--shadow-medium)",
+        gold: "var(--shadow-gold)",
+        premium: "var(--shadow-premium)",
       },
       backgroundImage: {
         "gradient-primary": "var(--gradient-primary)",
@@ -89,11 +95,22 @@ export default {
             height: "0",
           },
         },
+        "fade-in": {
+          "0%": { opacity: "0", transform: "translateY(8px)" },
+          "100%": { opacity: "1", transform: "translateY(0)" },
+        },
+        "scale-in": {
+          "0%": { opacity: "0", transform: "scale(0.97)" },
+          "100%": { opacity: "1", transform: "scale(1)" },
+        },
       },
       animation: {
         "accordion-down": "accordion-down 0.2s ease-out",
         "accordion-up": "accordion-up 0.2s ease-out",
+        "fade-in": "fade-in 0.35s ease-out both",
+        "scale-in": "scale-in 0.2s ease-out both",
       },
+
     },
   },
   plugins: [require("tailwindcss-animate")],
