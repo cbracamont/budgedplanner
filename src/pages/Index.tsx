@@ -1,6 +1,5 @@
 "use client";
 
-import { PieChart, Pie, Cell, Tooltip, ResponsiveContainer } from "recharts";
 
 import { useState, useEffect, useMemo, useCallback } from "react";
 import { useQueryClient, useQuery } from "@tanstack/react-query";
@@ -13,7 +12,6 @@ import {
   isSameDay,
   add,
   sub,
-  startOfWeek,
 } from "date-fns";
 import { formatCurrency, getTranslation } from "@/lib/i18n";
 import {
@@ -121,7 +119,6 @@ import {
   AlertDialogHeader,
   AlertDialogTitle,
 } from "@/components/ui/alert-dialog";
-import { Badge } from "@/components/ui/badge";
 import { Label } from "@/components/ui/label";
 import { Input } from "@/components/ui/input";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
