@@ -1,3 +1,4 @@
+import { friendlyError } from '@/lib/errorMessages';
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -54,7 +55,7 @@ export const useAddExpenseCategory = () => {
       queryClient.invalidateQueries({ queryKey: ["variable_expense_categories"] });
     },
     onError: (error: Error) =>
-      toast({ title: "Error", description: error.message, variant: "destructive" }),
+      toast({ title: "Error", description: friendlyError(error), variant: "destructive" }),
   });
 };
 
@@ -72,7 +73,7 @@ export const useDeleteExpenseCategory = () => {
       queryClient.invalidateQueries({ queryKey: ["variable_expenses"] });
     },
     onError: (error: Error) =>
-      toast({ title: "Error", description: error.message, variant: "destructive" }),
+      toast({ title: "Error", description: friendlyError(error), variant: "destructive" }),
   });
 };
 
@@ -140,7 +141,7 @@ export const useSaveCategoryBudget = (month: Date) => {
       queryClient.invalidateQueries({ queryKey: ["category_budgets"] });
     },
     onError: (error: Error) =>
-      toast({ title: "Error", description: error.message, variant: "destructive" }),
+      toast({ title: "Error", description: friendlyError(error), variant: "destructive" }),
   });
 };
 
@@ -156,7 +157,7 @@ export const useDeleteCategoryBudget = () => {
       queryClient.invalidateQueries({ queryKey: ["category_budgets"] });
     },
     onError: (error: Error) =>
-      toast({ title: "Error", description: error.message, variant: "destructive" }),
+      toast({ title: "Error", description: friendlyError(error), variant: "destructive" }),
   });
 };
 
@@ -208,7 +209,7 @@ export const useCopyBudgetsFromPreviousMonth = (month: Date) => {
       if (count === 0) toast({ title: "Nothing to copy", description: "No limits found in the previous month." });
     },
     onError: (error: Error) =>
-      toast({ title: "Error", description: error.message, variant: "destructive" }),
+      toast({ title: "Error", description: friendlyError(error), variant: "destructive" }),
   });
 };
 

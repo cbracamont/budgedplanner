@@ -1,3 +1,4 @@
+import { friendlyError } from '@/lib/errorMessages';
 import { useState } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { SectionCard, SectionEmpty, SectionLoading } from "@/components/ui/section-card";
@@ -158,7 +159,7 @@ export const SavingsGoalsManager = ({
           onError: (error) => {
             toast({
               title: "Error",
-              description: error.message || "Failed to update goal.",
+              description: friendlyError(error) || "Failed to update goal.",
               variant: "destructive",
             });
           },
@@ -178,7 +179,7 @@ export const SavingsGoalsManager = ({
         onError: (error) => {
           toast({
             title: "Error",
-            description: error.message || "Failed to create goal.",
+            description: friendlyError(error) || "Failed to create goal.",
             variant: "destructive",
           });
         },
@@ -201,7 +202,7 @@ export const SavingsGoalsManager = ({
       onError: (error) => {
         toast({
           title: "Error",
-          description: error.message || "Failed to delete goal.",
+          description: friendlyError(error) || "Failed to delete goal.",
           variant: "destructive",
         });
       },
@@ -246,7 +247,7 @@ export const SavingsGoalsManager = ({
         onError: (error) => {
           toast({
             title: "Error",
-            description: error.message || "Failed to activate contribution.",
+            description: friendlyError(error) || "Failed to activate contribution.",
             variant: "destructive",
           });
         },

@@ -1,3 +1,4 @@
+import { friendlyError } from '@/lib/errorMessages';
 import { useQuery, useMutation, useQueryClient } from '@tanstack/react-query';
 import { supabase } from '@/integrations/supabase/client';
 import { useToast } from '@/hooks/use-toast';
@@ -88,7 +89,7 @@ export const useAddIncome = () => {
       toast({ title: 'Success', description: 'Income source added' });
     },
     onError: (error: Error) => {
-      toast({ title: 'Error', description: error.message, variant: 'destructive' });
+      toast({ title: 'Error', description: friendlyError(error), variant: 'destructive' });
     }
   });
 };
@@ -114,7 +115,7 @@ export const useUpdateIncome = () => {
       toast({ title: 'Success', description: 'Income source updated' });
     },
     onError: (error: Error) => {
-      toast({ title: 'Error', description: error.message, variant: 'destructive' });
+      toast({ title: 'Error', description: friendlyError(error), variant: 'destructive' });
     }
   });
 };
@@ -133,7 +134,7 @@ export const useDeleteIncome = () => {
       toast({ title: 'Success', description: 'Income source deleted' });
     },
     onError: (error: Error) => {
-      toast({ title: 'Error', description: error.message, variant: 'destructive' });
+      toast({ title: 'Error', description: friendlyError(error), variant: 'destructive' });
     }
   });
 };
@@ -195,7 +196,7 @@ export const useAddDebt = () => {
       toast({ title: 'Success', description: 'Debt added' });
     },
     onError: (error: Error) => {
-      toast({ title: 'Error', description: error.message, variant: 'destructive' });
+      toast({ title: 'Error', description: friendlyError(error), variant: 'destructive' });
     }
   });
 };
@@ -224,7 +225,7 @@ export const useUpdateDebt = () => {
       toast({ title: 'Success', description: 'Debt updated' });
     },
     onError: (error: Error) => {
-      toast({ title: 'Error', description: error.message, variant: 'destructive' });
+      toast({ title: 'Error', description: friendlyError(error), variant: 'destructive' });
     }
   });
 };
@@ -246,7 +247,7 @@ export const useDeleteDebt = () => {
       toast({ title: 'Success', description: 'Debt deleted' });
     },
     onError: (error: Error) => {
-      toast({ title: 'Error', description: error.message, variant: 'destructive' });
+      toast({ title: 'Error', description: friendlyError(error), variant: 'destructive' });
     }
   });
 };
@@ -304,7 +305,7 @@ export const useAddFixedExpense = () => {
       toast({ title: 'Success', description: 'Expense added' });
     },
     onError: (error: Error) => {
-      toast({ title: 'Error', description: error.message, variant: 'destructive' });
+      toast({ title: 'Error', description: friendlyError(error), variant: 'destructive' });
     }
   });
 };
@@ -330,7 +331,7 @@ export const useUpdateFixedExpense = () => {
       toast({ title: 'Success', description: 'Expense updated' });
     },
     onError: (error: Error) => {
-      toast({ title: 'Error', description: error.message, variant: 'destructive' });
+      toast({ title: 'Error', description: friendlyError(error), variant: 'destructive' });
     }
   });
 };
@@ -349,7 +350,7 @@ export const useDeleteFixedExpense = () => {
       toast({ title: 'Success', description: 'Expense deleted' });
     },
     onError: (error: Error) => {
-      toast({ title: 'Error', description: error.message, variant: 'destructive' });
+      toast({ title: 'Error', description: friendlyError(error), variant: 'destructive' });
     }
   });
 };
@@ -406,7 +407,7 @@ export const useAddVariableExpense = () => {
       toast({ title: 'Success', description: 'Expense added successfully' });
     },
     onError: (error: Error) => {
-      toast({ title: 'Error', description: error.message, variant: 'destructive' });
+      toast({ title: 'Error', description: friendlyError(error), variant: 'destructive' });
     }
   });
 };
@@ -433,7 +434,7 @@ export const useUpdateVariableExpense = () => {
       toast({ title: 'Success', description: 'Expense updated successfully' });
     },
     onError: (error: Error) => {
-      toast({ title: 'Error', description: error.message, variant: 'destructive' });
+      toast({ title: 'Error', description: friendlyError(error), variant: 'destructive' });
     }
   });
 };
@@ -452,7 +453,7 @@ export const useDeleteVariableExpense = () => {
       toast({ title: 'Success', description: 'Expense deleted successfully' });
     },
     onError: (error: Error) => {
-      toast({ title: 'Error', description: error.message, variant: 'destructive' });
+      toast({ title: 'Error', description: friendlyError(error), variant: 'destructive' });
     }
   });
 };
@@ -511,7 +512,7 @@ export const useAddSavingsGoal = () => {
       toast({ title: 'Success', description: 'Goal created successfully' });
     },
     onError: (error: Error) => {
-      toast({ title: 'Error', description: error.message, variant: 'destructive' });
+      toast({ title: 'Error', description: friendlyError(error), variant: 'destructive' });
     }
   });
 };
@@ -537,7 +538,7 @@ export const useUpdateSavingsGoal = () => {
       toast({ title: 'Success', description: 'Goal updated successfully' });
     },
     onError: (error: Error) => {
-      toast({ title: 'Error', description: error.message, variant: 'destructive' });
+      toast({ title: 'Error', description: friendlyError(error), variant: 'destructive' });
     }
   });
 };
@@ -556,7 +557,7 @@ export const useDeleteSavingsGoal = () => {
       toast({ title: 'Success', description: 'Goal deleted successfully' });
     },
     onError: (error: Error) => {
-      toast({ title: 'Error', description: error.message, variant: 'destructive' });
+      toast({ title: 'Error', description: friendlyError(error), variant: 'destructive' });
     }
   });
 };
@@ -618,7 +619,7 @@ export const useUpdateSavings = () => {
       toast({ title: 'Success', description: 'Savings updated successfully' });
     },
     onError: (error: Error) => {
-      toast({ title: 'Error', description: error.message, variant: 'destructive' });
+      toast({ title: 'Error', description: friendlyError(error), variant: 'destructive' });
     }
   });
 };
