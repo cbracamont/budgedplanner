@@ -5,6 +5,7 @@ import { formatCurrency, Language } from "@/lib/i18n";
 import { AlertCircle, AlertTriangle, TrendingDown, ChevronDown, ChevronUp, Zap, Target, Clock, ArrowRight } from "lucide-react";
 import { useDebtPayments } from "@/hooks/useDebtPayments";
 import { Button } from "@/components/ui/button";
+import { effectiveApr, addMonthsSafe, monthlyInterest, type DebtRateLike } from "@/lib/debtMath";
 
 interface Debt {
   id: string;
@@ -12,6 +13,10 @@ interface Debt {
   balance: number;
   minimum_payment: number;
   apr: number;
+  promotional_apr?: number | null;
+  promotional_apr_end_date?: string | null;
+  regular_apr?: number | null;
+  is_installment?: boolean | null;
 }
 
 interface SimplifiedDebtPriorityProps {
@@ -46,14 +51,16 @@ interface SimulationResult {
 }
 
 function runAmortization(
-  debts: { id: string; name: string; balance: number; minPay: number; apr: number }[],
+  debts: ({ id: string; name: string; balance: number; minPay: number; apr: number } & DebtRateLike)[],
   extraBudget: number,
   method: "avalanche" | "snowball" | "hybrid",
-  maxMonths = 360
+  maxMonths = 360,
+  startDate: Date = new Date()
 ): { perDebt: Map<string, { months: number; interest: number; unpayable: boolean; projection: { month: number; balance: number }[] }>; totalMonths: number } {
   const simDebts = debts.map(d => ({
     ...d,
     bal: d.balance,
+    rate: d.apr,
     totalInterest: 0,
     months: 0,
     done: false,
@@ -64,10 +71,12 @@ function runAmortization(
   while (simDebts.some(d => !d.done) && month < maxMonths) {
     month++;
 
-    // 1. Apply interest
+    // 1. Apply interest at the rate in force that month (promotional APR aware)
+    const monthDate = addMonthsSafe(startDate, month - 1);
     for (const d of simDebts) {
+      d.rate = effectiveApr(d, monthDate);
       if (d.done) continue;
-      const interest = d.bal * (d.apr / 100 / 12);
+      const interest = monthlyInterest(d.bal, d.rate);
       d.totalInterest += interest;
       d.bal += interest;
     }
@@ -93,15 +102,15 @@ function runAmortization(
     // 4. Sort remaining debts by strategy and apply extra
     const active = simDebts.filter(d => !d.done);
     if (method === "avalanche") {
-      active.sort((a, b) => b.apr - a.apr);
+      active.sort((a, b) => b.rate - a.rate);
     } else if (method === "snowball") {
       active.sort((a, b) => a.bal - b.bal);
     } else {
       active.sort((a, b) => {
-        const maxApr = Math.max(...simDebts.map(x => x.apr)) || 1;
+        const maxApr = Math.max(...simDebts.map(x => x.rate)) || 1;
         const maxBal = Math.max(...simDebts.map(x => x.balance)) || 1;
-        const scoreA = (a.apr / maxApr) * 0.6 + ((maxBal - a.bal) / maxBal) * 0.4;
-        const scoreB = (b.apr / maxApr) * 0.6 + ((maxBal - b.bal) / maxBal) * 0.4;
+        const scoreA = (a.rate / maxApr) * 0.6 + ((maxBal - a.bal) / maxBal) * 0.4;
+        const scoreB = (b.rate / maxApr) * 0.6 + ((maxBal - b.bal) / maxBal) * 0.4;
         return scoreB - scoreA;
       });
     }
@@ -154,6 +163,10 @@ export const SimplifiedDebtPriority = ({
       balance: d.balance,
       minPay: d.minimum_payment,
       apr: d.apr,
+      promotional_apr: d.promotional_apr,
+      promotional_apr_end_date: d.promotional_apr_end_date,
+      regular_apr: d.regular_apr,
+      is_installment: d.is_installment,
     }));
 
     // Run with minimum payments only
@@ -164,14 +177,14 @@ export const SimplifiedDebtPriority = ({
     // Sort by strategy
     const sortFn =
       method === "avalanche"
-        ? (a: Debt, b: Debt) => b.apr - a.apr
+        ? (a: Debt, b: Debt) => effectiveApr(b) - effectiveApr(a)
         : method === "snowball"
           ? (a: Debt, b: Debt) => a.balance - b.balance
           : (a: Debt, b: Debt) => {
-              const maxApr = Math.max(...debts.map(x => x.apr)) || 1;
+              const maxApr = Math.max(...debts.map(x => effectiveApr(x))) || 1;
               const maxBal = Math.max(...debts.map(x => x.balance)) || 1;
-              const scoreA = (a.apr / maxApr) * 0.6 + ((maxBal - a.balance) / maxBal) * 0.4;
-              const scoreB = (b.apr / maxApr) * 0.6 + ((maxBal - b.balance) / maxBal) * 0.4;
+              const scoreA = (effectiveApr(a) / maxApr) * 0.6 + ((maxBal - a.balance) / maxBal) * 0.4;
+              const scoreB = (effectiveApr(b) / maxApr) * 0.6 + ((maxBal - b.balance) / maxBal) * 0.4;
               return scoreB - scoreA;
             };
 
@@ -187,7 +200,7 @@ export const SimplifiedDebtPriority = ({
       if (extraRemaining <= 0) break;
       // Cap at what month 1 actually needs after interest and the minimum payment,
       // so the displayed extra never exceeds what the simulation applies.
-      const monthInterest = d.balance * (d.apr / 100 / 12);
+      const monthInterest = monthlyInterest(d.balance, effectiveApr(d));
       const needed = Math.max(0, d.balance + monthInterest - d.minimum_payment);
       const extraForThis = Math.min(extraRemaining, needed);
       extraAllocation.set(d.id, extraForThis);
@@ -206,7 +219,7 @@ export const SimplifiedDebtPriority = ({
       return {
         debtId: debt.id,
         name: debt.name,
-        apr: debt.apr,
+        apr: effectiveApr(debt),
         currentBalance: debt.balance,
         originalBalance,
         minimumPayment: debt.minimum_payment,
