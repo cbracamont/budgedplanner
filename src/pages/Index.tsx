@@ -381,6 +381,8 @@ const Index = () => {
   const addVariableExpenseMutation = useAddVariableExpense();
   const addSavingsGoalMutation = useAddSavingsGoal();
   const t = translations[language];
+  setErrorLanguage(language);
+
   const {
     totalIncome,
     totalVariableIncome,
