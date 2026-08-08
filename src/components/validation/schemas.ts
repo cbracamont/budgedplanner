@@ -15,7 +15,7 @@ export const debtInputSchema = z.object({
   apr: z.number().min(0, "APR must be positive").max(100, "APR must be less than 100%"),
   minimum_payment: z.number().min(0, "Minimum payment must be positive").max(1000000, "Payment too large"),
   payment_day: z.number().int().min(1, "Invalid day").max(31, "Invalid day"),
-  bank: z.string().max(100, "Bank name too long").optional(),
+  bank: z.string().max(100, "Bank name too long").nullable().optional(),
 });
 
 export const fixedExpenseInputSchema = z.object({

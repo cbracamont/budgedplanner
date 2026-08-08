@@ -1,3 +1,4 @@
+import { friendlyError } from '@/lib/errorMessages';
 import { useState, useMemo } from "react";
 import { Card, CardContent } from "@/components/ui/card";
 import { SectionCard, SectionEmpty, SectionLoading } from "@/components/ui/section-card";
@@ -299,7 +300,7 @@ export const MonthlyPaymentTracker = ({ language }: MonthlyPaymentTrackerProps) 
           onError: (error) => {
             toast({
               title: "Error",
-              description: error.message || "Failed to update payment.",
+              description: friendlyError(error) || "Failed to update payment.",
               variant: "destructive",
             });
           },
@@ -324,7 +325,7 @@ export const MonthlyPaymentTracker = ({ language }: MonthlyPaymentTrackerProps) 
         onError: (error) => {
           toast({
             title: "Error",
-            description: error.message || "Failed to add payment.",
+            description: friendlyError(error) || "Failed to add payment.",
             variant: "destructive",
           });
         },
@@ -365,7 +366,7 @@ export const MonthlyPaymentTracker = ({ language }: MonthlyPaymentTrackerProps) 
       onError: (error) => {
         toast({
           title: "Error",
-          description: error.message || "Failed to delete payment.",
+          description: friendlyError(error) || "Failed to delete payment.",
           variant: "destructive",
         });
       },

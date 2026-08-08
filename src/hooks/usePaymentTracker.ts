@@ -1,3 +1,4 @@
+import { friendlyError } from '@/lib/errorMessages';
 import { useQuery, useMutation, useQueryClient } from "@tanstack/react-query";
 import { supabase } from "@/integrations/supabase/client";
 import { useToast } from "@/hooks/use-toast";
@@ -255,7 +256,7 @@ export const useAddPaymentTracker = () => {
     onError: (error: Error) => {
       toast({
         title: "Error",
-        description: error.message,
+        description: friendlyError(error),
         variant: "destructive",
       });
     },
@@ -286,7 +287,7 @@ export const useUpdatePaymentTracker = () => {
     onError: (error: Error) => {
       toast({
         title: "Error",
-        description: error.message,
+        description: friendlyError(error),
         variant: "destructive",
       });
     },
@@ -317,7 +318,7 @@ export const useDeletePaymentTracker = () => {
     onError: (error: Error) => {
       toast({
         title: "Error",
-        description: error.message,
+        description: friendlyError(error),
         variant: "destructive",
       });
     },
